@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "dev:app": "bun --cwd packages/app start",
+    "dev:api": "bun --cwd packages/api dev",
     "typecheck": "bunx turbo run typecheck"
   },
   "workspaces": {
