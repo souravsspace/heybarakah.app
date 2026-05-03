@@ -1,0 +1,15 @@
+{
+  "extends": "@barakaah/tsconfig/base.json",
+  "compilerOptions": {
+    "module": "Preserve",
+    "jsx": "preserve",
+    "allowJs": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false
+  }
+}

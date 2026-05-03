@@ -1,0 +1,36 @@
+{
+  "name": "heybarakaah.app",
+  "type": "module",
+  "version": "0.0.1",
+  "packageManager": "bun@1.3.10",
+  "private": true,
+  "scripts": {
+    "dev:example": "bun --cwd packages/example dev",
+    "typecheck": "bunx turbo run typecheck"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "catalog": {
+      "typescript": "~5.6.2",
+      "@types/bun": "1.3.11"
+    }
+  },
+  "devDependencies": {
+    "@barakaah/tsconfig": "workspace:*",
+    "@biomejs/biome": "2.4.14",
+    "@types/bun": "catalog:",
+    "lint-staged": "^16.4.0",
+    "turbo": "^2.8.20",
+    "ultracite": "7.6.3"
+  },
+  "peerDependencies": {
+    "typescript": "catalog:"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "bun x ultracite fix"
+    ]
+  }
+}

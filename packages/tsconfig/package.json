@@ -1,0 +1,17 @@
+{
+  "name": "@barakaah/tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "license": "PROPRIETARY",
+  "files": [
+    "base.json",
+    "api.json"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./api.json": "./api.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
