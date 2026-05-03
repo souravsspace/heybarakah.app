@@ -7,6 +7,7 @@
   "scripts": {
     "dev:app": "bun --cwd packages/app start",
     "dev:api": "bun --cwd packages/api dev",
+    "dev:marketing": "bun --cwd packages/marketing dev",
     "typecheck": "bunx turbo run typecheck"
   },
   "workspaces": {
