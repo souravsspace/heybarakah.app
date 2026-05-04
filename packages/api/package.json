@@ -10,6 +10,8 @@
     "hono": "^4.12.16"
   },
   "devDependencies": {
+    "@barakaah/tsconfig": "workspace:*",
     "wrangler": "^4.4.0"
   }
 }
+

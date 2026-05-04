@@ -22,6 +22,7 @@
         "hono": "^4.12.16",
       },
       "devDependencies": {
+        "@barakaah/tsconfig": "workspace:*",
         "wrangler": "^4.4.0",
       },
     },
@@ -56,6 +57,7 @@
         "react-native-worklets": "0.5.1",
       },
       "devDependencies": {
+        "@barakaah/tsconfig": "workspace:*",
         "@types/react": "~19.1.0",
         "eslint": "^9.25.0",
         "eslint-config-expo": "~10.0.0",
@@ -67,6 +69,9 @@
       "version": "0.0.1",
       "dependencies": {
         "astro": "^6.2.1",
+      },
+      "devDependencies": {
+        "@barakaah/tsconfig": "workspace:*",
       },
     },
     "packages/tsconfig": {

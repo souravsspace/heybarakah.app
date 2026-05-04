@@ -5,11 +5,15 @@
   "license": "PROPRIETARY",
   "files": [
     "base.json",
-    "api.json"
+    "api.json",
+    "app.json",
+    "marketing.json"
   ],
   "exports": {
     "./base.json": "./base.json",
-    "./api.json": "./api.json"
+    "./api.json": "./api.json",
+    "./app.json": "./app.json",
+    "./marketing.json": "./marketing.json"
   },
   "publishConfig": {
     "access": "public"
