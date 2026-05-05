@@ -1,0 +1,6 @@
+{
+	"runtime": "nodejs24.x",
+	"handler": "packages/marketing/dist/server/entry.mjs",
+	"launcherType": "Nodejs",
+	"supportsResponseStreaming": true
+}
