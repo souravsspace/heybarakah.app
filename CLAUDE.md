@@ -14,7 +14,8 @@ When designing or implementing any UI, components, layouts, or visual features, 
 2. **`design/colors_and_type.css`** — All design tokens as CSS custom properties: core palette (`--color-primary` #29603E mosque green, neutrals, semantic colors), typography scale (`--font-serif` Libre Baskerville, `--font-sans` Inter), spacing scale (`--space-xs` to `--space-xl`), radii, shadows (`--shadow-cta` green glow), and motion curves. Import this file in any artifact or production code.
 3. **`design/SKILL.md`** — Agent skill manifest. Quick reference for what the system contains and how to use it.
 4. **`design/assets/`** — Barakaah logo and marks. Do not recolor or redraw the logo.
-5. **`design/ui_kits/app/`** — Reusable mobile app components (Banner, Button, Card, PrayerRow, PrayerCountdown, LockMark, TabBar). Use these as the canonical component patterns.
+5. **`assets/`** — App icons, platform-specific iconsets (android, ios, web), and font files. Use these whenever brand assets are needed outside the design system.
+6. **`design/ui_kits/app/`** — Reusable mobile app components (Banner, Button, Card, PrayerRow, PrayerCountdown, LockMark, TabBar). Use these as the canonical component patterns.
 6. **`design/preview/`** — Rendered swatches and specimens showing each token in context.
 
 **Key rules to internalize:**
