@@ -32,11 +32,11 @@ export default function Faq() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="relative">
+    <section id="faq" className="relative bg-white border-b border-[color:var(--color-border)]">
       <div className="mx-auto max-w-3xl px-6 py-28 md:py-32">
         <div className="text-center">
           <p className="t-eyebrow text-[color:var(--color-primary)]">Common questions</p>
-          <h2 className="serif mt-4 text-[36px] leading-[1.1] font-bold text-[color:var(--color-fg)] md:text-[44px]">
+          <h2 className="serif mt-4 text-5xl md:text-7xl leading-[1.1] font-bold text-[color:var(--color-fg)]">
             Quiet answers.
           </h2>
         </div>
@@ -55,7 +55,7 @@ export default function Faq() {
                   onClick={() => setOpen(isOpen ? null : i)}
                   className="flex w-full items-center justify-between gap-6 bg-white px-6 py-5 text-left transition-colors hover:bg-[color:var(--color-surface-soft)]"
                 >
-                  <span className="text-[16px] font-medium leading-[24px] text-[color:var(--color-fg)]">
+                  <span className="text-base font-medium leading-6 text-[color:var(--color-fg)]">
                     {item.q}
                   </span>
                   <ChevronDown
@@ -70,7 +70,7 @@ export default function Faq() {
                   style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                 >
                   <div className="min-h-0">
-                    <p className="px-6 pb-6 text-[15px] leading-[24px] text-[color:var(--color-fg-muted)]">
+                    <p className="px-6 pb-6 text-sm leading-6 text-[color:var(--color-fg-muted)]">
                       {item.a}
                     </p>
                   </div>

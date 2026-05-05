@@ -1,7 +1,37 @@
 ---
+import { appConfig } from "../app-config";
+const { routes } = appConfig;
 ---
-<div class="bg-[color:var(--color-primary)] text-white">
-  <div class="mx-auto max-w-6xl px-6 py-2.5 text-center">
-    <span class="t-eyebrow">Now in private beta — join the waitlist</span>
-  </div>
+<div class="relative overflow-hidden bg-[color:var(--color-primary)] text-white">
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 opacity-[0.08]"
+    style="background-image: repeating-linear-gradient(45deg, transparent 0 10px, white 10px 11px);"
+  ></div>
+
+  <a
+    href={routes.pricing}
+    class="group relative flex items-center justify-center gap-3 px-6 py-2.5 transition-colors hover:bg-[color:var(--color-primary-hover)]"
+  >
+    <span class="relative inline-flex h-2 w-2 shrink-0">
+      <span class="absolute inset-0 animate-ping rounded-full bg-white/70"></span>
+      <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+    </span>
+
+    <span class="t-eyebrow font-bold tracking-[0.18em]">Private beta</span>
+
+    <span aria-hidden="true" class="hidden h-3 w-px bg-white/40 sm:inline-block"></span>
+
+    <span class="hidden text-xs tracking-wide text-white/85 sm:inline">Lifetime early access — limited seats</span>
+
+    <span
+      class="ml-1 inline-flex items-center gap-1 text-xs font-bold tracking-[0.14em] uppercase transition-transform duration-200 group-hover:translate-x-0.5"
+    >
+      Join
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 12h14" />
+        <path d="m13 5 7 7-7 7" />
+      </svg>
+    </span>
+  </a>
 </div>
