@@ -1,34 +1,269 @@
 ---
-const items = [
-  "You miss salah because your phone pulls you elsewhere.",
-  "You open apps mid-wudu without realising.",
-  "You silence the adhan and forget to come back.",
-  "You finish a doomscroll and the prayer window has closed.",
-  "You want your phone to honour your salah, not interrupt it.",
+const questions = [
+  {
+    q: "Ahmed lives in the UK and is visiting his family in Palestine for 3 weeks. How should he pray?",
+    options: [
+      "Shorten and combine prayers for the duration of the visit.",
+      "Pray normally (do not shorten or combine).",
+      "Shorten prayers for the first 15 days, then pray normally.",
+      "Shorten prayers only during the journey. Pray normally on arrival in Palestine.",
+    ],
+    answer: 3,
+  },
+  {
+    q: "Sarah is scrolling on her phone when the maghrib adhan plays. There are 12 minutes left in the window. What is most correct?",
+    options: [
+      "Finish the post she's reading first, then make wudu.",
+      "Reply to the adhan, stop scrolling, make wudu, and pray straight away.",
+      "Wait until isha and pray them together.",
+      "Pray quickly without wudu since the time is short.",
+    ],
+    answer: 1,
+  },
+  {
+    q: "Yusuf cannot remember if he prayed asr. The asr window is still open. What does he do?",
+    options: [
+      "Skip it — assume he prayed.",
+      "Wait until maghrib and pray qada later.",
+      "Pray asr now; act on certainty over doubt.",
+      "Pray two rakat as a precaution.",
+    ],
+    answer: 2,
+  },
+  {
+    q: "Aisha is in the middle of salah when her phone starts ringing loudly in her pocket. What should she do?",
+    options: [
+      "Answer the call quietly, then continue.",
+      "Speak 'one moment' and silence the phone.",
+      "Ignore the phone and continue her salah.",
+      "Break her salah, silence the phone, and start again.",
+    ],
+    answer: 2,
+  },
+  {
+    q: "Omar wakes up and realises the fajr window has already closed. What is the correct action?",
+    options: [
+      "Skip fajr — the window is gone.",
+      "Pray fajr as qada as soon as he remembers.",
+      "Add the rakat onto dhuhr.",
+      "Wait until the next morning's fajr and pray two sets.",
+    ],
+    answer: 1,
+  },
 ];
 ---
-<section class="bg-[color:var(--color-surface-soft)] border-y border-[color:var(--color-border)]">
+<section
+  id="quiz-section"
+  class="bg-[color:var(--color-surface-soft)] border-b border-[color:var(--color-border)]"
+  data-questions={JSON.stringify(questions)}
+>
   <div class="mx-auto max-w-3xl px-6 py-24 md:py-28">
     <div class="text-center">
-      <p class="t-eyebrow text-[color:var(--color-primary)]">Do you need Barakah?</p>
-      <h2 class="serif mt-4 text-[32px] leading-[1.15] font-bold text-[color:var(--color-fg)] md:text-[38px]">
-        If any of these sound familiar.
+      <p class="t-eyebrow text-[color:var(--color-primary)]">Test your obligatory knowledge</p>
+      <h2 class="serif mt-3 text-4xl md:text-6xl leading-[1.1] font-bold text-[color:var(--color-fg)]">
+        Do you need Barakah?
       </h2>
+      <p class="mt-4 text-sm md:text-base text-[color:var(--color-fg-muted)]">
+        5 fard ayn questions (Hanafi madhab); knowledge <em>every</em> Muslim must know.
+      </p>
     </div>
 
-    <ul class="mt-14 space-y-px overflow-hidden rounded-[4px] border border-[color:var(--color-border)] bg-white">
-      {items.map((item, i) => (
-        <li class={`flex items-start gap-4 px-6 py-5 ${i !== 0 ? "border-t border-[color:var(--color-border)]" : ""}`}>
-          <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-primary)] bg-[color:var(--color-primary-soft)] text-[color:var(--color-primary)]">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-          </span>
-          <p class="text-[16px] leading-[24px] text-[color:var(--color-fg)]">{item}</p>
-        </li>
-      ))}
-    </ul>
+    <!-- Quiz card -->
+    <div id="quiz-card" class="mt-12">
+      <!-- Segmented progress -->
+      <div id="quiz-progress" class="mx-auto flex max-w-sm items-center gap-1.5"></div>
 
-    <p class="mt-10 text-center text-[14px] text-[color:var(--color-fg-muted)]">
-      Then Barakah was made for you.
-    </p>
+      <div class="mt-8 text-center">
+        <p id="quiz-step" class="text-[13px] font-bold tracking-tight text-[color:var(--color-fg)]">Question 1 of 5</p>
+        <p
+          id="quiz-question"
+          class="mx-auto mt-2 max-w-lg text-[15px] leading-6 text-[color:var(--color-fg)]"
+        ></p>
+      </div>
+
+      <ul id="quiz-options" class="mx-auto mt-6 max-w-xl space-y-2.5"></ul>
+
+      <div id="quiz-footer" class="mx-auto mt-6 hidden max-w-xl flex-col items-stretch gap-3">
+        <button
+          id="quiz-next"
+          type="button"
+          class="w-full rounded-[8px] bg-[color:var(--color-primary)] px-6 py-3 text-base font-semibold text-white shadow-[var(--shadow-cta)] hover:opacity-90 transition-opacity"
+        >
+          Next question
+        </button>
+        <p id="quiz-feedback" class="text-center text-[11px] uppercase tracking-[0.12em] font-semibold text-[color:var(--color-fg-muted)]"></p>
+      </div>
+    </div>
+
+    <!-- Result card -->
+    <div id="quiz-result" class="mt-14 hidden">
+      <div class="flex flex-col items-center">
+        <div class="relative h-44 w-44">
+          <svg viewBox="0 0 120 120" class="h-full w-full -rotate-90">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--color-border)" stroke-width="10" />
+            <circle
+              id="result-ring"
+              cx="60"
+              cy="60"
+              r="52"
+              fill="none"
+              stroke="var(--color-primary)"
+              stroke-width="10"
+              stroke-linecap="round"
+              stroke-dasharray="326.7"
+              stroke-dashoffset="326.7"
+              style="transition: stroke-dashoffset 900ms ease, stroke 300ms ease;"
+            />
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <p id="result-percent" class="serif text-3xl md:text-4xl font-bold text-[color:var(--color-fg)]">0%</p>
+          </div>
+        </div>
+
+        <p id="result-headline" class="mt-8 text-base font-semibold text-[color:var(--color-fg)]">
+          Don't risk your akhira.
+        </p>
+        <p class="mt-3 max-w-xl text-center text-sm text-[color:var(--color-fg-muted)]">
+          Become an expert at dealing with these scenarios + hundreds more.
+        </p>
+
+        <a
+          href="#waitlist"
+          class="mt-8 inline-flex items-center justify-center rounded-[6px] bg-[color:var(--color-primary)] px-6 py-3 text-sm font-semibold text-white shadow-[var(--shadow-cta)] hover:opacity-90 transition-opacity"
+        >
+          Fix my score with Barakah
+        </a>
+      </div>
+    </div>
   </div>
 </section>
+
+<script>
+  type Q = { q: string; options: string[]; answer: number };
+  const section = document.getElementById("quiz-section")!;
+  const questions: Q[] = JSON.parse(section.dataset.questions!);
+
+  const elProgress = document.getElementById("quiz-progress")!;
+  const elStep = document.getElementById("quiz-step")!;
+  const elQ = document.getElementById("quiz-question")!;
+  const elOpts = document.getElementById("quiz-options")!;
+  const elNext = document.getElementById("quiz-next") as HTMLButtonElement;
+  const elFooter = document.getElementById("quiz-footer")!;
+  const elFeedback = document.getElementById("quiz-feedback")!;
+  const elCard = document.getElementById("quiz-card")!;
+  const elResult = document.getElementById("quiz-result")!;
+  const elRing = document.getElementById("result-ring") as unknown as SVGCircleElement;
+  const elPercent = document.getElementById("result-percent")!;
+  const elHeadline = document.getElementById("result-headline")!;
+
+  let idx = 0;
+  let score = 0;
+  let locked = false;
+
+  function renderProgress() {
+    elProgress.innerHTML = "";
+    questions.forEach((_, i) => {
+      const seg = document.createElement("span");
+      const filled = i <= idx;
+      seg.className = `h-1 flex-1 rounded-full transition-colors ${
+        filled ? "bg-[color:var(--color-primary)]" : "bg-[color:var(--color-border)]"
+      }`;
+      elProgress.appendChild(seg);
+    });
+  }
+
+  function render() {
+    locked = false;
+    const q = questions[idx];
+    renderProgress();
+    elStep.textContent = `Question ${idx + 1} of ${questions.length}`;
+    elQ.textContent = q.q;
+
+    elFooter.classList.remove("flex");
+    elFooter.classList.add("hidden");
+    elNext.textContent = idx === questions.length - 1 ? "See result" : "Next question";
+    elFeedback.textContent = "";
+
+    elOpts.innerHTML = "";
+    q.options.forEach((opt, i) => {
+      const li = document.createElement("li");
+      li.className =
+        "quiz-opt cursor-pointer rounded-[8px] border-2 border-[color:var(--color-border)] bg-white px-4 py-3 text-center text-[13px] md:text-sm font-medium leading-5 text-[color:var(--color-fg)] hover:border-[color:var(--color-primary)] hover:bg-[color:var(--color-surface-soft)] transition-colors";
+      li.dataset.i = String(i);
+      li.textContent = opt;
+      li.addEventListener("click", () => choose(i, li));
+      elOpts.appendChild(li);
+    });
+  }
+
+  function choose(i: number, _li: HTMLElement) {
+    if (locked) return;
+    locked = true;
+    const q = questions[idx];
+    const correct = i === q.answer;
+    if (correct) score++;
+
+    const all = Array.from(elOpts.querySelectorAll<HTMLElement>(".quiz-opt"));
+    all.forEach((node) => {
+      const ni = Number(node.dataset.i);
+      node.classList.remove("hover:border-[color:var(--color-primary)]");
+      node.classList.add("pointer-events-none");
+      node.classList.remove("border-[color:var(--color-border)]");
+
+      if (ni === q.answer) {
+        node.classList.add("border-[color:var(--color-primary)]", "bg-[color:var(--color-primary-soft)]");
+      } else if (ni === i && !correct) {
+        node.classList.add("border-[#B91C1C]", "bg-[#FEF2F2]");
+      } else {
+        node.classList.add("border-[color:var(--color-border)]", "opacity-50");
+      }
+    });
+
+    if (correct) {
+      elFeedback.textContent = "Correct";
+      elFeedback.className = "text-center text-[11px] uppercase tracking-[0.12em] font-semibold text-[color:var(--color-primary)]";
+    } else {
+      elFeedback.textContent = "Not quite — review the highlighted answer";
+      elFeedback.className = "text-center text-[11px] uppercase tracking-[0.12em] font-semibold text-[#B91C1C]";
+    }
+    elFooter.classList.remove("hidden");
+    elFooter.classList.add("flex");
+  }
+
+  elNext.addEventListener("click", () => {
+    if (idx < questions.length - 1) {
+      idx++;
+      render();
+    } else {
+      finish();
+    }
+  });
+
+  function finish() {
+    elCard.classList.add("hidden");
+    elResult.classList.remove("hidden");
+    const pct = Math.round((score / questions.length) * 100);
+    const circumference = 2 * Math.PI * 52;
+    const offset = circumference - (pct / 100) * circumference;
+    const passed = pct >= 80;
+    elRing.style.stroke = passed ? "var(--color-primary)" : "#B91C1C";
+    requestAnimationFrame(() => {
+      elRing.style.strokeDashoffset = String(offset);
+    });
+
+    let n = 0;
+    const step = Math.max(1, Math.round(pct / 30));
+    const tick = () => {
+      n = Math.min(pct, n + step);
+      elPercent.textContent = `${n}%`;
+      if (n < pct) requestAnimationFrame(tick);
+    };
+    tick();
+
+    if (passed) elHeadline.textContent = "Mashallah — solid foundation.";
+    else if (pct >= 40) elHeadline.textContent = "Don't risk your akhira.";
+    else elHeadline.textContent = "Time to rebuild the basics.";
+  }
+
+  render();
+</script>

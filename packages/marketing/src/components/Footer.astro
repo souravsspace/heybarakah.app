@@ -1,48 +1,35 @@
 ---
-const groups = [
-  {
-    title: "Product",
-    links: [
-      { label: "Features", href: "#features" },
-      { label: "FAQ", href: "#faq" },
-      { label: "Waitlist", href: "#waitlist" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About", href: "#" },
-      { label: "Contact", href: "#" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { label: "Privacy", href: "#" },
-      { label: "Terms", href: "#" },
-    ],
-  },
-];
+import { appConfig } from "../app-config";
+const { brand, footer } = appConfig;
+const groups = footer.groups;
+const year = new Date().getFullYear();
 ---
-<footer class="border-t border-[color:var(--color-border)] bg-white">
-  <div class="mx-auto max-w-6xl px-6 py-16">
-    <div class="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+<footer class="bg-white">
+  <div class="mx-auto max-w-6xl px-6 pt-20 pb-12">
+    <div class="flex flex-col items-start gap-14 md:flex-row md:items-start md:justify-center md:gap-24">
       <div>
-        <a href="/" class="flex items-center gap-3" aria-label="Barakah">
-          <img src="/barakah-app-icon.png" alt="" class="h-9 w-9 rounded-[8px]" />
-          <span class="serif text-[20px] font-bold tracking-tight text-[color:var(--color-fg)]">Barakah</span>
+        <a href="/" aria-label={brand.name} class="inline-block">
+          <span class="serif text-[2rem] leading-none font-bold tracking-tight text-[color:var(--color-fg)]">{brand.name}</span>
         </a>
-        <p class="mt-5 max-w-[280px] text-[14px] leading-[22px] text-[color:var(--color-fg-muted)]">
-          A quiet companion for salah. Made with reverence, in service of every muslim.
+        <p class="mt-5 max-w-[220px] text-xs leading-5 text-[color:var(--color-fg-muted)]">
+          {footer.blurb}
         </p>
       </div>
+
+      <div class="grid grid-cols-2 gap-x-16 gap-y-10">
       {groups.map((g) => (
         <div>
-          <p class="t-eyebrow text-[color:var(--color-fg-subtle)]">{g.title}</p>
-          <ul class="mt-5 space-y-3">
+          <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[color:var(--color-fg)]">{g.title}</p>
+          <ul class="mt-5 space-y-3.5">
             {g.links.map((l) => (
               <li>
-                <a href={l.href} class="text-[14px] text-[color:var(--color-fg)] transition-opacity hover:opacity-70">
+                <a
+                  href={l.href}
+                  class:list={[
+                    "text-xs leading-5 text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-primary)]",
+                    l.emphasis && "font-bold underline underline-offset-4 text-[color:var(--color-primary)] hover:text-[color:var(--color-primary)]",
+                  ]}
+                >
                   {l.label}
                 </a>
               </li>
@@ -50,11 +37,13 @@ const groups = [
           </ul>
         </div>
       ))}
+      </div>
     </div>
+  </div>
 
-    <div class="mt-14 flex flex-col items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-8 text-[13px] text-[color:var(--color-fg-subtle)] md:flex-row md:items-center">
-      <p>© {new Date().getFullYear()} Barakah. All rights reserved.</p>
-      <p>Bismillah ir-Rahman ir-Raheem.</p>
+  <div class="border-t border-[color:var(--color-border)]">
+    <div class="mx-auto max-w-6xl px-6 py-5 text-center text-xs font-bold text-[color:var(--color-fg-muted)]">
+      Copyright © {year}. {brand.legalName}
     </div>
   </div>
 </footer>

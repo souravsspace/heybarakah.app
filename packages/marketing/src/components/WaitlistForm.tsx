@@ -3,12 +3,16 @@ import { ArrowRight, Check } from "../lib/icons";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-export default function WaitlistForm({ compact = false }: { compact?: boolean }) {
+export default function WaitlistForm({
+  compact = false,
+}: {
+  compact?: boolean;
+}) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -17,7 +21,26 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
       return;
     }
     setStatus("submitting");
-    setTimeout(() => setStatus("success"), 600);
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        ok?: boolean;
+      };
+      if (!res.ok || !data.ok) {
+        setError(data.error ?? "Something went wrong. Try again.");
+        setStatus("error");
+        return;
+      }
+      setStatus("success");
+    } catch {
+      setError("Network error. Try again.");
+      setStatus("error");
+    }
   }
 
   if (status === "success") {
@@ -27,40 +50,51 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
         role="status"
       >
         <Check size={18} />
-        <span className="text-[15px]">You're on the list. We'll be in touch.</span>
+        <span className="text-sm">You're on the list. We'll be in touch.</span>
       </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate aria-label="Join the waitlist">
-      <div
-        className={`flex flex-col gap-2.5 sm:flex-row ${compact ? "" : ""}`}
-      >
+    <form
+      aria-label="Join the waitlist"
+      className="mx-auto w-full max-w-[380px]"
+      noValidate
+      onSubmit={onSubmit}
+    >
+      <div className="flex items-center gap-1.5 rounded-full border border-[color:var(--color-border)] bg-white p-1 pl-1.5 transition-all duration-200 ease-[var(--ease-out)] focus-within:border-[color:var(--color-primary)] focus-within:shadow-[0_0_0_3px_rgba(41,96,62,0.12)] hover:border-[color:var(--color-border-strong)]">
         <input
-          type="email"
-          required
-          value={email}
+          aria-label="Email address"
+          autoComplete="off"
+          className="flex-1 min-w-0 appearance-none border-0 bg-transparent px-3 py-2 text-sm font-medium tracking-wide text-[color:var(--color-fg)] placeholder:text-[color:var(--color-fg-subtle)] outline-none focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none"
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          aria-label="Email address"
-          className="flex-1 rounded-[4px] border border-[color:var(--color-border)] bg-white px-4 py-3.5 text-[15px] outline-none transition-colors hover:border-[color:var(--color-border-strong)] focus:border-[color:var(--color-primary)]"
+          required
+          style={{
+            boxShadow: "none",
+            outline: "none",
+            WebkitAppearance: "none",
+          }}
+          type="email"
+          value={email}
         />
         <button
-          type="submit"
+          className="inline-flex shrink-0 items-center justify-center rounded-full bg-[color:var(--color-primary)] px-5 py-3 text-xs font-bold uppercase tracking-[0.1em] text-white shadow-[inset_0_0_0_2px_rgba(255,255,255,0.95),0_0_0_1.5px_#29603E,0_6px_18px_rgba(41,96,62,0.28)] transition-all duration-200 ease-[var(--ease-out)] hover:bg-[color:var(--color-primary-hover)] active:scale-[0.98] active:bg-[color:var(--color-primary-press)] disabled:opacity-60"
           disabled={status === "submitting"}
-          className="group inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-primary)] px-7 py-3.5 text-white shadow-[0_8px_24px_rgba(41,96,62,0.28)] transition-all duration-200 ease-[var(--ease-out)] hover:bg-[color:var(--color-primary-hover)] active:scale-[0.98] active:bg-[color:var(--color-primary-press)] disabled:opacity-60"
+          type="submit"
         >
-          <span className="t-eyebrow">{status === "submitting" ? "Joining" : "Join waitlist"}</span>
-          <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+          {status === "submitting" ? "Joining" : "Join waitlist"}
         </button>
       </div>
       {error ? (
-        <p className="mt-2 text-sm text-[color:var(--color-error)]" role="alert">
+        <p
+          className="mt-2 text-sm text-[color:var(--color-error)]"
+          role="alert"
+        >
           {error}
         </p>
       ) : (
-        <p className="mt-2.5 text-[13px] text-[color:var(--color-fg-subtle)]">
+        <p className="mt-2.5 text-xs text-[color:var(--color-fg-subtle)]">
           No spam. One quiet email when we open access.
         </p>
       )}
