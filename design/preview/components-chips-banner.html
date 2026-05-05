@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Chips & Banner</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fff;}
+  .banner{background:#29603E;color:#fff;font-family:var(--font-sans);font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;text-align:center;padding:10px 16px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:20px 32px;}
+  .chip{font-family:var(--font-sans);font-size:13px;font-weight:500;padding:6px 14px;border-radius:9999px;background:#F3F4F6;color:#000;}
+  .chip.on{background:#29603E;color:#fff;}
+  .chip.soft{background:#EAF2EC;color:#29603E;}
+  .chip .dot{display:inline-block;width:6px;height:6px;background:currentColor;border-radius:50%;margin-right:6px;vertical-align:middle;opacity:0.8;}
+</style></head>
+<body>
+  <div class="banner">PRAYER LOCK · ENABLED · YOUR DAY IS ANCHORED</div>
+  <div class="chips">
+    <span class="chip on">Fajr</span>
+    <span class="chip">Dhuhr</span>
+    <span class="chip">Asr</span>
+    <span class="chip">Maghrib</span>
+    <span class="chip">Isha</span>
+    <span class="chip soft"><span class="dot"></span>4-day streak</span>
+    <span class="chip">Optional</span>
+  </div>
+</body></html>

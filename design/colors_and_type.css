@@ -1,0 +1,234 @@
+/* ==========================================================================
+   Barakaah — Colors & Type
+   A faith-centered, trust-forward learning brand.
+   Editorial serif headlines + clean modern sans for UI.
+   ========================================================================== */
+
+/* Libre Baskerville Bold — official brand font, served locally */
+@font-face {
+  font-family: "Libre Baskerville";
+  src: url("fonts/LibreBaskerville-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Libre Baskerville regular + italic and Inter family — Google Fonts. */
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;1,400&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* --------------------------------------------------------------------
+     CORE PALETTE — per Barakaah brand spec
+     -------------------------------------------------------------------- */
+
+  /* Primary — mosque green. The brand's heartbeat. */
+  --color-primary: #29603E;
+  --color-primary-hover: #234F34;        /* slightly deeper for hover */
+  --color-primary-press: #1B3F29;        /* deeper still for press */
+  --color-primary-soft: #EAF2EC;         /* tinted bg for highlights */
+  --color-primary-glow: rgba(41, 96, 62, 0.28); /* CTA glow */
+
+  /* Neutral scale */
+  --color-black: #000000;
+  --color-fg: #000000;                   /* primary text on light */
+  --color-fg-muted: #6B7280;             /* tertiary / metadata */
+  --color-fg-subtle: #9CA3AF;            /* placeholders, captions */
+  --color-bg: #FFFFFF;                   /* canvas */
+  --color-surface: #FFFFFF;              /* card/panel */
+  --color-surface-muted: #F3F4F6;        /* chip/quiet bg */
+  --color-surface-soft: #FAFAF7;         /* warm off-white */
+  --color-border: #E5E7EB;
+  --color-border-strong: #D1D5DB;
+
+  /* Semantic */
+  --color-error: #B91C1C;
+  --color-error-soft: #FEE2E2;
+  --color-success: #29603E;              /* uses brand green */
+  --color-warning: #B45309;
+
+  /* Aliases */
+  --fg-1: var(--color-fg);
+  --fg-2: var(--color-fg-muted);
+  --fg-3: var(--color-fg-subtle);
+  --fg-on-primary: #FFFFFF;
+  --bg-1: var(--color-bg);
+  --bg-2: var(--color-surface-muted);
+  --bg-3: var(--color-surface-soft);
+
+  /* --------------------------------------------------------------------
+     TYPOGRAPHY — families
+     -------------------------------------------------------------------- */
+  --font-serif: "Libre Baskerville", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
+
+  /* Type scale (raw tokens from spec) */
+  --type-display-size: 38px;     --type-display-lh: 45px;     --type-display-weight: 700;
+  --type-h1-size: 31px;          --type-h1-lh: 37px;          --type-h1-weight: 700;
+  --type-h2-size: 24px;          --type-h2-lh: 30px;          --type-h2-weight: 700;
+  --type-h3-size: 20px;          --type-h3-lh: 24px;          --type-h3-weight: 600;
+
+  --type-body-lg-size: 18px;     --type-body-lg-lh: 26px;
+  --type-body-md-size: 16px;     --type-body-md-lh: 24px;
+  --type-body-sm-size: 14px;     --type-body-sm-lh: 20px;
+
+  --type-label-lg-size: 18px;    --type-label-lg-lh: 22px;    --type-label-lg-weight: 600;
+  --type-label-md-size: 16px;    --type-label-md-lh: 24px;    --type-label-md-weight: 500;
+  --type-label-sm-size: 14px;    --type-label-sm-lh: 20px;    --type-label-sm-weight: 500;
+  --type-caption-size: 12px;     --type-caption-lh: 16px;     --type-caption-weight: 500;
+
+  /* --------------------------------------------------------------------
+     SPACING — generous, contemplative rhythm
+     -------------------------------------------------------------------- */
+  --space-xs: 6px;
+  --space-sm: 14px;
+  --space-md: 24px;
+  --space-lg: 40px;
+  --space-xl: 100px;
+
+  /* --------------------------------------------------------------------
+     RADIUS
+     -------------------------------------------------------------------- */
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* --------------------------------------------------------------------
+     ELEVATION — restrained; brand is mostly flat.
+     CTA glow is the one expressive shadow.
+     -------------------------------------------------------------------- */
+  --shadow-none: 0 0 0 0 transparent;
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-pop:  0 6px 20px rgba(0,0,0,0.08);
+  --shadow-cta:  0 8px 24px var(--color-primary-glow);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+}
+
+/* ==========================================================================
+   SEMANTIC TYPOGRAPHY
+   Headlines = serif. UI = sans. No uppercase paragraphs.
+   ========================================================================== */
+
+.t-display, h1.display {
+  font-family: var(--font-serif);
+  font-size: var(--type-display-size);
+  line-height: var(--type-display-lh);
+  font-weight: var(--type-display-weight);
+  letter-spacing: 0;
+  color: var(--fg-1);
+  text-wrap: balance;
+}
+
+h1, .t-h1 {
+  font-family: var(--font-serif);
+  font-size: var(--type-h1-size);
+  line-height: var(--type-h1-lh);
+  font-weight: var(--type-h1-weight);
+  color: var(--fg-1);
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+h2, .t-h2 {
+  font-family: var(--font-serif);
+  font-size: var(--type-h2-size);
+  line-height: var(--type-h2-lh);
+  font-weight: var(--type-h2-weight);
+  color: var(--fg-1);
+  text-wrap: balance;
+}
+
+h3, .t-h3 {
+  font-family: var(--font-sans);
+  font-size: var(--type-h3-size);
+  line-height: var(--type-h3-lh);
+  font-weight: var(--type-h3-weight);
+  color: var(--fg-1);
+}
+
+p, .t-body {
+  font-family: var(--font-sans);
+  font-size: var(--type-body-md-size);
+  line-height: var(--type-body-md-lh);
+  font-weight: 400;
+  color: var(--fg-1);
+  text-wrap: pretty;
+}
+
+.t-body-lg {
+  font-family: var(--font-sans);
+  font-size: var(--type-body-lg-size);
+  line-height: var(--type-body-lg-lh);
+  font-weight: 400;
+  color: var(--fg-1);
+}
+
+.t-body-sm {
+  font-family: var(--font-sans);
+  font-size: var(--type-body-sm-size);
+  line-height: var(--type-body-sm-lh);
+  font-weight: 400;
+  color: var(--fg-2);
+}
+
+.t-label-lg {
+  font-family: var(--font-sans);
+  font-size: var(--type-label-lg-size);
+  line-height: var(--type-label-lg-lh);
+  font-weight: var(--type-label-lg-weight);
+  color: var(--fg-1);
+}
+
+.t-label, .t-label-md {
+  font-family: var(--font-sans);
+  font-size: var(--type-label-md-size);
+  line-height: var(--type-label-md-lh);
+  font-weight: var(--type-label-md-weight);
+  color: var(--fg-1);
+}
+
+.t-label-sm {
+  font-family: var(--font-sans);
+  font-size: var(--type-label-sm-size);
+  line-height: var(--type-label-sm-lh);
+  font-weight: var(--type-label-sm-weight);
+  color: var(--fg-1);
+}
+
+.t-caption {
+  font-family: var(--font-sans);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-lh);
+  font-weight: var(--type-caption-weight);
+  color: var(--fg-2);
+  letter-spacing: 0.02em;
+}
+
+/* The single all-caps treatment — used only for the announcement bar
+   and the primary CTA label, where urgency and clarity matter. */
+.t-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Body base */
+html, body {
+  font-family: var(--font-sans);
+  color: var(--fg-1);
+  background: var(--bg-1);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}

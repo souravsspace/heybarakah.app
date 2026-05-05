@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Semantic colors</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fff;}
+  .wrap{display:flex;gap:14px;padding:24px 32px;}
+  .sw{flex:1;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:14px;min-height:120px;display:flex;flex-direction:column;justify-content:space-between;}
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:9999px;font-family:var(--font-sans);font-size:13px;font-weight:500;width:max-content;}
+  .pill.success{background:#EAF2EC;color:#29603E;}
+  .pill.error{background:#FEE2E2;color:#B91C1C;}
+  .pill.warn{background:#FEF3C7;color:#B45309;}
+  .pill.info{background:#F3F4F6;color:#374151;}
+  .name{font-family:var(--font-sans);font-size:12px;font-weight:600;color:#000;}
+  .hex{font-family:var(--font-mono);font-size:11px;color:#6B7280;margin-top:2px;}
+  .role{font-family:var(--font-sans);font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:#6B7280;}
+  .dot{width:8px;height:8px;border-radius:50%;}
+</style></head>
+<body><div class="wrap">
+  <div class="sw"><div class="role">Success</div><div class="pill success"><span class="dot" style="background:#29603E"></span>Streak unbroken</div><div><div class="name">Reuses brand green</div><div class="hex">#29603E · #EAF2EC</div></div></div>
+  <div class="sw"><div class="role">Error</div><div class="pill error"><span class="dot" style="background:#B91C1C"></span>Could not save</div><div><div class="name">Deep crimson</div><div class="hex">#B91C1C · #FEE2E2</div></div></div>
+  <div class="sw"><div class="role">Warning</div><div class="pill warn"><span class="dot" style="background:#B45309"></span>Time is short</div><div><div class="name">Amber</div><div class="hex">#B45309</div></div></div>
+  <div class="sw"><div class="role">Info / muted</div><div class="pill info">Optional</div><div><div class="name">Neutral chip</div><div class="hex">#F3F4F6</div></div></div>
+</div></body></html>

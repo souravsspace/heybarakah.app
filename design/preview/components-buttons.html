@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fff;}
+  .wrap{padding:24px 32px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
+  .btn{font-family:var(--font-sans);font-size:16px;font-weight:500;border-radius:9999px;border:none;cursor:pointer;padding:18px 28px;}
+  .primary{background:#29603E;color:#fff;box-shadow:0 8px 24px rgba(41,96,62,0.28);}
+  .primary.hover{background:#234F34;}
+  .primary.press{background:#1B3F29;transform:scale(0.98);}
+  .secondary{background:transparent;color:#000;border:1px solid #000;}
+  .link{background:transparent;color:#000;text-decoration:underline;padding:6px 0;font-size:14px;}
+  .cta{font-weight:600;letter-spacing:0.06em;text-transform:uppercase;font-size:14px;}
+</style></head>
+<body><div class="wrap">
+  <button class="btn primary cta">Begin · Free</button>
+  <button class="btn primary hover">Hover</button>
+  <button class="btn primary press">Press</button>
+  <button class="btn secondary">Learn more</button>
+  <button class="btn link">Privacy policy</button>
+</div></body></html>

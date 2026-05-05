@@ -1,0 +1,19 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Radii</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fff;}
+  .wrap{display:flex;gap:18px;padding:28px 32px;align-items:flex-end;}
+  .col{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .box{width:78px;height:78px;background:var(--color-primary-soft);border:1px solid #C9DDD0;}
+  .lbl{font-family:var(--font-mono);font-size:11px;color:var(--fg-1);font-weight:600;}
+  .px{font-family:var(--font-mono);font-size:10px;color:var(--fg-2);}
+</style></head>
+<body><div class="wrap">
+  <div class="col"><div class="box" style="border-radius:0"></div><div class="lbl">none</div><div class="px">0</div></div>
+  <div class="col"><div class="box" style="border-radius:4px"></div><div class="lbl">sm</div><div class="px">4 · cards/inputs</div></div>
+  <div class="col"><div class="box" style="border-radius:8px"></div><div class="lbl">md</div><div class="px">8</div></div>
+  <div class="col"><div class="box" style="border-radius:16px"></div><div class="lbl">lg</div><div class="px">16 · sheets</div></div>
+  <div class="col"><div class="box" style="border-radius:24px"></div><div class="lbl">xl</div><div class="px">24</div></div>
+  <div class="col"><div class="box" style="border-radius:9999px"></div><div class="lbl">full</div><div class="px">∞ · buttons</div></div>
+</div></body></html>

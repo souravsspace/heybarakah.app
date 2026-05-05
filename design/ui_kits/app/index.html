@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Barakaah · App UI Kit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { background: #EAEAEC; padding: 24px 0 60px; }
+  .stage { display: flex; gap: 24px; padding: 0 32px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .col .label { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: #6B7280; letter-spacing: 0.04em; text-transform: uppercase; }
+  .header { padding: 8px 32px 28px; max-width: 1200px; margin: 0 auto; }
+  .header h1 { font-family: 'Libre Baskerville', serif; font-size: 28px; font-weight: 700; margin: 0 0 6px; color: #000; }
+  .header p { font-family: 'Inter', sans-serif; font-size: 14px; color: #6B7280; margin: 0; max-width: 720px; line-height: 22px; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="Components.jsx"></script>
+<script type="text/babel" src="Screens.jsx"></script>
+</head>
+<body>
+  <div class="header">
+    <h1>Barakaah · App UI Kit</h1>
+    <p>An interactive recreation of the Barakaah mobile experience: welcome → location → home → prayer-lock → lesson. Tap "Begin" on the welcome screen to walk through the flow. Each screen is a composable JSX component (see <code>Screens.jsx</code>, <code>Components.jsx</code>).</p>
+  </div>
+  <div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState } = React;
+
+function Frame({ label, children, screen }) {
+  return (
+    <div className="col" data-screen-label={label}>
+      <IOSDevice width={390} height={780}>{children}</IOSDevice>
+      <div className="label">{label}</div>
+    </div>
+  );
+}
+
+function App() {
+  const [step, setStep] = useState("welcome"); // welcome | location | home | lock | lesson
+
+  return (
+    <div className="stage">
+      {/* Always show all 5 screens side-by-side, but the "interactive" one swaps based on step */}
+      <Frame label="01 · Welcome">
+        <ScreenWelcome onNext={() => setStep("location")} />
+      </Frame>
+      <Frame label="02 · Location">
+        <ScreenLocation onBack={() => setStep("welcome")} onNext={() => setStep("home")} />
+      </Frame>
+      <Frame label="03 · Home">
+        <ScreenHome onTab={() => {}} />
+      </Frame>
+      <Frame label="04 · Prayer lock">
+        <ScreenPrayerLock onDismiss={() => {}} />
+      </Frame>
+      <Frame label="05 · Lesson">
+        <ScreenLesson onBack={() => {}} />
+      </Frame>
+    </div>
+  );
+}
+
+function waitFor(check, cb) {
+  if (check()) return cb();
+  setTimeout(() => waitFor(check, cb), 30);
+}
+waitFor(
+  () => window.IOSDevice && window.ScreenWelcome && window.ScreenHome && window.ScreenPrayerLock && window.ScreenLesson && window.ScreenLocation,
+  () => {
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    setTimeout(() => window.lucide && window.lucide.createIcons(), 100);
+  }
+);
+</script>
+</body>
+</html>
