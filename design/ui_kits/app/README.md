@@ -1,6 +1,6 @@
-# Barakaah App — UI Kit
+# Barakah App — UI Kit
 
-A high-fidelity recreation of the Barakaah Islamic-app experience, derived from `uploads/DESIGN.md`. No production codebase was provided; treat this as a strong starting point and flag any drift from the real product.
+A high-fidelity recreation of the Barakah Islamic-app experience, derived from `uploads/DESIGN.md`. No production codebase was provided; treat this as a strong starting point and flag any drift from the real product.
 
 ## Files
 

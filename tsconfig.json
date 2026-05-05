@@ -1,5 +1,5 @@
 {
-  "extends": "@barakaah/tsconfig/base.json",
+  "extends": "@barakah/tsconfig/base.json",
   "compilerOptions": {
     "module": "Preserve",
     "jsx": "preserve",

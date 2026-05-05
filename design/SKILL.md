@@ -1,6 +1,6 @@
 ---
-name: barakaah-design
-description: Use this skill to generate well-branded interfaces and assets for Barakaah, a faith-centered Islamic learning app whose core function is "prayer lock — put Allah first." For production or throwaway prototypes, mocks, slides, etc. Contains essential design guidelines, colors, type, fonts, assets, and UI kit components for prototyping.
+name: barakah-design
+description: Use this skill to generate well-branded interfaces and assets for Barakah, a faith-centered Islamic learning app whose core function is "prayer lock — put Allah first." For production or throwaway prototypes, mocks, slides, etc. Contains essential design guidelines, colors, type, fonts, assets, and UI kit components for prototyping.
 user-invocable: true
 ---
 
@@ -8,7 +8,7 @@ Read the README.md file within this skill, and explore the other available files
 
 Key files:
 - `colors_and_type.css` — all design tokens as CSS variables. Always import this in artifacts.
-- `assets/barakaah-logo.png` — primary mark. Don't recolor or redraw.
+- `assets/barakah-logo.png` — primary mark. Don't recolor or redraw.
 - `ui_kits/app/` — interactive recreation of the mobile app, with reusable JSX components (`Banner`, `Button`, `Card`, `PrayerRow`, `PrayerCountdown`, `LockMark`, `TabBar`).
 - `preview/*.html` — small swatches and specimens demonstrating each token.
 

@@ -1,19 +1,19 @@
-# Barakaah Design System
+# Barakah Design System
 
 > **Prayer lock: put Allah first.**
 > A faith-centered Islamic learning app. Calm, trust-forward, editorial.
 
 ---
 
-## What Barakaah is
+## What Barakah is
 
-Barakaah is an Islamic app whose core function — "**prayer lock**" — gently guides users to put Allah first throughout their day. The brand voice is contemplative and educational rather than playful or consumer-app loud. Visually, the system pairs a **classical editorial serif** (Libre Baskerville) for emotional / spiritual headlines with a **modern sans-serif** (Inter) for everything functional. Mosque-green is the only accent; whitespace is the dominant texture.
+Barakah is an Islamic app whose core function — "**prayer lock**" — gently guides users to put Allah first throughout their day. The brand voice is contemplative and educational rather than playful or consumer-app loud. Visually, the system pairs a **classical editorial serif** (Libre Baskerville) for emotional / spiritual headlines with a **modern sans-serif** (Inter) for everything functional. Mosque-green is the only accent; whitespace is the dominant texture.
 
 The product surface is a single mobile app for now. This system anticipates future surfaces (marketing site, settings, onboarding) all sharing the same vocabulary.
 
 ## Sources used
 
-This system was built from materials supplied by the user — the original brand spec (tokens, typography, components, do's & don'ts) plus the Barakaah primary mark.
+This system was built from materials supplied by the user — the original brand spec (tokens, typography, components, do's & don'ts) plus the Barakah primary mark.
 
 ---
 
@@ -27,13 +27,13 @@ This system was built from materials supplied by the user — the original brand
 | `assets/` | Logos, marks, generic imagery. |
 | `fonts/` | Libre Baskerville Bold (TTF). Other weights via Google Fonts CDN. |
 | `preview/` | Cards rendered into the Design System tab — type, colors, spacing, components, brand. |
-| `ui_kits/app/` | The Barakaah mobile app UI kit — interactive recreation. |
+| `ui_kits/app/` | The Barakah mobile app UI kit — interactive recreation. |
 
 ---
 
 ## Content fundamentals
 
-Barakaah's voice is **gentle, certain, and reverent.** It does not market — it invites. Copy should feel like a wise older relative or a respected teacher: warm, never preachy, never salesy.
+Barakah's voice is **gentle, certain, and reverent.** It does not market — it invites. Copy should feel like a wise older relative or a respected teacher: warm, never preachy, never salesy.
 
 **Tone**
 - Calm and unhurried. Sentences are short and complete.
@@ -139,7 +139,7 @@ Barakaah's voice is **gentle, certain, and reverent.** It does not market — it
 
 ## Iconography
 
-**Approach.** Barakaah uses a **single line-icon system** — thin strokes, geometric, unfilled. The visual register is closer to architectural drawing than to UI iconography. We pair Lucide icons (open-source, MIT) — a warm, calm line set with consistent `1.75` stroke width — alongside a few brand-specific glyphs (kaaba, crescent, prayer beads) that may need to be sourced from a Muslim-focused icon set later.
+**Approach.** Barakah uses a **single line-icon system** — thin strokes, geometric, unfilled. The visual register is closer to architectural drawing than to UI iconography. We pair Lucide icons (open-source, MIT) — a warm, calm line set with consistent `1.75` stroke width — alongside a few brand-specific glyphs (kaaba, crescent, prayer beads) that may need to be sourced from a Muslim-focused icon set later.
 
 **Implementation.**
 - **Lucide** is the chosen base set, loaded from CDN: `https://unpkg.com/lucide@latest/dist/lucide.min.js`. Use `data-lucide="name"` on any element, then call `lucide.createIcons()`.
@@ -147,7 +147,7 @@ Barakaah's voice is **gentle, certain, and reverent.** It does not market — it
 - All icons are monochrome. Color comes from the surrounding text.
 
 **Custom marks.**
-- The Barakaah logo (in `assets/`) is the only "branded" mark. Use it at minimum 32px on dark or light. Do not stretch or recolor — the green is part of the mark.
+- The Barakah logo (in `assets/`) is the only "branded" mark. Use it at minimum 32px on dark or light. Do not stretch or recolor — the green is part of the mark.
 
 **Emoji.** **Not used.** Anywhere. See content fundamentals.
 

@@ -1,4 +1,4 @@
-// Barakaah app components — small, modular, copy-paste friendly
+// Barakah app components — small, modular, copy-paste friendly
 // Exposed to window at the bottom for cross-script use.
 
 const { useEffect: bkUseEffect } = React;
@@ -89,7 +89,7 @@ function LockMark() {
       <div className="bk-lockring"></div>
       <div className="bk-lockring r2"></div>
       <div className="bk-lockring r3"></div>
-      <img className="bk-locklogo" src="../../assets/barakaah-logo.svg" alt="" />
+      <img className="bk-locklogo" src="../../assets/barakah-logo.svg" alt="" />
     </div>
   );
 }
