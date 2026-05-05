@@ -62,31 +62,38 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: "Please use a non-disposable email." }, 400);
   }
 
-  const resend = new Resend(env.RESEND_API_KEY);
+  try {
+    const resend = new Resend(env.RESEND_API_KEY);
 
-  const contact = await resend.contacts.create({
-    audienceId: env.RESEND_AUDIENCE_ID,
-    email,
-    unsubscribed: false,
-  });
+    const contact = await resend.contacts.create({
+      audienceId: env.RESEND_AUDIENCE_ID,
+      email,
+      unsubscribed: false,
+    });
 
-  if (contact.error && contact.error.name !== "validation_error") {
-    return json({ error: "Could not save your email." }, 502);
+    if (contact.error && contact.error.name !== "validation_error") {
+      console.error("[waitlist] contacts.create error", contact.error);
+      return json({ error: "Could not save your email." }, 502);
+    }
+
+    const { subject, text, html } = welcomeEmail();
+    const send = await resend.emails.send({
+      from: env.RESEND_FROM,
+      to: email,
+      subject,
+      text,
+      html,
+      replyTo: env.RESEND_REPLY_TO,
+    });
+
+    if (send.error) {
+      console.error("[waitlist] emails.send error", send.error);
+      return json({ ok: true, warning: "Saved, but confirmation email failed." });
+    }
+
+    return json({ ok: true });
+  } catch (err) {
+    console.error("[waitlist] unhandled error", err);
+    return json({ error: "Server error. Try again." }, 500);
   }
-
-  const { subject, text, html } = welcomeEmail();
-  const send = await resend.emails.send({
-    from: env.RESEND_FROM,
-    to: email,
-    subject,
-    text,
-    html,
-    replyTo: env.RESEND_REPLY_TO,
-  });
-
-  if (send.error) {
-    return json({ ok: true, warning: "Saved, but confirmation email failed." });
-  }
-
-  return json({ ok: true });
 };
