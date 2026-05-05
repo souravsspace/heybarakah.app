@@ -1,0 +1,84 @@
+---
+import WaitlistForm from "./WaitlistForm.tsx";
+---
+<section id="waitlist" class="relative overflow-hidden">
+  <div class="mx-auto grid max-w-6xl gap-16 px-6 pt-20 pb-24 md:grid-cols-[1.05fr_0.95fr] md:gap-12 md:pt-28 md:pb-32 lg:gap-20">
+    <div class="flex flex-col justify-center">
+      <a href="/" class="mb-8 inline-flex items-center gap-3" aria-label="Barakaah">
+        <img src="/barakaah-app-icon.png" alt="" class="h-10 w-10 rounded-[9px] shadow-[0_8px_20px_-6px_rgba(41,96,62,0.35)]" />
+        <span class="serif text-[22px] font-bold tracking-tight text-[color:var(--color-fg)]">Barakaah</span>
+      </a>
+      <p class="t-eyebrow mb-6 text-[color:var(--color-primary)]">Prayer lock for muslims</p>
+      <h1 class="serif text-[44px] leading-[1.05] font-bold tracking-tight text-[color:var(--color-fg)] md:text-[56px] md:leading-[1.04]">
+        Your phone,<br /><span class="italic font-normal text-[color:var(--color-primary)]">on prayer time.</span>
+      </h1>
+      <p class="mt-6 max-w-[520px] text-[18px] leading-[28px] text-[color:var(--color-fg-muted)]">
+        Barakaah quietly locks distractions during salah. Five times a day, your phone steps aside so you can show up — not scroll.
+      </p>
+      <div class="mt-10 max-w-[480px]">
+        <WaitlistForm client:load />
+      </div>
+
+      <div class="mt-10 flex items-center gap-6 text-[13px] text-[color:var(--color-fg-subtle)]">
+        <div class="flex -space-x-2">
+          <span class="h-7 w-7 rounded-full border-2 border-white bg-[color:var(--color-primary-soft)]"></span>
+          <span class="h-7 w-7 rounded-full border-2 border-white bg-[color:var(--color-surface-muted)]"></span>
+          <span class="h-7 w-7 rounded-full border-2 border-white bg-[color:var(--color-primary-soft)]"></span>
+        </div>
+        <span>Joining 2,400+ on the waitlist.</span>
+      </div>
+    </div>
+
+    <div class="relative flex items-center justify-center">
+      <div class="absolute inset-0 -z-10">
+        <div class="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--color-primary-soft)] blur-3xl opacity-60"></div>
+      </div>
+
+      <div class="relative h-[560px] w-[280px] rounded-[44px] border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-soft)] p-3 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.18)]">
+        <div class="relative h-full w-full overflow-hidden rounded-[34px] bg-white">
+          <div class="flex items-center justify-between px-6 pt-3 pb-2 text-[11px] font-semibold text-[color:var(--color-fg)]">
+            <span>5:42</span>
+            <span class="flex items-center gap-1">
+              <span class="h-1 w-3 rounded-sm bg-current"></span>
+              <span class="h-2 w-3 rounded-sm bg-current"></span>
+              <span class="h-2.5 w-3 rounded-sm bg-current"></span>
+            </span>
+          </div>
+
+          <div class="flex h-[calc(100%-28px)] flex-col items-center px-6 pt-10">
+            <p class="t-eyebrow text-[color:var(--color-primary)]">Fajr</p>
+            <p class="serif mt-3 text-[30px] font-bold text-[color:var(--color-fg)]">Begin with bismillah.</p>
+            <p class="mt-2 text-[13px] text-[color:var(--color-fg-muted)]">Locked until 6:02 am</p>
+
+            <div class="relative mt-12 h-[180px] w-[180px]">
+              <div class="absolute inset-0 rounded-full border border-[color:var(--color-border)]"></div>
+              <div class="absolute inset-3 rounded-full border border-[color:var(--color-border)]"></div>
+              <div
+                class="absolute inset-6 rounded-full border-2 border-[color:var(--color-primary)]"
+                style="border-top-color: transparent; border-right-color: transparent; transform: rotate(-45deg);"
+              ></div>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="serif text-[36px] font-bold leading-none text-[color:var(--color-fg)]">19:48</span>
+                <span class="mt-1 text-[11px] uppercase tracking-[0.14em] text-[color:var(--color-fg-subtle)]">remaining</span>
+              </div>
+            </div>
+
+            <div class="mt-10 w-full rounded-[4px] border border-[color:var(--color-border)] bg-white p-4">
+              <div class="flex items-center justify-between">
+                <span class="text-[13px] font-medium text-[color:var(--color-fg)]">Today's prayers</span>
+                <span class="text-[11px] text-[color:var(--color-fg-subtle)]">2 of 5</span>
+              </div>
+              <div class="mt-3 flex gap-1.5">
+                <span class="h-1 flex-1 rounded-full bg-[color:var(--color-primary)]"></span>
+                <span class="h-1 flex-1 rounded-full bg-[color:var(--color-primary)]"></span>
+                <span class="h-1 flex-1 rounded-full bg-[color:var(--color-border)]"></span>
+                <span class="h-1 flex-1 rounded-full bg-[color:var(--color-border)]"></span>
+                <span class="h-1 flex-1 rounded-full bg-[color:var(--color-border)]"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
