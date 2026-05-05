@@ -1,0 +1,17 @@
+---
+import WaitlistForm from "./WaitlistForm.tsx";
+---
+<section class="bg-white">
+  <div class="mx-auto max-w-3xl px-6 py-28 text-center md:py-32">
+    <img src="/barakaah-app-icon.png" alt="" class="mx-auto h-20 w-20 rounded-[18px] shadow-[0_30px_60px_-15px_rgba(41,96,62,0.35)]" />
+    <h2 class="serif mt-10 text-[40px] leading-[1.05] font-bold text-[color:var(--color-fg)] md:text-[52px]">
+      Begin with bismillah.
+    </h2>
+    <p class="mx-auto mt-5 max-w-xl text-[17px] leading-[27px] text-[color:var(--color-fg-muted)]">
+      Join the waitlist for early access. We'll send a single, quiet email when Barakaah opens.
+    </p>
+    <div class="mx-auto mt-9 max-w-md">
+      <WaitlistForm client:load />
+    </div>
+  </div>
+</section>
