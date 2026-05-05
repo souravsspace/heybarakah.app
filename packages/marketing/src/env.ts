@@ -11,6 +11,6 @@ export const env = createEnv({
   },
   clientPrefix: "PUBLIC_",
   client: {},
-  runtimeEnv: process.env,
+  runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,
 });
