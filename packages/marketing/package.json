@@ -20,7 +20,7 @@
     "tailwindcss": "^4.2.4"
   },
   "devDependencies": {
-    "@barakaah/tsconfig": "workspace:*",
+    "@barakah/tsconfig": "workspace:*",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3"
   }

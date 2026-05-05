@@ -1,6 +1,6 @@
 ---
 version: alpha
-name: Barakaah App
+name: Barakah App
 description: A faith-centered, trust-forward learning brand that pairs classical serif headlines with clean modern UI.
 colors:
   primary: "#29603E"
@@ -142,11 +142,11 @@ components:
     padding: "6px"
 ---
 
-# Barakaah App
+# Barakah App
 
 ## Overview
 
-Barakaah App feels calm, faith-centered, and highly trustworthy, with a clear educational mission rather than a playful consumer-app tone. The visual language balances a classical editorial serif for emotional impact with a modern sans-serif system for readability and conversion-focused clarity. Overall the layout is spacious, minimal, and persuasive, aimed at users who want legitimacy, simplicity, and a gentle sense of momentum.
+Barakah App feels calm, faith-centered, and highly trustworthy, with a clear educational mission rather than a playful consumer-app tone. The visual language balances a classical editorial serif for emotional impact with a modern sans-serif system for readability and conversion-focused clarity. Overall the layout is spacious, minimal, and persuasive, aimed at users who want legitimacy, simplicity, and a gentle sense of momentum.
 
 ## Colors
 

@@ -1,5 +1,5 @@
 {
-  "name": "barakaah",
+  "name": "barakah",
   "main": "expo-router/entry",
   "version": "0.0.1",
   "scripts": {
@@ -34,7 +34,7 @@
     "react-native-web": "~0.21.0"
   },
   "devDependencies": {
-    "@barakaah/tsconfig": "workspace:*",
+    "@barakah/tsconfig": "workspace:*",
     "@types/react": "~19.1.0",
     "typescript": "catalog:",
     "eslint": "^9.25.0",

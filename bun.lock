@@ -3,9 +3,9 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "heybarakaah_app",
+      "name": "heybarakah_app",
       "devDependencies": {
-        "@barakaah/tsconfig": "workspace:*",
+        "@barakah/tsconfig": "workspace:*",
         "@biomejs/biome": "2.4.14",
         "@types/bun": "catalog:",
         "lint-staged": "^16.4.0",
@@ -22,12 +22,12 @@
         "hono": "^4.12.16",
       },
       "devDependencies": {
-        "@barakaah/tsconfig": "workspace:*",
+        "@barakah/tsconfig": "workspace:*",
         "wrangler": "^4.4.0",
       },
     },
     "packages/app": {
-      "name": "barakaah",
+      "name": "barakah",
       "version": "0.0.1",
       "dependencies": {
         "@expo/vector-icons": "^15.0.3",
@@ -57,7 +57,7 @@
         "react-native-worklets": "0.5.1",
       },
       "devDependencies": {
-        "@barakaah/tsconfig": "workspace:*",
+        "@barakah/tsconfig": "workspace:*",
         "@types/react": "~19.1.0",
         "eslint": "^9.25.0",
         "eslint-config-expo": "~10.0.0",
@@ -76,13 +76,13 @@
         "tailwindcss": "^4.2.4",
       },
       "devDependencies": {
-        "@barakaah/tsconfig": "workspace:*",
+        "@barakah/tsconfig": "workspace:*",
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
       },
     },
     "packages/tsconfig": {
-      "name": "@barakaah/tsconfig",
+      "name": "@barakah/tsconfig",
       "version": "0.0.0",
     },
   },
@@ -293,7 +293,7 @@
 
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
 
-    "@barakaah/tsconfig": ["@barakaah/tsconfig@workspace:packages/tsconfig"],
+    "@barakah/tsconfig": ["@barakah/tsconfig@workspace:packages/tsconfig"],
 
     "@biomejs/biome": ["@biomejs/biome@2.4.14", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "2.4.14", "@biomejs/cli-darwin-x64": "2.4.14", "@biomejs/cli-linux-arm64": "2.4.14", "@biomejs/cli-linux-arm64-musl": "2.4.14", "@biomejs/cli-linux-x64": "2.4.14", "@biomejs/cli-linux-x64-musl": "2.4.14", "@biomejs/cli-win32-arm64": "2.4.14", "@biomejs/cli-win32-x64": "2.4.14" }, "bin": { "biome": "bin/biome" } }, "sha512-TmAvxOEgrpLypzVGJ8FulIZnlyA9TxrO1hyqYrCz9r+bwma9xXxuLA5IuYnj55XQneFx460KjRbx6SWGLkg3bQ=="],
 
@@ -983,7 +983,7 @@
 
     "balanced-match": ["balanced-match@1.0.2", "", {}, "sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw=="],
 
-    "barakaah": ["barakaah@workspace:packages/app"],
+    "barakah": ["barakah@workspace:packages/app"],
 
     "base64-js": ["base64-js@1.5.1", "", {}, "sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA=="],
 

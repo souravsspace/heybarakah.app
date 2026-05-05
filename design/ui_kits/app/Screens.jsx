@@ -1,4 +1,4 @@
-// Barakaah app — five core screens
+// Barakah app — five core screens
 
 // 1. ONBOARDING / WELCOME
 function ScreenWelcome({ onNext }) {
@@ -10,7 +10,7 @@ function ScreenWelcome({ onNext }) {
         <div style={{ textAlign:"center" }}>
           <div className="bk-display">Your salah,<br/>on time.</div>
           <p className="bk-meta" style={{ marginTop:14, fontSize:15, lineHeight:"22px" }}>
-            Begin each day with intention. Barakaah gently guides you through your five daily prayers — quietly, without noise.
+            Begin each day with intention. Barakah gently guides you through your five daily prayers — quietly, without noise.
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 {
-  "extends": ["astro/tsconfigs/strict", "@barakaah/tsconfig/marketing.json"],
+  "extends": ["astro/tsconfigs/strict", "@barakah/tsconfig/marketing.json"],
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist"]
 }
