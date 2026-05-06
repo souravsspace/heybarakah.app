@@ -1,14 +1,20 @@
 {
-  "extends": ["expo/tsconfig.base", "@barakah/tsconfig/app.json"],
+  "extends": [
+    "expo/tsconfig.base",
+    "@barakah/tsconfig/app.json"
+  ],
   "compilerOptions": {
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
   ]
 }
