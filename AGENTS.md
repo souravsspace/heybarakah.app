@@ -6,17 +6,12 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Design System Reference
 
-When designing or implementing any UI, components, layouts, or visual features, **always read everything in `design/` first**. This directory is the single source of truth for the Barakah brand. Do not assume tokens, colors, or patterns — look them up.
+When designing or implementing any UI, components, layouts, or visual features, **always read `DESIGN.md` first**. This file is the single source of truth for the Barakah brand. Do not assume tokens, colors, or patterns — look them up.
 
 **Read these files in order:**
 
-1. **`design/README.md`** — Brand context, content fundamentals (tone, voice, casing rules, no emoji), visual foundations (colors, type, spacing, shadows, borders, radii, hover/press states, animation rules, layout rules, imagery vibe), and iconography approach (Lucide line icons, stroke 1.75, monochrome).
-2. **`design/colors_and_type.css`** — All design tokens as CSS custom properties: core palette (`--color-primary` #29603E mosque green, neutrals, semantic colors), typography scale (`--font-serif` Libre Baskerville, `--font-sans` Inter), spacing scale (`--space-xs` to `--space-xl`), radii, shadows (`--shadow-cta` green glow), and motion curves. Import this file in any artifact or production code.
-3. **`design/SKILL.md`** — Agent skill manifest. Quick reference for what the system contains and how to use it.
-4. **`design/assets/`** — Barakah logo and marks. Do not recolor or redraw the logo.
-5. **`assets/`** — App icons, platform-specific iconsets (android, ios, web), and font files. Use these whenever brand assets are needed outside the design system.
-6. **`design/ui_kits/app/`** — Reusable mobile app components (Banner, Button, Card, PrayerRow, PrayerCountdown, LockMark, TabBar). Use these as the canonical component patterns.
-6. **`design/preview/`** — Rendered swatches and specimens showing each token in context.
+1. **`DESIGN.md`** — Comprehensive design specification with the full color system, typography scale, layout rules, elevation and depth guidelines, shape language, component definitions, and do's/don'ts. Use this as the single source of truth for design decisions.
+2. **`assets/`** — App icons, platform-specific iconsets (android, ios, web), font files, and SVG marks. Use these whenever brand assets are needed.
 
 **Key rules to internalize:**
 - Mosque green `#29603E` is the **only** accent. Everything else is black, white, and cool grays.
@@ -26,7 +21,7 @@ When designing or implementing any UI, components, layouts, or visual features, 
 - Sentence case everywhere except the announcement bar and primary CTA label (all-caps).
 - Always honor Islamic typographic conventions: **Allah, ﷺ, Qur'an, du'a, salah, fajr, dhuhr, asr, maghrib, isha**.
 
-All design work must align with the rules and tokens defined in `design/`.
+All design work must align with the rules and tokens defined in `DESIGN.md`.
 
 ---
 
