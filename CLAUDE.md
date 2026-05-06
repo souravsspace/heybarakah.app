@@ -96,20 +96,21 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
-## 4. Git Workflow
+## 4. Git Workflow — Per-File Commits
 
-**Before staging or committing, ask the user which workflow they want:**
+Every file change must be committed individually. No batching.
 
-- **Full staging:** `git add .`
-- **Per-file commits:** stage and commit each changed file individually
+1. Write/edit the file
+2. `bun x ultracite fix`
+3. `bun turbo typecheck` (fix all errors before continuing)
+4. `git add <file>` (never `git add .` or `git add -A`)
+5. `git commit -m "<type>(<scope>): <summary>"`
+6. Move to next file
 
-Do not assume the workflow. Wait for the user's choice if it is not already clear.
-
-When the workflow is clear, follow it exactly.
-
-**Conventional commit format:** `<type>: <summary>`
+**Conventional commit format:** `<type>(<scope>): <summary>`
 
 - **type:** `feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`, `perf`, `ci`, `build`
+- **scope:** `app`, `marketing`, `ui`, `hooks`, `lib`, `constants`, `assets`, `config`, `types`, `tests`
 - **summary:** present tense, lowercase, no period, ≤72 chars
 
 ---
