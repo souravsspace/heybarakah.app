@@ -1,12 +1,13 @@
 ---
 import { appConfig } from "../app-config";
+import WaitlistForm from "./WaitlistForm";
 
 const { brand, hero } = appConfig;
 ---
 <section id="waitlist" class="relative overflow-hidden bg-white border-b border-[color:var(--color-border)]">
   <div class="mx-auto max-w-3xl px-6 pt-20 pb-24 text-center md:pt-28 md:pb-32">
     <a href="/" class="mb-8 inline-flex items-center gap-3" aria-label={brand.name}>
-      <img src="/barakah-app-icon.png" alt="" class="h-10 w-10 rounded-[9px] shadow-[0_8px_20px_-6px_rgba(41,96,62,0.35)]" />
+      <img src="/icon.svg" alt="" class="h-10 w-10 rounded-[9px]" />
       <span class="serif text-2xl font-extrabold tracking-wide text-[color:var(--color-primary)]">{brand.name}</span>
     </a>
 
