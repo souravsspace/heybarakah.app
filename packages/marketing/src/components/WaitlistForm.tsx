@@ -3,11 +3,9 @@ import { Check } from "../lib/icons";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-export default function WaitlistForm({
-  compact = false,
-}: {
-  compact?: boolean;
-}) {
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export default function WaitlistForm() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +13,7 @@ export default function WaitlistForm({
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!EMAIL_PATTERN.test(email)) {
       setError("Enter a valid email.");
       setStatus("error");
       return;
