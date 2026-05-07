@@ -3,6 +3,8 @@ import type { SVGProps } from "react";
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
 const base = (size = 20): SVGProps<SVGSVGElement> => ({
+  "aria-hidden": true,
+  focusable: false,
   width: size,
   height: size,
   viewBox: "0 0 24 24",
