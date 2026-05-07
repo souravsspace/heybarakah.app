@@ -1,8 +1,8 @@
-import { Image } from "expo-image";
 import { Text, useWindowDimensions, View } from "react-native";
 import { BodyText } from "@/components/onboarding/body-text";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
+import { MosqueTwin } from "@/components/onboarding/illustrations/mosque-twin";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
@@ -48,12 +48,7 @@ export default function Promise() {
             }}
           >
             <View className="items-center">
-              <Image
-                source={require("../../assets/images/onboarding/mihrab.png")}
-                style={{ width: 150, height: 188 }}
-                contentFit="contain"
-                transition={0}
-              />
+              <MosqueTwin size={188} />
             </View>
 
             <View
