@@ -112,7 +112,10 @@ export function OnboardingProvider({
               payload: { ...INITIAL, ...parsed, hydrated: true },
             });
             return;
-          } catch {}
+          } catch {
+            dispatch({ type: "HYDRATE", payload: INITIAL });
+            return;
+          }
         }
         dispatch({ type: "HYDRATE", payload: INITIAL });
       })
@@ -127,7 +130,7 @@ export function OnboardingProvider({
       clearTimeout(writeTimer.current);
     }
     writeTimer.current = setTimeout(() => {
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => undefined);
     }, 200);
     return () => {
       if (writeTimer.current) {

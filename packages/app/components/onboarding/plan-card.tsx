@@ -47,7 +47,7 @@ export function PlanCard({
   return (
     <Pressable
       onPress={() => {
-        Haptics.selectionAsync().catch(() => {});
+        Haptics.selectionAsync().catch(() => undefined);
         onPress();
       }}
       style={({ pressed }) => ({ opacity: pressed ? 0.95 : 1 })}

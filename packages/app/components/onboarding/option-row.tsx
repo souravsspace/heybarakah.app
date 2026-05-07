@@ -38,7 +38,7 @@ export function OptionRow({ label, hint, selected, onPress, icon }: Props) {
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       onPress={() => {
-        Haptics.selectionAsync().catch(() => {});
+        Haptics.selectionAsync().catch(() => undefined);
         onPress();
       }}
       style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}

@@ -200,7 +200,6 @@ export function MosqueGlow({
           cy={cy}
           delay={(RIPPLE_DURATION / RIPPLE_COUNT) * i}
           endR={endR}
-          // biome-ignore lint/suspicious/noArrayIndexKey: static
           key={i}
           startR={startR}
         />

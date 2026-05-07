@@ -13,7 +13,7 @@ export function ToggleRow({ label, hint, value, onToggle }: Props) {
     <Pressable
       className="flex-row items-center rounded-md border border-neutral bg-surface px-md py-sm"
       onPress={() => {
-        Haptics.selectionAsync().catch(() => {});
+        Haptics.selectionAsync().catch(() => undefined);
         onToggle();
       }}
     >
@@ -27,7 +27,7 @@ export function ToggleRow({ label, hint, value, onToggle }: Props) {
       </View>
       <Switch
         onValueChange={() => {
-          Haptics.selectionAsync().catch(() => {});
+          Haptics.selectionAsync().catch(() => undefined);
           onToggle();
         }}
         thumbColor="#FFFFFF"

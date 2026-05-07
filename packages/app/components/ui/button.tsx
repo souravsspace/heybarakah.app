@@ -36,7 +36,7 @@ export function Button({
       disabled={disabled}
       onPress={(event) => {
         if (!disabled) {
-          Haptics.selectionAsync().catch(() => {});
+          Haptics.selectionAsync().catch(() => undefined);
         }
         onPress?.(event);
       }}
