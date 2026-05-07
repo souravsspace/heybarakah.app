@@ -57,7 +57,7 @@ function nextPrayerIndex() {
 
 function DayRibbon({ width, nextIdx }: { width: number; nextIdx: number }) {
   const start = PRAYERS[0].minutes;
-  const end = PRAYERS[PRAYERS.length - 1].minutes;
+  const end = PRAYERS.at(-1).minutes;
   const range = end - start;
 
   const now = new Date();

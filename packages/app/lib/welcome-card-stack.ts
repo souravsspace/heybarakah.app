@@ -1,8 +1,8 @@
-export type WelcomeCardStackState = {
+export interface WelcomeCardStackState {
   cardOrder: number[];
   dragIndex: number | null;
   outgoingIndex: number | null;
-};
+}
 
 export function createWelcomeCardStackState(
   cardCount: number

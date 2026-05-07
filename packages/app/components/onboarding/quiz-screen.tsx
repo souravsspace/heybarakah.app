@@ -6,17 +6,21 @@ import { Headline } from "./headline";
 import { OptionRow } from "./option-row";
 import { ScreenShell } from "./screen-shell";
 
-type Option = { value: string; label: string; hint?: string };
+interface Option {
+  hint?: string;
+  label: string;
+  value: string;
+}
 
-type Props = {
-  title: string;
-  subtitle?: string;
-  options: readonly Option[];
-  value?: string;
-  onSelect: (v: string) => void;
-  onNext: () => void;
+interface Props {
   ctaLabel?: string;
-};
+  onNext: () => void;
+  onSelect: (v: string) => void;
+  options: readonly Option[];
+  subtitle?: string;
+  title: string;
+  value?: string;
+}
 
 export function QuizScreen({
   title,

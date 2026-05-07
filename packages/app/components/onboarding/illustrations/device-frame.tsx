@@ -1,10 +1,10 @@
 import { View } from "react-native";
 
-type Props = {
-  width?: number;
-  height?: number;
+interface Props {
   children?: React.ReactNode;
-};
+  height?: number;
+  width?: number;
+}
 
 export function DeviceFrame({ width = 220, height = 440, children }: Props) {
   const bezel = 6;

@@ -21,16 +21,19 @@ import Svg, {
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-type Props = {
-  values?: number[];
-  labels?: string[];
-  width?: number;
+interface Props {
   height?: number;
+  labels?: string[];
   peakIndex?: number;
   peakLabel?: string;
-};
+  values?: number[];
+  width?: number;
+}
 
-type Pt = { x: number; y: number };
+interface Pt {
+  x: number;
+  y: number;
+}
 
 function smoothPath(points: Pt[]): string {
   if (points.length < 2) {
@@ -72,13 +75,13 @@ export function AreaChart({
         x: padX + (innerW * i) / (values.length - 1),
         y: padTop + innerH * (1 - v),
       })),
-    [values, innerW, innerH, padX, padTop]
+    [values, innerW, innerH]
   );
 
   const linePath = useMemo(() => smoothPath(points), [points]);
   const areaPath = useMemo(
     () =>
-      `${linePath} L ${points[points.length - 1].x} ${baseY} L ${points[0].x} ${baseY} Z`,
+      `${linePath} L ${points.at(-1).x} ${baseY} L ${points[0].x} ${baseY} Z`,
     [linePath, points, baseY]
   );
 

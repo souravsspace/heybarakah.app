@@ -1,9 +1,9 @@
-export type WelcomeCardContent = {
-  title: string;
-  eyebrow: string;
+export interface WelcomeCardContent {
   detail: string;
   duration: "5 min";
-};
+  eyebrow: string;
+  title: string;
+}
 
 export const welcomeCardContent: WelcomeCardContent[] = [
   {

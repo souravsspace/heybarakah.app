@@ -1,16 +1,16 @@
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type Props = {
+interface Props {
   children: React.ReactNode;
   footer?: React.ReactNode;
   hero?: React.ReactNode;
-  showProgress?: boolean;
-  showBack?: boolean;
   scroll?: boolean;
+  showBack?: boolean;
+  showProgress?: boolean;
   topSafe?: boolean;
   variant?: "default" | "filled-green";
-};
+}
 
 export function ScreenShell({
   children,

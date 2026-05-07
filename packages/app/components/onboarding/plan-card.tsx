@@ -9,16 +9,16 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-type Props = {
-  name: string;
-  price: string;
-  cadence: string;
-  perMonth?: string | null;
+interface Props {
   badge?: string | null;
+  cadence: string;
+  name: string;
+  onPress: () => void;
+  perMonth?: string | null;
+  price: string;
   recommended?: boolean;
   selected: boolean;
-  onPress: () => void;
-};
+}
 
 export function PlanCard({
   name,

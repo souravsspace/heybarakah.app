@@ -1,12 +1,12 @@
 import * as Haptics from "expo-haptics";
 import { Pressable, Switch, Text, View } from "react-native";
 
-type Props = {
-  label: string;
+interface Props {
   hint?: string;
-  value: boolean;
+  label: string;
   onToggle: () => void;
-};
+  value: boolean;
+}
 
 export function ToggleRow({ label, hint, value, onToggle }: Props) {
   return (

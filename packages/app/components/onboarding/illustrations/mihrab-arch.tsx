@@ -1,11 +1,11 @@
 import { View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
-type Props = {
-  size?: number;
+interface Props {
   children?: React.ReactNode;
   ornate?: boolean;
-};
+  size?: number;
+}
 
 export function MihrabArch({ size = 220, children, ornate = true }: Props) {
   const w = size;

@@ -10,13 +10,13 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-type Props = {
-  label: string;
+interface Props {
   hint?: string;
-  selected: boolean;
-  onPress: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
-};
+  label: string;
+  onPress: () => void;
+  selected: boolean;
+}
 
 export function OptionRow({ label, hint, selected, onPress, icon }: Props) {
   const v = useSharedValue(selected ? 1 : 0);

@@ -10,13 +10,13 @@ import Svg, { Line, Rect, Text as SvgText } from "react-native-svg";
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
-type Props = {
-  values?: number[];
-  width?: number;
+interface Props {
   height?: number;
   highlightLast?: boolean;
   labels?: string[];
-};
+  values?: number[];
+  width?: number;
+}
 
 function Bar({
   x,

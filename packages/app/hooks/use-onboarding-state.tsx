@@ -12,12 +12,8 @@ const STORAGE_KEY = "onboarding:v1";
 export type Plan = "yearly" | "monthly" | "lifetime";
 export type AuthProvider = "apple" | "google" | "email";
 
-export type OnboardingState = {
-  gender?: "male" | "female";
-  madhab?: "hanafi" | "shafii" | "maliki" | "hanbali" | "none";
-  consistency?: "never" | "sometimes" | "most" | "all";
-  struggle?: "phone" | "forgetting" | "fajr" | "khushu";
-  goal?: "all-five" | "khushu" | "phone-addiction" | "fajr";
+export interface OnboardingState {
+  authProvider?: AuthProvider;
   calcMethod?:
     | "isna"
     | "mwl"
@@ -25,6 +21,16 @@ export type OnboardingState = {
     | "egyptian"
     | "karachi"
     | "custom";
+  completedAt?: string;
+  consistency?: "never" | "sometimes" | "most" | "all";
+  gender?: "male" | "female";
+  goal?: "all-five" | "khushu" | "phone-addiction" | "fajr";
+  hydrated: boolean;
+  locationGranted?: boolean;
+  madhab?: "hanafi" | "shafii" | "maliki" | "hanbali" | "none";
+  name?: string;
+  notifGranted?: boolean;
+  plan?: Plan;
   prayersToLock: {
     fajr: boolean;
     dhuhr: boolean;
@@ -33,16 +39,10 @@ export type OnboardingState = {
     isha: boolean;
   };
   strictness?: "adhan-iqama" | "full-window" | "custom";
-  locationGranted?: boolean;
-  notifGranted?: boolean;
-  plan?: Plan;
+  struggle?: "phone" | "forgetting" | "fajr" | "khushu";
   trialStartedAt?: string;
-  authProvider?: AuthProvider;
-  name?: string;
-  completedAt?: string;
-  hydrated: boolean;
   version: 1;
-};
+}
 
 const INITIAL: OnboardingState = {
   prayersToLock: {
@@ -86,10 +86,10 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
   }
 }
 
-type Ctx = {
-  state: OnboardingState;
+interface Ctx {
   dispatch: React.Dispatch<Action>;
-};
+  state: OnboardingState;
+}
 
 const OnboardingContext = createContext<Ctx | null>(null);
 
