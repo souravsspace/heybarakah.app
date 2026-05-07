@@ -11,7 +11,12 @@ export function BodyText({
   className = "",
   children,
   ...rest
-}: TextProps & { tone?: Tone; size?: Size; align?: Align; children: React.ReactNode }) {
+}: TextProps & {
+  tone?: Tone;
+  size?: Size;
+  align?: Align;
+  children: React.ReactNode;
+}) {
   const sizeClass = size === "sm" ? "text-body-sm" : "text-body";
   const toneClass = tone === "muted" ? "text-tertiary" : "text-ink";
   const alignClass = align === "left" ? "text-left" : "text-center";

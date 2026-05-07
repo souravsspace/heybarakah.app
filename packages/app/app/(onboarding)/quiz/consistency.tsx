@@ -9,17 +9,17 @@ export default function Consistency() {
 
   return (
     <QuizScreen
-      title="How often do you pray today?"
-      subtitle="No judgement. We meet you where you are."
-      options={QUIZ_OPTIONS.consistency}
-      value={state.consistency}
+      onNext={next}
       onSelect={(v) =>
         dispatch({
           type: "SET_FIELD",
           payload: { consistency: v as "never" | "sometimes" | "most" | "all" },
         })
       }
-      onNext={next}
+      options={QUIZ_OPTIONS.consistency}
+      subtitle="No judgement. We meet you where you are."
+      title="How often do you pray today?"
+      value={state.consistency}
     />
   );
 }

@@ -30,8 +30,8 @@ function Dot({ delay }: { delay: number }) {
 
   return (
     <Animated.View
+      className="mx-[6px] h-[10px] w-[10px] rounded-full bg-primary"
       style={style}
-      className="w-[10px] h-[10px] rounded-full bg-primary mx-[6px]"
     />
   );
 }

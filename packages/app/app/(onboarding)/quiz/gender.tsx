@@ -9,14 +9,17 @@ export default function Gender() {
 
   return (
     <QuizScreen
-      title="What's your gender?"
-      subtitle="Barakah tailors its reminders for each."
-      options={QUIZ_OPTIONS.gender}
-      value={state.gender}
-      onSelect={(v) =>
-        dispatch({ type: "SET_FIELD", payload: { gender: v as "male" | "female" } })
-      }
       onNext={next}
+      onSelect={(v) =>
+        dispatch({
+          type: "SET_FIELD",
+          payload: { gender: v as "male" | "female" },
+        })
+      }
+      options={QUIZ_OPTIONS.gender}
+      subtitle="Barakah tailors its reminders for each."
+      title="What's your gender?"
+      value={state.gender}
     />
   );
 }

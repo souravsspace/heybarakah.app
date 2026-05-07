@@ -2,12 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Linking, Pressable, Text, View } from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
-import { LINKS } from "@/constants/links";
 import { Headline } from "@/components/onboarding/headline";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
 import { MosquePodium } from "@/components/onboarding/illustrations/mosque-podium";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
+import { LINKS } from "@/constants/links";
 import { PLANS } from "@/constants/onboarding-config";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
@@ -58,12 +58,11 @@ export default function Plans() {
 
   return (
     <ScreenShell
-      scroll={false}
       footer={
         <View className="gap-sm">
           <Button label={ctaLabel} onPress={start} />
           {showAll ? (
-            <Text className="font-sans text-body-sm text-tertiary text-center">
+            <Text className="text-center font-sans text-body-sm text-tertiary">
               {footerCaption}
             </Text>
           ) : (
@@ -81,6 +80,7 @@ export default function Plans() {
           )}
         </View>
       }
+      scroll={false}
     >
       <FadeSlideIn className="gap-md">
         <View
@@ -98,7 +98,7 @@ export default function Plans() {
           </View>
           <View className="flex-row" style={{ gap: 6 }}>
             <Pressable
-              className="bg-neutral-soft rounded-full px-sm py-[5px]"
+              className="rounded-full bg-neutral-soft px-sm py-[5px]"
               onPress={() => Linking.openURL(LINKS.terms)}
             >
               <Text className="font-sans text-caption text-tertiary">
@@ -106,7 +106,7 @@ export default function Plans() {
               </Text>
             </Pressable>
             <Pressable
-              className="bg-neutral-soft rounded-full px-sm py-[5px]"
+              className="rounded-full bg-neutral-soft px-sm py-[5px]"
               onPress={() => goTo("/(account)/auth")}
             >
               <Text className="font-sans text-caption text-tertiary">
@@ -121,7 +121,9 @@ export default function Plans() {
         </View>
 
         <View className="px-sm" style={{ marginTop: showAll ? 4 : 8 }}>
-          <Headline size="h2">Lock in your five.{"\n"}Begin the return.</Headline>
+          <Headline size="h2">
+            Lock in your five.{"\n"}Begin the return.
+          </Headline>
         </View>
 
         <View style={{ marginTop: showAll ? 18 : 16, gap: 22 }}>
@@ -205,7 +207,7 @@ export default function Plans() {
                   </View>
                 ) : null}
                 <View
-                  className="rounded-2xl px-md py-md flex-row items-center justify-between"
+                  className="flex-row items-center justify-between rounded-2xl px-md py-md"
                   style={{
                     borderWidth: 2.5,
                     borderColor: isSelected ? PRIMARY : NEUTRAL_BORDER,
@@ -254,7 +256,6 @@ export default function Plans() {
             );
           })}
         </View>
-
       </FadeSlideIn>
     </ScreenShell>
   );

@@ -17,7 +17,9 @@ export default function AccountLayout() {
             accessibilityLabel="Back"
             hitSlop={12}
             onPress={() => {
-              if (router.canGoBack()) router.back();
+              if (router.canGoBack()) {
+                router.back();
+              }
             }}
           >
             <Ionicons color="#0F1311" name="chevron-back" size={26} />

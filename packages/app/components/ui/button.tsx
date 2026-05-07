@@ -32,12 +32,14 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
+      className={`w-full items-center justify-center rounded-2xl px-md py-md ${bgClass}`}
       disabled={disabled}
       onPress={(event) => {
-        if (!disabled) Haptics.selectionAsync().catch(() => {});
+        if (!disabled) {
+          Haptics.selectionAsync().catch(() => {});
+        }
         onPress?.(event);
       }}
-      className={`w-full items-center justify-center rounded-2xl px-md py-md ${bgClass}`}
       style={({ pressed }) => ({
         minHeight: height,
         height,

@@ -5,9 +5,15 @@ import { welcomeCardContent } from "../constants/welcome-card-content";
 describe("welcome card content", () => {
   test("gives every welcome card concise lesson metadata", () => {
     expect(welcomeCardContent).toHaveLength(12);
-    expect(welcomeCardContent.every((card) => card.duration === "5 min")).toBe(true);
-    expect(welcomeCardContent.every((card) => card.eyebrow.length > 0)).toBe(true);
-    expect(welcomeCardContent.every((card) => card.detail.length > 0)).toBe(true);
+    expect(welcomeCardContent.every((card) => card.duration === "5 min")).toBe(
+      true
+    );
+    expect(welcomeCardContent.every((card) => card.eyebrow.length > 0)).toBe(
+      true
+    );
+    expect(welcomeCardContent.every((card) => card.detail.length > 0)).toBe(
+      true
+    );
   });
 
   test("keeps travel copy focused on prayer lock lessons", () => {

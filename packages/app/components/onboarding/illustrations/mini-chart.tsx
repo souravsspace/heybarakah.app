@@ -37,7 +37,7 @@ function Bar({
   useEffect(() => {
     p.value = withDelay(
       delay,
-      withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }),
+      withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) })
     );
   }, [p, delay]);
 
@@ -48,11 +48,11 @@ function Bar({
 
   return (
     <AnimatedRect
-      x={x}
-      width={width}
-      rx={4}
-      fill={fill}
       animatedProps={animatedProps}
+      fill={fill}
+      rx={4}
+      width={width}
+      x={x}
     />
   );
 }
@@ -74,27 +74,27 @@ export function MiniChart({
   const baseY = height - padBottom;
 
   return (
-    <Svg width={width} height={height}>
+    <Svg height={height} width={width}>
       <Line
-        x1={padX}
-        y1={baseY}
-        x2={width - padX}
-        y2={baseY}
         stroke="#E5E7EB"
         strokeWidth={1}
+        x1={padX}
+        x2={width - padX}
+        y1={baseY}
+        y2={baseY}
       />
       {[0.25, 0.5, 0.75].map((g) => {
         const y = padTop + innerH * (1 - g);
         return (
           <Line
             key={g}
-            x1={padX}
-            y1={y}
-            x2={width - padX}
-            y2={y}
             stroke="#E5E7EB"
-            strokeWidth={0.5}
             strokeDasharray="3,4"
+            strokeWidth={0.5}
+            x1={padX}
+            x2={width - padX}
+            y1={y}
+            y2={y}
           />
         );
       })}
@@ -105,13 +105,13 @@ export function MiniChart({
         const fill = highlightLast && isLast ? "#29603E" : "#C7D6CC";
         return (
           <Bar
-            key={i}
-            x={x}
             baseY={baseY}
-            width={barW}
-            targetH={targetH}
-            fill={fill}
             delay={i * 90}
+            fill={fill}
+            key={i}
+            targetH={targetH}
+            width={barW}
+            x={x}
           />
         );
       })}
@@ -119,13 +119,13 @@ export function MiniChart({
         const x = padX + i * (barW + gap) + barW / 2;
         return (
           <SvgText
+            fill="#6B7280"
+            fontFamily="Inter"
+            fontSize="10"
             key={l + i}
+            textAnchor="middle"
             x={x}
             y={height - 6}
-            fontSize="10"
-            fill="#6B7280"
-            textAnchor="middle"
-            fontFamily="Inter"
           >
             {l}
           </SvgText>

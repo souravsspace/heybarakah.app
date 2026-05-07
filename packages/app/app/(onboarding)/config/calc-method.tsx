@@ -12,17 +12,17 @@ export default function CalcMethod() {
 
   return (
     <QuizScreen
-      title="How should we calculate prayer times?"
-      subtitle="Choose the method your community uses. You can change this later."
-      options={QUIZ_OPTIONS.calcMethod}
-      value={state.calcMethod}
+      onNext={next}
       onSelect={(v) =>
         dispatch({
           type: "SET_FIELD",
           payload: { calcMethod: v as OnboardingState["calcMethod"] },
         })
       }
-      onNext={next}
+      options={QUIZ_OPTIONS.calcMethod}
+      subtitle="Choose the method your community uses. You can change this later."
+      title="How should we calculate prayer times?"
+      value={state.calcMethod}
     />
   );
 }

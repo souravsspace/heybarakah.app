@@ -1,5 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useContext, useEffect, useReducer, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+  useRef,
+} from "react";
 
 const STORAGE_KEY = "onboarding:v1";
 
@@ -12,7 +18,13 @@ export type OnboardingState = {
   consistency?: "never" | "sometimes" | "most" | "all";
   struggle?: "phone" | "forgetting" | "fajr" | "khushu";
   goal?: "all-five" | "khushu" | "phone-addiction" | "fajr";
-  calcMethod?: "isna" | "mwl" | "umm-al-qura" | "egyptian" | "karachi" | "custom";
+  calcMethod?:
+    | "isna"
+    | "mwl"
+    | "umm-al-qura"
+    | "egyptian"
+    | "karachi"
+    | "custom";
   prayersToLock: {
     fajr: boolean;
     dhuhr: boolean;
@@ -33,7 +45,13 @@ export type OnboardingState = {
 };
 
 const INITIAL: OnboardingState = {
-  prayersToLock: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true },
+  prayersToLock: {
+    fajr: true,
+    dhuhr: true,
+    asr: true,
+    maghrib: true,
+    isha: true,
+  },
   hydrated: false,
   version: 1,
 };
@@ -75,7 +93,11 @@ type Ctx = {
 
 const OnboardingContext = createContext<Ctx | null>(null);
 
-export function OnboardingProvider({ children }: { children: React.ReactNode }) {
+export function OnboardingProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [state, dispatch] = useReducer(reducer, INITIAL);
   const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -85,7 +107,10 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         if (raw) {
           try {
             const parsed = JSON.parse(raw) as OnboardingState;
-            dispatch({ type: "HYDRATE", payload: { ...INITIAL, ...parsed, hydrated: true } });
+            dispatch({
+              type: "HYDRATE",
+              payload: { ...INITIAL, ...parsed, hydrated: true },
+            });
             return;
           } catch {}
         }
@@ -95,13 +120,19 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   useEffect(() => {
-    if (!state.hydrated) return;
-    if (writeTimer.current) clearTimeout(writeTimer.current);
+    if (!state.hydrated) {
+      return;
+    }
+    if (writeTimer.current) {
+      clearTimeout(writeTimer.current);
+    }
     writeTimer.current = setTimeout(() => {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
     }, 200);
     return () => {
-      if (writeTimer.current) clearTimeout(writeTimer.current);
+      if (writeTimer.current) {
+        clearTimeout(writeTimer.current);
+      }
     };
   }, [state]);
 
@@ -114,6 +145,10 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
 export function useOnboardingState() {
   const ctx = useContext(OnboardingContext);
-  if (!ctx) throw new Error("useOnboardingState must be used inside OnboardingProvider");
+  if (!ctx) {
+    throw new Error(
+      "useOnboardingState must be used inside OnboardingProvider"
+    );
+  }
   return ctx;
 }

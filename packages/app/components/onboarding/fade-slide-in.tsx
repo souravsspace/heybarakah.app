@@ -20,8 +20,14 @@ export function FadeSlideIn({
 
   useEffect(() => {
     const t = setTimeout(() => {
-      o.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) });
-      y.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
+      o.value = withTiming(1, {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+      });
+      y.value = withTiming(0, {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+      });
     }, delay);
     return () => clearTimeout(t);
   }, [delay, o, y]);

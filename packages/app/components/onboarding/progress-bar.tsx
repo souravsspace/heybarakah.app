@@ -22,8 +22,8 @@ export function ProgressBar({ progress }: { progress: number }) {
   }));
 
   return (
-    <View className="h-[6px] bg-neutral rounded-full overflow-hidden w-full">
-      <Animated.View style={style} className="h-full bg-primary" />
+    <View className="h-[6px] w-full overflow-hidden rounded-full bg-neutral">
+      <Animated.View className="h-full bg-primary" style={style} />
     </View>
   );
 }

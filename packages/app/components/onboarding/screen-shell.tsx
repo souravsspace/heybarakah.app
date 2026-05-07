@@ -51,17 +51,15 @@ export function ScreenShell({
             : undefined
         }
         style={
-          !scroll
-            ? { paddingHorizontal: 24, paddingTop: 16, flex: 1 }
-            : undefined
+          scroll
+            ? undefined
+            : { paddingHorizontal: 24, paddingTop: 16, flex: 1 }
         }
       >
         {children}
       </Body>
 
-      {footer ? (
-        <View className="px-md pt-sm pb-md">{footer}</View>
-      ) : null}
+      {footer ? <View className="px-md pt-sm pb-md">{footer}</View> : null}
     </SafeAreaView>
   );
 }

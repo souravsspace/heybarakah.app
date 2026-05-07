@@ -1,13 +1,8 @@
 {
-  "extends": [
-    "expo/tsconfig.base",
-    "@barakah/tsconfig/app.json"
-  ],
+  "extends": ["expo/tsconfig.base", "@barakah/tsconfig/app.json"],
   "compilerOptions": {
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     }
   },
   "include": [

@@ -22,12 +22,12 @@ export default function Promise() {
 
   return (
     <ScreenShell
-      scroll={false}
       footer={
         <View style={{ paddingHorizontal: 8 }}>
           <Button label="Show me how" onPress={next} />
         </View>
       }
+      scroll={false}
     >
       <FadeSlideIn className="flex-1 items-center gap-md" delay={120}>
         <View className="items-center gap-[2px]">
@@ -77,17 +77,17 @@ export default function Promise() {
 
             {STEPS.map((step, i) => (
               <Step
-                key={step.label}
-                index={i + 1}
-                label={step.label}
                 detail={step.detail}
+                index={i + 1}
                 isLast={i === STEPS.length - 1}
+                key={step.label}
+                label={step.label}
               />
             ))}
           </View>
         </FadeSlideIn>
 
-        <FadeSlideIn delay={380} className="mt-auto items-center">
+        <FadeSlideIn className="mt-auto items-center" delay={380}>
           <View className="items-center" style={{ width: fullWidth }}>
             <View
               style={{
@@ -176,9 +176,7 @@ function Step({
 }
 
 function Reassure({ label }: { label: string }) {
-  return (
-    <Text className="font-sans text-caption text-tertiary">{label}</Text>
-  );
+  return <Text className="font-sans text-caption text-tertiary">{label}</Text>;
 }
 
 function Dot() {

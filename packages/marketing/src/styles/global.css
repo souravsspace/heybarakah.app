@@ -19,26 +19,28 @@ html {
 }
 
 @theme {
-  --color-primary: #29603E;
-  --color-primary-hover: #234F34;
-  --color-primary-press: #1B3F29;
-  --color-primary-soft: #EAF2EC;
+  --color-primary: #29603e;
+  --color-primary-hover: #234f34;
+  --color-primary-press: #1b3f29;
+  --color-primary-soft: #eaf2ec;
 
   --color-fg: #000000;
-  --color-fg-muted: #6B7280;
-  --color-fg-subtle: #9CA3AF;
+  --color-fg-muted: #6b7280;
+  --color-fg-subtle: #9ca3af;
 
-  --color-surface: #FFFFFF;
-  --color-surface-muted: #F3F4F6;
-  --color-surface-soft: #FAFAF7;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3f4f6;
+  --color-surface-soft: #fafaf7;
 
-  --color-border: #E5E7EB;
-  --color-border-strong: #D1D5DB;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
 
-  --color-error: #B91C1C;
+  --color-error: #b91c1c;
 
-  --font-serif: "Libre Baskerville", "Iowan Old Style", Georgia, "Times New Roman", serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif:
+    "Libre Baskerville", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   --shadow-cta: 0 8px 24px rgba(41, 96, 62, 0.28);
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -49,11 +51,12 @@ html {
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-html, body {
+html,
+body {
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
   color: var(--color-fg);
   background: var(--color-surface);
-  -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
@@ -62,8 +65,8 @@ html, body {
   font-size: 12px;
   font-weight: 600;
   line-height: 16px;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
+  letter-spacing: 0.14em;
 }
 
 .serif {

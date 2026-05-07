@@ -205,12 +205,7 @@ export function MosqueTwin({
         transform={`translate(${tx} ${ty}) scale(${scale})`}
       >
         {PATHS.map((d, i) => (
-          <StaggeredPath
-            color={color}
-            d={d}
-            delay={160 + i * 180}
-            key={d}
-          />
+          <StaggeredPath color={color} d={d} delay={160 + i * 180} key={d} />
         ))}
       </AnimatedG>
     </Svg>

@@ -1,9 +1,9 @@
 import { View } from "react-native";
+import { Button } from "@/components/ui/button";
 import { BodyText } from "./body-text";
 import { FadeSlideIn } from "./fade-slide-in";
 import { Headline } from "./headline";
 import { OptionRow } from "./option-row";
-import { Button } from "@/components/ui/button";
 import { ScreenShell } from "./screen-shell";
 
 type Option = { value: string; label: string; hint?: string };
@@ -29,27 +29,27 @@ export function QuizScreen({
 }: Props) {
   return (
     <ScreenShell
-      footer={<Button label={ctaLabel} onPress={onNext} disabled={!value} />}
+      footer={<Button disabled={!value} label={ctaLabel} onPress={onNext} />}
     >
       <FadeSlideIn className="gap-md">
         <View className="gap-sm">
-          <Headline size="h2" align="left">
+          <Headline align="left" size="h2">
             {title}
           </Headline>
           {subtitle ? (
-            <BodyText size="sm" tone="muted" align="left">
+            <BodyText align="left" size="sm" tone="muted">
               {subtitle}
             </BodyText>
           ) : null}
         </View>
-        <View className="gap-sm mt-sm">
+        <View className="mt-sm gap-sm">
           {options.map((opt) => (
             <OptionRow
+              hint={opt.hint}
               key={opt.value}
               label={opt.label}
-              hint={opt.hint}
-              selected={value === opt.value}
               onPress={() => onSelect(opt.value)}
+              selected={value === opt.value}
             />
           ))}
         </View>

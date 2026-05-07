@@ -1,6 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Text, useWindowDimensions, View } from "react-native";
+import {
+  Animated,
+  Easing,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
@@ -54,7 +60,10 @@ export default function Calculating() {
   return (
     <ScreenShell showBack={false}>
       <FadeSlideIn className="flex-1 items-center gap-md">
-        <View className="items-center" style={{ width: fullWidth, marginTop: 24 }}>
+        <View
+          className="items-center"
+          style={{ width: fullWidth, marginTop: 24 }}
+        >
           <View
             style={{
               width: 28,
@@ -110,10 +119,10 @@ export default function Calculating() {
               i < active ? "done" : i === active ? "active" : "pending";
             return (
               <StageRow
+                isLast={i === STAGES.length - 1}
                 key={label}
                 label={label}
                 status={status}
-                isLast={i === STAGES.length - 1}
               />
             );
           })}
@@ -158,7 +167,9 @@ function StageRow({
         </Text>
         {status === "active" ? <Pulse /> : null}
       </View>
-      {isLast ? null : <View style={{ height: 1, backgroundColor: "#EFEFEF" }} />}
+      {isLast ? null : (
+        <View style={{ height: 1, backgroundColor: "#EFEFEF" }} />
+      )}
     </View>
   );
 }
@@ -230,7 +241,7 @@ function Pulse() {
           duration: 600,
           useNativeDriver: true,
         }),
-      ]),
+      ])
     );
     loop.start();
     return () => loop.stop();

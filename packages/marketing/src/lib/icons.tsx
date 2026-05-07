@@ -32,7 +32,7 @@ export function X({ size, ...rest }: IconProps) {
 export function Lock({ size, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...rest}>
-      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <rect height="11" rx="2" width="18" x="3" y="11" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );

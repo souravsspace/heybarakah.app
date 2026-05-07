@@ -30,5 +30,9 @@ export function rateLimit(key: string, opts: RateLimitOptions) {
 
 setInterval(() => {
   const now = Date.now();
-  for (const [k, b] of buckets) if (b.resetAt <= now) buckets.delete(k);
+  for (const [k, b] of buckets) {
+    if (b.resetAt <= now) {
+      buckets.delete(k);
+    }
+  }
 }, 60_000).unref?.();

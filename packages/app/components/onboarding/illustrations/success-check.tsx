@@ -26,17 +26,24 @@ export function SuccessCheck({ size = 96 }: { size?: number }) {
   }));
 
   return (
-    <Svg width={size} height={size} viewBox="0 0 96 96">
-      <Circle cx={48} cy={48} r={44} stroke="#29603E" strokeWidth={2} fill="#FFFFFF" />
-      <AnimatedPath
-        d="M 30 50 L 44 64 L 68 36"
+    <Svg height={size} viewBox="0 0 96 96" width={size}>
+      <Circle
+        cx={48}
+        cy={48}
+        fill="#FFFFFF"
+        r={44}
         stroke="#29603E"
-        strokeWidth={3}
+        strokeWidth={2}
+      />
+      <AnimatedPath
+        animatedProps={animatedProps}
+        d="M 30 50 L 44 64 L 68 36"
         fill="none"
+        stroke="#29603E"
+        strokeDasharray={length}
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeDasharray={length}
-        animatedProps={animatedProps}
+        strokeWidth={3}
       />
     </Svg>
   );

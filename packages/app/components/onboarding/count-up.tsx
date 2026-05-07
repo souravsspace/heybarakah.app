@@ -14,9 +14,11 @@ export function CountUp({
     let raf: number;
     const tick = () => {
       const t = Math.min(1, (Date.now() - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
+      const eased = 1 - (1 - t) ** 3;
       setN(Math.floor(eased * to));
-      if (t < 1) raf = requestAnimationFrame(tick);
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);

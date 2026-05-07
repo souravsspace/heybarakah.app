@@ -58,7 +58,6 @@ export default function Permissions() {
 
   return (
     <ScreenShell
-      scroll={false}
       footer={
         <View className="gap-sm" style={{ paddingHorizontal: 8 }}>
           <Button
@@ -69,13 +68,14 @@ export default function Permissions() {
           <LinkButton label="Skip for now" onPress={skip} />
         </View>
       }
+      scroll={false}
     >
       <FadeSlideIn className="flex-1 items-center gap-md" delay={120}>
         <View className="items-center gap-[2px]">
           <Headline size="h1">{"Two quiet\npermissions."}</Headline>
           <BodyText size="sm" tone="muted">
-            Both are needed to lock your phone at the right moment, in the
-            right place.
+            Both are needed to lock your phone at the right moment, in the right
+            place.
           </BodyText>
         </View>
 
@@ -91,17 +91,17 @@ export default function Permissions() {
           >
             {PERMS.map((p, i) => (
               <PermRow
-                key={p.title}
-                icon={p.icon}
-                title={p.title}
                 detail={p.detail}
+                icon={p.icon}
                 isLast={i === PERMS.length - 1}
+                key={p.title}
+                title={p.title}
               />
             ))}
           </View>
         </FadeSlideIn>
 
-        <FadeSlideIn delay={380} className="mt-auto items-center">
+        <FadeSlideIn className="mt-auto items-center" delay={380}>
           <View className="items-center" style={{ width: fullWidth }}>
             <View
               style={{
@@ -186,15 +186,15 @@ function PermRow({
           </Text>
         </View>
       </View>
-      {isLast ? null : <View style={{ height: 1, backgroundColor: "#EFEFEF" }} />}
+      {isLast ? null : (
+        <View style={{ height: 1, backgroundColor: "#EFEFEF" }} />
+      )}
     </View>
   );
 }
 
 function Reassure({ label }: { label: string }) {
-  return (
-    <Text className="font-sans text-caption text-tertiary">{label}</Text>
-  );
+  return <Text className="font-sans text-caption text-tertiary">{label}</Text>;
 }
 
 function Dot() {

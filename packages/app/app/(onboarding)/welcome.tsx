@@ -13,8 +13,8 @@ import {
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
-import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { welcomeCardContent } from "@/constants/welcome-card-content";
+import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import {
   clearWelcomeCardDrag,
   completeWelcomeCardSwipe,
@@ -85,7 +85,9 @@ export default function Welcome() {
 
   const sendTopCardToBottom = useCallback(
     (dx: number, dy: number) => {
-      if (isSwiping.current) return;
+      if (isSwiping.current) {
+        return;
+      }
       isSwiping.current = true;
       setCardStack(startWelcomeCardExit);
       swipe.stopAnimation();
@@ -127,7 +129,9 @@ export default function Welcome() {
           setCardStack(startWelcomeCardDrag);
         },
         onPanResponderMove: (_, gesture) => {
-          if (isSwiping.current) return;
+          if (isSwiping.current) {
+            return;
+          }
 
           swipe.setValue({
             x: gesture.dx,
@@ -138,7 +142,9 @@ export default function Welcome() {
           });
         },
         onPanResponderRelease: (_, gesture) => {
-          if (isSwiping.current) return;
+          if (isSwiping.current) {
+            return;
+          }
 
           const cappedDy = Math.max(
             Math.min(gesture.dy, cardHeight * 0.28),
@@ -199,7 +205,7 @@ export default function Welcome() {
             const isOutgoing = outgoingIndex === cardIndex;
             const isActive = outgoingIndex === null && stackDepth === 0;
             const canUseSwipe = dragIndex === cardIndex;
-            const visibleLimit = outgoingIndex !== null ? 4 : 3;
+            const visibleLimit = outgoingIndex === null ? 3 : 4;
             const isVisible =
               isOutgoing || (stackDepth >= 0 && stackDepth < visibleLimit);
             const baseX = stackDepth <= 0 ? 0 : stackDepth * 8;

@@ -12,17 +12,17 @@ export default function Strictness() {
 
   return (
     <QuizScreen
-      title="How long should the lock last?"
-      subtitle="Most users start with adhan to end of window. You can soften this later."
-      options={QUIZ_OPTIONS.strictness}
-      value={state.strictness}
+      onNext={next}
       onSelect={(v) =>
         dispatch({
           type: "SET_FIELD",
           payload: { strictness: v as OnboardingState["strictness"] },
         })
       }
-      onNext={next}
+      options={QUIZ_OPTIONS.strictness}
+      subtitle="Most users start with adhan to end of window. You can soften this later."
+      title="How long should the lock last?"
+      value={state.strictness}
     />
   );
 }

@@ -11,11 +11,15 @@ export default function OnboardingLayout() {
   const { progress, back, index, currentPath } = useOnboardingNav();
 
   const focusedName = useNavigationState((state) => {
-    if (!state) return undefined;
+    if (!state) {
+      return;
+    }
     return state.routes[state.index]?.name;
   });
   const prevName = useNavigationState((state) => {
-    if (!state) return undefined;
+    if (!state) {
+      return;
+    }
     return state.routes[state.index - 1]?.name;
   });
 
@@ -30,9 +34,9 @@ export default function OnboardingLayout() {
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
       {hideHeader ? null : (
-        <View className="flex-row items-center px-md gap-sm h-[48px]">
-          <Pressable onPress={back} accessibilityLabel="Back" hitSlop={12}>
-            <Ionicons name="chevron-back" size={26} color="#000000" />
+        <View className="h-[48px] flex-row items-center gap-sm px-md">
+          <Pressable accessibilityLabel="Back" hitSlop={12} onPress={back}>
+            <Ionicons color="#000000" name="chevron-back" size={26} />
           </Pressable>
           <View className="flex-1">
             <ProgressBar progress={progress} />
@@ -41,18 +45,20 @@ export default function OnboardingLayout() {
         </View>
       )}
       <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: "slide_from_right",
-          contentStyle: { backgroundColor: "#FFFFFF" },
-        }}
         screenListeners={{
           gestureStart: () => {
-            if (prevName === "welcome") setGestureToWelcome(true);
+            if (prevName === "welcome") {
+              setGestureToWelcome(true);
+            }
           },
           gestureEnd: () => setGestureToWelcome(false),
           gestureCancel: () => setGestureToWelcome(false),
           transitionEnd: () => setGestureToWelcome(false),
+        }}
+        screenOptions={{
+          headerShown: false,
+          animation: "slide_from_right",
+          contentStyle: { backgroundColor: "#FFFFFF" },
         }}
       >
         <Stack.Screen name="welcome" options={{ animation: "none" }} />

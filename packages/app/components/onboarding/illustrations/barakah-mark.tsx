@@ -14,11 +14,7 @@ export function BarakahMark({
   color?: string;
 }) {
   return (
-    <Svg
-      height={size}
-      viewBox="0 0 301 488"
-      width={size * (301 / 488)}
-    >
+    <Svg height={size} viewBox="0 0 301 488" width={size * (301 / 488)}>
       {PATHS.map((d) => (
         <Path d={d} fill={color} key={d} />
       ))}

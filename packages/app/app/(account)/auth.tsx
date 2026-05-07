@@ -130,7 +130,7 @@ export default function Auth() {
           style={{ marginTop: "auto", paddingBottom: 16 }}
         >
           <Text
-            className="font-sans text-tertiary text-center"
+            className="text-center font-sans text-tertiary"
             style={{ fontSize: 12, lineHeight: 18 }}
           >
             By continuing you agree to the{" "}

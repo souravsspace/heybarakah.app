@@ -20,7 +20,9 @@ export function purchaseEmail({
   currency: string;
   invoiceNumber?: string | null;
 }) {
-  const greeting = name ? `As-salaamu alaykum, ${name}.` : "As-salaamu alaykum.";
+  const greeting = name
+    ? `As-salaamu alaykum, ${name}.`
+    : "As-salaamu alaykum.";
   const total = formatMoney(totalAmount, currency);
   const subject = "Your Barakah lifetime is confirmed";
 

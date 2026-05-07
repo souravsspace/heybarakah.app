@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
+import disposableDomains from "disposable-email-domains";
 import { Resend } from "resend";
 import { z } from "zod";
-import disposableDomains from "disposable-email-domains";
 import { env } from "../../env";
 import { rateLimit } from "../../lib/rate-limit";
 import { welcomeEmail } from "../../lib/welcome-email";
@@ -20,7 +20,11 @@ const schema = z.object({
     .email("Enter a valid email."),
 });
 
-function json(body: unknown, status = 200, headers: Record<string, string> = {}) {
+function json(
+  body: unknown,
+  status = 200,
+  headers: Record<string, string> = {}
+) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json", ...headers },
@@ -29,19 +33,22 @@ function json(body: unknown, status = 200, headers: Record<string, string> = {})
 
 function clientIp(request: Request): string {
   const xff = request.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
+  if (xff) {
+    return xff.split(",")[0].trim();
+  }
   return request.headers.get("x-real-ip") ?? "unknown";
 }
 
 export const POST: APIRoute = async ({ request }) => {
   const ip = clientIp(request);
-  const rl = rateLimit(`waitlist:${ip}`, { limit: 5, windowMs: 60 * 60 * 1000 });
+  const rl = rateLimit(`waitlist:${ip}`, {
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+  });
   if (!rl.ok) {
-    return json(
-      { error: "Too many requests. Try again later." },
-      429,
-      { "retry-after": String(rl.retryAfter) },
-    );
+    return json({ error: "Too many requests. Try again later." }, 429, {
+      "retry-after": String(rl.retryAfter),
+    });
   }
 
   let payload: unknown;
@@ -53,7 +60,10 @@ export const POST: APIRoute = async ({ request }) => {
 
   const parsed = schema.safeParse(payload);
   if (!parsed.success) {
-    return json({ error: parsed.error.issues[0]?.message ?? "Invalid email." }, 400);
+    return json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid email." },
+      400
+    );
   }
 
   const email = parsed.data.email;
@@ -88,7 +98,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (send.error) {
       console.error("[waitlist] emails.send error", send.error);
-      return json({ ok: true, warning: "Saved, but confirmation email failed." });
+      return json({
+        ok: true,
+        warning: "Saved, but confirmation email failed.",
+      });
     }
 
     return json({ ok: true });
