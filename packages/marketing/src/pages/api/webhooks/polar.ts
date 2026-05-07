@@ -16,7 +16,7 @@ export const POST: APIRoute = async ({ request }) => {
     headers[k] = v;
   });
 
-  let event;
+  let event: ReturnType<typeof validateEvent>;
   try {
     event = validateEvent(body, headers, env.POLAR_WEBHOOK_SECRET);
   } catch (err) {
