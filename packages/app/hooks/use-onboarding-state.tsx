@@ -130,7 +130,9 @@ export function OnboardingProvider({
       clearTimeout(writeTimer.current);
     }
     writeTimer.current = setTimeout(() => {
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => undefined);
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(
+        () => undefined
+      );
     }, 200);
     return () => {
       if (writeTimer.current) {
