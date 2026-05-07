@@ -1,9 +1,7 @@
 ---
 import { appConfig } from "../app-config";
 
-// biome-ignore lint/correctness/noUnusedVariables: used in the Astro template below
 const { brand, contact, islamic } = appConfig;
-// biome-ignore lint/correctness/noUnusedVariables: used in the Astro template below
 const checkoutId = Astro.url.searchParams.get("checkout_id");
 ---
 
