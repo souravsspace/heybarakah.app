@@ -1,23 +1,34 @@
+import { useRouter } from "expo-router";
+import { View } from "react-native";
 import { BodyText } from "@/components/onboarding/body-text";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
-import { SuccessCheck } from "@/components/onboarding/illustrations/success-check";
-import { TasbihRow } from "@/components/onboarding/illustrations/tasbih-row";
-import { Button } from "@/components/ui/button";
+import { MosqueTwin } from "@/components/onboarding/illustrations/mosque-twin";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
-import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
+import { Button } from "@/components/ui/button";
 
 export default function Success() {
-  const { next } = useOnboardingNav();
+  const router = useRouter();
   return (
-    <ScreenShell showBack={false} footer={<Button label="Almost done" onPress={next} />}>
-      <FadeSlideIn className="flex-1 items-center justify-center gap-md">
-        <SuccessCheck size={104} />
-        <Headline>Your plan is ready.</Headline>
-        <BodyText tone="muted" className="px-sm">
-          Barakah is configured for your fiqh and your prayers. One last step.
-        </BodyText>
-        <TasbihRow width={200} count={11} />
+    <ScreenShell
+      footer={
+        <Button
+          label="Continue"
+          onPress={() => router.push("/(account)/name")}
+        />
+      }
+      scroll={false}
+    >
+      <FadeSlideIn className="flex-1 items-center justify-center" delay={80}>
+        <View style={{ alignItems: "center", gap: 18 }}>
+          <MosqueTwin size={392} />
+          <View className="items-center px-md" style={{ gap: 8 }}>
+            <Headline>You're set.</Headline>
+            <BodyText className="px-sm" size="sm" tone="muted">
+              Your prayer-lock is configured. One last step.
+            </BodyText>
+          </View>
+        </View>
       </FadeSlideIn>
     </ScreenShell>
   );
