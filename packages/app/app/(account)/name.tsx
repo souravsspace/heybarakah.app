@@ -4,8 +4,8 @@ import { TextInput, View } from "react-native";
 import { BodyText } from "@/components/onboarding/body-text";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
-import { Button } from "@/components/ui/button";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
+import { Button } from "@/components/ui/button";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 
 export default function Name() {
@@ -14,37 +14,52 @@ export default function Name() {
   const [value, setValue] = useState("");
 
   function finish() {
-    dispatch({ type: "SET_FIELD", payload: { name: value.trim() || undefined } });
+    dispatch({
+      type: "SET_FIELD",
+      payload: { name: value.trim() || undefined },
+    });
     dispatch({ type: "COMPLETE" });
     router.replace("/home");
   }
 
   return (
     <ScreenShell
-      showBack={false}
       footer={
         <Button
+          disabled={value.trim().length === 0}
           label="ENTER BARAKAH"
           onPress={finish}
-          disabled={value.trim().length === 0}
         />
       }
+      scroll={false}
     >
-      <FadeSlideIn className="flex-1 justify-center gap-md">
-        <View className="items-center gap-sm">
-          <Headline>What should we call you?</Headline>
-          <BodyText tone="muted">A first name is enough.</BodyText>
+      <FadeSlideIn className="flex-1 justify-center" delay={80}>
+        <View className="items-center px-sm" style={{ gap: 8 }}>
+          <Headline>What should we {"\n"} call you?</Headline>
+          <BodyText className="px-sm" size="sm" tone="muted">
+            We'll use your name in du'a reminders.
+          </BodyText>
         </View>
         <TextInput
-          value={value}
+          autoCapitalize="words"
+          autoFocus
+          className="border bg-surface font-sans text-ink"
           onChangeText={setValue}
+          onSubmitEditing={finish}
           placeholder="Your name"
           placeholderTextColor="#9CA3AF"
-          autoFocus
-          autoCapitalize="words"
           returnKeyType="done"
-          onSubmitEditing={finish}
-          className="border border-neutral rounded-md px-md py-md text-body font-sans text-ink mt-md"
+          style={{
+            marginTop: 28,
+            borderColor: "#E5E7EB",
+            borderWidth: 1.5,
+            borderRadius: 18,
+            paddingHorizontal: 18,
+            paddingVertical: 18,
+            fontSize: 18,
+            fontWeight: "500",
+          }}
+          value={value}
         />
       </FadeSlideIn>
     </ScreenShell>

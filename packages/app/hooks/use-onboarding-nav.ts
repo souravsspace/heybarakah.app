@@ -15,7 +15,13 @@ export function useOnboardingNav() {
 
   const index = currentPath ? ONBOARDING_ROUTES.indexOf(currentPath) : -1;
   const total = ONBOARDING_ROUTES.length;
-  const progress = index >= 0 ? (index + 1) / total : 0;
+  const progressEndIndex = ONBOARDING_ROUTES.indexOf(
+    "/(onboarding)/paywall/akhira-worth"
+  );
+  const progressDenom =
+    progressEndIndex >= 0 ? progressEndIndex + 1 : total;
+  const progress =
+    index >= 0 ? Math.min(1, (index + 1) / progressDenom) : 0;
 
   function next() {
     if (index < 0 || index >= total - 1) return;
@@ -27,9 +33,9 @@ export function useOnboardingNav() {
     router.back();
   }
 
-  function goTo(route: OnboardingRoute) {
+  function goTo(route: OnboardingRoute | string) {
     router.push(route as never);
   }
 
-  return { index, total, progress, next, back, goTo };
+  return { index, total, progress, next, back, goTo, currentPath };
 }

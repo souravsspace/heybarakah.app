@@ -8,7 +8,7 @@ import { ProgressBar } from "@/components/onboarding/progress-bar";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 
 export default function OnboardingLayout() {
-  const { progress, back, index } = useOnboardingNav();
+  const { progress, back, index, currentPath } = useOnboardingNav();
 
   const focusedName = useNavigationState((state) => {
     if (!state) return undefined;
@@ -22,7 +22,10 @@ export default function OnboardingLayout() {
   const [gestureToWelcome, setGestureToWelcome] = useState(false);
 
   const hideHeader =
-    focusedName === "welcome" || gestureToWelcome || index <= 0;
+    focusedName === "welcome" ||
+    currentPath === "/(onboarding)/paywall/plans" ||
+    gestureToWelcome ||
+    index <= 0;
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
