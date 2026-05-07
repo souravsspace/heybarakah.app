@@ -236,7 +236,7 @@ function CountdownRing({
               cx={(x1 + x2) / 2}
               cy={(y1 + y2) / 2}
               fill="#FFFFFF"
-              key={i}
+              key={`${x1}-${y1}`}
               opacity={isHour ? 0.55 : 0.22}
               r={isHour ? 0.9 : 0.5}
             />
