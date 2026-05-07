@@ -1,27 +1,39 @@
 import { useRouter } from "expo-router";
-import { Pressable, Text, View } from "react-native";
-
+import { Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Button } from "@/components/ui/button";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 
-export default function HomeScreen() {
-  const { dispatch } = useOnboardingState();
+export default function Home() {
+  const { state, dispatch } = useOnboardingState();
   const router = useRouter();
+  const name = state.name?.trim() || "friend";
 
-  const handleReset = () => {
+  function reset() {
     dispatch({ type: "RESET" });
-    router.replace("/(onboarding)/welcome" as never);
-  };
+    router.replace("/(onboarding)/welcome");
+  }
 
   return (
-    <View className="flex-1 items-center justify-center bg-white gap-6 px-6">
-      <Text className="text-2xl font-serif text-black">hello world</Text>
-
-      <Pressable
-        onPress={handleReset}
-        className="bg-[#29603E] px-6 py-3 rounded-lg active:opacity-80"
+    <SafeAreaView className="flex-1 bg-surface">
+      <View
+        className="flex-1 items-center justify-center px-md"
+        style={{ gap: 14 }}
       >
-        <Text className="text-white text-base font-sans">Reset onboarding</Text>
-      </Pressable>
-    </View>
+        <Text
+          className="font-serif text-ink text-center"
+          style={{ fontSize: 28, lineHeight: 36 }}
+        >
+          Assalāmu ʿalaykum,{"\n"}
+          {name}.
+        </Text>
+        <Text className="font-sans text-tertiary text-center text-body-sm px-sm">
+          Your prayer-lock is active. Five times a day, in shāʾ Allāh.
+        </Text>
+        <View style={{ marginTop: 24, width: "100%" }}>
+          <Button label="RESET ONBOARDING" onPress={reset} />
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
