@@ -23,6 +23,20 @@ const STAGES = [
   "Locking your plan",
 ];
 
+type StageStatus = "done" | "active" | "pending";
+
+function getStageStatus(index: number, active: number): StageStatus {
+  if (index < active) return "done";
+  if (index === active) return "active";
+  return "pending";
+}
+
+function getStageTextColor(status: StageStatus) {
+  if (status === "pending") return "#9CA3AF";
+  if (status === "active") return "#000000";
+  return "#6B7280";
+}
+
 export default function Calculating() {
   const { next } = useOnboardingNav();
   const { width } = useWindowDimensions();
@@ -115,8 +129,7 @@ export default function Calculating() {
           }}
         >
           {STAGES.map((label, i) => {
-            const status: "done" | "active" | "pending" =
-              i < active ? "done" : i === active ? "active" : "pending";
+            const status = getStageStatus(i, active);
             return (
               <StageRow
                 isLast={i === STAGES.length - 1}
@@ -138,7 +151,7 @@ function StageRow({
   isLast,
 }: {
   label: string;
-  status: "done" | "active" | "pending";
+  status: StageStatus;
   isLast: boolean;
 }) {
   return (
@@ -154,12 +167,7 @@ function StageRow({
             flex: 1,
             fontSize: 14,
             fontWeight: status === "active" ? "600" : "500",
-            color:
-              status === "pending"
-                ? "#9CA3AF"
-                : status === "active"
-                  ? "#000000"
-                  : "#6B7280",
+            color: getStageTextColor(status),
             letterSpacing: -0.1,
           }}
         >
@@ -174,7 +182,7 @@ function StageRow({
   );
 }
 
-function StatusIcon({ status }: { status: "done" | "active" | "pending" }) {
+function StatusIcon({ status }: { status: StageStatus }) {
   if (status === "done") {
     return (
       <View
