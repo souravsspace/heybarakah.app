@@ -18,12 +18,9 @@ export const ONBOARDING_ROUTES = [
   "/(onboarding)/stats",
   "/(onboarding)/hadith",
   "/(onboarding)/commit",
+  "/(onboarding)/paywall/try-free",
+  "/(onboarding)/paywall/akhira-worth",
   "/(onboarding)/paywall/plans",
-  "/(onboarding)/paywall/timeline",
-  "/(onboarding)/paywall/checkout",
-  "/(onboarding)/auth",
-  "/(onboarding)/success",
-  "/(onboarding)/name",
 ] as const;
 
 export type OnboardingRoute = (typeof ONBOARDING_ROUTES)[number];
@@ -107,7 +104,7 @@ export const PLANS = [
   {
     id: "lifetime" as const,
     name: "Lifetime",
-    price: "$79",
+    price: "$99.99",
     cadence: "once",
     perMonth: "Pay once, keep forever",
     badge: null,
