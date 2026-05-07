@@ -4,7 +4,7 @@ export const appConfig = {
     shortName: "Barakah",
     tagline: "Prayer lock for muslims",
     description: "A quiet companion for salah. Show up; not scroll.",
-    legalName: "Barakah App Ltd.",
+    legalName: "Barakah App",
     bismillah: "Bismillah ir-Rahman ir-Raheem.",
   },
 

@@ -1,5 +1,7 @@
 ---
 import { appConfig } from "../app-config";
+import SuccessConfetti from "../components/SuccessConfetti";
+import Layout from "../layouts/Layout.astro";
 
 const { brand, contact, islamic } = appConfig;
 const checkoutId = Astro.url.searchParams.get("checkout_id");
