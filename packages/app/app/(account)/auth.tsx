@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
+import { selectionAsync } from "expo-haptics";
 import { useRouter } from "expo-router";
 import { Linking, Pressable, Text, View } from "react-native";
 import { BodyText } from "@/components/onboarding/body-text";
@@ -31,7 +31,7 @@ export default function Auth() {
   const router = useRouter();
 
   function pick(provider: AuthProvider) {
-    Haptics.selectionAsync().catch(() => {});
+    selectionAsync().catch(() => undefined);
 
     const fromWelcome = !state.plan;
 
