@@ -39,7 +39,8 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" />
           <Stack.Screen name="(onboarding)" />
-          <Stack.Screen name="home" />
+          <Stack.Screen name="(account)" />
+          <Stack.Screen name="(app)" />
           <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
         </Stack>
         <StatusBar style="dark" />
