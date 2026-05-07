@@ -21,13 +21,13 @@ export default function Home() {
         style={{ gap: 14 }}
       >
         <Text
-          className="font-serif text-ink text-center"
+          className="text-center font-serif text-ink"
           style={{ fontSize: 28, lineHeight: 36 }}
         >
           Assalāmu ʿalaykum,{"\n"}
           {name}.
         </Text>
-        <Text className="font-sans text-tertiary text-center text-body-sm px-sm">
+        <Text className="px-sm text-center font-sans text-body-sm text-tertiary">
           Your prayer-lock is active. Five times a day, in shāʾ Allāh.
         </Text>
         <View style={{ marginTop: 24, width: "100%" }}>

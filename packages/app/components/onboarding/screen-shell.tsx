@@ -1,16 +1,16 @@
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type Props = {
+interface Props {
   children: React.ReactNode;
   footer?: React.ReactNode;
   hero?: React.ReactNode;
-  showProgress?: boolean;
-  showBack?: boolean;
   scroll?: boolean;
+  showBack?: boolean;
+  showProgress?: boolean;
   topSafe?: boolean;
   variant?: "default" | "filled-green";
-};
+}
 
 export function ScreenShell({
   children,
@@ -51,17 +51,15 @@ export function ScreenShell({
             : undefined
         }
         style={
-          !scroll
-            ? { paddingHorizontal: 24, paddingTop: 16, flex: 1 }
-            : undefined
+          scroll
+            ? undefined
+            : { paddingHorizontal: 24, paddingTop: 16, flex: 1 }
         }
       >
         {children}
       </Body>
 
-      {footer ? (
-        <View className="px-md pt-sm pb-md">{footer}</View>
-      ) : null}
+      {footer ? <View className="px-md pt-sm pb-md">{footer}</View> : null}
     </SafeAreaView>
   );
 }

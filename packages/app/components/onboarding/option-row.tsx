@@ -10,13 +10,13 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-type Props = {
-  label: string;
+interface Props {
   hint?: string;
-  selected: boolean;
-  onPress: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
-};
+  label: string;
+  onPress: () => void;
+  selected: boolean;
+}
 
 export function OptionRow({ label, hint, selected, onPress, icon }: Props) {
   const v = useSharedValue(selected ? 1 : 0);
@@ -29,16 +29,8 @@ export function OptionRow({ label, hint, selected, onPress, icon }: Props) {
   }, [selected, v]);
 
   const containerStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      v.value,
-      [0, 1],
-      ["#FFFFFF", "#E8F0EA"],
-    ),
-    borderColor: interpolateColor(
-      v.value,
-      [0, 1],
-      ["#E5E7EB", "#29603E"],
-    ),
+    backgroundColor: interpolateColor(v.value, [0, 1], ["#FFFFFF", "#E8F0EA"]),
+    borderColor: interpolateColor(v.value, [0, 1], ["#E5E7EB", "#29603E"]),
   }));
 
   return (
@@ -46,20 +38,20 @@ export function OptionRow({ label, hint, selected, onPress, icon }: Props) {
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       onPress={() => {
-        Haptics.selectionAsync().catch(() => {});
+        Haptics.selectionAsync().catch(() => undefined);
         onPress();
       }}
       style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
     >
       <Animated.View
-        className="flex-row items-center px-md rounded-lg border"
+        className="flex-row items-center rounded-lg border px-md"
         style={[containerStyle, { minHeight: 60, borderWidth: 1.5 }]}
       >
         {icon ? (
           <Ionicons
+            color={selected ? "#29603E" : "#6B7280"}
             name={icon}
             size={20}
-            color={selected ? "#29603E" : "#6B7280"}
             style={{ marginRight: 14 }}
           />
         ) : null}
@@ -73,15 +65,15 @@ export function OptionRow({ label, hint, selected, onPress, icon }: Props) {
             {label}
           </Text>
           {hint ? (
-            <Text className="font-sans text-body-sm text-tertiary mt-[2px]">
+            <Text className="mt-[2px] font-sans text-body-sm text-tertiary">
               {hint}
             </Text>
           ) : null}
         </View>
         {selected ? (
-          <Ionicons name="checkmark-circle" size={22} color="#29603E" />
+          <Ionicons color="#29603E" name="checkmark-circle" size={22} />
         ) : (
-          <View className="w-[22px] h-[22px] rounded-full border border-neutral" />
+          <View className="h-[22px] w-[22px] rounded-full border border-neutral" />
         )}
       </Animated.View>
     </Pressable>

@@ -32,11 +32,16 @@ export default function Faq() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="relative bg-white border-b border-[color:var(--color-border)]">
+    <section
+      className="relative border-[color:var(--color-border)] border-b bg-white"
+      id="faq"
+    >
       <div className="mx-auto max-w-3xl px-6 py-28 md:py-32">
         <div className="text-center">
-          <p className="t-eyebrow text-[color:var(--color-primary)]">Common questions</p>
-          <h2 className="serif mt-4 text-5xl md:text-7xl leading-[1.1] font-bold text-[color:var(--color-fg)]">
+          <p className="t-eyebrow text-[color:var(--color-primary)]">
+            Common questions
+          </p>
+          <h2 className="serif mt-4 font-bold text-5xl text-[color:var(--color-fg)] leading-[1.1] md:text-7xl">
             Quiet answers.
           </h2>
         </div>
@@ -46,23 +51,25 @@ export default function Faq() {
             const isOpen = open === i;
             return (
               <div
+                className={
+                  i === 0 ? "" : "border-[color:var(--color-border)] border-t"
+                }
                 key={item.q}
-                className={i !== 0 ? "border-t border-[color:var(--color-border)]" : ""}
               >
                 <button
-                  type="button"
                   aria-expanded={isOpen}
-                  onClick={() => setOpen(isOpen ? null : i)}
                   className="flex w-full items-center justify-between gap-6 bg-white px-6 py-5 text-left transition-colors hover:bg-[color:var(--color-surface-soft)]"
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  type="button"
                 >
-                  <span className="text-base font-medium leading-6 text-[color:var(--color-fg)]">
+                  <span className="font-medium text-[color:var(--color-fg)] text-base leading-6">
                     {item.q}
                   </span>
                   <ChevronDown
-                    size={18}
                     className={`shrink-0 text-[color:var(--color-fg-muted)] transition-transform duration-200 ${
                       isOpen ? "rotate-180" : ""
                     }`}
+                    size={18}
                   />
                 </button>
                 <div
@@ -70,7 +77,7 @@ export default function Faq() {
                   style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                 >
                   <div className="min-h-0">
-                    <p className="px-6 pb-6 text-sm leading-6 text-[color:var(--color-fg-muted)]">
+                    <p className="px-6 pb-6 text-[color:var(--color-fg-muted)] text-sm leading-6">
                       {item.a}
                     </p>
                   </div>

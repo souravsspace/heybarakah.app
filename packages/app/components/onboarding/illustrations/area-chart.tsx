@@ -21,19 +21,24 @@ import Svg, {
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-type Props = {
-  values?: number[];
-  labels?: string[];
-  width?: number;
+interface Props {
   height?: number;
+  labels?: string[];
   peakIndex?: number;
   peakLabel?: string;
-};
+  values?: number[];
+  width?: number;
+}
 
-type Pt = { x: number; y: number };
+interface Pt {
+  x: number;
+  y: number;
+}
 
 function smoothPath(points: Pt[]): string {
-  if (points.length < 2) return "";
+  if (points.length < 2) {
+    return "";
+  }
   const d: string[] = [`M ${points[0].x} ${points[0].y}`];
   for (let i = 0; i < points.length - 1; i++) {
     const p0 = points[i - 1] ?? points[i];
@@ -70,18 +75,17 @@ export function AreaChart({
         x: padX + (innerW * i) / (values.length - 1),
         y: padTop + innerH * (1 - v),
       })),
-    [values, innerW, innerH, padX, padTop]
+    [values, innerW, innerH]
   );
 
   const linePath = useMemo(() => smoothPath(points), [points]);
   const areaPath = useMemo(
     () =>
-      `${linePath} L ${points[points.length - 1].x} ${baseY} L ${points[0].x} ${baseY} Z`,
+      `${linePath} L ${points.at(-1).x} ${baseY} L ${points[0].x} ${baseY} Z`,
     [linePath, points, baseY]
   );
 
-  const highlight =
-    peakIndex ?? values.indexOf(Math.max(...values));
+  const highlight = peakIndex ?? values.indexOf(Math.max(...values));
   const peak = points[highlight];
 
   const reveal = useSharedValue(0);
@@ -108,14 +112,14 @@ export function AreaChart({
   }));
 
   return (
-    <Svg width={width} height={height}>
+    <Svg height={height} width={width}>
       <Defs>
-        <LinearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+        <LinearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1">
           <Stop offset="0" stopColor="#29603E" stopOpacity={0.26} />
           <Stop offset="1" stopColor="#29603E" stopOpacity={0} />
         </LinearGradient>
         <ClipPath id="reveal">
-          <AnimatedRect x={0} y={0} height={height} animatedProps={clipProps} />
+          <AnimatedRect animatedProps={clipProps} height={height} x={0} y={0} />
         </ClipPath>
       </Defs>
 
@@ -124,70 +128,70 @@ export function AreaChart({
         return (
           <Line
             key={g}
-            x1={padX}
-            y1={y}
-            x2={width - padX}
-            y2={y}
             stroke="#E5E7EB"
-            strokeWidth={0.5}
             strokeDasharray="3,4"
+            strokeWidth={0.5}
+            x1={padX}
+            x2={width - padX}
+            y1={y}
+            y2={y}
           />
         );
       })}
       <Line
-        x1={padX}
-        y1={baseY}
-        x2={width - padX}
-        y2={baseY}
         stroke="#E5E7EB"
         strokeWidth={1}
+        x1={padX}
+        x2={width - padX}
+        y1={baseY}
+        y2={baseY}
       />
 
-      <Path d={areaPath} fill="url(#areaFill)" clipPath="url(#reveal)" />
+      <Path clipPath="url(#reveal)" d={areaPath} fill="url(#areaFill)" />
       <Path
+        clipPath="url(#reveal)"
         d={linePath}
-        stroke="#29603E"
-        strokeWidth={2.5}
         fill="none"
+        stroke="#29603E"
         strokeLinecap="round"
         strokeLinejoin="round"
-        clipPath="url(#reveal)"
+        strokeWidth={2.5}
       />
 
       <Line
-        x1={peak.x}
-        y1={peak.y + 4}
-        x2={peak.x}
-        y2={baseY}
-        stroke="#29603E"
-        strokeWidth={1}
-        strokeDasharray="2,3"
         opacity={0.4}
+        stroke="#29603E"
+        strokeDasharray="2,3"
+        strokeWidth={1}
+        x1={peak.x}
+        x2={peak.x}
+        y1={peak.y + 4}
+        y2={baseY}
       />
 
       <AnimatedCircle
+        animatedProps={haloProps}
         cx={peak.x}
         cy={peak.y}
         fill="#29603E"
-        animatedProps={haloProps}
       />
       <AnimatedCircle
+        animatedProps={dotProps}
         cx={peak.x}
         cy={peak.y}
         fill="#29603E"
         stroke="#FFFFFF"
         strokeWidth={2}
-        animatedProps={dotProps}
       />
 
       <SvgText
+        fill="#29603E"
+        fontFamily="Inter"
+        fontSize="11"
+        fontWeight="700"
+        textAnchor="middle"
         x={peak.x}
         y={peak.y - 14}
-        fontSize="11"
-        fill="#29603E"
-        textAnchor="middle"
-        fontFamily="Inter"
-        fontWeight="700"
       >
         {peakLabel}
       </SvgText>
@@ -197,14 +201,14 @@ export function AreaChart({
         const isPeak = i === highlight;
         return (
           <SvgText
+            fill={isPeak ? "#29603E" : "#6B7280"}
+            fontFamily="Inter"
+            fontSize="10"
+            fontWeight={isPeak ? "700" : "400"}
             key={l + i}
+            textAnchor="middle"
             x={x}
             y={height - 8}
-            fontSize="10"
-            fill={isPeak ? "#29603E" : "#6B7280"}
-            textAnchor="middle"
-            fontFamily="Inter"
-            fontWeight={isPeak ? "700" : "400"}
           >
             {l}
           </SvgText>

@@ -29,7 +29,7 @@ function Bead({
   useEffect(() => {
     p.value = withDelay(
       delay,
-      withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) }),
+      withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) })
     );
   }, [p, delay]);
 
@@ -40,12 +40,12 @@ function Bead({
 
   return (
     <AnimatedCircle
+      animatedProps={animatedProps}
       cx={cx}
       cy={cy}
       fill={fill}
       stroke={stroke}
       strokeWidth={1.5}
-      animatedProps={animatedProps}
     />
   );
 }
@@ -63,15 +63,15 @@ export function TasbihRow({
   const center = Math.floor(count / 2);
 
   return (
-    <Svg width={width} height={32}>
+    <Svg height={32} width={width}>
       <Line
-        x1={r}
-        y1={y}
-        x2={width - r}
-        y2={y}
         stroke="#29603E"
         strokeOpacity={0.25}
         strokeWidth={1}
+        x1={r}
+        x2={width - r}
+        y1={y}
+        y2={y}
       />
       {Array.from({ length: count }).map((_, i) => {
         const cx = r + i * (r * 2 + gap);
@@ -79,13 +79,13 @@ export function TasbihRow({
         const sideKnot = !big && (i === center - 1 || i === center + 1);
         return (
           <Bead
-            key={i}
             cx={cx}
             cy={y}
-            r={big ? r + 2 : sideKnot ? r - 1 : r}
-            fill={big ? "#29603E" : "#FFFFFF"}
-            stroke="#29603E"
             delay={Math.abs(i - center) * 60}
+            fill={big ? "#29603E" : "#FFFFFF"}
+            key={i}
+            r={big ? r + 2 : sideKnot ? r - 1 : r}
+            stroke="#29603E"
           />
         );
       })}

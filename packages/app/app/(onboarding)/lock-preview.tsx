@@ -15,12 +15,12 @@ export default function LockPreview() {
 
   return (
     <ScreenShell
-      scroll={false}
       footer={
         <View style={{ paddingHorizontal: 8 }}>
           <Button label="I want this" onPress={next} />
         </View>
       }
+      scroll={false}
     >
       <FadeSlideIn className="flex-1 items-center gap-md" delay={120}>
         <View className="items-center gap-[2px]">
@@ -31,13 +31,13 @@ export default function LockPreview() {
         </View>
 
         <FadeSlideIn delay={240}>
-          <DeviceFrame width={270} height={500}>
+          <DeviceFrame height={500} width={270}>
             <LockScreen />
           </DeviceFrame>
         </FadeSlideIn>
 
         <View className="mt-auto flex-row items-center gap-[6px]">
-          <Ionicons name="lock-closed-outline" size={12} color="#6B7280" />
+          <Ionicons color="#6B7280" name="lock-closed-outline" size={12} />
           <Text
             className="font-sans text-caption text-tertiary"
             style={{ letterSpacing: 0.4 }}
@@ -74,23 +74,23 @@ function LockScreen() {
         </Text>
         <View className="flex-row items-center gap-[5px]">
           <Image
+            contentFit="contain"
             source={require("../../assets/images/onboarding/lock-preview/dual-cell-signals.png")}
             style={{ width: 16, height: 10 }}
-            contentFit="contain"
             tintColor="#FFFFFF"
             transition={0}
           />
           <Image
+            contentFit="contain"
             source={require("../../assets/images/onboarding/lock-preview/wifi.png")}
             style={{ width: 13, height: 10 }}
-            contentFit="contain"
             tintColor="#FFFFFF"
             transition={0}
           />
           <Image
+            contentFit="contain"
             source={require("../../assets/images/onboarding/lock-preview/battery.png")}
             style={{ width: 22, height: 11 }}
-            contentFit="contain"
             tintColor="#FFFFFF"
             transition={0}
           />
@@ -130,7 +130,7 @@ function LockScreen() {
         </View>
 
         <View style={{ marginTop: 18 }}>
-          <CountdownRing size={146} progress={0.62} time="18:42" />
+          <CountdownRing progress={0.62} size={146} time="18:42" />
         </View>
 
         <Text
@@ -187,19 +187,19 @@ function LockScreen() {
 function BackgroundHalo() {
   return (
     <Svg
-      width="100%"
       height="100%"
-      style={{ position: "absolute", inset: 0 }}
       pointerEvents="none"
+      style={{ position: "absolute", inset: 0 }}
+      width="100%"
     >
       <Defs>
-        <LinearGradient id="halo" x1="0.5" y1="0" x2="0.5" y2="1">
+        <LinearGradient id="halo" x1="0.5" x2="0.5" y1="0" y2="1">
           <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.08} />
           <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity={0.02} />
           <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0} />
         </LinearGradient>
       </Defs>
-      <Circle cx="50%" cy="48%" r="130" fill="url(#halo)" />
+      <Circle cx="50%" cy="48%" fill="url(#halo)" r="130" />
     </Svg>
   );
 }
@@ -221,7 +221,7 @@ function CountdownRing({
 
   return (
     <View style={{ width: size, height: size }}>
-      <Svg width={size} height={size}>
+      <Svg height={size} width={size}>
         {Array.from({ length: tickCount }).map((_, i) => {
           const angle = (i / tickCount) * Math.PI * 2 - Math.PI / 2;
           const inner = r - 5;
@@ -233,12 +233,12 @@ function CountdownRing({
           const isHour = i % 5 === 0;
           return (
             <Circle
-              key={i}
               cx={(x1 + x2) / 2}
               cy={(y1 + y2) / 2}
-              r={isHour ? 0.9 : 0.5}
               fill="#FFFFFF"
+              key={`${x1}-${y1}`}
               opacity={isHour ? 0.55 : 0.22}
+              r={isHour ? 0.9 : 0.5}
             />
           );
         })}
@@ -246,21 +246,21 @@ function CountdownRing({
         <Circle
           cx={size / 2}
           cy={size / 2}
+          fill="none"
           r={r}
           stroke="rgba(255,255,255,0.15)"
           strokeWidth={stroke}
-          fill="none"
         />
         <Circle
           cx={size / 2}
           cy={size / 2}
+          fill="none"
           r={r}
           stroke="#FFFFFF"
-          strokeWidth={stroke}
-          fill="none"
           strokeDasharray={c}
           strokeDashoffset={offset}
           strokeLinecap="round"
+          strokeWidth={stroke}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>

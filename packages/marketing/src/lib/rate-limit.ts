@@ -1,11 +1,14 @@
-type Bucket = { count: number; resetAt: number };
+interface Bucket {
+  count: number;
+  resetAt: number;
+}
 
 const buckets = new Map<string, Bucket>();
 
-export type RateLimitOptions = {
+export interface RateLimitOptions {
   limit: number;
   windowMs: number;
-};
+}
 
 export function rateLimit(key: string, opts: RateLimitOptions) {
   const now = Date.now();
@@ -30,5 +33,9 @@ export function rateLimit(key: string, opts: RateLimitOptions) {
 
 setInterval(() => {
   const now = Date.now();
-  for (const [k, b] of buckets) if (b.resetAt <= now) buckets.delete(k);
+  for (const [k, b] of buckets) {
+    if (b.resetAt <= now) {
+      buckets.delete(k);
+    }
+  }
 }, 60_000).unref?.();

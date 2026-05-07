@@ -12,10 +12,30 @@ import { getCurrentLocation } from "@/hooks/use-permissions";
 const SCREEN_PAD_X = 24;
 
 const PRAYERS = [
-  { name: "Fajr", time: "5:12", minutes: 5 * 60 + 12, icon: "moon-outline" as const },
-  { name: "Dhuhr", time: "12:48", minutes: 12 * 60 + 48, icon: "sunny-outline" as const },
-  { name: "Asr", time: "16:22", minutes: 16 * 60 + 22, icon: "partly-sunny-outline" as const },
-  { name: "Maghrib", time: "19:08", minutes: 19 * 60 + 8, icon: "cloudy-night-outline" as const },
+  {
+    name: "Fajr",
+    time: "5:12",
+    minutes: 5 * 60 + 12,
+    icon: "moon-outline" as const,
+  },
+  {
+    name: "Dhuhr",
+    time: "12:48",
+    minutes: 12 * 60 + 48,
+    icon: "sunny-outline" as const,
+  },
+  {
+    name: "Asr",
+    time: "16:22",
+    minutes: 16 * 60 + 22,
+    icon: "partly-sunny-outline" as const,
+  },
+  {
+    name: "Maghrib",
+    time: "19:08",
+    minutes: 19 * 60 + 8,
+    icon: "cloudy-night-outline" as const,
+  },
   { name: "Isha", time: "20:34", minutes: 20 * 60 + 34, icon: "moon" as const },
 ];
 
@@ -37,7 +57,7 @@ function nextPrayerIndex() {
 
 function DayRibbon({ width, nextIdx }: { width: number; nextIdx: number }) {
   const start = PRAYERS[0].minutes;
-  const end = PRAYERS[PRAYERS.length - 1].minutes;
+  const end = PRAYERS.at(-1).minutes;
   const range = end - start;
 
   const now = new Date();
@@ -109,8 +129,8 @@ function DayRibbon({ width, nextIdx }: { width: number; nextIdx: number }) {
           const active = i === nextIdx;
           return (
             <Text
-              key={p.name}
               className="font-sans"
+              key={p.name}
               style={{
                 position: "absolute",
                 left: (pct / 100) * innerWidth - 16,
@@ -141,9 +161,13 @@ export default function PrayerTimes() {
   const today = useMemo(() => formatToday(), []);
 
   useEffect(() => {
-    if (!state.locationGranted) return;
+    if (!state.locationGranted) {
+      return;
+    }
     getCurrentLocation().then((loc) => {
-      if (loc) setCity("Your location");
+      if (loc) {
+        setCity("Your location");
+      }
     });
   }, [state.locationGranted]);
 
@@ -176,19 +200,19 @@ export default function PrayerTimes() {
           >
             {PRAYERS.map((p, i) => (
               <PrayerRow
-                key={p.name}
                 icon={p.icon}
+                isLast={i === PRAYERS.length - 1}
+                isNext={i === nextIdx}
+                key={p.name}
                 name={p.name}
                 time={p.time}
-                isNext={i === nextIdx}
-                isLast={i === PRAYERS.length - 1}
               />
             ))}
           </View>
         </FadeSlideIn>
 
-        <FadeSlideIn delay={380} className="mt-auto items-center">
-          <DayRibbon width={fullWidth} nextIdx={nextIdx} />
+        <FadeSlideIn className="mt-auto items-center" delay={380}>
+          <DayRibbon nextIdx={nextIdx} width={fullWidth} />
         </FadeSlideIn>
       </FadeSlideIn>
     </ScreenShell>
@@ -322,7 +346,9 @@ function PrayerRow({
           </Text>
         </View>
       </View>
-      {isLast ? null : <View style={{ height: 1, backgroundColor: "#EFEFEF" }} />}
+      {isLast ? null : (
+        <View style={{ height: 1, backgroundColor: "#EFEFEF" }} />
+      )}
     </View>
   );
 }

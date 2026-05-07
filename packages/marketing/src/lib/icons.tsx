@@ -16,6 +16,7 @@ const base = (size = 20): SVGProps<SVGSVGElement> => ({
 export function Check({ size, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...rest}>
+      <title>Check</title>
       <path d="M20 6 9 17l-5-5" />
     </svg>
   );
@@ -24,6 +25,7 @@ export function Check({ size, ...rest }: IconProps) {
 export function X({ size, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...rest}>
+      <title>Close</title>
       <path d="M18 6 6 18M6 6l12 12" />
     </svg>
   );
@@ -32,7 +34,8 @@ export function X({ size, ...rest }: IconProps) {
 export function Lock({ size, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...rest}>
-      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <title>Lock</title>
+      <rect height="11" rx="2" width="18" x="3" y="11" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );
@@ -41,6 +44,7 @@ export function Lock({ size, ...rest }: IconProps) {
 export function Bell({ size, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...rest}>
+      <title>Bell</title>
       <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
     </svg>
@@ -50,6 +54,7 @@ export function Bell({ size, ...rest }: IconProps) {
 export function Compass({ size, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...rest}>
+      <title>Compass</title>
       <circle cx="12" cy="12" r="10" />
       <path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" />
     </svg>
@@ -59,6 +64,7 @@ export function Compass({ size, ...rest }: IconProps) {
 export function ChevronDown({ size, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...rest}>
+      <title>Expand</title>
       <path d="m6 9 6 6 6-6" />
     </svg>
   );
@@ -67,6 +73,7 @@ export function ChevronDown({ size, ...rest }: IconProps) {
 export function ArrowRight({ size, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...rest}>
+      <title>Arrow right</title>
       <path d="M5 12h14M13 5l7 7-7 7" />
     </svg>
   );
@@ -75,6 +82,7 @@ export function ArrowRight({ size, ...rest }: IconProps) {
 export function Moon({ size, ...rest }: IconProps) {
   return (
     <svg {...base(size)} {...rest}>
+      <title>Moon</title>
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
   );

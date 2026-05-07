@@ -1,6 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Text, useWindowDimensions, View } from "react-native";
+import {
+  Animated,
+  Easing,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
@@ -16,6 +22,28 @@ const STAGES = [
   "Mapping prayer windows",
   "Locking your plan",
 ];
+
+type StageStatus = "done" | "active" | "pending";
+
+function getStageStatus(index: number, active: number): StageStatus {
+  if (index < active) {
+    return "done";
+  }
+  if (index === active) {
+    return "active";
+  }
+  return "pending";
+}
+
+function getStageTextColor(status: StageStatus) {
+  if (status === "pending") {
+    return "#9CA3AF";
+  }
+  if (status === "active") {
+    return "#000000";
+  }
+  return "#6B7280";
+}
 
 export default function Calculating() {
   const { next } = useOnboardingNav();
@@ -54,7 +82,10 @@ export default function Calculating() {
   return (
     <ScreenShell showBack={false}>
       <FadeSlideIn className="flex-1 items-center gap-md">
-        <View className="items-center" style={{ width: fullWidth, marginTop: 24 }}>
+        <View
+          className="items-center"
+          style={{ width: fullWidth, marginTop: 24 }}
+        >
           <View
             style={{
               width: 28,
@@ -106,14 +137,13 @@ export default function Calculating() {
           }}
         >
           {STAGES.map((label, i) => {
-            const status: "done" | "active" | "pending" =
-              i < active ? "done" : i === active ? "active" : "pending";
+            const status = getStageStatus(i, active);
             return (
               <StageRow
+                isLast={i === STAGES.length - 1}
                 key={label}
                 label={label}
                 status={status}
-                isLast={i === STAGES.length - 1}
               />
             );
           })}
@@ -129,7 +159,7 @@ function StageRow({
   isLast,
 }: {
   label: string;
-  status: "done" | "active" | "pending";
+  status: StageStatus;
   isLast: boolean;
 }) {
   return (
@@ -145,12 +175,7 @@ function StageRow({
             flex: 1,
             fontSize: 14,
             fontWeight: status === "active" ? "600" : "500",
-            color:
-              status === "pending"
-                ? "#9CA3AF"
-                : status === "active"
-                  ? "#000000"
-                  : "#6B7280",
+            color: getStageTextColor(status),
             letterSpacing: -0.1,
           }}
         >
@@ -158,12 +183,14 @@ function StageRow({
         </Text>
         {status === "active" ? <Pulse /> : null}
       </View>
-      {isLast ? null : <View style={{ height: 1, backgroundColor: "#EFEFEF" }} />}
+      {isLast ? null : (
+        <View style={{ height: 1, backgroundColor: "#EFEFEF" }} />
+      )}
     </View>
   );
 }
 
-function StatusIcon({ status }: { status: "done" | "active" | "pending" }) {
+function StatusIcon({ status }: { status: StageStatus }) {
   if (status === "done") {
     return (
       <View
@@ -230,7 +257,7 @@ function Pulse() {
           duration: 600,
           useNativeDriver: true,
         }),
-      ]),
+      ])
     );
     loop.start();
     return () => loop.stop();

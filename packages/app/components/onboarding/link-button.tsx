@@ -1,4 +1,4 @@
-import { Pressable, Text, type PressableProps } from "react-native";
+import { Pressable, type PressableProps, Text } from "react-native";
 
 export function LinkButton({
   label,
@@ -12,7 +12,7 @@ export function LinkButton({
       style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
       {...rest}
     >
-      <Text className="font-sans text-body-sm text-tertiary text-center underline">
+      <Text className="text-center font-sans text-body-sm text-tertiary underline">
         {label}
       </Text>
     </Pressable>

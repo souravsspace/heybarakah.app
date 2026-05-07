@@ -1,11 +1,11 @@
 import { View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
-type Props = {
-  size?: number;
+interface Props {
   children?: React.ReactNode;
   ornate?: boolean;
-};
+  size?: number;
+}
 
 export function MihrabArch({ size = 220, children, ornate = true }: Props) {
   const w = size;
@@ -22,33 +22,38 @@ export function MihrabArch({ size = 220, children, ornate = true }: Props) {
 
   return (
     <View
-      style={{ width: w, height: h, alignItems: "center", justifyContent: "center" }}
+      style={{
+        width: w,
+        height: h,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
     >
-      <Svg width={w} height={h} style={{ position: "absolute" }}>
+      <Svg height={h} style={{ position: "absolute" }} width={w}>
         <Path
           d={archD}
-          stroke="#29603E"
-          strokeWidth={stroke}
           fill="#FFFFFF"
+          stroke="#29603E"
           strokeLinejoin="round"
+          strokeWidth={stroke}
         />
         {ornate ? (
           <>
             <Path
               d={innerD}
+              fill="none"
               stroke="#29603E"
+              strokeLinejoin="round"
               strokeOpacity={0.35}
               strokeWidth={1}
-              fill="none"
-              strokeLinejoin="round"
             />
             <Path
               d={finialD}
-              stroke="#29603E"
-              strokeWidth={1.5}
               fill="none"
+              stroke="#29603E"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeWidth={1.5}
             />
           </>
         ) : null}

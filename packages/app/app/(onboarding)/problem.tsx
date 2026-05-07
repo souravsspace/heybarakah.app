@@ -63,7 +63,7 @@ export default function Problem() {
           </View>
         </FadeSlideIn>
 
-        <FadeSlideIn delay={380} className="mt-auto items-center">
+        <FadeSlideIn className="mt-auto items-center" delay={380}>
           <View
             className="items-center"
             style={{ width: fullWidth, paddingBottom: 4 }}

@@ -47,7 +47,7 @@ export default function AkhiraWorth() {
       scroll={false}
     >
       <FadeSlideIn className="flex-1">
-        <View className="items-center mt-md mb-md px-sm">
+        <View className="mt-md mb-md items-center px-sm">
           <Headline>What's your {"\n"} akhira worth?</Headline>
           <BodyText className="mt-sm" size="sm" tone="muted">
             Barakah is cheaper than Netflix, Prime {"\n"} and your delivery
@@ -56,7 +56,7 @@ export default function AkhiraWorth() {
         </View>
 
         <View
-          className="flex-row items-end justify-between mt-lg"
+          className="mt-lg flex-row items-end justify-between"
           style={{ height: MAX_HEIGHT + 8 }}
         >
           {COMPETITORS.map((c, i) => {
@@ -117,12 +117,12 @@ export default function AkhiraWorth() {
         </View>
 
         <View
-          className="flex-row items-center justify-center mt-lg"
+          className="mt-lg flex-row items-center justify-center"
           style={{ gap: 8 }}
         >
           <Ionicons color="#0F1311" name="checkmark" size={18} />
           <Text
-            className="font-sans text-label text-ink"
+            className="font-sans text-ink text-label"
             style={{ fontWeight: "600" }}
           >
             Free Trial Included

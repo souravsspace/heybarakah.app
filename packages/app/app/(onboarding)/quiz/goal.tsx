@@ -9,17 +9,19 @@ export default function Goal() {
 
   return (
     <QuizScreen
-      title="What's your number one goal?"
-      subtitle="Niyyah is half the deed."
-      options={QUIZ_OPTIONS.goal}
-      value={state.goal}
+      onNext={next}
       onSelect={(v) =>
         dispatch({
           type: "SET_FIELD",
-          payload: { goal: v as "all-five" | "khushu" | "phone-addiction" | "fajr" },
+          payload: {
+            goal: v as "all-five" | "khushu" | "phone-addiction" | "fajr",
+          },
         })
       }
-      onNext={next}
+      options={QUIZ_OPTIONS.goal}
+      subtitle="Niyyah is half the deed."
+      title="What's your number one goal?"
+      value={state.goal}
     />
   );
 }

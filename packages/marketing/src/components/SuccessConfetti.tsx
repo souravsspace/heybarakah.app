@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import confetti from "canvas-confetti";
+import { useEffect } from "react";
 
 export default function SuccessConfetti() {
   useEffect(() => {
@@ -30,7 +30,9 @@ export default function SuccessConfetti() {
         origin: { x: 1, y: 0.7 },
         colors,
       });
-      if (Date.now() < end) requestAnimationFrame(frame);
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
     })();
   }, []);
 

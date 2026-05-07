@@ -3,14 +3,14 @@ import "../global.css";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import { hideAsync, preventAutoHideAsync } from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
 
 import { OnboardingProvider } from "@/hooks/use-onboarding-state";
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+preventAutoHideAsync().catch(() => undefined);
 
 export const unstable_settings = {
   anchor: "index",
@@ -23,10 +23,14 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+    if (fontsLoaded) {
+      hideAsync().catch(() => undefined);
+    }
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <ThemeProvider value={DefaultTheme}>
@@ -41,7 +45,10 @@ export default function RootLayout() {
           <Stack.Screen name="(onboarding)" />
           <Stack.Screen name="(account)" />
           <Stack.Screen name="(app)" />
-          <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
+          <Stack.Screen
+            name="modal"
+            options={{ presentation: "modal", title: "Modal" }}
+          />
         </Stack>
         <StatusBar style="dark" />
       </OnboardingProvider>

@@ -27,7 +27,8 @@ export const appConfig = {
     lifetimePrice: "$39.99",
     originalPrice: "$165",
     label: "Early access — lifetime",
-    checkoutUrl: "https://buy.polar.sh/polar_cl_Y5OrCssvZrWKPBmeacK37ZHOtdBgjBd4R1Hw43u4P8Q",
+    checkoutUrl:
+      "https://buy.polar.sh/polar_cl_Y5OrCssvZrWKPBmeacK37ZHOtdBgjBd4R1Hw43u4P8Q",
   },
 
   routes: {
@@ -78,7 +79,10 @@ export const appConfig = {
       {
         title: "Barakah",
         links: [
-          { label: "Early Access (lifetime)", href: "https://buy.polar.sh/polar_cl_Y5OrCssvZrWKPBmeacK37ZHOtdBgjBd4R1Hw43u4P8Q" },
+          {
+            label: "Early Access (lifetime)",
+            href: "https://buy.polar.sh/polar_cl_Y5OrCssvZrWKPBmeacK37ZHOtdBgjBd4R1Hw43u4P8Q",
+          },
           { label: "FAQs", href: "#faq" },
           { label: "Join Waitlist", href: "#waitlist" },
           { label: "Consent Preferences", href: "#", emphasis: true },

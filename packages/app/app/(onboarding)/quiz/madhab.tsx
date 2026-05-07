@@ -9,17 +9,19 @@ export default function Madhab() {
 
   return (
     <QuizScreen
-      title="Which fiqh do you follow?"
-      subtitle="This affects asr time and prayer length defaults."
-      options={QUIZ_OPTIONS.madhab}
-      value={state.madhab}
+      onNext={next}
       onSelect={(v) =>
         dispatch({
           type: "SET_FIELD",
-          payload: { madhab: v as "hanafi" | "shafii" | "maliki" | "hanbali" | "none" },
+          payload: {
+            madhab: v as "hanafi" | "shafii" | "maliki" | "hanbali" | "none",
+          },
         })
       }
-      onNext={next}
+      options={QUIZ_OPTIONS.madhab}
+      subtitle="This affects asr time and prayer length defaults."
+      title="Which fiqh do you follow?"
+      value={state.madhab}
     />
   );
 }

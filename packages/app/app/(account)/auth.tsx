@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
+import { selectionAsync } from "expo-haptics";
 import { useRouter } from "expo-router";
 import { Linking, Pressable, Text, View } from "react-native";
 import { BodyText } from "@/components/onboarding/body-text";
@@ -31,7 +31,7 @@ export default function Auth() {
   const router = useRouter();
 
   function pick(provider: AuthProvider) {
-    Haptics.selectionAsync().catch(() => {});
+    selectionAsync().catch(() => undefined);
 
     const fromWelcome = !state.plan;
 
@@ -130,7 +130,7 @@ export default function Auth() {
           style={{ marginTop: "auto", paddingBottom: 16 }}
         >
           <Text
-            className="font-sans text-tertiary text-center"
+            className="text-center font-sans text-tertiary"
             style={{ fontSize: 12, lineHeight: 18 }}
           >
             By continuing you agree to the{" "}

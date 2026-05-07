@@ -1,14 +1,14 @@
-export type WelcomeLayout = {
-  columnWidth: number;
-  cardWidth: number;
-  cardHeight: number;
-  imageHeight: number;
-  buttonWidth: number;
+export interface WelcomeLayout {
   buttonHeight: number;
-  heroTopMargin: number;
+  buttonWidth: number;
+  cardHeight: number;
   cardTopMargin: number;
+  cardWidth: number;
+  columnWidth: number;
   footerBottomMargin: number;
-};
+  heroTopMargin: number;
+  imageHeight: number;
+}
 
 export function getWelcomeLayout(screenWidth: number): WelcomeLayout {
   const columnWidth = Math.min(Math.max(screenWidth - 36, 318), 330);

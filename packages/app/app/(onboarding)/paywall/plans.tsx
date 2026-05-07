@@ -2,21 +2,55 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Linking, Pressable, Text, View } from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
-import { LINKS } from "@/constants/links";
 import { Headline } from "@/components/onboarding/headline";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
 import { MosquePodium } from "@/components/onboarding/illustrations/mosque-podium";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
+import { LINKS } from "@/constants/links";
 import { PLANS } from "@/constants/onboarding-config";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 
-type PlanId = (typeof PLANS)[number]["id"];
+type Plan = (typeof PLANS)[number];
+type PlanId = Plan["id"];
 
 const PRIMARY = "#29603E";
 const NEUTRAL_BORDER = "#E5E7EB";
 const CARD_REST = "#F4F2EE";
+
+const CTA_LABELS: Record<PlanId, string> = {
+  yearly: "TRY FOR $0.00",
+  monthly: "START MONTHLY · $7.99/MO",
+  lifetime: "GET LIFETIME · $99.99",
+};
+
+const FOOTER_CAPTIONS: Record<PlanId, string> = {
+  yearly: "7 days free, then $39.99 per year.",
+  monthly: "$7.99 per month. Cancel anytime.",
+  lifetime: "Pay once. Keep forever. No subscription.",
+};
+
+const PLAN_COPY: Record<
+  PlanId,
+  { strikePrice: string; leftSub: string; rightLabel: string }
+> = {
+  yearly: {
+    strikePrice: "$239.88",
+    leftSub: "12 mo · $39.99",
+    rightLabel: "≈ $3.33 / mo",
+  },
+  monthly: {
+    strikePrice: "$19.99",
+    leftSub: "1 mo · $7.99",
+    rightLabel: "$7.99 / mo",
+  },
+  lifetime: {
+    strikePrice: "$199",
+    leftSub: "Pay once · $99.99",
+    rightLabel: "Lifetime",
+  },
+};
 
 export default function Plans() {
   const { state, dispatch } = useOnboardingState();
@@ -42,29 +76,14 @@ export default function Plans() {
     goTo("/(account)/auth");
   }
 
-  const ctaLabel =
-    selected === "yearly"
-      ? "TRY FOR $0.00"
-      : selected === "monthly"
-        ? "START MONTHLY · $7.99/MO"
-        : "GET LIFETIME · $99.99";
-
-  const footerCaption =
-    selected === "yearly"
-      ? "7 days free, then $39.99 per year."
-      : selected === "monthly"
-        ? "$7.99 per month. Cancel anytime."
-        : "Pay once. Keep forever. No subscription.";
-
   return (
     <ScreenShell
-      scroll={false}
       footer={
         <View className="gap-sm">
-          <Button label={ctaLabel} onPress={start} />
+          <Button label={CTA_LABELS[selected]} onPress={start} />
           {showAll ? (
-            <Text className="font-sans text-body-sm text-tertiary text-center">
-              {footerCaption}
+            <Text className="text-center font-sans text-body-sm text-tertiary">
+              {FOOTER_CAPTIONS[selected]}
             </Text>
           ) : (
             <Pressable
@@ -81,6 +100,7 @@ export default function Plans() {
           )}
         </View>
       }
+      scroll={false}
     >
       <FadeSlideIn className="gap-md">
         <View
@@ -98,7 +118,7 @@ export default function Plans() {
           </View>
           <View className="flex-row" style={{ gap: 6 }}>
             <Pressable
-              className="bg-neutral-soft rounded-full px-sm py-[5px]"
+              className="rounded-full bg-neutral-soft px-sm py-[5px]"
               onPress={() => Linking.openURL(LINKS.terms)}
             >
               <Text className="font-sans text-caption text-tertiary">
@@ -106,7 +126,7 @@ export default function Plans() {
               </Text>
             </Pressable>
             <Pressable
-              className="bg-neutral-soft rounded-full px-sm py-[5px]"
+              className="rounded-full bg-neutral-soft px-sm py-[5px]"
               onPress={() => goTo("/(account)/auth")}
             >
               <Text className="font-sans text-caption text-tertiary">
@@ -121,141 +141,135 @@ export default function Plans() {
         </View>
 
         <View className="px-sm" style={{ marginTop: showAll ? 4 : 8 }}>
-          <Headline size="h2">Lock in your five.{"\n"}Begin the return.</Headline>
+          <Headline size="h2">
+            Lock in your five.{"\n"}Begin the return.
+          </Headline>
         </View>
 
         <View style={{ marginTop: showAll ? 18 : 16, gap: 22 }}>
-          {visible.map((p) => {
-            const isSelected = selected === p.id;
-            const isYearly = p.id === "yearly";
-            const isLifetime = p.id === "lifetime";
-            const strikePrice =
-              p.id === "yearly"
-                ? "$239.88"
-                : p.id === "monthly"
-                  ? "$19.99"
-                  : "$199";
-            const leftSub =
-              p.id === "yearly"
-                ? "12 mo · $39.99"
-                : p.id === "monthly"
-                  ? "1 mo · $7.99"
-                  : "Pay once · $99.99";
-            const rightLabel =
-              p.id === "yearly"
-                ? "≈ $3.33 / mo"
-                : p.id === "monthly"
-                  ? "$7.99 / mo"
-                  : "Lifetime";
-
-            return (
-              <Pressable
-                key={p.id}
-                onPress={() => setPlan(p.id)}
-                style={{ position: "relative" }}
-              >
-                {isYearly ? (
-                  <View
-                    className="absolute z-10 rounded-full px-sm py-[3px]"
-                    style={{
-                      top: -10,
-                      left: 16,
-                      backgroundColor: PRIMARY,
-                    }}
-                  >
-                    <Text
-                      className="font-sans text-label-sm text-surface"
-                      style={{ letterSpacing: 0.6, fontWeight: "700" }}
-                    >
-                      7 DAY FREE TRIAL
-                    </Text>
-                  </View>
-                ) : null}
-                {isLifetime ? (
-                  <View
-                    className="absolute z-10 rounded-full px-sm py-[3px]"
-                    style={{
-                      top: -10,
-                      left: 16,
-                      backgroundColor: "#0F1311",
-                    }}
-                  >
-                    <Text
-                      className="font-sans text-label-sm text-surface"
-                      style={{ letterSpacing: 0.6, fontWeight: "700" }}
-                    >
-                      BEST VALUE
-                    </Text>
-                  </View>
-                ) : null}
-                {isSelected ? (
-                  <View
-                    className="absolute z-10 rounded-full"
-                    style={{
-                      top: -8,
-                      right: 12,
-                      width: 22,
-                      height: 22,
-                      backgroundColor: PRIMARY,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons color="#F4EDDF" name="checkmark" size={14} />
-                  </View>
-                ) : null}
-                <View
-                  className="rounded-2xl px-md py-md flex-row items-center justify-between"
-                  style={{
-                    borderWidth: 2.5,
-                    borderColor: isSelected ? PRIMARY : NEUTRAL_BORDER,
-                    backgroundColor: isSelected ? "#FFFFFF" : CARD_REST,
-                  }}
-                >
-                  <View className="flex-1 pr-sm">
-                    <View
-                      className="flex-row items-baseline"
-                      style={{ gap: 10 }}
-                    >
-                      <Text
-                        className="font-sans text-ink"
-                        style={{ fontSize: 18, fontWeight: "700" }}
-                      >
-                        {p.name}
-                      </Text>
-                      {strikePrice ? (
-                        <Text
-                          className="font-sans text-tertiary"
-                          style={{
-                            fontSize: 15,
-                            fontWeight: "500",
-                            textDecorationLine: "line-through",
-                          }}
-                        >
-                          {strikePrice}
-                        </Text>
-                      ) : null}
-                    </View>
-                    <Text
-                      className="font-sans text-tertiary"
-                      style={{ fontSize: 14, fontWeight: "500", marginTop: 4 }}
-                    >
-                      {leftSub}
-                    </Text>
-                  </View>
-                  <Text
-                    className="font-sans text-ink"
-                    style={{ fontSize: 17, fontWeight: "700" }}
-                  >
-                    {rightLabel}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
+          {visible.map((plan) => (
+            <PlanOption
+              isSelected={selected === plan.id}
+              key={plan.id}
+              onPress={() => setPlan(plan.id)}
+              plan={plan}
+            />
+          ))}
         </View>
-
       </FadeSlideIn>
     </ScreenShell>
+  );
+}
+
+function PlanOption({
+  plan,
+  isSelected,
+  onPress,
+}: {
+  plan: Plan;
+  isSelected: boolean;
+  onPress: () => void;
+}) {
+  const copy = PLAN_COPY[plan.id];
+
+  return (
+    <Pressable onPress={onPress} style={{ position: "relative" }}>
+      <PlanBadge id={plan.id} />
+      {isSelected ? <SelectedCheck /> : null}
+      <View
+        className="flex-row items-center justify-between rounded-2xl px-md py-md"
+        style={{
+          borderWidth: 2.5,
+          borderColor: isSelected ? PRIMARY : NEUTRAL_BORDER,
+          backgroundColor: isSelected ? "#FFFFFF" : CARD_REST,
+        }}
+      >
+        <View className="flex-1 pr-sm">
+          <View className="flex-row items-baseline" style={{ gap: 10 }}>
+            <Text
+              className="font-sans text-ink"
+              style={{ fontSize: 18, fontWeight: "700" }}
+            >
+              {plan.name}
+            </Text>
+            <Text
+              className="font-sans text-tertiary"
+              style={{
+                fontSize: 15,
+                fontWeight: "500",
+                textDecorationLine: "line-through",
+              }}
+            >
+              {copy.strikePrice}
+            </Text>
+          </View>
+          <Text
+            className="font-sans text-tertiary"
+            style={{ fontSize: 14, fontWeight: "500", marginTop: 4 }}
+          >
+            {copy.leftSub}
+          </Text>
+        </View>
+        <Text
+          className="font-sans text-ink"
+          style={{ fontSize: 17, fontWeight: "700" }}
+        >
+          {copy.rightLabel}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function PlanBadge({ id }: { id: PlanId }) {
+  if (id === "yearly") {
+    return <Badge backgroundColor={PRIMARY} label="7 DAY FREE TRIAL" />;
+  }
+
+  if (id === "lifetime") {
+    return <Badge backgroundColor="#0F1311" label="BEST VALUE" />;
+  }
+
+  return null;
+}
+
+function Badge({
+  backgroundColor,
+  label,
+}: {
+  backgroundColor: string;
+  label: string;
+}) {
+  return (
+    <View
+      className="absolute z-10 rounded-full px-sm py-[3px]"
+      style={{ top: -10, left: 16, backgroundColor }}
+    >
+      <Text
+        className="font-sans text-label-sm text-surface"
+        style={{ letterSpacing: 0.6, fontWeight: "700" }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function SelectedCheck() {
+  return (
+    <View
+      className="absolute z-10 rounded-full"
+      style={{
+        top: -8,
+        right: 12,
+        width: 22,
+        height: 22,
+        backgroundColor: PRIMARY,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Ionicons color="#F4EDDF" name="checkmark" size={14} />
+    </View>
   );
 }

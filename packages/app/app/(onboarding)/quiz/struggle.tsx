@@ -9,17 +9,19 @@ export default function Struggle() {
 
   return (
     <QuizScreen
-      title="What gets in the way?"
-      subtitle="Pick the one that hurts the most."
-      options={QUIZ_OPTIONS.struggle}
-      value={state.struggle}
+      onNext={next}
       onSelect={(v) =>
         dispatch({
           type: "SET_FIELD",
-          payload: { struggle: v as "phone" | "forgetting" | "fajr" | "khushu" },
+          payload: {
+            struggle: v as "phone" | "forgetting" | "fajr" | "khushu",
+          },
         })
       }
-      onNext={next}
+      options={QUIZ_OPTIONS.struggle}
+      subtitle="Pick the one that hurts the most."
+      title="What gets in the way?"
+      value={state.struggle}
     />
   );
 }

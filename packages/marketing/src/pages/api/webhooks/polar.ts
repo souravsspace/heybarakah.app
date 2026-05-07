@@ -1,9 +1,9 @@
-import type { APIRoute } from "astro";
-import { Resend } from "resend";
 import {
   validateEvent,
   WebhookVerificationError,
 } from "@polar-sh/sdk/webhooks";
+import type { APIRoute } from "astro";
+import { Resend } from "resend";
 import { env } from "../../../env";
 import { purchaseEmail } from "../../../lib/purchase-email";
 
@@ -16,7 +16,7 @@ export const POST: APIRoute = async ({ request }) => {
     headers[k] = v;
   });
 
-  let event;
+  let event: ReturnType<typeof validateEvent>;
   try {
     event = validateEvent(body, headers, env.POLAR_WEBHOOK_SECRET);
   } catch (err) {
@@ -33,7 +33,9 @@ export const POST: APIRoute = async ({ request }) => {
   const order = event.data;
   const email = order.customer?.email;
   const name = order.customer?.name ?? order.billingName ?? null;
-  if (!email) return new Response("ok", { status: 200 });
+  if (!email) {
+    return new Response("ok", { status: 200 });
+  }
 
   const resend = new Resend(env.RESEND_API_KEY);
   const { subject, text, html } = purchaseEmail({

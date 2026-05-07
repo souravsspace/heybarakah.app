@@ -1,36 +1,38 @@
 import * as Haptics from "expo-haptics";
 import { Pressable, Switch, Text, View } from "react-native";
 
-type Props = {
-  label: string;
+interface Props {
   hint?: string;
-  value: boolean;
+  label: string;
   onToggle: () => void;
-};
+  value: boolean;
+}
 
 export function ToggleRow({ label, hint, value, onToggle }: Props) {
   return (
     <Pressable
+      className="flex-row items-center rounded-md border border-neutral bg-surface px-md py-sm"
       onPress={() => {
-        Haptics.selectionAsync().catch(() => {});
+        Haptics.selectionAsync().catch(() => undefined);
         onToggle();
       }}
-      className="flex-row items-center px-md py-sm rounded-md border border-neutral bg-surface"
     >
       <View className="flex-1 pr-sm">
-        <Text className="font-sans text-label text-ink">{label}</Text>
+        <Text className="font-sans text-ink text-label">{label}</Text>
         {hint ? (
-          <Text className="font-sans text-body-sm text-tertiary mt-[2px]">{hint}</Text>
+          <Text className="mt-[2px] font-sans text-body-sm text-tertiary">
+            {hint}
+          </Text>
         ) : null}
       </View>
       <Switch
-        value={value}
         onValueChange={() => {
-          Haptics.selectionAsync().catch(() => {});
+          Haptics.selectionAsync().catch(() => undefined);
           onToggle();
         }}
-        trackColor={{ false: "#E5E7EB", true: "#29603E" }}
         thumbColor="#FFFFFF"
+        trackColor={{ false: "#E5E7EB", true: "#29603E" }}
+        value={value}
       />
     </Pressable>
   );

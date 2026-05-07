@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function AccountLayout() {
   const router = useRouter();
   const segments = useSegments() as readonly string[];
-  const last = segments[segments.length - 1];
+  const last = segments.at(-1);
   const showBack = last !== "name";
 
   return (
@@ -17,7 +17,9 @@ export default function AccountLayout() {
             accessibilityLabel="Back"
             hitSlop={12}
             onPress={() => {
-              if (router.canGoBack()) router.back();
+              if (router.canGoBack()) {
+                router.back();
+              }
             }}
           >
             <Ionicons color="#0F1311" name="chevron-back" size={26} />

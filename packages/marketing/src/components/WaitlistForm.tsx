@@ -1,13 +1,11 @@
 import { type FormEvent, useState } from "react";
-import { ArrowRight, Check } from "../lib/icons";
+import { Check } from "../lib/icons";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-export default function WaitlistForm({
-  compact = false,
-}: {
-  compact?: boolean;
-}) {
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export default function WaitlistForm() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +13,7 @@ export default function WaitlistForm({
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!EMAIL_PATTERN.test(email)) {
       setError("Enter a valid email.");
       setStatus("error");
       return;
@@ -31,7 +29,7 @@ export default function WaitlistForm({
         error?: string;
         ok?: boolean;
       };
-      if (!res.ok || !data.ok) {
+      if (!(res.ok && data.ok)) {
         setError(data.error ?? "Something went wrong. Try again.");
         setStatus("error");
         return;
@@ -66,7 +64,7 @@ export default function WaitlistForm({
         <input
           aria-label="Email address"
           autoComplete="off"
-          className="flex-1 min-w-0 appearance-none border-0 bg-transparent px-3 py-2 text-sm font-medium tracking-wide text-[color:var(--color-fg)] placeholder:text-[color:var(--color-fg-subtle)] outline-none focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none"
+          className="min-w-0 flex-1 appearance-none border-0 bg-transparent px-3 py-2 font-medium text-[color:var(--color-fg)] text-sm tracking-wide outline-none placeholder:text-[color:var(--color-fg-subtle)] focus:border-0 focus:shadow-none focus:outline-none focus:ring-0"
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           required
@@ -79,7 +77,7 @@ export default function WaitlistForm({
           value={email}
         />
         <button
-          className="inline-flex shrink-0 items-center justify-center rounded-full bg-[color:var(--color-primary)] px-5 py-3 text-xs font-bold uppercase tracking-[0.1em] text-white shadow-[inset_0_0_0_2px_rgba(255,255,255,0.95),0_0_0_1.5px_#29603E,0_6px_18px_rgba(41,96,62,0.28)] transition-all duration-200 ease-[var(--ease-out)] hover:bg-[color:var(--color-primary-hover)] active:scale-[0.98] active:bg-[color:var(--color-primary-press)] disabled:opacity-60"
+          className="inline-flex shrink-0 items-center justify-center rounded-full bg-[color:var(--color-primary)] px-5 py-3 font-bold text-white text-xs uppercase tracking-[0.1em] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.95),0_0_0_1.5px_#29603E,0_6px_18px_rgba(41,96,62,0.28)] transition-all duration-200 ease-[var(--ease-out)] hover:bg-[color:var(--color-primary-hover)] active:scale-[0.98] active:bg-[color:var(--color-primary-press)] disabled:opacity-60"
           disabled={status === "submitting"}
           type="submit"
         >
@@ -88,13 +86,13 @@ export default function WaitlistForm({
       </div>
       {error ? (
         <p
-          className="mt-2 text-sm text-[color:var(--color-error)]"
+          className="mt-2 text-[color:var(--color-error)] text-sm"
           role="alert"
         >
           {error}
         </p>
       ) : (
-        <p className="mt-2.5 text-xs text-[color:var(--color-fg-subtle)]">
+        <p className="mt-2.5 text-[color:var(--color-fg-subtle)] text-xs">
           No spam. One quiet email when we open access.
         </p>
       )}

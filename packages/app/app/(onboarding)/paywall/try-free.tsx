@@ -33,14 +33,11 @@ export default function TryFree() {
       scroll={false}
     >
       <FadeSlideIn className="flex-1">
-        <View className="items-center mt-md mb-lg px-sm">
+        <View className="mt-md mb-lg items-center px-sm">
           <Headline>We want you to try Barakah for FREE</Headline>
         </View>
 
-        <View
-          className="flex-row flex-wrap"
-          style={{ marginHorizontal: -6 }}
-        >
+        <View className="flex-row flex-wrap" style={{ marginHorizontal: -6 }}>
           {FEATURES.map((f, i) => (
             <FadeSlideIn
               className="w-1/2 p-[6px]"
@@ -48,11 +45,11 @@ export default function TryFree() {
               key={f.title}
             >
               <View
-                className="bg-surface border border-neutral rounded-2xl items-center pt-md pb-md px-sm"
+                className="items-center rounded-2xl border border-neutral bg-surface px-sm pt-md pb-md"
                 style={{ minHeight: 178 }}
               >
                 <View
-                  className="bg-neutral-soft rounded-2xl items-center justify-center"
+                  className="items-center justify-center rounded-2xl bg-neutral-soft"
                   style={{ width: 104, height: 104 }}
                 >
                   <Image
@@ -61,7 +58,7 @@ export default function TryFree() {
                   />
                 </View>
                 <Text
-                  className="font-serif text-ink text-center mt-sm"
+                  className="mt-sm text-center font-serif text-ink"
                   style={{ fontSize: 16, lineHeight: 22 }}
                 >
                   {f.title}
@@ -72,12 +69,12 @@ export default function TryFree() {
         </View>
 
         <View
-          className="flex-row items-center justify-center mt-lg"
+          className="mt-lg flex-row items-center justify-center"
           style={{ gap: 8 }}
         >
           <Ionicons color="#0F1311" name="checkmark" size={18} />
           <Text
-            className="font-sans text-label text-ink"
+            className="font-sans text-ink text-label"
             style={{ fontWeight: "600" }}
           >
             No Payment Due Now
