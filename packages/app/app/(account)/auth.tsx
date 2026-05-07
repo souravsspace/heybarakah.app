@@ -1,10 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { Pressable, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Linking, Pressable, Text, View } from "react-native";
+import { BodyText } from "@/components/onboarding/body-text";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
-import { BrandMark } from "@/components/onboarding/illustrations/brand-mark";
+import { Headline } from "@/components/onboarding/headline";
+import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
-import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
+import { LINKS } from "@/constants/links";
 import {
   type AuthProvider,
   useOnboardingState,
@@ -15,78 +18,140 @@ const PROVIDERS: {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
 }[] = [
-  { id: "google", label: "Continue with Google", icon: "logo-google" },
   { id: "apple", label: "Continue with Apple", icon: "logo-apple" },
+  { id: "google", label: "Continue with Google", icon: "logo-google" },
   { id: "email", label: "Continue with Email", icon: "mail-outline" },
 ];
 
+const PRIMARY = "#29603E";
+const INK = "#0F1311";
+
 export default function Auth() {
-  const { dispatch } = useOnboardingState();
-  const { next } = useOnboardingNav();
+  const { state, dispatch } = useOnboardingState();
+  const router = useRouter();
 
   function pick(provider: AuthProvider) {
     Haptics.selectionAsync().catch(() => {});
+
+    const fromWelcome = !state.plan;
+
+    if (fromWelcome) {
+      dispatch({
+        type: "SET_FIELD",
+        payload: {
+          authProvider: provider,
+          gender: state.gender ?? "male",
+          madhab: state.madhab ?? "hanafi",
+          consistency: state.consistency ?? "most",
+          struggle: state.struggle ?? "phone",
+          goal: state.goal ?? "all-five",
+          calcMethod: state.calcMethod ?? "isna",
+          strictness: state.strictness ?? "full-window",
+          plan: "yearly",
+          trialStartedAt: state.trialStartedAt ?? new Date().toISOString(),
+          name: state.name ?? "Sana",
+        },
+      });
+      dispatch({ type: "COMPLETE" });
+      router.replace("/home");
+      return;
+    }
+
     dispatch({ type: "SET_FIELD", payload: { authProvider: provider } });
-    next();
+    router.push("/(account)/success");
   }
 
   return (
-    <ScreenShell
-      hero={
-        <FadeSlideIn>
-          <BrandMark color="#FFFFFF" size={100} />
-        </FadeSlideIn>
-      }
-      showBack={false}
-      variant="filled-green"
-    >
-      <FadeSlideIn className="flex-1 gap-md" delay={120}>
-        <View className="items-center gap-sm">
-          <Text
-            className="font-serif text-display text-surface text-center"
-            style={{ fontWeight: "700" }}
-          >
-            Log in
-          </Text>
-          <Text className="font-sans text-body text-surface/80 text-center px-sm">
-            Sync your trial across devices and never lose your progress.
-          </Text>
+    <ScreenShell scroll={false}>
+      <FadeSlideIn className="flex-1">
+        <View className="items-center" style={{ marginTop: 12 }}>
+          <BarakahMark color={PRIMARY} size={64} />
         </View>
 
-        <View className="gap-sm mt-md">
+        <View className="items-center px-sm" style={{ marginTop: 28, gap: 8 }}>
+          <Headline>Welcome back.</Headline>
+          <BodyText className="px-sm" size="sm" tone="muted">
+            Sign in to sync your trial across devices.
+          </BodyText>
+        </View>
+
+        <View style={{ marginTop: 36, gap: 14 }}>
           {PROVIDERS.map((p) => (
             <Pressable
-              className="flex-row items-center justify-center h-[60px] rounded-full bg-surface"
+              accessibilityRole="button"
               key={p.id}
               onPress={() => pick(p.id)}
-              style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.92 : 1,
+              })}
             >
-              <Ionicons
-                color="#000000"
-                name={p.icon}
-                size={20}
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                className="font-sans text-label text-ink"
-                style={{ fontWeight: "600" }}
+              <View
+                className="flex-row items-center justify-center bg-surface"
+                style={{
+                  height: 60,
+                  borderRadius: 18,
+                  borderWidth: 1.5,
+                  borderColor: "#E5E7EB",
+                }}
               >
-                {p.label}
-              </Text>
+                <Ionicons
+                  color={INK}
+                  name={p.icon}
+                  size={22}
+                  style={{ marginRight: 12 }}
+                />
+                <Text
+                  className="font-sans text-ink"
+                  style={{ fontSize: 16, fontWeight: "600" }}
+                >
+                  {p.label}
+                </Text>
+              </View>
             </Pressable>
           ))}
         </View>
 
-        <Pressable className="items-center mt-sm" hitSlop={8}>
-          <Text className="font-sans text-body-sm text-surface/70 underline">
+        <Pressable
+          accessibilityRole="button"
+          className="items-center"
+          hitSlop={8}
+          style={{ marginTop: 22 }}
+        >
+          <Text
+            className="font-sans text-tertiary"
+            style={{ fontSize: 13, textDecorationLine: "underline" }}
+          >
             Restore device purchase
           </Text>
         </Pressable>
 
-        <Text className="font-sans text-caption text-surface/60 text-center mt-md px-sm">
-          By continuing you agree to the Terms and acknowledge the Privacy
-          Policy.
-        </Text>
+        <View
+          className="items-center px-sm"
+          style={{ marginTop: "auto", paddingBottom: 16 }}
+        >
+          <Text
+            className="font-sans text-tertiary text-center"
+            style={{ fontSize: 12, lineHeight: 18 }}
+          >
+            By continuing you agree to the{" "}
+            <Text
+              className="text-ink"
+              onPress={() => Linking.openURL(LINKS.terms)}
+              style={{ fontWeight: "600", textDecorationLine: "underline" }}
+            >
+              Terms
+            </Text>{" "}
+            and{" "}
+            <Text
+              className="text-ink"
+              onPress={() => Linking.openURL(LINKS.privacy)}
+              style={{ fontWeight: "600", textDecorationLine: "underline" }}
+            >
+              Privacy Policy
+            </Text>
+            .
+          </Text>
+        </View>
       </FadeSlideIn>
     </ScreenShell>
   );
