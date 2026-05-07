@@ -297,7 +297,7 @@ export default function Welcome() {
           <Button height={buttonHeight} label="Bismillah" onPress={next} />
           <Pressable
             accessibilityRole="button"
-            onPress={() => goTo("/(onboarding)/auth")}
+            onPress={() => goTo("/(account)/auth")}
             style={({ pressed }) => ({ opacity: pressed ? 0.65 : 1 })}
           >
             <Text className="text-center font-sans text-body-sm text-tertiary">
