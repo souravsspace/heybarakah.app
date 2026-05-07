@@ -26,14 +26,22 @@ const STAGES = [
 type StageStatus = "done" | "active" | "pending";
 
 function getStageStatus(index: number, active: number): StageStatus {
-  if (index < active) return "done";
-  if (index === active) return "active";
+  if (index < active) {
+    return "done";
+  }
+  if (index === active) {
+    return "active";
+  }
   return "pending";
 }
 
 function getStageTextColor(status: StageStatus) {
-  if (status === "pending") return "#9CA3AF";
-  if (status === "active") return "#000000";
+  if (status === "pending") {
+    return "#9CA3AF";
+  }
+  if (status === "active") {
+    return "#000000";
+  }
   return "#6B7280";
 }
 

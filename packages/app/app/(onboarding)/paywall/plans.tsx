@@ -31,7 +31,10 @@ const FOOTER_CAPTIONS: Record<PlanId, string> = {
   lifetime: "Pay once. Keep forever. No subscription.",
 };
 
-const PLAN_COPY: Record<PlanId, { strikePrice: string; leftSub: string; rightLabel: string }> = {
+const PLAN_COPY: Record<
+  PlanId,
+  { strikePrice: string; leftSub: string; rightLabel: string }
+> = {
   yearly: {
     strikePrice: "$239.88",
     leftSub: "12 mo · $39.99",
