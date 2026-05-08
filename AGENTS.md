@@ -139,3 +139,12 @@ Use `bun:test`. Do **not** use Jest or Vitest.
 ### Imports
 
 Framework imports → `workspace:*` internal packages → relative paths.
+
+
+<claude-mem-context>
+# Memory Context
+
+# [heybarakah_app] recent context, 2026-05-08 6:36pm GMT+6
+
+No previous sessions found.
+</claude-mem-context>
