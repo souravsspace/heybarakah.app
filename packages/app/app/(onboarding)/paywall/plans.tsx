@@ -22,13 +22,13 @@ const CARD_REST = "#F4F2EE";
 const CTA_LABELS: Record<PlanId, string> = {
   yearly: "TRY FOR $0.00",
   monthly: "START MONTHLY · $7.99/MO",
-  lifetime: "GET LIFETIME · $99.99",
+  family: "START FAMILY · $4.99/MO",
 };
 
 const FOOTER_CAPTIONS: Record<PlanId, string> = {
   yearly: "7 days free, then $39.99 per year.",
   monthly: "$7.99 per month. Cancel anytime.",
-  lifetime: "Pay once. Keep forever. No subscription.",
+  family: "$59.88 per year. Up to 5 members.",
 };
 
 const PLAN_COPY: Record<
@@ -45,10 +45,10 @@ const PLAN_COPY: Record<
     leftSub: "1 mo · $7.99",
     rightLabel: "$7.99 / mo",
   },
-  lifetime: {
-    strikePrice: "$199",
-    leftSub: "Pay once · $99.99",
-    rightLabel: "Lifetime",
+  family: {
+    strikePrice: "$119.76",
+    leftSub: "12 mo · $59.88",
+    rightLabel: "$4.99 / mo",
   },
 };
 
@@ -58,7 +58,7 @@ export default function Plans() {
   const [showAll, setShowAll] = useState(false);
   const selected: PlanId = state.plan ?? "yearly";
 
-  const visible = PLANS.filter((p) => showAll || p.id !== "lifetime");
+  const visible = PLANS.filter((p) => showAll || p.id !== "family");
 
   function setPlan(id: PlanId) {
     dispatch({ type: "SET_FIELD", payload: { plan: id } });
@@ -226,8 +226,8 @@ function PlanBadge({ id }: { id: PlanId }) {
     return <Badge backgroundColor={PRIMARY} label="7 DAY FREE TRIAL" />;
   }
 
-  if (id === "lifetime") {
-    return <Badge backgroundColor="#0F1311" label="BEST VALUE" />;
+  if (id === "family") {
+    return <Badge backgroundColor="#0F1311" label="UP TO 5 MEMBERS" />;
   }
 
   return null;
