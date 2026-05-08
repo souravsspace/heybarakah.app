@@ -64,37 +64,24 @@ export default function Problem() {
         </FadeSlideIn>
 
         <FadeSlideIn className="mt-auto items-center" delay={380}>
-          <View
-            className="items-center"
-            style={{ width: fullWidth, paddingBottom: 4 }}
-          >
-            <View
-              style={{
-                width: 28,
-                height: 1,
-                backgroundColor: "#29603E",
-                marginBottom: 14,
-              }}
-            />
-            <Text
-              className="font-sans text-tertiary"
-              style={{
-                fontSize: 10,
-                letterSpacing: 2,
-                fontWeight: "700",
-              }}
-            >
-              AT THIS RATE
-            </Text>
+          <View className="items-center" style={{ width: fullWidth }}>
             <Text
               className="text-center font-serif text-ink"
+              style={{ fontSize: 22, letterSpacing: -0.3, lineHeight: 28 }}
+            >
+              One day vanishes.
+            </Text>
+            <Text
+              className="text-center font-sans text-tertiary"
               style={{
-                fontSize: 22,
-                lineHeight: 28,
-                marginTop: 10,
+                fontSize: 13,
+                letterSpacing: 0.1,
+                lineHeight: 18,
+                marginTop: 8,
               }}
             >
-              A full day a year,{"\n"}stolen from your salah.
+              Across a lifetime, two months of salah {"\n"}surrendered to the
+              scroll.
             </Text>
           </View>
         </FadeSlideIn>
