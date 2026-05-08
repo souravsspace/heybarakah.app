@@ -2,14 +2,17 @@
   "hooks": {
     "PostToolUse": [
       {
+        "matcher": "Write|Edit",
         "hooks": [
           {
-            "command": "bun fix --skip=correctness/noUnusedImports",
-            "type": "command"
+            "type": "command",
+            "command": "bun fix --skip=correctness/noUnusedImports"
           }
-        ],
-        "matcher": "Write|Edit"
+        ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "expo@claude-plugins-official": true
   }
 }
