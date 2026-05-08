@@ -54,7 +54,7 @@ export default function TryFree() {
                 >
                   <Image
                     source={f.image}
-                    style={{ width: 72, height: 72, resizeMode: "contain" }}
+                    style={{ width: 100, height: 100, resizeMode: "contain" }}
                   />
                 </View>
                 <Text
