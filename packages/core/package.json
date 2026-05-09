@@ -1,0 +1,31 @@
+{
+  "name": "@barakah/core",
+  "version": "0.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./convex/_generated/*": "./convex/_generated/*",
+    "./convex/*": "./convex/*"
+  },
+  "scripts": {
+    "dev": "convex dev",
+    "dev:setup": "convex dev --configure --until-success"
+  },
+  "dependencies": {
+    "convex": "catalog:",
+    "zod": "catalog:",
+    "dotenv": "catalog:",
+    "better-auth": "catalog:",
+    "@better-auth/expo": "catalog:",
+    "@convex-dev/better-auth": "catalog:",
+    "@convex-dev/resend": "^0.2.3"
+  },
+  "devDependencies": {
+    "@barakah/tsconfig": "workspace:*",
+    "@types/bun": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": "catalog:"
+  }
+}
