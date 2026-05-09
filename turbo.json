@@ -7,13 +7,11 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"],
       "env": [
-        "POLAR_WEBHOOK_SECRET",
         "RESEND_API_KEY",
         "RESEND_AUDIENCE_ID",
         "RESEND_FROM",
         "RESEND_REPLY_TO",
-        "EXPO_PUBLIC_CONVEX_URL",
-        "EXPO_PUBLIC_CONVEX_SITE_URL"
+        "POLAR_WEBHOOK_SECRET"
       ]
     },
     "dev": { "cache": false, "persistent": true }
