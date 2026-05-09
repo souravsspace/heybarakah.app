@@ -4,8 +4,8 @@ import {
 } from "@polar-sh/sdk/webhooks";
 import type { APIRoute } from "astro";
 import { Resend } from "resend";
-import { env } from "../../../env";
-import { purchaseEmail } from "../../../lib/purchase-email";
+import { env } from "@/env";
+import { purchaseEmail } from "@/lib/purchase-email";
 
 export const prerender = false;
 

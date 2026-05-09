@@ -1,5 +1,12 @@
 {
   "extends": ["astro/tsconfigs/strict", "@barakah/tsconfig/marketing.json"],
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@barakah/env": ["../env"]
+    }
+  },
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist"]
 }
