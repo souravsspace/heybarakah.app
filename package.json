@@ -9,6 +9,7 @@
     "dev:api": "bun --cwd packages/api dev",
     "dev:convex": "bun --cwd packages/core dev",
     "dev:marketing": "bun --cwd packages/marketing dev",
+    "reset:db": "bun --cwd packages/core reset:db",
     "typecheck": "bunx turbo run typecheck",
     "check": "bun x ultracite check",
     "fix": "bun x ultracite fix"
