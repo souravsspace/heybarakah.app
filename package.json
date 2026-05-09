@@ -7,6 +7,7 @@
   "scripts": {
     "dev:app": "bun --cwd packages/app start",
     "dev:api": "bun --cwd packages/api dev",
+    "dev:convex": "bun --cwd packages/convex dev",
     "dev:marketing": "bun --cwd packages/marketing dev",
     "typecheck": "bunx turbo run typecheck"
   },
@@ -16,7 +17,13 @@
     ],
     "catalog": {
       "typescript": "~5.9.2",
-      "@types/bun": "1.3.13"
+      "@types/bun": "1.3.13",
+      "zod": "^4.4.3",
+      "dotenv": "^17.4.2",
+      "convex": "^1.38.0",
+      "better-auth": "~1.6.9",
+      "@better-auth/expo": "~1.6.9",
+      "@convex-dev/better-auth": "^0.12.2"
     }
   },
   "devDependencies": {
@@ -34,5 +41,6 @@
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
       "bun x ultracite fix"
     ]
-  }
+  },
+  "dependencies": {}
 }

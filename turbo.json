@@ -12,7 +12,8 @@
         "RESEND_AUDIENCE_ID",
         "RESEND_FROM",
         "RESEND_REPLY_TO",
-        "ping"
+        "EXPO_PUBLIC_CONVEX_URL",
+        "EXPO_PUBLIC_CONVEX_SITE_URL"
       ]
     },
     "dev": { "cache": false, "persistent": true }
