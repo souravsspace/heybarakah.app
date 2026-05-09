@@ -1,4 +1,4 @@
 export const LINKS = {
-  terms: "https://trysonex.app/terms",
-  privacy: "https://trysonex.app/privacy",
+  terms: "https://heybarakah.app/terms",
+  privacy: "https://heybarakah.app/privacy",
 } as const;
