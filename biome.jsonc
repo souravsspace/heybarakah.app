@@ -2,7 +2,7 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["ultracite/biome/core"],
   "files": {
-    "includes": ["!packages/marketing"]
+    "includes": ["!packages/marketing", "!**/convex/_generated"]
   },
   "linter": {
     "rules": {
@@ -23,20 +23,5 @@
         "noUnknownAtRules": "off"
       }
     }
-  },
-  "overrides": [
-    {
-      "includes": ["**/*.astro"],
-      "linter": {
-        "rules": {
-          "correctness": {
-            "noUnusedVariables": "off"
-          },
-          "suspicious": {
-            "noEmptySource": "off"
-          }
-        }
-      }
-    }
-  ]
+  }
 }
