@@ -10,7 +10,8 @@
   },
   "scripts": {
     "dev": "convex dev",
-    "dev:setup": "convex dev --configure --until-success"
+    "dev:setup": "convex dev --configure --until-success",
+    "reset:db": "bun scripts/reset-db.ts"
   },
   "dependencies": {
     "convex": "catalog:",
