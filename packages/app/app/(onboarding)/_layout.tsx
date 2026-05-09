@@ -1,14 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigationState } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AuthLoading } from "@/components/auth-loading";
 import { ProgressBar } from "@/components/onboarding/progress-bar";
+import { useUser } from "@/contexts/user-context";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 
 export default function OnboardingLayout() {
   const { progress, back, index, currentPath } = useOnboardingNav();
+  const { user, isLoading } = useUser();
 
   const focusedName = useNavigationState((state) => {
     if (!state) {
@@ -24,6 +27,13 @@ export default function OnboardingLayout() {
   });
 
   const [gestureToWelcome, setGestureToWelcome] = useState(false);
+
+  if (isLoading) {
+    return <AuthLoading />;
+  }
+  if (user) {
+    return <Redirect href="/home" />;
+  }
 
   const hideHeader =
     focusedName === "welcome" ||
