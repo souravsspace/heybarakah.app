@@ -7,9 +7,11 @@
   "scripts": {
     "dev:app": "bun --cwd packages/app start",
     "dev:api": "bun --cwd packages/api dev",
-    "dev:convex": "bun --cwd packages/convex dev",
+    "dev:convex": "bun --cwd packages/core dev",
     "dev:marketing": "bun --cwd packages/marketing dev",
-    "typecheck": "bunx turbo run typecheck"
+    "typecheck": "bunx turbo run typecheck",
+    "check": "bun x ultracite check",
+    "fix": "bun x ultracite fix"
   },
   "workspaces": {
     "packages": [
