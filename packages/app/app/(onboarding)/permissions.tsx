@@ -74,8 +74,8 @@ export default function Permissions() {
         <View className="items-center gap-[2px]">
           <Headline size="h1">{"Two quiet\npermissions."}</Headline>
           <BodyText size="sm" tone="muted">
-            Both are needed to lock your phone at the right moment, in the right
-            place.
+            Both are needed to lock your phone at {"\n"} the right moment, in
+            the right place.
           </BodyText>
         </View>
 
@@ -101,33 +101,11 @@ export default function Permissions() {
           </View>
         </FadeSlideIn>
 
-        <FadeSlideIn className="mt-auto items-center" delay={380}>
-          <View className="items-center" style={{ width: fullWidth }}>
-            <View
-              style={{
-                width: 28,
-                height: 1,
-                backgroundColor: "#29603E",
-                marginBottom: 12,
-              }}
-            />
-            <Text
-              className="font-sans text-tertiary"
-              style={{ fontSize: 10, letterSpacing: 2, fontWeight: "700" }}
-            >
-              YOUR DATA
-            </Text>
-            <Text
-              className="text-center font-serif text-ink"
-              style={{ fontSize: 18, lineHeight: 24, marginTop: 8 }}
-            >
-              Stays on your device.
-            </Text>
-            <View className="mt-xs flex-row items-center gap-sm">
-              <Reassure label="No tracking" />
-              <Dot />
-              <Reassure label="Revoke any time" />
-            </View>
+        <FadeSlideIn delay={380}>
+          <View className="mt-xs flex-row items-center gap-sm">
+            <Reassure label="No tracking" />
+            <Dot />
+            <Reassure label="Revoke any time" />
           </View>
         </FadeSlideIn>
       </FadeSlideIn>

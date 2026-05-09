@@ -1,17 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
 import { selectionAsync } from "expo-haptics";
-import { useRouter } from "expo-router";
-import { Linking, Pressable, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 import { BodyText } from "@/components/onboarding/body-text";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { LINKS } from "@/constants/links";
+import { useUser } from "@/contexts/user-context";
 import {
   type AuthProvider,
   useOnboardingState,
 } from "@/hooks/use-onboarding-state";
+import { useAppleAuth } from "@/lib/oauth/use-apple-auth";
+import { useGoogleAuth } from "@/lib/oauth/use-google-auth";
+import { useSubscription } from "@/lib/subscription";
 
 const PROVIDERS: {
   id: AuthProvider;
@@ -26,20 +38,31 @@ const PROVIDERS: {
 const PRIMARY = "#29603E";
 const INK = "#0F1311";
 
+type Mode = "signup" | "signin";
+
 export default function Auth() {
   const { state, dispatch } = useOnboardingState();
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const oAuthGoogle = useGoogleAuth();
+  const oAuthApple = useAppleAuth();
+  const { user } = useUser();
+  const { hydrated, claimPending } = useSubscription();
+  const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(
+    null
+  );
 
-  function pick(provider: AuthProvider) {
-    selectionAsync().catch(() => undefined);
+  const mode: Mode = params.mode === "signup" ? "signup" : "signin";
 
+  const handlingRef = useRef(false);
+
+  function fillDefaultsIfWelcome(authProvider: AuthProvider) {
     const fromWelcome = !state.plan;
-
     if (fromWelcome) {
       dispatch({
         type: "SET_FIELD",
         payload: {
-          authProvider: provider,
+          authProvider,
           gender: state.gender ?? "male",
           madhab: state.madhab ?? "hanafi",
           consistency: state.consistency ?? "most",
@@ -52,14 +75,101 @@ export default function Auth() {
           name: state.name ?? "Sana",
         },
       });
-      dispatch({ type: "COMPLETE" });
-      router.replace("/home");
+    } else {
+      dispatch({ type: "SET_FIELD", payload: { authProvider } });
+    }
+  }
+
+  useEffect(() => {
+    if (!(user && hydrated) || handlingRef.current) {
       return;
     }
+    const email = user.email;
+    if (!email) {
+      return;
+    }
+    handlingRef.current = true;
 
-    dispatch({ type: "SET_FIELD", payload: { authProvider: provider } });
-    router.push("/(account)/success");
+    (async () => {
+      const result = await claimPending(email);
+
+      if (mode === "signup") {
+        if (result === "conflict") {
+          handlingRef.current = false;
+          Alert.alert(
+            "Account already subscribed",
+            `${email} already has an active subscription. Sign out and use a different email or login method to apply your new purchase.`
+          );
+          return;
+        }
+        if (result === "claimed") {
+          // New account post-paywall — walk through finalizing screens.
+          router.replace("/success" as never);
+          return;
+        }
+        if (result === "already-active") {
+          // Existing account, already entitled — straight to home.
+          if (!state.completedAt) {
+            dispatch({ type: "COMPLETE" });
+          }
+          router.replace("/home");
+          return;
+        }
+        // 'no-sub' — paywall pending was lost somehow. Defensive.
+        router.replace("/no-active-sub" as never);
+        return;
+      }
+
+      // signin mode
+      if (result === "claimed" || result === "already-active") {
+        if (!state.completedAt) {
+          dispatch({ type: "COMPLETE" });
+        }
+        router.replace("/home");
+        return;
+      }
+      router.replace("/no-active-sub" as never);
+    })();
+  }, [user, hydrated, mode, claimPending, state.completedAt, dispatch, router]);
+
+  async function pick(provider: AuthProvider) {
+    selectionAsync().catch(() => undefined);
+    setPendingProvider(provider);
+    fillDefaultsIfWelcome(provider);
+
+    if (provider === "google") {
+      try {
+        await oAuthGoogle.signIn();
+      } finally {
+        setPendingProvider(null);
+      }
+      return;
+    }
+    if (provider === "apple") {
+      Alert.alert(
+        "Apple sign-in unavailable",
+        "Apple sign-in is not configured yet."
+      );
+      setPendingProvider(null);
+      return;
+    }
+    router.push({
+      pathname: "/(account)/email-otp",
+      params: { mode },
+    });
   }
+
+  const loadingProvider =
+    pendingProvider ??
+    (oAuthGoogle.isLoading ? "google" : null) ??
+    (oAuthApple.isLoading ? "apple" : null);
+  const isOAuthLoading = loadingProvider !== null;
+
+  const headline = mode === "signup" ? "Create your account" : "Welcome back.";
+  const subline =
+    mode === "signup"
+      ? "You're all set. Create your account to save your progress."
+      : "Sign in to sync your trial across devices.";
 
   return (
     <ScreenShell scroll={false}>
@@ -69,9 +179,9 @@ export default function Auth() {
         </View>
 
         <View className="items-center px-sm" style={{ marginTop: 28, gap: 8 }}>
-          <Headline>Welcome back.</Headline>
+          <Headline>{headline}</Headline>
           <BodyText className="px-sm" size="sm" tone="muted">
-            Sign in to sync your trial across devices.
+            {subline}
           </BodyText>
         </View>
 
@@ -79,10 +189,11 @@ export default function Auth() {
           {PROVIDERS.map((p) => (
             <Pressable
               accessibilityRole="button"
+              disabled={isOAuthLoading}
               key={p.id}
               onPress={() => pick(p.id)}
               style={({ pressed }) => ({
-                opacity: pressed ? 0.92 : 1,
+                opacity: pressed || isOAuthLoading ? 0.92 : 1,
               })}
             >
               <View
@@ -94,36 +205,30 @@ export default function Auth() {
                   borderColor: "#E5E7EB",
                 }}
               >
-                <Ionicons
-                  color={INK}
-                  name={p.icon}
-                  size={22}
-                  style={{ marginRight: 12 }}
-                />
-                <Text
-                  className="font-sans text-ink"
-                  style={{ fontSize: 16, fontWeight: "600" }}
-                >
-                  {p.label}
-                </Text>
+                {loadingProvider === p.id ? (
+                  <ActivityIndicator color={INK} size="small" />
+                ) : (
+                  <>
+                    <Ionicons
+                      color={INK}
+                      name={p.icon}
+                      size={22}
+                      style={{ marginRight: 12 }}
+                    />
+                    <Text
+                      className="font-sans text-ink"
+                      style={{ fontSize: 16, fontWeight: "600" }}
+                    >
+                      {p.id === "email" && mode === "signup"
+                        ? "Sign up with Email"
+                        : p.label}
+                    </Text>
+                  </>
+                )}
               </View>
             </Pressable>
           ))}
         </View>
-
-        <Pressable
-          accessibilityRole="button"
-          className="items-center"
-          hitSlop={8}
-          style={{ marginTop: 22 }}
-        >
-          <Text
-            className="font-sans text-tertiary"
-            style={{ fontSize: 13, textDecorationLine: "underline" }}
-          >
-            Restore device purchase
-          </Text>
-        </Pressable>
 
         <View
           className="items-center px-sm"

@@ -1,0 +1,22 @@
+{
+  "name": "@barakah/env",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./app": "./src/app.ts",
+    "./marketing": "./src/marketing.ts"
+  },
+  "dependencies": {
+    "dotenv": "catalog:",
+    "zod": "catalog:",
+    "@t3-oss/env-core": "^0.13.11"
+  },
+  "devDependencies": {
+    "@barakah/tsconfig": "workspace:*",
+    "@types/bun": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": "catalog:"
+  }
+}

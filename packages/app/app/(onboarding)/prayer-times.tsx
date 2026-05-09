@@ -222,14 +222,6 @@ export default function PrayerTimes() {
 function Eyebrow({ label }: { label: string }) {
   return (
     <View className="items-center" style={{ marginBottom: 10 }}>
-      <View
-        style={{
-          width: 28,
-          height: 1,
-          backgroundColor: "#29603E",
-          marginBottom: 10,
-        }}
-      />
       <Text
         className="font-sans text-tertiary"
         style={{ fontSize: 10, letterSpacing: 2, fontWeight: "700" }}

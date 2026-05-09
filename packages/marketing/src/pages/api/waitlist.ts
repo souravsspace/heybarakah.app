@@ -2,9 +2,9 @@ import type { APIRoute } from "astro";
 import disposableDomains from "disposable-email-domains";
 import { Resend } from "resend";
 import { z } from "zod";
-import { env } from "../../env";
-import { rateLimit } from "../../lib/rate-limit";
-import { welcomeEmail } from "../../lib/welcome-email";
+import { env } from "@/env";
+import { rateLimit } from "@/lib/rate-limit";
+import { welcomeEmail } from "@/lib/welcome-email";
 
 export const prerender = false;
 

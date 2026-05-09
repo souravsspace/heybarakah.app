@@ -1,16 +1,15 @@
 import { Redirect } from "expo-router";
-import { View } from "react-native";
-import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import { AuthLoading } from "@/components/auth-loading";
+import { useUser } from "@/contexts/user-context";
 
 export default function Index() {
-  const { state } = useOnboardingState();
+  const { user, isLoading } = useUser();
 
-  if (!state.hydrated) {
-    return <View className="flex-1 bg-surface" />;
+  if (isLoading) {
+    return <AuthLoading />;
   }
-
-  if (!state.completedAt) {
-    return <Redirect href={"/(onboarding)/welcome" as never} />;
+  if (user) {
+    return <Redirect href="/home" />;
   }
-  return <Redirect href="/home" />;
+  return <Redirect href={"/(onboarding)/welcome" as never} />;
 }

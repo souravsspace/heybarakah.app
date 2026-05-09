@@ -9,7 +9,7 @@ import {
 
 const STORAGE_KEY = "onboarding:v1";
 
-export type Plan = "yearly" | "monthly" | "lifetime";
+export type Plan = "yearly" | "monthly" | "family";
 export type AuthProvider = "apple" | "google" | "email";
 
 export interface OnboardingState {

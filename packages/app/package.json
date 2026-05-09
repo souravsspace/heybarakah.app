@@ -7,7 +7,15 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@barakah/core": "workspace:*",
+    "@barakah/env": "workspace:*",
+    "@better-auth/expo": "catalog:",
+    "@convex-dev/better-auth": "catalog:",
     "@expo/vector-icons": "^15.0.3",
+    "better-auth": "catalog:",
+    "convex": "catalog:",
+    "expo-apple-authentication": "~8.0.7",
+    "expo-secure-store": "~15.0.7",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
@@ -19,6 +27,7 @@
     "expo-image": "~3.0.11",
     "expo-linking": "~8.0.11",
     "expo-location": "~19.0.8",
+    "expo-network": "~8.0.7",
     "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.23",
     "expo-splash-screen": "~31.0.13",

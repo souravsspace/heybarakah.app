@@ -14,7 +14,7 @@ export default function Success() {
       footer={
         <Button
           label="Continue"
-          onPress={() => router.push("/(account)/name")}
+          onPress={() => router.push("/name" as never)}
         />
       }
       scroll={false}
