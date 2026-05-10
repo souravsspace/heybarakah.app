@@ -49,7 +49,10 @@ export default function EmailOtp() {
       setEmail(trimmed);
       setStep("code");
     } catch {
-      Alert.alert("Could not send code", "Check your connection and try again.");
+      Alert.alert(
+        "Could not send code",
+        "Check your connection and try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +80,10 @@ export default function EmailOtp() {
         params: { mode },
       });
     } catch {
-      Alert.alert("Could not verify code", "Check your connection and try again.");
+      Alert.alert(
+        "Could not verify code",
+        "Check your connection and try again."
+      );
     } finally {
       setIsLoading(false);
     }
