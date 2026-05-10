@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -6,6 +7,7 @@ import { authClient } from "@/lib/auth-client";
 import { useSubscription } from "@/lib/subscription";
 
 export default function LoggingOut() {
+  const router = useRouter();
   const { dispatch } = useOnboardingState();
   const { clearPending } = useSubscription();
 
@@ -18,8 +20,9 @@ export default function LoggingOut() {
       }
       await clearPending().catch(() => undefined);
       dispatch({ type: "RESET" });
+      router.replace("/(onboarding)/welcome" as never);
     })();
-  }, [clearPending, dispatch]);
+  }, [clearPending, dispatch, router]);
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
