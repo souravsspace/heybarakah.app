@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
@@ -7,7 +7,7 @@ import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
-import { getCurrentLocation } from "@/hooks/use-permissions";
+import { usePrayerTimes as useLivePrayerTimes } from "@/hooks/usePrayerTimes";
 
 const SCREEN_PAD_X = 24;
 
@@ -39,42 +39,11 @@ const FALLBACK_PRAYERS = [
   { name: "Isha", time: "20:34", minutes: 20 * 60 + 34, icon: "moon" as const },
 ];
 
-const PRAYER_NAMES = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
-
-const PRAYER_ICONS: Record<
-  (typeof PRAYER_NAMES)[number],
-  keyof typeof Ionicons.glyphMap
-> = {
-  Fajr: "moon-outline",
-  Dhuhr: "sunny-outline",
-  Asr: "partly-sunny-outline",
-  Maghrib: "cloudy-night-outline",
-  Isha: "moon",
-};
-
-const METHOD_LABELS: Record<string, string> = {
-  1: "KARACHI",
-  2: "ISNA",
-  3: "MWL",
-  4: "UMM AL-QURA",
-  5: "EGYPTIAN",
-  7: "MWL",
-  8: "UMM AL-QURA",
-  9: "KARACHI",
-  99: "CUSTOM",
-};
-
 interface PrayerRowData {
   icon: keyof typeof Ionicons.glyphMap;
   minutes: number;
   name: string;
   time: string;
-}
-
-interface PrayerTimesData {
-  city: string;
-  method: string;
-  prayers: PrayerRowData[];
 }
 
 function formatToday() {
@@ -101,148 +70,53 @@ function nextPrayerIndexFor(prayers: PrayerRowData[]) {
 }
 
 function parseMinutes(value: string) {
-  const clean = value.replace(/[^\d:]/g, "");
-  const [hRaw, mRaw] = clean.split(":");
-  const hours = Number(hRaw);
-  const mins = Number(mRaw);
-  if (Number.isNaN(hours) || Number.isNaN(mins)) {
+  const [hoursText, minutesText] = value.split(":");
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
     return null;
   }
-  return hours * 60 + mins;
+  return hours * 60 + minutes;
 }
 
-function toPrayerRows(timings: Record<string, string>) {
-  const mapped = PRAYER_NAMES.map((name) => {
-    const time = timings[name];
-    const minutes = parseMinutes(time);
-    if (!time || minutes === null) {
-      return null;
-    }
-
-    return {
-      name,
-      time: time.replace(/\s*\(.+\)\s*/g, ""),
-      minutes,
-      icon: PRAYER_ICONS[name],
-    } satisfies PrayerRowData;
-  }).filter((item) => item !== null);
-
-  if (mapped.length !== PRAYER_NAMES.length) {
+function toPrayerRows(
+  todayPrayerTimes: {
+    timings: {
+      fajr: string;
+      dhuhr: string;
+      asr: string;
+      maghrib: string;
+      isha: string;
+    };
+  } | null
+): PrayerRowData[] | null {
+  if (!todayPrayerTimes) {
     return null;
   }
 
-  return mapped;
-}
+  const entries: [
+    name: string,
+    time: string,
+    icon: keyof typeof Ionicons.glyphMap,
+  ][] = [
+    ["Fajr", todayPrayerTimes.timings.fajr, "moon-outline"],
+    ["Dhuhr", todayPrayerTimes.timings.dhuhr, "sunny-outline"],
+    ["Asr", todayPrayerTimes.timings.asr, "partly-sunny-outline"],
+    ["Maghrib", todayPrayerTimes.timings.maghrib, "cloudy-night-outline"],
+    ["Isha", todayPrayerTimes.timings.isha, "moon"],
+  ];
 
-function methodCodeFromCalcMethod(calcMethod?: string) {
-  switch (calcMethod) {
-    case "karachi":
-      return 1;
-    case "isna":
-      return 2;
-    case "mwl":
-      return 3;
-    case "umm-al-qura":
-      return 4;
-    case "egyptian":
-      return 5;
-    default:
-      return 2;
-  }
-}
-
-function usePrayerTimes({
-  calcMethod,
-  locationGranted,
-}: {
-  calcMethod?: string;
-  locationGranted: boolean;
-}) {
-  const [data, setData] = useState<PrayerTimesData | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      try {
-        let latitude: number | null = null;
-        let longitude: number | null = null;
-
-        if (locationGranted) {
-          const loc = await getCurrentLocation();
-          if (loc) {
-            latitude = loc.coords.latitude;
-            longitude = loc.coords.longitude;
-          }
-        }
-
-        const methodCode = methodCodeFromCalcMethod(calcMethod);
-        const endpoint =
-          latitude !== null && longitude !== null
-            ? `https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=${methodCode}`
-            : `https://api.aladhan.com/v1/timingsByCity?city=Mecca&country=Saudi Arabia&method=${methodCode}`;
-
-        const response = await fetch(endpoint);
-        if (!response.ok) {
-          return;
-        }
-
-        const payload: unknown = await response.json();
-        if (
-          !payload ||
-          typeof payload !== "object" ||
-          !("data" in payload) ||
-          !payload.data ||
-          typeof payload.data !== "object"
-        ) {
-          return;
-        }
-
-        const dataObj = payload.data as {
-          timings?: Record<string, string>;
-          meta?: {
-            timezone?: string;
-            method?: { id?: number; name?: string };
-          };
-        };
-
-        if (!dataObj.timings) {
-          return;
-        }
-
-        const prayers = toPrayerRows(dataObj.timings);
-        if (!prayers) {
-          return;
-        }
-
-        const city =
-          latitude !== null && longitude !== null
-            ? "Your location"
-            : "Mecca, Saudi Arabia";
-        const methodFromApi = dataObj.meta?.method?.id
-          ? METHOD_LABELS[String(dataObj.meta.method.id)]
-          : undefined;
-        const method =
-          methodFromApi ?? dataObj.meta?.method?.name?.toUpperCase() ?? "ISNA";
-
-        if (!cancelled) {
-          setData({ city, method, prayers });
-        }
-      } catch {
-        // Keep fallback static data to avoid blocking onboarding.
+  const rows = entries
+    .map(([name, time, icon]) => {
+      const minutes = parseMinutes(time);
+      if (minutes === null) {
+        return null;
       }
-    };
+      return { name, time, minutes, icon };
+    })
+    .filter((value) => value !== null);
 
-    load().catch(() => {
-      // Keep fallback static data to avoid blocking onboarding.
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [calcMethod, locationGranted]);
-
-  return data;
+  return rows.length === entries.length ? rows : null;
 }
 
 function DayRibbon({
@@ -355,22 +229,21 @@ export default function PrayerTimes() {
   const { width } = useWindowDimensions();
   const fullWidth = width - SCREEN_PAD_X * 2;
 
-  const liveData = usePrayerTimes({
-    calcMethod: state.calcMethod,
-    locationGranted: Boolean(state.locationGranted),
-  });
+  const liveData = useLivePrayerTimes();
+  const liveRows = useMemo(
+    () => toPrayerRows(liveData.todayPrayerTimes),
+    [liveData.todayPrayerTimes]
+  );
 
-  const prayers = liveData?.prayers ?? FALLBACK_PRAYERS;
+  const prayers = liveRows ?? FALLBACK_PRAYERS;
   const nextIdx = useMemo(
-    () => (liveData ? nextPrayerIndexFor(prayers) : nextPrayerIndex()),
-    [liveData, prayers]
+    () => (liveRows ? nextPrayerIndexFor(prayers) : nextPrayerIndex()),
+    [liveRows, prayers]
   );
   const today = useMemo(() => formatToday(), []);
 
-  const city = liveData?.city ?? "Mecca, Saudi Arabia";
-  const method =
-    liveData?.method ??
-    (state.calcMethod ? state.calcMethod.toUpperCase() : "ISNA");
+  const city = liveData.location?.city ?? "Mecca, Saudi Arabia";
+  const method = state.calcMethod ? state.calcMethod.toUpperCase() : "ISNA";
 
   return (
     <ScreenShell footer={<Button label="Looks good" onPress={next} />}>
