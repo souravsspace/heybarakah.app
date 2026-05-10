@@ -34,8 +34,6 @@ export default function Home() {
         goal: state.goal,
         calcMethod: state.calcMethod,
         strictness: state.strictness,
-        plan: state.plan,
-        trialStartedAt: state.trialStartedAt,
         locationGranted: state.locationGranted,
         notifGranted: state.notifGranted,
         prayersToLock: state.prayersToLock,
