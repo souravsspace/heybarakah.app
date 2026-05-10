@@ -81,7 +81,7 @@ export function AreaChart({
   const linePath = useMemo(() => smoothPath(points), [points]);
   const areaPath = useMemo(
     () =>
-      `${linePath} L ${points.at(-1).x} ${baseY} L ${points[0].x} ${baseY} Z`,
+      `${linePath} L ${points.at(-1)?.x ?? 0} ${baseY} L ${points[0].x} ${baseY} Z`,
     [linePath, points, baseY]
   );
 

@@ -47,7 +47,8 @@ export default function Auth() {
   const oAuthGoogle = useGoogleAuth();
   const oAuthApple = useAppleAuth();
   const { user } = useUser();
-  const { hydrated, claimPending } = useSubscription();
+  const { activeSubscription, hydrated, claimPending, isSubscriptionLoading } =
+    useSubscription();
   const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(
     null
   );
@@ -81,56 +82,53 @@ export default function Auth() {
   }
 
   useEffect(() => {
-    if (!(user && hydrated) || handlingRef.current) {
-      return;
-    }
-    const email = user.email;
-    if (!email) {
+    if (!(user && hydrated) || isSubscriptionLoading || handlingRef.current) {
       return;
     }
     handlingRef.current = true;
 
     (async () => {
-      const result = await claimPending(email);
+      try {
+        const result = await claimPending();
 
-      if (mode === "signup") {
-        if (result === "conflict") {
-          handlingRef.current = false;
-          Alert.alert(
-            "Account already subscribed",
-            `${email} already has an active subscription. Sign out and use a different email or login method to apply your new purchase.`
-          );
-          return;
-        }
         if (result === "claimed") {
-          // New account post-paywall — walk through finalizing screens.
-          router.replace("/success" as never);
-          return;
-        }
-        if (result === "already-active") {
-          // Existing account, already entitled — straight to home.
+          if (mode === "signup") {
+            router.replace("/success" as never);
+            return;
+          }
           if (!state.completedAt) {
             dispatch({ type: "COMPLETE" });
           }
           router.replace("/home");
           return;
         }
-        // 'no-sub' — paywall pending was lost somehow. Defensive.
-        router.replace("/no-active-sub" as never);
-        return;
-      }
 
-      // signin mode
-      if (result === "claimed" || result === "already-active") {
-        if (!state.completedAt) {
-          dispatch({ type: "COMPLETE" });
+        if (activeSubscription) {
+          if (!state.completedAt) {
+            dispatch({ type: "COMPLETE" });
+          }
+          router.replace("/home");
+          return;
         }
-        router.replace("/home");
-        return;
+
+        router.replace("/no-active-sub" as never);
+      } catch (error) {
+        handlingRef.current = false;
+        const message = error instanceof Error ? error.message : String(error);
+        Alert.alert("Subscription error", message);
       }
-      router.replace("/no-active-sub" as never);
     })();
-  }, [user, hydrated, mode, claimPending, state.completedAt, dispatch, router]);
+  }, [
+    user,
+    hydrated,
+    isSubscriptionLoading,
+    mode,
+    claimPending,
+    activeSubscription,
+    state.completedAt,
+    dispatch,
+    router,
+  ]);
 
   async function pick(provider: AuthProvider) {
     selectionAsync().catch(() => undefined);
@@ -188,7 +186,12 @@ export default function Auth() {
         <View style={{ marginTop: 36, gap: 14 }}>
           {PROVIDERS.map((p) => (
             <Pressable
+              accessibilityLabel={p.label}
               accessibilityRole="button"
+              accessibilityState={{
+                busy: loadingProvider === p.id,
+                disabled: isOAuthLoading,
+              }}
               disabled={isOAuthLoading}
               key={p.id}
               onPress={() => pick(p.id)}
@@ -240,6 +243,7 @@ export default function Auth() {
           >
             By continuing you agree to the{" "}
             <Text
+              accessibilityRole="link"
               className="text-ink"
               onPress={() => Linking.openURL(LINKS.terms)}
               style={{ fontWeight: "600", textDecorationLine: "underline" }}
@@ -248,6 +252,7 @@ export default function Auth() {
             </Text>{" "}
             and{" "}
             <Text
+              accessibilityRole="link"
               className="text-ink"
               onPress={() => Linking.openURL(LINKS.privacy)}
               style={{ fontWeight: "600", textDecorationLine: "underline" }}
