@@ -1,6 +1,6 @@
 import { api, type PrayerDay } from "@barakah/core";
 import { useAction, useQuery } from "convex/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import {
   getCurrentLocation,
@@ -20,6 +20,7 @@ type Madhab = "hanafi" | "shafii" | "maliki" | "hanbali" | "none";
 type NextPrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 
 const DEFAULT_DAYS = 7;
+const AUTO_REFRESH_RETRY_MS = 30_000;
 
 const CALC_METHOD_MAP: Record<CalcMethod, number> = {
   isna: 2,
@@ -102,6 +103,8 @@ export function usePrayerTimes() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshResult, setRefreshResult] = useState<PrayerDay[] | null>(null);
+  const autoRefreshRequestKey = useRef<string | null>(null);
+  const lastAutoRefreshAt = useRef(0);
 
   const requestArgs = useMemo(() => {
     if (!location) {
@@ -198,6 +201,16 @@ export function usePrayerTimes() {
     ) {
       return;
     }
+
+    const requestKey = JSON.stringify(requestArgs);
+    if (
+      autoRefreshRequestKey.current === requestKey &&
+      Date.now() - lastAutoRefreshAt.current < AUTO_REFRESH_RETRY_MS
+    ) {
+      return;
+    }
+    autoRefreshRequestKey.current = requestKey;
+    lastAutoRefreshAt.current = Date.now();
 
     let cancelled = false;
     setRefreshing(true);
