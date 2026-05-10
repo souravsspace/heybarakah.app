@@ -1,26 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Redirect, Stack, useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AuthLoading } from "@/components/auth-loading";
-import { useUser } from "@/contexts/user-context";
 
 export default function AccountLayout() {
   const router = useRouter();
-  const { user, isLoading } = useUser();
-
-  if (isLoading) {
-    return <AuthLoading />;
-  }
-  if (user) {
-    return <Redirect href="/home" />;
-  }
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
       <View className="flex-row items-center px-md" style={{ height: 48 }}>
         <Pressable
           accessibilityLabel="Back"
+          accessibilityRole="button"
           hitSlop={12}
           onPress={() => {
             if (router.canGoBack()) {
