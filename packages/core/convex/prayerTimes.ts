@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import {
+  ALADHAN_METHOD_IDS,
   calculateAdhanJsPrayerDays,
   comparePrayerDays,
   createPrayerTimesCacheKey,
@@ -9,7 +10,6 @@ import {
   isAdhanJsSupportedMethod,
   normalizeAlAdhanCalendarResponse,
   PRAYER_CACHE_TTL_MS,
-  type PrayerTimeCache,
   roundCoordinate,
   slicePrayerDays,
 } from "../src/prayer";
@@ -21,6 +21,8 @@ const args = {
   latitude: v.number(),
   longitude: v.number(),
   timezone: v.string(),
+  countryCode: v.optional(v.string()),
+  city: v.optional(v.string()),
   method: v.number(),
   school: v.number(),
   latitudeAdjustmentMethod: v.optional(v.number()),
@@ -30,61 +32,75 @@ const args = {
   days: v.optional(v.number()),
 };
 
+const SUPPORTED_METHODS = new Set<number>(Object.values(ALADHAN_METHOD_IDS));
+const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function validatePrayerRequest(request: {
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  method: number;
+  school: number;
+  startDate: string;
+}) {
+  if (request.latitude < -90 || request.latitude > 90) {
+    throw new Error("Invalid latitude");
+  }
+  if (request.longitude < -180 || request.longitude > 180) {
+    throw new Error("Invalid longitude");
+  }
+  if (!request.timezone.trim()) {
+    throw new Error("Invalid timezone");
+  }
+  if (!SUPPORTED_METHODS.has(request.method)) {
+    throw new Error("Unsupported prayer calculation method");
+  }
+  if (request.school !== 0 && request.school !== 1) {
+    throw new Error("Unsupported school");
+  }
+  if (!DATE_KEY_PATTERN.test(request.startDate)) {
+    throw new Error("Invalid startDate format");
+  }
+}
+
 export const getCachedPrayerTimes = query({
   args,
   handler: async (ctx, request) => {
+    validatePrayerRequest(request);
+
     const user = await authComponent.safeGetAuthUser(ctx);
-    const days = request.days ?? DEFAULT_PRAYER_DAYS;
+    const days = DEFAULT_PRAYER_DAYS;
     const cacheKey = createPrayerTimesCacheKey({ ...request, days });
     const userCacheKey = createUserPrayerTimesCacheKey(cacheKey, user?._id);
+
     const hit = await ctx.db
       .query("prayerTimeCaches")
       .withIndex("by_userCacheKey", (q) => q.eq("userCacheKey", userCacheKey))
       .unique();
-    if (!hit) {
+
+    if (!hit || hit.expiresAt <= Date.now() || !hit.timings?.length) {
       return null;
     }
-    if (hit.expiresAt <= Date.now()) {
-      return null;
-    }
+
     return hit;
   },
 });
 
-export const refreshPrayerTimes = action({
+export const refreshPrayerTimes: ReturnType<typeof action> = action({
   args,
-  handler: async (ctx, request) => {
+  handler: async (ctx, request): Promise<unknown> => {
+    validatePrayerRequest(request);
+
     const user = await authComponent.safeGetAuthUser(ctx);
-    const days = request.days ?? DEFAULT_PRAYER_DAYS;
-    const cacheKey = createPrayerTimesCacheKey({ ...request, days });
+    const days = DEFAULT_PRAYER_DAYS;
+    const requestWithDays = { ...request, days };
+
+    const cacheKey = createPrayerTimesCacheKey(requestWithDays);
     const userCacheKey = createUserPrayerTimesCacheKey(cacheKey, user?._id);
 
-    const getCachedPrayerTimesRef = (
-      internal as unknown as {
-        prayerTimes: {
-          getCachedPrayerTimes: Parameters<typeof ctx.runQuery>[0];
-        };
-      }
-    ).prayerTimes.getCachedPrayerTimes;
-    const upsertPrayerTimesCacheRef = (
-      internal as unknown as {
-        prayerTimes: {
-          upsertPrayerTimesCache: Parameters<typeof ctx.runMutation>[0];
-        };
-      }
-    ).prayerTimes.upsertPrayerTimesCache;
-
-    const cached = await ctx.runQuery(getCachedPrayerTimesRef, {
-      ...request,
-      days,
-    });
-    if (cached) {
-      return cached;
-    }
-
-    const normalized = await fetchAndNormalize({ ...request, days });
-    const fallback = isAdhanJsSupportedMethod(request.method)
-      ? (calculateAdhanJsPrayerDays({ ...request, days }) ?? [])
+    const normalized = await fetchAndNormalize(requestWithDays);
+    const fallback = isAdhanJsSupportedMethod(requestWithDays.method)
+      ? (calculateAdhanJsPrayerDays(requestWithDays) ?? [])
       : [];
 
     const finalTimings = normalized.length > 0 ? normalized : fallback;
@@ -92,38 +108,46 @@ export const refreshPrayerTimes = action({
       throw new Error("Unable to compute prayer times from any source");
     }
 
-    const source =
+    const source: "aladhan" | "adhan-js" | "hybrid" =
       normalized.length > 0
         ? fallback.length > 0
           ? "hybrid"
           : "aladhan"
         : "adhan-js";
+
     const comparison =
       normalized.length > 0 && fallback.length > 0
         ? comparePrayerDays(normalized, fallback)
         : undefined;
+    const primarySource: "aladhan" | "adhan-js" =
+      normalized.length > 0 ? "aladhan" : "adhan-js";
+
     const now = Date.now();
-    const payload: PrayerTimeCache = {
+    const payload = {
       userId: user?._id,
       cacheKey,
       userCacheKey,
-      latitude: request.latitude,
-      latitudeRounded: roundCoordinate(request.latitude),
-      longitude: request.longitude,
-      longitudeRounded: roundCoordinate(request.longitude),
-      timezone: request.timezone,
-      method: request.method,
-      school: request.school,
-      latitudeAdjustmentMethod: request.latitudeAdjustmentMethod,
-      midnightMode: request.midnightMode,
-      tune: request.tune,
-      startDate: request.startDate,
-      endDate: finalTimings.at(-1)?.date ?? request.startDate,
+      latitude: requestWithDays.latitude,
+      longitude: requestWithDays.longitude,
+      latitudeRounded: roundCoordinate(requestWithDays.latitude),
+      longitudeRounded: roundCoordinate(requestWithDays.longitude),
+      timezone: requestWithDays.timezone,
+      countryCode: requestWithDays.countryCode,
+      city: requestWithDays.city,
+      method: requestWithDays.method,
+      school: requestWithDays.school,
+      latitudeAdjustmentMethod: requestWithDays.latitudeAdjustmentMethod,
+      midnightMode: requestWithDays.midnightMode,
+      tune: requestWithDays.tune,
+      startDate: requestWithDays.startDate,
+      endDate: finalTimings.at(-1)?.date ?? requestWithDays.startDate,
       days,
       source,
-      primarySource: normalized.length > 0 ? "aladhan" : "adhan-js",
+      primarySource,
       fallbackSource:
-        normalized.length > 0 && fallback.length > 0 ? "adhan-js" : undefined,
+        normalized.length > 0 && fallback.length > 0
+          ? ("adhan-js" as const)
+          : undefined,
       timings: finalTimings,
       comparison,
       raw: undefined,
@@ -133,7 +157,10 @@ export const refreshPrayerTimes = action({
       updatedAt: now,
     };
 
-    return await ctx.runMutation(upsertPrayerTimesCacheRef, payload);
+    return await ctx.runMutation(
+      internal.prayerTimes.upsertPrayerTimesCache,
+      payload
+    );
   },
 });
 
@@ -200,6 +227,7 @@ export const upsertPrayerTimesCache = internalMutation({
         q.eq("userCacheKey", request.userCacheKey)
       )
       .unique();
+
     if (existing) {
       await ctx.db.patch(existing._id, {
         ...request,
@@ -208,6 +236,7 @@ export const upsertPrayerTimesCache = internalMutation({
       });
       return await ctx.db.get(existing._id);
     }
+
     const id = await ctx.db.insert("prayerTimeCaches", request);
     return await ctx.db.get(id);
   },
@@ -217,35 +246,45 @@ async function fetchAndNormalize(request: {
   latitude: number;
   longitude: number;
   timezone: string;
+  countryCode?: string;
+  city?: string;
   method: number;
   school: number;
+  latitudeAdjustmentMethod?: number;
+  midnightMode?: number;
+  tune?: string;
   startDate: string;
   days: number;
 }) {
   const start = new Date(`${request.startDate}T00:00:00Z`);
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + request.days - 1);
+
   const sameMonth =
     start.getUTCFullYear() === end.getUTCFullYear() &&
     start.getUTCMonth() === end.getUTCMonth();
 
   try {
     const primary = await fetchAlAdhanCalendarByCoordinates(request);
-    let days = normalizeAlAdhanCalendarResponse(primary, request);
+    let parsedDays = normalizeAlAdhanCalendarResponse(primary, request);
+
     if (!sameMonth) {
-      const nextMonthDate = `${end.getUTCFullYear()}-${String(end.getUTCMonth() + 1).padStart(2, "0")}-01`;
-      const extra = await fetchAlAdhanCalendarByCoordinates({
+      const nextMonthStart = `${end.getUTCFullYear()}-${String(
+        end.getUTCMonth() + 1
+      ).padStart(2, "0")}-01`;
+      const nextMonthResponse = await fetchAlAdhanCalendarByCoordinates({
         ...request,
-        startDate: nextMonthDate,
+        startDate: nextMonthStart,
       });
-      days = days.concat(
-        normalizeAlAdhanCalendarResponse(extra, {
+      parsedDays = parsedDays.concat(
+        normalizeAlAdhanCalendarResponse(nextMonthResponse, {
           ...request,
-          startDate: nextMonthDate,
+          startDate: nextMonthStart,
         })
       );
     }
-    return slicePrayerDays(days, request.startDate, request.days);
+
+    return slicePrayerDays(parsedDays, request.startDate, request.days);
   } catch {
     return [];
   }
