@@ -1,0 +1,360 @@
+import { api } from "@barakah/core";
+import { useAction, useQuery } from "convex/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import {
+  getCurrentLocation,
+  requestLocationPermission,
+  reverseGeocodeLocation,
+} from "@/hooks/use-permissions";
+
+type CalcMethod =
+  | "isna"
+  | "mwl"
+  | "umm-al-qura"
+  | "egyptian"
+  | "karachi"
+  | "custom";
+
+type Madhab = "hanafi" | "shafii" | "maliki" | "hanbali" | "none";
+
+type PrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
+
+interface PrayerDay {
+  date: string;
+  timings: Record<PrayerName, string>;
+}
+
+interface PrayerCacheResponse {
+  cacheStatus?: "hit" | "miss";
+  prayerTimes?: PrayerDay[];
+  timings?: PrayerDay[];
+}
+
+interface PrayerRefreshResponse {
+  cacheStatus?: "refreshed" | "hit" | "miss";
+  prayerTimes?: PrayerDay[];
+  timings?: PrayerDay[];
+}
+
+const DEFAULT_DAYS = 7;
+
+const CALC_METHOD_MAP: Record<CalcMethod, number> = {
+  isna: 2,
+  mwl: 3,
+  "umm-al-qura": 4,
+  egyptian: 5,
+  karachi: 1,
+  custom: 3,
+};
+
+function todayDateKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function mapSchool(madhab?: Madhab): number {
+  return madhab === "hanafi" ? 1 : 0;
+}
+
+function mapMethod(
+  calcMethod: CalcMethod | undefined,
+  isBangladesh: boolean
+): number {
+  if (calcMethod) {
+    return CALC_METHOD_MAP[calcMethod];
+  }
+  return isBangladesh ? 1 : 3;
+}
+
+function pickPrayerTimes(
+  queryResult: PrayerCacheResponse | undefined,
+  refreshResult: PrayerRefreshResponse | null
+) {
+  if (refreshResult?.timings?.length) {
+    return refreshResult.timings;
+  }
+  if (refreshResult?.prayerTimes?.length) {
+    return refreshResult.prayerTimes;
+  }
+  if (queryResult?.timings?.length) {
+    return queryResult.timings;
+  }
+  if (queryResult?.prayerTimes?.length) {
+    return queryResult.prayerTimes;
+  }
+  return [];
+}
+
+function getNextPrayer(days: PrayerDay[]) {
+  const now = new Date();
+  const today = todayDateKey();
+  const todayItem = days.find((item) => item.date === today);
+  const prayers: PrayerName[] = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+
+  if (!todayItem) {
+    return null;
+  }
+
+  for (const prayer of prayers) {
+    const raw = todayItem.timings[prayer];
+    const [hourString, minuteString] = raw.split(":");
+    const hour = Number(hourString);
+    const minute = Number(minuteString);
+
+    if (Number.isNaN(hour) || Number.isNaN(minute)) {
+      continue;
+    }
+
+    const prayerAt = new Date(now);
+    prayerAt.setHours(hour, minute, 0, 0);
+
+    if (prayerAt > now) {
+      return {
+        name: prayer,
+        time: raw,
+        at: prayerAt,
+      };
+    }
+  }
+
+  const tomorrow = days[1];
+  if (!tomorrow) {
+    return null;
+  }
+
+  return {
+    name: "fajr" as const,
+    time: tomorrow.timings.fajr,
+    at: new Date(`${tomorrow.date}T${tomorrow.timings.fajr}:00`),
+  };
+}
+
+export function usePrayerTimes() {
+  const { state } = useOnboardingState();
+
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    timezone: string;
+    city: string | null;
+    countryCode: string | null;
+    isBangladesh: boolean;
+  } | null>(null);
+  const [loadingLocation, setLoadingLocation] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshResult, setRefreshResult] =
+    useState<PrayerRefreshResponse | null>(null);
+
+  const prayerTimesApi = (api as Record<string, unknown>).prayerTimes as
+    | {
+        getCachedPrayerTimes?: unknown;
+        refreshPrayerTimes?: unknown;
+      }
+    | undefined;
+
+  const cachedQueryRef = prayerTimesApi?.getCachedPrayerTimes as
+    | Parameters<typeof useQuery>[0]
+    | undefined;
+  const refreshActionRef = prayerTimesApi?.refreshPrayerTimes as
+    | Parameters<typeof useAction>[0]
+    | undefined;
+
+  const requestArgs = useMemo(() => {
+    if (!location) {
+      return null;
+    }
+
+    const school = mapSchool(state.madhab as Madhab | undefined);
+    const method = mapMethod(
+      state.calcMethod as CalcMethod | undefined,
+      location.isBangladesh
+    );
+
+    return {
+      latitude: location.latitude,
+      longitude: location.longitude,
+      timezone: location.timezone,
+      countryCode: location.countryCode ?? undefined,
+      city: location.city ?? undefined,
+      method,
+      school,
+      startDate: todayDateKey(),
+      days: DEFAULT_DAYS,
+    };
+  }, [location, state.calcMethod, state.madhab]);
+
+  const queryArgs = requestArgs && cachedQueryRef ? requestArgs : "skip";
+  const cachedResult = useQuery(
+    cachedQueryRef ?? ({} as Parameters<typeof useQuery>[0]),
+    queryArgs
+  );
+
+  const refreshAction = useAction(
+    refreshActionRef ?? ({} as Parameters<typeof useAction>[0])
+  ) as
+    | ((
+        args: NonNullable<typeof requestArgs>
+      ) => Promise<PrayerRefreshResponse>)
+    | undefined;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLocation() {
+      setLoadingLocation(true);
+      setError(null);
+
+      const granted =
+        state.locationGranted === true || (await requestLocationPermission());
+      if (!granted) {
+        if (!cancelled) {
+          setError("Location permission was denied.");
+          setLoadingLocation(false);
+        }
+        return;
+      }
+
+      const current = await getCurrentLocation();
+
+      if (!current) {
+        if (!cancelled) {
+          setError("Unable to determine your location.");
+          setLoadingLocation(false);
+        }
+        return;
+      }
+
+      const { latitude, longitude } = current.coords;
+      const timezone =
+        Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      const geocode = await reverseGeocodeLocation(latitude, longitude);
+      const countryCode = geocode?.countryCode?.toUpperCase() ?? null;
+      const isBangladesh = countryCode === "BD" || timezone === "Asia/Dhaka";
+
+      if (!cancelled) {
+        setLocation({
+          latitude,
+          longitude,
+          timezone,
+          city: geocode?.city ?? null,
+          countryCode,
+          isBangladesh,
+        });
+        setLoadingLocation(false);
+      }
+    }
+
+    loadLocation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [state.locationGranted]);
+
+  useEffect(() => {
+    if (!(requestArgs && refreshAction && cachedResult) || loadingLocation) {
+      return;
+    }
+
+    const queryMiss =
+      cachedResult.cacheStatus === "miss" ||
+      !(cachedResult.timings?.length || cachedResult.prayerTimes?.length);
+
+    if (!queryMiss || refreshing) {
+      return;
+    }
+
+    let cancelled = false;
+    const action = refreshAction;
+    const args = requestArgs;
+
+    async function refreshOnMiss() {
+      setRefreshing(true);
+      try {
+        const refreshed = await action(args);
+        if (!cancelled) {
+          setRefreshResult(refreshed);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Could not refresh prayer times. Please try again.");
+        }
+      } finally {
+        if (!cancelled) {
+          setRefreshing(false);
+        }
+      }
+    }
+
+    refreshOnMiss();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cachedResult, loadingLocation, refreshAction, refreshing, requestArgs]);
+
+  const prayerTimes = useMemo(
+    () => pickPrayerTimes(cachedResult, refreshResult),
+    [cachedResult, refreshResult]
+  );
+
+  const todayPrayerTimes = useMemo(() => {
+    const today = todayDateKey();
+    return prayerTimes.find((item) => item.date === today) ?? null;
+  }, [prayerTimes]);
+
+  const nextPrayer = useMemo(() => getNextPrayer(prayerTimes), [prayerTimes]);
+
+  const cacheStatus = useMemo(() => {
+    if (refreshing) {
+      return "refreshing" as const;
+    }
+    if (refreshResult?.cacheStatus) {
+      return refreshResult.cacheStatus;
+    }
+    if (cachedResult?.cacheStatus) {
+      return cachedResult.cacheStatus;
+    }
+    if (prayerTimes.length > 0) {
+      return "hit" as const;
+    }
+    return "idle" as const;
+  }, [
+    cachedResult?.cacheStatus,
+    prayerTimes.length,
+    refreshResult?.cacheStatus,
+    refreshing,
+  ]);
+
+  const refresh = useCallback(async () => {
+    if (!(requestArgs && refreshAction)) {
+      return;
+    }
+
+    setError(null);
+    setRefreshing(true);
+    try {
+      const refreshed = await refreshAction(requestArgs);
+      setRefreshResult(refreshed);
+    } catch {
+      setError("Unable to refresh prayer times right now.");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshAction, requestArgs]);
+
+  const loading =
+    loadingLocation || (cachedResult === undefined && !refreshResult);
+
+  return {
+    location,
+    prayerTimes,
+    todayPrayerTimes,
+    nextPrayer,
+    loading,
+    error,
+    refresh,
+    cacheStatus,
+  };
+}
