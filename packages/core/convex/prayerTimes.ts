@@ -14,6 +14,7 @@ import {
   slicePrayerDays,
 } from "../src/prayer";
 import { internal } from "./_generated/api";
+import type { Doc } from "./_generated/dataModel";
 import { action, internalMutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
@@ -42,6 +43,7 @@ function validatePrayerRequest(request: {
   method: number;
   school: number;
   startDate: string;
+  days?: number;
 }) {
   if (request.latitude < -90 || request.latitude > 90) {
     throw new Error("Invalid latitude");
@@ -60,6 +62,9 @@ function validatePrayerRequest(request: {
   }
   if (!DATE_KEY_PATTERN.test(request.startDate)) {
     throw new Error("Invalid startDate format");
+  }
+  if (request.days !== undefined && request.days !== DEFAULT_PRAYER_DAYS) {
+    throw new Error("Only 7-day prayer windows are supported");
   }
 }
 
@@ -88,7 +93,7 @@ export const getCachedPrayerTimes = query({
 
 export const refreshPrayerTimes: ReturnType<typeof action> = action({
   args,
-  handler: async (ctx, request): Promise<unknown> => {
+  handler: async (ctx, request): Promise<Doc<"prayerTimeCaches"> | null> => {
     validatePrayerRequest(request);
 
     const user = await authComponent.safeGetAuthUser(ctx);
