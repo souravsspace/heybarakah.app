@@ -47,7 +47,8 @@ export default function Auth() {
   const oAuthGoogle = useGoogleAuth();
   const oAuthApple = useAppleAuth();
   const { user } = useUser();
-  const { activeSubscription, hydrated, claimPending } = useSubscription();
+  const { activeSubscription, hydrated, claimPending, isSubscriptionLoading } =
+    useSubscription();
   const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(
     null
   );
@@ -81,7 +82,7 @@ export default function Auth() {
   }
 
   useEffect(() => {
-    if (!(user && hydrated) || handlingRef.current) {
+    if (!(user && hydrated) || isSubscriptionLoading || handlingRef.current) {
       return;
     }
     handlingRef.current = true;
@@ -120,6 +121,7 @@ export default function Auth() {
   }, [
     user,
     hydrated,
+    isSubscriptionLoading,
     mode,
     claimPending,
     activeSubscription,
@@ -184,7 +186,12 @@ export default function Auth() {
         <View style={{ marginTop: 36, gap: 14 }}>
           {PROVIDERS.map((p) => (
             <Pressable
+              accessibilityLabel={p.label}
               accessibilityRole="button"
+              accessibilityState={{
+                busy: loadingProvider === p.id,
+                disabled: isOAuthLoading,
+              }}
               disabled={isOAuthLoading}
               key={p.id}
               onPress={() => pick(p.id)}
@@ -236,6 +243,7 @@ export default function Auth() {
           >
             By continuing you agree to the{" "}
             <Text
+              accessibilityRole="link"
               className="text-ink"
               onPress={() => Linking.openURL(LINKS.terms)}
               style={{ fontWeight: "600", textDecorationLine: "underline" }}
@@ -244,6 +252,7 @@ export default function Auth() {
             </Text>{" "}
             and{" "}
             <Text
+              accessibilityRole="link"
               className="text-ink"
               onPress={() => Linking.openURL(LINKS.privacy)}
               style={{ fontWeight: "600", textDecorationLine: "underline" }}
