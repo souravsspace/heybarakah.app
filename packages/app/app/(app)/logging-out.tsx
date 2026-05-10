@@ -7,7 +7,7 @@ import { useSubscription } from "@/lib/subscription";
 
 export default function LoggingOut() {
   const { dispatch } = useOnboardingState();
-  const { clear } = useSubscription();
+  const { clearPending } = useSubscription();
 
   useEffect(() => {
     (async () => {
@@ -16,10 +16,10 @@ export default function LoggingOut() {
       } catch {
         // ignore
       }
-      await clear().catch(() => undefined);
+      await clearPending().catch(() => undefined);
       dispatch({ type: "RESET" });
     })();
-  }, [clear, dispatch]);
+  }, [clearPending, dispatch]);
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
