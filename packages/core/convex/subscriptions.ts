@@ -40,6 +40,11 @@ export const claimMockSubscription = mutation({
       )
       .unique();
     if (existing) {
+      if (existing.productId !== args.productId) {
+        throw new Error(
+          `Active subscription already exists with product ${existing.productId}`
+        );
+      }
       return existing;
     }
 
