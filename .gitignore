@@ -27,6 +27,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .cache
 *.tsbuildinfo
 
+# git worktrees
+.worktrees
+
 # IntelliJ based IDEs
 .idea
 
