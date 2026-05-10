@@ -87,4 +87,55 @@ export default defineSchema({
   })
     .index("by_authUserId", ["authUserId"])
     .index("by_authUserId_status", ["authUserId", "status"]),
+  prayerTimeCaches: defineTable({
+    userId: v.optional(v.string()),
+    cacheKey: v.string(),
+    userCacheKey: v.string(),
+    latitude: v.number(),
+    longitude: v.number(),
+    timezone: v.string(),
+    method: v.number(),
+    school: v.number(),
+    startDate: v.string(),
+    endDate: v.string(),
+    days: v.number(),
+    source: v.union(
+      v.literal("aladhan"),
+      v.literal("adhan-js"),
+      v.literal("hybrid")
+    ),
+    primarySource: v.union(v.literal("aladhan"), v.literal("adhan-js")),
+    fallbackSource: v.optional(v.literal("adhan-js")),
+    timings: v.array(
+      v.object({
+        date: v.string(),
+        timezone: v.string(),
+        method: v.number(),
+        school: v.number(),
+        source: v.union(
+          v.literal("aladhan"),
+          v.literal("adhan-js"),
+          v.literal("hybrid")
+        ),
+        location: v.object({ latitude: v.number(), longitude: v.number() }),
+        timings: v.object({
+          fajr: v.string(),
+          sunrise: v.string(),
+          dhuhr: v.string(),
+          asr: v.string(),
+          maghrib: v.string(),
+          isha: v.string(),
+        }),
+      })
+    ),
+    comparison: v.optional(v.any()),
+    generatedAt: v.number(),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_cacheKey", ["cacheKey"])
+    .index("by_userCacheKey", ["userCacheKey"])
+    .index("by_userId", ["userId"])
+    .index("by_expiry", ["expiresAt"]),
 });
