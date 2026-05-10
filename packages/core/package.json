@@ -5,6 +5,7 @@
   "types": "./index.ts",
   "exports": {
     ".": "./index.ts",
+    "./prayer": "./src/prayer/index.ts",
     "./convex/_generated/*": "./convex/_generated/*",
     "./convex/*": "./convex/*"
   },
@@ -15,13 +16,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "convex": "catalog:",
-    "zod": "catalog:",
-    "dotenv": "catalog:",
-    "better-auth": "catalog:",
     "@better-auth/expo": "catalog:",
     "@convex-dev/better-auth": "catalog:",
-    "@convex-dev/resend": "^0.2.3"
+    "@convex-dev/resend": "^0.2.3",
+    "adhan": "^4.4.3",
+    "better-auth": "catalog:",
+    "convex": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@barakah/tsconfig": "workspace:*",
