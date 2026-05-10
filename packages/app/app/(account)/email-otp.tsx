@@ -17,6 +17,8 @@ import { authClient } from "@/lib/auth-client";
 
 const PRIMARY = "#29603E";
 const INK = "#0F1311";
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const OTP_PATTERN = /^\d{6}$/;
 
 export default function EmailOtp() {
   const router = useRouter();
@@ -29,46 +31,56 @@ export default function EmailOtp() {
 
   async function sendCode() {
     const trimmed = email.trim().toLowerCase();
-    if (!trimmed?.includes("@")) {
+    if (!EMAIL_PATTERN.test(trimmed)) {
       Alert.alert("Invalid email", "Enter a valid email address.");
       return;
     }
     selectionAsync().catch(() => undefined);
     setIsLoading(true);
-    const { error } = await authClient.emailOtp.sendVerificationOtp({
-      email: trimmed,
-      type: "sign-in",
-    });
-    setIsLoading(false);
-    if (error) {
-      Alert.alert("Could not send code", error.message ?? "Try again.");
-      return;
+    try {
+      const { error } = await authClient.emailOtp.sendVerificationOtp({
+        email: trimmed,
+        type: "sign-in",
+      });
+      if (error) {
+        Alert.alert("Could not send code", error.message ?? "Try again.");
+        return;
+      }
+      setEmail(trimmed);
+      setStep("code");
+    } catch {
+      Alert.alert("Could not send code", "Check your connection and try again.");
+    } finally {
+      setIsLoading(false);
     }
-    setEmail(trimmed);
-    setStep("code");
   }
 
   async function verify() {
-    if (!code.trim() || code.trim().length < 4) {
-      Alert.alert("Invalid code", "Enter the code from your email.");
+    if (!OTP_PATTERN.test(code.trim())) {
+      Alert.alert("Invalid code", "Enter the 6-digit code from your email.");
       return;
     }
     selectionAsync().catch(() => undefined);
     setIsLoading(true);
-    const { error } = await authClient.signIn.emailOtp({
-      email,
-      otp: code.trim(),
-    });
-    setIsLoading(false);
-    if (error) {
-      Alert.alert("Invalid code", error.message ?? "Try again.");
-      return;
+    try {
+      const { error } = await authClient.signIn.emailOtp({
+        email,
+        otp: code.trim(),
+      });
+      if (error) {
+        Alert.alert("Invalid code", error.message ?? "Try again.");
+        return;
+      }
+      // user-context will pick up user; auth.tsx effect handles nav
+      router.replace({
+        pathname: "/(account)/auth",
+        params: { mode },
+      });
+    } catch {
+      Alert.alert("Could not verify code", "Check your connection and try again.");
+    } finally {
+      setIsLoading(false);
     }
-    // user-context will pick up user; auth.tsx effect handles nav
-    router.replace({
-      pathname: "/(account)/auth",
-      params: { mode },
-    });
   }
 
   return (
@@ -88,6 +100,8 @@ export default function EmailOtp() {
         <View style={{ marginTop: 36, gap: 14 }}>
           {step === "email" ? (
             <TextInput
+              accessibilityHint="Enter the email address for your Barakah account"
+              accessibilityLabel="Email address"
               autoCapitalize="none"
               autoComplete="email"
               autoFocus
@@ -110,6 +124,8 @@ export default function EmailOtp() {
             />
           ) : (
             <TextInput
+              accessibilityHint="Enter the 6-digit code sent to your email"
+              accessibilityLabel="Verification code"
               autoComplete="one-time-code"
               autoFocus
               className="font-sans text-ink"
@@ -136,6 +152,7 @@ export default function EmailOtp() {
 
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ busy: isLoading, disabled: isLoading }}
             disabled={isLoading}
             onPress={step === "email" ? sendCode : verify}
             style={({ pressed }) => ({
