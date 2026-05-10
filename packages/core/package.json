@@ -11,7 +11,8 @@
   "scripts": {
     "dev": "convex dev",
     "dev:setup": "convex dev --configure --until-success",
-    "reset:db": "bun scripts/reset-db.ts"
+    "reset:db": "bun scripts/reset-db.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "convex": "catalog:",
