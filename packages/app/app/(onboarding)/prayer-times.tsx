@@ -11,7 +11,7 @@ import { getCurrentLocation } from "@/hooks/use-permissions";
 
 const SCREEN_PAD_X = 24;
 
-const PRAYERS = [
+const FALLBACK_PRAYERS = [
   {
     name: "Fajr",
     time: "5:12",
@@ -39,6 +39,44 @@ const PRAYERS = [
   { name: "Isha", time: "20:34", minutes: 20 * 60 + 34, icon: "moon" as const },
 ];
 
+const PRAYER_NAMES = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
+
+const PRAYER_ICONS: Record<
+  (typeof PRAYER_NAMES)[number],
+  keyof typeof Ionicons.glyphMap
+> = {
+  Fajr: "moon-outline",
+  Dhuhr: "sunny-outline",
+  Asr: "partly-sunny-outline",
+  Maghrib: "cloudy-night-outline",
+  Isha: "moon",
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  1: "KARACHI",
+  2: "ISNA",
+  3: "MWL",
+  4: "UMM AL-QURA",
+  5: "EGYPTIAN",
+  7: "MWL",
+  8: "UMM AL-QURA",
+  9: "KARACHI",
+  99: "CUSTOM",
+};
+
+interface PrayerRowData {
+  icon: keyof typeof Ionicons.glyphMap;
+  minutes: number;
+  name: string;
+  time: string;
+}
+
+interface PrayerTimesData {
+  city: string;
+  method: string;
+  prayers: PrayerRowData[];
+}
+
 function formatToday() {
   const d = new Date();
   return d.toLocaleDateString(undefined, {
@@ -51,13 +89,173 @@ function formatToday() {
 function nextPrayerIndex() {
   const now = new Date();
   const cur = now.getHours() * 60 + now.getMinutes();
-  const idx = PRAYERS.findIndex((p) => p.minutes > cur);
+  const idx = FALLBACK_PRAYERS.findIndex((p) => p.minutes > cur);
   return idx === -1 ? 0 : idx;
 }
 
-function DayRibbon({ width, nextIdx }: { width: number; nextIdx: number }) {
-  const start = PRAYERS[0].minutes;
-  const end = PRAYERS.at(-1)?.minutes ?? 0;
+function nextPrayerIndexFor(prayers: PrayerRowData[]) {
+  const now = new Date();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  const idx = prayers.findIndex((p) => p.minutes > cur);
+  return idx === -1 ? 0 : idx;
+}
+
+function parseMinutes(value: string) {
+  const clean = value.replace(/[^\d:]/g, "");
+  const [hRaw, mRaw] = clean.split(":");
+  const hours = Number(hRaw);
+  const mins = Number(mRaw);
+  if (Number.isNaN(hours) || Number.isNaN(mins)) {
+    return null;
+  }
+  return hours * 60 + mins;
+}
+
+function toPrayerRows(timings: Record<string, string>) {
+  const mapped = PRAYER_NAMES.map((name) => {
+    const time = timings[name];
+    const minutes = parseMinutes(time);
+    if (!time || minutes === null) {
+      return null;
+    }
+
+    return {
+      name,
+      time: time.replace(/\s*\(.+\)\s*/g, ""),
+      minutes,
+      icon: PRAYER_ICONS[name],
+    } satisfies PrayerRowData;
+  }).filter((item) => item !== null);
+
+  if (mapped.length !== PRAYER_NAMES.length) {
+    return null;
+  }
+
+  return mapped;
+}
+
+function methodCodeFromCalcMethod(calcMethod?: string) {
+  switch (calcMethod) {
+    case "karachi":
+      return 1;
+    case "isna":
+      return 2;
+    case "mwl":
+      return 3;
+    case "umm-al-qura":
+      return 4;
+    case "egyptian":
+      return 5;
+    default:
+      return 2;
+  }
+}
+
+function usePrayerTimes({
+  calcMethod,
+  locationGranted,
+}: {
+  calcMethod?: string;
+  locationGranted: boolean;
+}) {
+  const [data, setData] = useState<PrayerTimesData | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        let latitude: number | null = null;
+        let longitude: number | null = null;
+
+        if (locationGranted) {
+          const loc = await getCurrentLocation();
+          if (loc) {
+            latitude = loc.coords.latitude;
+            longitude = loc.coords.longitude;
+          }
+        }
+
+        const methodCode = methodCodeFromCalcMethod(calcMethod);
+        const endpoint =
+          latitude !== null && longitude !== null
+            ? `https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=${methodCode}`
+            : `https://api.aladhan.com/v1/timingsByCity?city=Mecca&country=Saudi Arabia&method=${methodCode}`;
+
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+          return;
+        }
+
+        const payload: unknown = await response.json();
+        if (
+          !payload ||
+          typeof payload !== "object" ||
+          !("data" in payload) ||
+          !payload.data ||
+          typeof payload.data !== "object"
+        ) {
+          return;
+        }
+
+        const dataObj = payload.data as {
+          timings?: Record<string, string>;
+          meta?: {
+            timezone?: string;
+            method?: { id?: number; name?: string };
+          };
+        };
+
+        if (!dataObj.timings) {
+          return;
+        }
+
+        const prayers = toPrayerRows(dataObj.timings);
+        if (!prayers) {
+          return;
+        }
+
+        const city =
+          latitude !== null && longitude !== null
+            ? "Your location"
+            : "Mecca, Saudi Arabia";
+        const methodFromApi = dataObj.meta?.method?.id
+          ? METHOD_LABELS[String(dataObj.meta.method.id)]
+          : undefined;
+        const method =
+          methodFromApi ?? dataObj.meta?.method?.name?.toUpperCase() ?? "ISNA";
+
+        if (!cancelled) {
+          setData({ city, method, prayers });
+        }
+      } catch {
+        // Keep fallback static data to avoid blocking onboarding.
+      }
+    };
+
+    load().catch(() => {
+      // Keep fallback static data to avoid blocking onboarding.
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [calcMethod, locationGranted]);
+
+  return data;
+}
+
+function DayRibbon({
+  prayers,
+  width,
+  nextIdx,
+}: {
+  prayers: PrayerRowData[];
+  width: number;
+  nextIdx: number;
+}) {
+  const start = prayers[0]?.minutes ?? 0;
+  const end = prayers.at(-1)?.minutes ?? 0;
   const range = end - start;
 
   const now = new Date();
@@ -86,7 +284,7 @@ function DayRibbon({ width, nextIdx }: { width: number; nextIdx: number }) {
             width: "100%",
           }}
         />
-        {PRAYERS.map((p, i) => {
+        {prayers.map((p, i) => {
           const pct = ((p.minutes - start) / range) * 100;
           const active = i === nextIdx;
           return (
@@ -124,7 +322,7 @@ function DayRibbon({ width, nextIdx }: { width: number; nextIdx: number }) {
           height: 14,
         }}
       >
-        {PRAYERS.map((p, i) => {
+        {prayers.map((p, i) => {
           const pct = ((p.minutes - start) / range) * 100;
           const active = i === nextIdx;
           return (
@@ -156,22 +354,23 @@ export default function PrayerTimes() {
   const { next } = useOnboardingNav();
   const { width } = useWindowDimensions();
   const fullWidth = width - SCREEN_PAD_X * 2;
-  const [city, setCity] = useState("Mecca, Saudi Arabia");
-  const nextIdx = useMemo(() => nextPrayerIndex(), []);
+
+  const liveData = usePrayerTimes({
+    calcMethod: state.calcMethod,
+    locationGranted: Boolean(state.locationGranted),
+  });
+
+  const prayers = liveData?.prayers ?? FALLBACK_PRAYERS;
+  const nextIdx = useMemo(
+    () => (liveData ? nextPrayerIndexFor(prayers) : nextPrayerIndex()),
+    [liveData, prayers]
+  );
   const today = useMemo(() => formatToday(), []);
 
-  useEffect(() => {
-    if (!state.locationGranted) {
-      return;
-    }
-    getCurrentLocation().then((loc) => {
-      if (loc) {
-        setCity("Your location");
-      }
-    });
-  }, [state.locationGranted]);
-
-  const method = state.calcMethod ? state.calcMethod.toUpperCase() : "ISNA";
+  const city = liveData?.city ?? "Mecca, Saudi Arabia";
+  const method =
+    liveData?.method ??
+    (state.calcMethod ? state.calcMethod.toUpperCase() : "ISNA");
 
   return (
     <ScreenShell footer={<Button label="Looks good" onPress={next} />}>
@@ -198,10 +397,10 @@ export default function PrayerTimes() {
               paddingBottom: 4,
             }}
           >
-            {PRAYERS.map((p, i) => (
+            {prayers.map((p, i) => (
               <PrayerRow
                 icon={p.icon}
-                isLast={i === PRAYERS.length - 1}
+                isLast={i === prayers.length - 1}
                 isNext={i === nextIdx}
                 key={p.name}
                 name={p.name}
@@ -212,7 +411,7 @@ export default function PrayerTimes() {
         </FadeSlideIn>
 
         <FadeSlideIn className="mt-auto items-center" delay={380}>
-          <DayRibbon nextIdx={nextIdx} width={fullWidth} />
+          <DayRibbon nextIdx={nextIdx} prayers={prayers} width={fullWidth} />
         </FadeSlideIn>
       </FadeSlideIn>
     </ScreenShell>
