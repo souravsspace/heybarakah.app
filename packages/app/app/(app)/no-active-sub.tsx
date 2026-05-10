@@ -27,7 +27,7 @@ export default function NoActiveSub() {
 
   async function onRestore() {
     setIsRestoring(true);
-    const ok = await restore(user?.email ?? null);
+    const ok = await restore();
     setIsRestoring(false);
     if (ok) {
       router.replace("/home");
