@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "scripts": {
     "start": "expo start",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@barakah/core": "workspace:*",
