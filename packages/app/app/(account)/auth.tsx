@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { AuthLoading } from "@/components/auth-loading";
 import { BodyText } from "@/components/onboarding/body-text";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
@@ -43,10 +44,10 @@ type Mode = "signup" | "signin";
 export default function Auth() {
   const { state, dispatch } = useOnboardingState();
   const router = useRouter();
-  const params = useLocalSearchParams<{ mode?: string }>();
+  const params = useLocalSearchParams<{ mode?: string; verifying?: string }>();
   const oAuthGoogle = useGoogleAuth();
   const oAuthApple = useAppleAuth();
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const { activeSubscription, hydrated, claimPending, isSubscriptionLoading } =
     useSubscription();
   const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(
@@ -136,9 +137,8 @@ export default function Auth() {
     fillDefaultsIfWelcome(provider);
 
     if (provider === "google") {
-      try {
-        await oAuthGoogle.signIn();
-      } finally {
+      const didStart = await oAuthGoogle.signIn();
+      if (!didStart) {
         setPendingProvider(null);
       }
       return;
@@ -162,6 +162,11 @@ export default function Auth() {
     (oAuthGoogle.isLoading ? "google" : null) ??
     (oAuthApple.isLoading ? "apple" : null);
   const isOAuthLoading = loadingProvider !== null;
+  const isVerifyingAuth = params.verifying === "1";
+
+  if (isUserLoading || isOAuthLoading || isVerifyingAuth || user) {
+    return <AuthLoading />;
+  }
 
   const headline = mode === "signup" ? "Create your account" : "Welcome back.";
   const subline =

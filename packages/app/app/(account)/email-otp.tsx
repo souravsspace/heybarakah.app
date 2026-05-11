@@ -77,7 +77,7 @@ export default function EmailOtp() {
       // user-context will pick up user; auth.tsx effect handles nav
       router.replace({
         pathname: "/(account)/auth",
-        params: { mode },
+        params: { mode, verifying: "1" },
       });
     } catch {
       Alert.alert(

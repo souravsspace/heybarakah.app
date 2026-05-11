@@ -20,20 +20,23 @@ export function useGoogleAuth() {
           "Google sign-in failed",
           error.message ?? "Unknown error. Check Metro logs."
         );
-        return;
+        return false;
       }
       if (!data) {
         Alert.alert(
           "Google sign-in did not complete",
           "The browser closed before sign-in finished."
         );
+        return false;
       }
+      return true;
     } catch (error) {
       console.error("[google-oauth] threw:", error);
       Alert.alert(
         "Google sign-in error",
         error instanceof Error ? error.message : "Unknown error"
       );
+      return false;
     } finally {
       setIsLoading(false);
     }
