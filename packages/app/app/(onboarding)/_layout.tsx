@@ -19,13 +19,6 @@ export default function OnboardingLayout() {
     }
     return state.routes[state.index]?.name;
   });
-  const prevName = useNavigationState((state) => {
-    if (!state) {
-      return;
-    }
-    return state.routes[state.index - 1]?.name;
-  });
-
   const [gestureToWelcome, setGestureToWelcome] = useState(false);
 
   if (isLoading) {
@@ -56,13 +49,6 @@ export default function OnboardingLayout() {
       )}
       <Stack
         screenListeners={{
-          gestureStart: () => {
-            if (prevName === "welcome") {
-              setGestureToWelcome(true);
-            }
-          },
-          gestureEnd: () => setGestureToWelcome(false),
-          gestureCancel: () => setGestureToWelcome(false),
           transitionEnd: () => setGestureToWelcome(false),
         }}
         screenOptions={{

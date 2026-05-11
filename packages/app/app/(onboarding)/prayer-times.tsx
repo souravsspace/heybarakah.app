@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
@@ -7,11 +7,11 @@ import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
-import { getCurrentLocation } from "@/hooks/use-permissions";
+import { usePrayerTimes as useLivePrayerTimes } from "@/hooks/usePrayerTimes";
 
 const SCREEN_PAD_X = 24;
 
-const PRAYERS = [
+const FALLBACK_PRAYERS = [
   {
     name: "Fajr",
     time: "5:12",
@@ -39,6 +39,13 @@ const PRAYERS = [
   { name: "Isha", time: "20:34", minutes: 20 * 60 + 34, icon: "moon" as const },
 ];
 
+interface PrayerRowData {
+  icon: keyof typeof Ionicons.glyphMap;
+  minutes: number;
+  name: string;
+  time: string;
+}
+
 function formatToday() {
   const d = new Date();
   return d.toLocaleDateString(undefined, {
@@ -51,13 +58,78 @@ function formatToday() {
 function nextPrayerIndex() {
   const now = new Date();
   const cur = now.getHours() * 60 + now.getMinutes();
-  const idx = PRAYERS.findIndex((p) => p.minutes > cur);
+  const idx = FALLBACK_PRAYERS.findIndex((p) => p.minutes > cur);
   return idx === -1 ? 0 : idx;
 }
 
-function DayRibbon({ width, nextIdx }: { width: number; nextIdx: number }) {
-  const start = PRAYERS[0].minutes;
-  const end = PRAYERS.at(-1).minutes;
+function nextPrayerIndexFor(prayers: PrayerRowData[]) {
+  const now = new Date();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  const idx = prayers.findIndex((p) => p.minutes > cur);
+  return idx === -1 ? 0 : idx;
+}
+
+function parseMinutes(value: string) {
+  const [hoursText, minutesText] = value.split(":");
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return null;
+  }
+  return hours * 60 + minutes;
+}
+
+function toPrayerRows(
+  todayPrayerTimes: {
+    timings: {
+      fajr: string;
+      dhuhr: string;
+      asr: string;
+      maghrib: string;
+      isha: string;
+    };
+  } | null,
+): PrayerRowData[] | null {
+  if (!todayPrayerTimes) {
+    return null;
+  }
+
+  const entries: [
+    name: string,
+    time: string,
+    icon: keyof typeof Ionicons.glyphMap,
+  ][] = [
+    ["Fajr", todayPrayerTimes.timings.fajr, "moon-outline"],
+    ["Dhuhr", todayPrayerTimes.timings.dhuhr, "sunny-outline"],
+    ["Asr", todayPrayerTimes.timings.asr, "partly-sunny-outline"],
+    ["Maghrib", todayPrayerTimes.timings.maghrib, "cloudy-night-outline"],
+    ["Isha", todayPrayerTimes.timings.isha, "moon"],
+  ];
+
+  const rows = entries
+    .map(([name, time, icon]) => {
+      const minutes = parseMinutes(time);
+      if (minutes === null) {
+        return null;
+      }
+      return { name, time, minutes, icon };
+    })
+    .filter((value) => value !== null);
+
+  return rows.length === entries.length ? rows : null;
+}
+
+function DayRibbon({
+  prayers,
+  width,
+  nextIdx,
+}: {
+  prayers: PrayerRowData[];
+  width: number;
+  nextIdx: number;
+}) {
+  const start = prayers[0]?.minutes ?? 0;
+  const end = prayers.at(-1)?.minutes ?? 0;
   const range = end - start;
 
   const now = new Date();
@@ -86,7 +158,7 @@ function DayRibbon({ width, nextIdx }: { width: number; nextIdx: number }) {
             width: "100%",
           }}
         />
-        {PRAYERS.map((p, i) => {
+        {prayers.map((p, i) => {
           const pct = ((p.minutes - start) / range) * 100;
           const active = i === nextIdx;
           return (
@@ -124,7 +196,7 @@ function DayRibbon({ width, nextIdx }: { width: number; nextIdx: number }) {
           height: 14,
         }}
       >
-        {PRAYERS.map((p, i) => {
+        {prayers.map((p, i) => {
           const pct = ((p.minutes - start) / range) * 100;
           const active = i === nextIdx;
           return (
@@ -156,21 +228,21 @@ export default function PrayerTimes() {
   const { next } = useOnboardingNav();
   const { width } = useWindowDimensions();
   const fullWidth = width - SCREEN_PAD_X * 2;
-  const [city, setCity] = useState("Mecca, Saudi Arabia");
-  const nextIdx = useMemo(() => nextPrayerIndex(), []);
+
+  const liveData = useLivePrayerTimes();
+  const liveRows = useMemo(
+    () => toPrayerRows(liveData.todayPrayerTimes),
+    [liveData.todayPrayerTimes],
+  );
+
+  const prayers = liveRows ?? FALLBACK_PRAYERS;
+  const nextIdx = useMemo(
+    () => (liveRows ? nextPrayerIndexFor(prayers) : nextPrayerIndex()),
+    [liveRows, prayers],
+  );
   const today = useMemo(() => formatToday(), []);
 
-  useEffect(() => {
-    if (!state.locationGranted) {
-      return;
-    }
-    getCurrentLocation().then((loc) => {
-      if (loc) {
-        setCity("Your location");
-      }
-    });
-  }, [state.locationGranted]);
-
+  const city = liveData.location?.city ?? "Mecca, Saudi Arabia";
   const method = state.calcMethod ? state.calcMethod.toUpperCase() : "ISNA";
 
   return (
@@ -198,10 +270,10 @@ export default function PrayerTimes() {
               paddingBottom: 4,
             }}
           >
-            {PRAYERS.map((p, i) => (
+            {prayers.map((p, i) => (
               <PrayerRow
                 icon={p.icon}
-                isLast={i === PRAYERS.length - 1}
+                isLast={i === prayers.length - 1}
                 isNext={i === nextIdx}
                 key={p.name}
                 name={p.name}
@@ -212,7 +284,7 @@ export default function PrayerTimes() {
         </FadeSlideIn>
 
         <FadeSlideIn className="mt-auto items-center" delay={380}>
-          <DayRibbon nextIdx={nextIdx} width={fullWidth} />
+          <DayRibbon nextIdx={nextIdx} prayers={prayers} width={fullWidth} />
         </FadeSlideIn>
       </FadeSlideIn>
     </ScreenShell>

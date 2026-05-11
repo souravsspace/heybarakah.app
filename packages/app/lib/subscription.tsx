@@ -1,4 +1,7 @@
+import { api } from "@barakah/core";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useMutation, useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import {
   createContext,
   useCallback,
@@ -8,173 +11,113 @@ import {
   useState,
 } from "react";
 
-const STORAGE_KEY = "subscription:v2";
+const STORAGE_KEY = "subscription-pending:v1";
 
 export type ProductId = "yearly" | "monthly" | "family";
 
-export interface UserEntitlement {
-  productId: ProductId;
-  purchasedAt: string;
-}
+export type ClaimResult = "claimed" | "no-pending";
 
-export interface SubscriptionState {
-  emails: Record<string, UserEntitlement>;
-  pending: ProductId | null;
-}
-
-const INITIAL: SubscriptionState = {
-  pending: null,
-  emails: {},
-};
-
-export type ClaimResult = "claimed" | "already-active" | "conflict" | "no-sub";
+type ActiveSubscription = FunctionReturnType<
+  typeof api.subscriptions.getMySubscription
+>;
 
 interface Ctx {
-  claimPending(email: string): Promise<ClaimResult>;
-  clear(): Promise<void>;
+  activeSubscription: ActiveSubscription | undefined;
+  claimPending(): Promise<ClaimResult>;
+  clearPending(): Promise<void>;
   hydrated: boolean;
-  isActiveFor(email: string | null | undefined): boolean;
+  isSubscriptionLoading: boolean;
+  pending: ProductId | null;
   purchasePending(productId: ProductId): Promise<void>;
-  restore(email: string | null | undefined): Promise<boolean>;
-  state: SubscriptionState;
+  restore(): Promise<boolean>;
 }
 
 const SubscriptionContext = createContext<Ctx | null>(null);
-
-function normalizeEmail(email: string | null | undefined): string | null {
-  if (!email) {
-    return null;
-  }
-  const trimmed = email.trim().toLowerCase();
-  return trimmed || null;
-}
 
 export function SubscriptionProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [state, setState] = useState<SubscriptionState>(INITIAL);
+  const [pending, setPending] = useState<ProductId | null>(null);
   const [hydrated, setHydrated] = useState(false);
+
+  const activeSubscription = useQuery(api.subscriptions.getMySubscription);
+  const claimMutation = useMutation(api.subscriptions.claimMockSubscription);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
         if (raw) {
           try {
-            const parsed = JSON.parse(raw) as SubscriptionState;
-            setState({ ...INITIAL, ...parsed });
+            const parsed = JSON.parse(raw) as { pending: unknown };
+            const productId = parsed.pending;
+            if (
+              productId === "yearly" ||
+              productId === "monthly" ||
+              productId === "family"
+            ) {
+              setPending(productId);
+            }
           } catch {
-            // corrupt — keep INITIAL
+            // corrupt — keep null
           }
         }
       })
       .finally(() => setHydrated(true));
   }, []);
 
-  const persist = useCallback(async (next: SubscriptionState) => {
-    setState(next);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  const purchasePending = useCallback(async (productId: ProductId) => {
+    setPending(productId);
+    await AsyncStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ pending: productId }),
+    );
   }, []);
 
-  const purchasePending = useCallback(
-    async (productId: ProductId) => {
-      await persist({
-        ...state,
-        pending: productId,
-      });
-    },
-    [persist, state]
-  );
-
-  const claimPending = useCallback(
-    async (email: string): Promise<ClaimResult> => {
-      const key = normalizeEmail(email);
-      if (!key) {
-        return "no-sub";
-      }
-      const hasPending = state.pending !== null;
-      const hasEntitlement = Boolean(state.emails[key]);
-      if (hasPending && hasEntitlement) {
-        // User just paid but this email already had a sub.
-        // Don't burn the pending purchase — keep it for a different account.
-        return "conflict";
-      }
-      if (hasPending && state.pending) {
-        const next: SubscriptionState = {
-          pending: null,
-          emails: {
-            ...state.emails,
-            [key]: {
-              productId: state.pending,
-              purchasedAt: new Date().toISOString(),
-            },
-          },
-        };
-        await persist(next);
-        return "claimed";
-      }
-      if (hasEntitlement) {
-        return "already-active";
-      }
-      return "no-sub";
-    },
-    [persist, state]
-  );
-
-  const isActiveFor = useCallback(
-    (email: string | null | undefined) => {
-      const key = normalizeEmail(email);
-      if (!key) {
-        return false;
-      }
-      return Boolean(state.emails[key]);
-    },
-    [state.emails]
-  );
-
-  const restore = useCallback(async (email: string | null | undefined) => {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return false;
+  const claimPending = useCallback(async (): Promise<ClaimResult> => {
+    if (!pending) {
+      return "no-pending";
     }
-    try {
-      const parsed = JSON.parse(raw) as SubscriptionState;
-      setState(parsed);
-      const key = normalizeEmail(email);
-      if (!key) {
-        return false;
-      }
-      return Boolean(parsed.emails[key]);
-    } catch {
-      return false;
-    }
-  }, []);
-
-  const clear = useCallback(async () => {
+    await claimMutation({ productId: pending });
+    setPending(null);
     await AsyncStorage.removeItem(STORAGE_KEY);
-    setState(INITIAL);
+    return "claimed";
+  }, [pending, claimMutation]);
+
+  const restore = useCallback(
+    async () => Boolean(activeSubscription),
+    [activeSubscription],
+  );
+
+  const clearPending = useCallback(async () => {
+    setPending(null);
+    await AsyncStorage.removeItem(STORAGE_KEY);
   }, []);
+
+  const isSubscriptionLoading = activeSubscription === undefined;
 
   const value = useMemo<Ctx>(
     () => ({
-      state,
-      hydrated,
-      isActiveFor,
-      purchasePending,
+      activeSubscription,
       claimPending,
+      clearPending,
+      hydrated,
+      isSubscriptionLoading,
+      pending,
+      purchasePending,
       restore,
-      clear,
     }),
     [
-      state,
-      hydrated,
-      isActiveFor,
-      purchasePending,
+      activeSubscription,
       claimPending,
+      clearPending,
+      hydrated,
+      isSubscriptionLoading,
+      pending,
+      purchasePending,
       restore,
-      clear,
-    ]
+    ],
   );
 
   return (

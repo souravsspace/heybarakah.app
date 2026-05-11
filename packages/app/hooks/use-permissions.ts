@@ -28,3 +28,29 @@ export async function getCurrentLocation() {
     return null;
   }
 }
+
+export interface ReverseGeocodeResult {
+  city: string | null;
+  countryCode: string | null;
+}
+
+export async function reverseGeocodeLocation(
+  latitude: number,
+  longitude: number,
+): Promise<ReverseGeocodeResult | null> {
+  try {
+    const places = await Location.reverseGeocodeAsync({ latitude, longitude });
+    const first = places[0];
+
+    if (!first) {
+      return null;
+    }
+
+    return {
+      city: first.city ?? first.subregion ?? first.region ?? null,
+      countryCode: first.isoCountryCode ?? null,
+    };
+  } catch {
+    return null;
+  }
+}

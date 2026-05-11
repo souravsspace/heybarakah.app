@@ -19,10 +19,10 @@ function Dot({ delay }: { delay: number }) {
       withRepeat(
         withSequence(
           withTiming(1.25, { duration: 360, easing: Easing.out(Easing.cubic) }),
-          withTiming(1, { duration: 360, easing: Easing.out(Easing.cubic) })
+          withTiming(1, { duration: 360, easing: Easing.out(Easing.cubic) }),
         ),
-        -1
-      )
+        -1,
+      ),
     );
   }, [delay, s]);
 

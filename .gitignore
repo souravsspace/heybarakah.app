@@ -26,6 +26,10 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .eslintcache
 .cache
 *.tsbuildinfo
+.turbo/
+
+# git worktrees
+.worktrees
 
 # IntelliJ based IDEs
 .idea

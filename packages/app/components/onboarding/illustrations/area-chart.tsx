@@ -75,14 +75,14 @@ export function AreaChart({
         x: padX + (innerW * i) / (values.length - 1),
         y: padTop + innerH * (1 - v),
       })),
-    [values, innerW, innerH]
+    [values, innerW, innerH],
   );
 
   const linePath = useMemo(() => smoothPath(points), [points]);
   const areaPath = useMemo(
     () =>
-      `${linePath} L ${points.at(-1).x} ${baseY} L ${points[0].x} ${baseY} Z`,
-    [linePath, points, baseY]
+      `${linePath} L ${points.at(-1)?.x ?? 0} ${baseY} L ${points[0].x} ${baseY} Z`,
+    [linePath, points, baseY],
   );
 
   const highlight = peakIndex ?? values.indexOf(Math.max(...values));
@@ -98,7 +98,7 @@ export function AreaChart({
     });
     dot.value = withDelay(
       900,
-      withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) })
+      withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) }),
     );
   }, [reveal, dot]);
 

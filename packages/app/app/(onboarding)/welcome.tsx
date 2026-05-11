@@ -59,7 +59,7 @@ export default function Welcome() {
   const isSwiping = useRef(false);
   const shouldResetSwipe = useRef(false);
   const [cardStack, setCardStack] = useState(() =>
-    createWelcomeCardStackState(welcomeCards.length)
+    createWelcomeCardStackState(welcomeCards.length),
   );
   const { cardOrder, dragIndex, outgoingIndex } = cardStack;
 
@@ -96,7 +96,7 @@ export default function Welcome() {
       const exitX = horizontalDirection * cardWidth * 1.55;
       const exitY = Math.max(
         Math.min(dy, cardHeight * 0.18),
-        -cardHeight * 0.18
+        -cardHeight * 0.18,
       );
 
       Animated.timing(swipe, {
@@ -113,7 +113,7 @@ export default function Welcome() {
         isSwiping.current = false;
       });
     },
-    [cardHeight, cardWidth, completeSwipe, swipe]
+    [cardHeight, cardWidth, completeSwipe, swipe],
   );
 
   const panResponder = useMemo(
@@ -137,7 +137,7 @@ export default function Welcome() {
             x: gesture.dx,
             y: Math.max(
               Math.min(gesture.dy, cardHeight * 0.28),
-              -cardHeight * 0.28
+              -cardHeight * 0.28,
             ),
           });
         },
@@ -148,7 +148,7 @@ export default function Welcome() {
 
           const cappedDy = Math.max(
             Math.min(gesture.dy, cardHeight * 0.28),
-            -cardHeight * 0.28
+            -cardHeight * 0.28,
           );
           const distance = Math.hypot(gesture.dx, cappedDy);
           const threshold = 44;
@@ -175,7 +175,7 @@ export default function Welcome() {
           isSwiping.current = false;
         },
       }),
-    [cardHeight, sendTopCardToBottom, swipe]
+    [cardHeight, sendTopCardToBottom, swipe],
   );
 
   return (

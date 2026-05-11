@@ -27,16 +27,21 @@ export default function NoActiveSub() {
 
   async function onRestore() {
     setIsRestoring(true);
-    const ok = await restore(user?.email ?? null);
-    setIsRestoring(false);
-    if (ok) {
-      router.replace("/home");
-      return;
+    try {
+      const ok = await restore();
+      if (ok) {
+        router.replace("/home");
+        return;
+      }
+      Alert.alert(
+        "Nothing to restore",
+        "We could not find an active subscription for this account.",
+      );
+    } catch {
+      Alert.alert("Could not restore", "Check your connection and try again.");
+    } finally {
+      setIsRestoring(false);
     }
-    Alert.alert(
-      "Nothing to restore",
-      "We could not find an active subscription for this account."
-    );
   }
 
   return (
@@ -44,6 +49,7 @@ export default function NoActiveSub() {
       <View className="flex-row items-center px-md" style={{ height: 48 }}>
         <Pressable
           accessibilityLabel="Back to sign in"
+          accessibilityRole="button"
           hitSlop={12}
           onPress={backToAuth}
         >

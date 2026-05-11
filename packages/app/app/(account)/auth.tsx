@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { AuthLoading } from "@/components/auth-loading";
 import { BodyText } from "@/components/onboarding/body-text";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
@@ -43,13 +44,14 @@ type Mode = "signup" | "signin";
 export default function Auth() {
   const { state, dispatch } = useOnboardingState();
   const router = useRouter();
-  const params = useLocalSearchParams<{ mode?: string }>();
+  const params = useLocalSearchParams<{ mode?: string; verifying?: string }>();
   const oAuthGoogle = useGoogleAuth();
   const oAuthApple = useAppleAuth();
-  const { user } = useUser();
-  const { hydrated, claimPending } = useSubscription();
+  const { user, isLoading: isUserLoading } = useUser();
+  const { activeSubscription, hydrated, claimPending, isSubscriptionLoading } =
+    useSubscription();
   const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(
-    null
+    null,
   );
 
   const mode: Mode = params.mode === "signup" ? "signup" : "signin";
@@ -81,56 +83,53 @@ export default function Auth() {
   }
 
   useEffect(() => {
-    if (!(user && hydrated) || handlingRef.current) {
-      return;
-    }
-    const email = user.email;
-    if (!email) {
+    if (!(user && hydrated) || isSubscriptionLoading || handlingRef.current) {
       return;
     }
     handlingRef.current = true;
 
     (async () => {
-      const result = await claimPending(email);
+      try {
+        const result = await claimPending();
 
-      if (mode === "signup") {
-        if (result === "conflict") {
-          handlingRef.current = false;
-          Alert.alert(
-            "Account already subscribed",
-            `${email} already has an active subscription. Sign out and use a different email or login method to apply your new purchase.`
-          );
-          return;
-        }
         if (result === "claimed") {
-          // New account post-paywall — walk through finalizing screens.
-          router.replace("/success" as never);
-          return;
-        }
-        if (result === "already-active") {
-          // Existing account, already entitled — straight to home.
+          if (mode === "signup") {
+            router.replace("/success" as never);
+            return;
+          }
           if (!state.completedAt) {
             dispatch({ type: "COMPLETE" });
           }
           router.replace("/home");
           return;
         }
-        // 'no-sub' — paywall pending was lost somehow. Defensive.
-        router.replace("/no-active-sub" as never);
-        return;
-      }
 
-      // signin mode
-      if (result === "claimed" || result === "already-active") {
-        if (!state.completedAt) {
-          dispatch({ type: "COMPLETE" });
+        if (activeSubscription) {
+          if (!state.completedAt) {
+            dispatch({ type: "COMPLETE" });
+          }
+          router.replace("/home");
+          return;
         }
-        router.replace("/home");
-        return;
+
+        router.replace("/no-active-sub" as never);
+      } catch (error) {
+        handlingRef.current = false;
+        const message = error instanceof Error ? error.message : String(error);
+        Alert.alert("Subscription error", message);
       }
-      router.replace("/no-active-sub" as never);
     })();
-  }, [user, hydrated, mode, claimPending, state.completedAt, dispatch, router]);
+  }, [
+    user,
+    hydrated,
+    isSubscriptionLoading,
+    mode,
+    claimPending,
+    activeSubscription,
+    state.completedAt,
+    dispatch,
+    router,
+  ]);
 
   async function pick(provider: AuthProvider) {
     selectionAsync().catch(() => undefined);
@@ -138,9 +137,8 @@ export default function Auth() {
     fillDefaultsIfWelcome(provider);
 
     if (provider === "google") {
-      try {
-        await oAuthGoogle.signIn();
-      } finally {
+      const didStart = await oAuthGoogle.signIn();
+      if (!didStart) {
         setPendingProvider(null);
       }
       return;
@@ -148,7 +146,7 @@ export default function Auth() {
     if (provider === "apple") {
       Alert.alert(
         "Apple sign-in unavailable",
-        "Apple sign-in is not configured yet."
+        "Apple sign-in is not configured yet.",
       );
       setPendingProvider(null);
       return;
@@ -164,6 +162,11 @@ export default function Auth() {
     (oAuthGoogle.isLoading ? "google" : null) ??
     (oAuthApple.isLoading ? "apple" : null);
   const isOAuthLoading = loadingProvider !== null;
+  const isVerifyingAuth = params.verifying === "1";
+
+  if (isUserLoading || isOAuthLoading || isVerifyingAuth || user) {
+    return <AuthLoading />;
+  }
 
   const headline = mode === "signup" ? "Create your account" : "Welcome back.";
   const subline =
@@ -188,7 +191,12 @@ export default function Auth() {
         <View style={{ marginTop: 36, gap: 14 }}>
           {PROVIDERS.map((p) => (
             <Pressable
+              accessibilityLabel={p.label}
               accessibilityRole="button"
+              accessibilityState={{
+                busy: loadingProvider === p.id,
+                disabled: isOAuthLoading,
+              }}
               disabled={isOAuthLoading}
               key={p.id}
               onPress={() => pick(p.id)}
@@ -240,6 +248,7 @@ export default function Auth() {
           >
             By continuing you agree to the{" "}
             <Text
+              accessibilityRole="link"
               className="text-ink"
               onPress={() => Linking.openURL(LINKS.terms)}
               style={{ fontWeight: "600", textDecorationLine: "underline" }}
@@ -248,6 +257,7 @@ export default function Auth() {
             </Text>{" "}
             and{" "}
             <Text
+              accessibilityRole="link"
               className="text-ink"
               onPress={() => Linking.openURL(LINKS.privacy)}
               style={{ fontWeight: "600", textDecorationLine: "underline" }}
