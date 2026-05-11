@@ -51,7 +51,7 @@ export default function EmailOtp() {
     } catch {
       Alert.alert(
         "Could not send code",
-        "Check your connection and try again.",
+        "Check your connection and try again."
       );
     } finally {
       setIsLoading(false);
@@ -82,7 +82,7 @@ export default function EmailOtp() {
     } catch {
       Alert.alert(
         "Could not verify code",
-        "Check your connection and try again.",
+        "Check your connection and try again."
       );
     } finally {
       setIsLoading(false);
