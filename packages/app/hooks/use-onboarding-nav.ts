@@ -21,7 +21,7 @@ export function useOnboardingNav() {
   const index = currentPath ? ONBOARDING_ROUTES.indexOf(currentPath) : -1;
   const total = ONBOARDING_ROUTES.length;
   const progressEndIndex = ONBOARDING_ROUTES.indexOf(
-    "/(onboarding)/paywall/akhira-worth",
+    "/(onboarding)/paywall/akhira-worth"
   );
   const progressDenom = progressEndIndex >= 0 ? progressEndIndex + 1 : total;
   const progress = index >= 0 ? Math.min(1, (index + 1) / progressDenom) : 0;
