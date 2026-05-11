@@ -44,7 +44,7 @@ function StaggeredPath({
   useEffect(() => {
     o.value = withDelay(
       delay,
-      withTiming(1, { duration: 700, easing: Easing.out(Easing.quad) })
+      withTiming(1, { duration: 700, easing: Easing.out(Easing.quad) }),
     );
   }, [o, delay]);
 
@@ -88,8 +88,8 @@ function Twinkle({
           easing: Easing.inOut(Easing.cubic),
         }),
         -1,
-        true
-      )
+        true,
+      ),
     );
   }, [p, delay]);
 
@@ -133,7 +133,7 @@ export function MosqueTwin({
         easing: Easing.inOut(Easing.cubic),
       }),
       -1,
-      true
+      true,
     );
     sway.value = withRepeat(
       withTiming(1, {
@@ -141,7 +141,7 @@ export function MosqueTwin({
         easing: Easing.inOut(Easing.cubic),
       }),
       -1,
-      true
+      true,
     );
   }, [breath, sway]);
 

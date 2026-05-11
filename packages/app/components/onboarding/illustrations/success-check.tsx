@@ -17,7 +17,7 @@ export function SuccessCheck({ size = 96 }: { size?: number }) {
   useEffect(() => {
     p.value = withDelay(
       150,
-      withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) })
+      withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }),
     );
   }, [p]);
 
