@@ -25,7 +25,7 @@ function titleCasePrayer(prayer: PrayerName): string {
 }
 
 function cacheStatusLabel(
-  status: PrayerTimesDebugProps["cacheStatus"]
+  status: PrayerTimesDebugProps["cacheStatus"],
 ): string {
   switch (status) {
     case "cache-hit":
