@@ -8,14 +8,16 @@
  * @module
  */
 
-import type * as _lib_resend_emails from "../_lib/resend/emails.js";
-import type * as _lib_resend_sendEmails from "../_lib/resend/sendEmails.js";
-import type * as auth from "../auth.js";
-import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
-import type * as prayerTimes from "../prayerTimes.js";
-import type * as subscriptions from "../subscriptions.js";
-import type * as users from "../users.js";
+import type * as lib_auth from "../lib/auth.js";
+import type * as lib_env from "../lib/env.js";
+import type * as lib_healthCheck from "../lib/healthCheck.js";
+import type * as lib_marketing from "../lib/marketing.js";
+import type * as lib_polar from "../lib/polar.js";
+import type * as lib_prayerTimes from "../lib/prayerTimes.js";
+import type * as lib_resend from "../lib/resend.js";
+import type * as lib_subscriptions from "../lib/subscriptions.js";
+import type * as lib_users from "../lib/users.js";
 
 import type {
   ApiFromModules,
@@ -24,14 +26,16 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  "_lib/resend/emails": typeof _lib_resend_emails;
-  "_lib/resend/sendEmails": typeof _lib_resend_sendEmails;
-  auth: typeof auth;
-  healthCheck: typeof healthCheck;
   http: typeof http;
-  prayerTimes: typeof prayerTimes;
-  subscriptions: typeof subscriptions;
-  users: typeof users;
+  "lib/auth": typeof lib_auth;
+  "lib/env": typeof lib_env;
+  "lib/healthCheck": typeof lib_healthCheck;
+  "lib/marketing": typeof lib_marketing;
+  "lib/polar": typeof lib_polar;
+  "lib/prayerTimes": typeof lib_prayerTimes;
+  "lib/resend": typeof lib_resend;
+  "lib/subscriptions": typeof lib_subscriptions;
+  "lib/users": typeof lib_users;
 }>;
 
 /**

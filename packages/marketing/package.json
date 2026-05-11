@@ -9,28 +9,29 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "deploy": "astro build && wrangler deploy",
+    "preview:worker": "astro build && wrangler dev",
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^12.0.0",
     "@astrojs/react": "^5.0.4",
-    "@astrojs/vercel": "^10.0.6",
-    "@polar-sh/sdk": "^0.47.1",
+    "@barakah/core": "workspace:*",
+    "@barakah/env": "workspace:*",
     "@tailwindcss/vite": "^4.2.4",
     "astro": "^6.2.1",
     "canvas-confetti": "^1.9.4",
-    "disposable-email-domains": "^1.0.62",
+    "convex": "^1.17.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "resend": "^6.12.2",
-    "standardwebhooks": "^1.0.0",
     "tailwindcss": "^4.2.4",
-    "zod": "catalog:",
-    "@barakah/env": "workspace:*"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@barakah/tsconfig": "workspace:*",
     "@types/canvas-confetti": "^1.9.0",
     "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "wrangler": "^4.0.0"
   }
 }

@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "heybarakah-marketing",
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2026-05-12",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      "id": "9cc9333b56f544e19efa7334e05a5056"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

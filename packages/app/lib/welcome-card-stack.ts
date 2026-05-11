@@ -5,7 +5,7 @@ export interface WelcomeCardStackState {
 }
 
 export function createWelcomeCardStackState(
-  cardCount: number,
+  cardCount: number
 ): WelcomeCardStackState {
   return {
     cardOrder: Array.from({ length: cardCount }, (_, index) => index),
@@ -15,7 +15,7 @@ export function createWelcomeCardStackState(
 }
 
 export function startWelcomeCardDrag(
-  state: WelcomeCardStackState,
+  state: WelcomeCardStackState
 ): WelcomeCardStackState {
   return {
     ...state,
@@ -24,7 +24,7 @@ export function startWelcomeCardDrag(
 }
 
 export function clearWelcomeCardDrag(
-  state: WelcomeCardStackState,
+  state: WelcomeCardStackState
 ): WelcomeCardStackState {
   return {
     ...state,
@@ -33,7 +33,7 @@ export function clearWelcomeCardDrag(
 }
 
 export function startWelcomeCardExit(
-  state: WelcomeCardStackState,
+  state: WelcomeCardStackState
 ): WelcomeCardStackState {
   return {
     ...state,
@@ -43,7 +43,7 @@ export function startWelcomeCardExit(
 }
 
 export function completeWelcomeCardSwipe(
-  state: WelcomeCardStackState,
+  state: WelcomeCardStackState
 ): WelcomeCardStackState {
   if (state.outgoingIndex === null) {
     return clearWelcomeCardDrag(state);
@@ -52,7 +52,7 @@ export function completeWelcomeCardSwipe(
   return {
     cardOrder: [
       ...state.cardOrder.filter(
-        (cardIndex) => cardIndex !== state.outgoingIndex,
+        (cardIndex) => cardIndex !== state.outgoingIndex
       ),
       state.outgoingIndex,
     ],

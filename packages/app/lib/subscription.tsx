@@ -18,7 +18,7 @@ export type ProductId = "yearly" | "monthly" | "family";
 export type ClaimResult = "claimed" | "no-pending";
 
 type ActiveSubscription = FunctionReturnType<
-  typeof api.subscriptions.getMySubscription
+  typeof api.lib.subscriptions.getMySubscription
 >;
 
 interface Ctx {
@@ -42,8 +42,10 @@ export function SubscriptionProvider({
   const [pending, setPending] = useState<ProductId | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
-  const activeSubscription = useQuery(api.subscriptions.getMySubscription);
-  const claimMutation = useMutation(api.subscriptions.claimMockSubscription);
+  const activeSubscription = useQuery(api.lib.subscriptions.getMySubscription);
+  const claimMutation = useMutation(
+    api.lib.subscriptions.claimMockSubscription
+  );
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
@@ -71,7 +73,7 @@ export function SubscriptionProvider({
     setPending(productId);
     await AsyncStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ pending: productId }),
+      JSON.stringify({ pending: productId })
     );
   }, []);
 
@@ -87,7 +89,7 @@ export function SubscriptionProvider({
 
   const restore = useCallback(
     async () => Boolean(activeSubscription),
-    [activeSubscription],
+    [activeSubscription]
   );
 
   const clearPending = useCallback(async () => {
@@ -117,7 +119,7 @@ export function SubscriptionProvider({
       pending,
       purchasePending,
       restore,
-    ],
+    ]
   );
 
   return (

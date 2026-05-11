@@ -67,8 +67,8 @@ function Ripple({
           easing: Easing.out(Easing.quad),
         }),
         -1,
-        false,
-      ),
+        false
+      )
     );
   }, [p, delay]);
 
@@ -111,8 +111,8 @@ function Twinkle({
           easing: Easing.inOut(Easing.cubic),
         }),
         -1,
-        true,
-      ),
+        true
+      )
     );
   }, [p, delay]);
 
@@ -152,7 +152,7 @@ export function MosqueGlow({
         easing: Easing.inOut(Easing.cubic),
       }),
       -1,
-      true,
+      true
     );
   }, [mosqueOpacity, breath]);
 

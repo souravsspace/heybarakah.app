@@ -6,6 +6,11 @@
   "exports": {
     ".": "./index.ts",
     "./prayer": "./src/prayer/index.ts",
+    "./marketing": "./src/marketing/index.ts",
+    "./polar": "./src/polar/index.ts",
+    "./subscriptions": "./src/subscriptions/index.ts",
+    "./users": "./src/users/index.ts",
+    "./auth": "./src/auth/index.ts",
     "./convex/_generated/*": "./convex/_generated/*",
     "./convex/*": "./convex/*"
   },
@@ -23,7 +28,9 @@
     "adhan": "^4.4.3",
     "better-auth": "catalog:",
     "convex": "catalog:",
-    "dotenv": "catalog:",
+    "disposable-email-domains": "^1.0.62",
+    "@polar-sh/sdk": "^0.47.1",
+    "resend": "^6.12.2",
     "zod": "catalog:"
   },
   "devDependencies": {

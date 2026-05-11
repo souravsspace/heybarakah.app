@@ -50,15 +50,15 @@ export function Hourglass({
     cycle.value = withRepeat(
       withTiming(1, { duration: total, easing: Easing.linear }),
       -1,
-      false,
+      false
     );
     stream.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 520, easing: Easing.out(Easing.quad) }),
-        withTiming(0.3, { duration: 520, easing: Easing.in(Easing.quad) }),
+        withTiming(0.3, { duration: 520, easing: Easing.in(Easing.quad) })
       ),
       -1,
-      true,
+      true
     );
   }, [cycle, stream, total]);
 

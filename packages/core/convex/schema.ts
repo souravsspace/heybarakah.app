@@ -1,92 +1,52 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { productId } from "../src/subscriptions/validators";
+import { profileFields } from "../src/users/validators";
 
-const productId = v.union(
-  v.literal("yearly"),
-  v.literal("monthly"),
-  v.literal("family")
-);
-
-const profileFields = {
-  authUserId: v.string(),
-  name: v.optional(v.string()),
-  gender: v.optional(v.union(v.literal("male"), v.literal("female"))),
-  madhab: v.optional(
-    v.union(
-      v.literal("hanafi"),
-      v.literal("shafii"),
-      v.literal("maliki"),
-      v.literal("hanbali"),
-      v.literal("none")
-    )
-  ),
-  consistency: v.optional(
-    v.union(
-      v.literal("never"),
-      v.literal("sometimes"),
-      v.literal("most"),
-      v.literal("all")
-    )
-  ),
-  struggle: v.optional(
-    v.union(
-      v.literal("phone"),
-      v.literal("forgetting"),
-      v.literal("fajr"),
-      v.literal("khushu")
-    )
-  ),
-  goal: v.optional(
-    v.union(
-      v.literal("all-five"),
-      v.literal("khushu"),
-      v.literal("phone-addiction"),
-      v.literal("fajr")
-    )
-  ),
-  calcMethod: v.optional(
-    v.union(
-      v.literal("isna"),
-      v.literal("mwl"),
-      v.literal("umm-al-qura"),
-      v.literal("egyptian"),
-      v.literal("karachi"),
-      v.literal("custom")
-    )
-  ),
-  strictness: v.optional(
-    v.union(
-      v.literal("adhan-iqama"),
-      v.literal("full-window"),
-      v.literal("custom")
-    )
-  ),
-  locationGranted: v.optional(v.boolean()),
-  notifGranted: v.optional(v.boolean()),
-  prayersToLock: v.optional(
-    v.object({
-      fajr: v.boolean(),
-      dhuhr: v.boolean(),
-      asr: v.boolean(),
-      maghrib: v.boolean(),
-      isha: v.boolean(),
-    })
-  ),
-  completedAt: v.optional(v.string()),
-};
+const userFields = { authUserId: v.string(), ...profileFields };
 
 export default defineSchema({
-  users: defineTable(profileFields).index("by_authUserId", ["authUserId"]),
+  users: defineTable(userFields).index("by_authUserId", ["authUserId"]),
   subscriptions: defineTable({
-    authUserId: v.string(),
+    authUserId: v.optional(v.string()),
+    customerEmail: v.optional(v.string()),
     productId,
-    status: v.literal("active"),
-    source: v.literal("mock"),
-    claimedAt: v.string(),
+    status: v.union(
+      v.literal("active"),
+      v.literal("inactive"),
+      v.literal("canceled"),
+      v.literal("past_due")
+    ),
+    source: v.union(v.literal("mock"), v.literal("polar")),
+    claimedAt: v.optional(v.string()),
+    activatedAt: v.optional(v.string()),
+    updatedAt: v.optional(v.string()),
     expiresAt: v.optional(v.string()),
+    polarCustomerId: v.optional(v.string()),
+    polarProductId: v.optional(v.string()),
+    polarOrderId: v.optional(v.string()),
   })
     .index("by_authUserId", ["authUserId"])
-    .index("by_authUserId_status", ["authUserId", "status"]),
+    .index("by_authUserId_status", ["authUserId", "status"])
+    .index("by_customerEmail", ["customerEmail"])
+    .index("by_polarOrderId", ["polarOrderId"])
+    .index("by_polarCustomerId", ["polarCustomerId"]),
+  polarOrders: defineTable({
+    polarOrderId: v.string(),
+    polarCustomerId: v.optional(v.string()),
+    customerEmail: v.string(),
+    customerName: v.optional(v.string()),
+    productId: v.optional(v.string()),
+    totalAmount: v.number(),
+    currency: v.string(),
+    invoiceNumber: v.optional(v.string()),
+    eventType: v.string(),
+    receivedAt: v.string(),
+    raw: v.optional(v.any()),
+  })
+    .index("by_polarOrderId", ["polarOrderId"])
+    .index("by_customerEmail", ["customerEmail"])
+    .index("by_polarCustomerId", ["polarCustomerId"]),
   prayerTimeCaches: defineTable({
     userId: v.optional(v.string()),
     cacheKey: v.string(),

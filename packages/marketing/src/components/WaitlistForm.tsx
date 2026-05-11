@@ -1,4 +1,7 @@
 import { type FormEvent, useState } from "react";
+
+import { joinWaitlist } from "@/lib/convex";
+
 import { Check } from "../lib/icons";
 
 type Status = "idle" | "submitting" | "success" | "error";
@@ -20,19 +23,14 @@ export default function WaitlistForm() {
     }
     setStatus("submitting");
     try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        ok?: boolean;
-      };
-      if (!(res.ok && data.ok)) {
+      const data = await joinWaitlist(email);
+      if (!data.ok) {
         setError(data.error ?? "Something went wrong. Try again.");
         setStatus("error");
         return;
+      }
+      if (data.warning) {
+        setError(data.warning);
       }
       setStatus("success");
     } catch {
@@ -48,7 +46,9 @@ export default function WaitlistForm() {
         role="status"
       >
         <Check size={18} />
-        <span className="text-sm">You're on the list. We'll be in touch.</span>
+        <span className="text-sm">
+          {error ?? "You're on the list. We'll be in touch."}
+        </span>
       </div>
     );
   }

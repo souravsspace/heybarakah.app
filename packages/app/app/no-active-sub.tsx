@@ -35,7 +35,7 @@ export default function NoActiveSub() {
       }
       Alert.alert(
         "Nothing to restore",
-        "We could not find an active subscription for this account.",
+        "We could not find an active subscription for this account."
       );
     } catch {
       Alert.alert("Could not restore", "Check your connection and try again.");

@@ -31,7 +31,7 @@ export default function Stats() {
 
   const data = useMemo(
     () => CITIES.map((c) => ({ name: c.name, value: randInt(c.min, c.max) })),
-    [],
+    []
   );
   const total = data.reduce((sum, d) => sum + d.value, 0);
   const max = Math.max(...data.map((d) => d.value));

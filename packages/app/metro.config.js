@@ -1,7 +1,7 @@
-import { getDefaultConfig } from "expo/metro-config.js";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getDefaultConfig } from "expo/metro-config.js";
 import { withNativeWind } from "nativewind/dist/metro/index.js";
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));

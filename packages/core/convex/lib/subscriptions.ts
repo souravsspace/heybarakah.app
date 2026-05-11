@@ -1,12 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { productId } from "../../src/subscriptions/validators";
+import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
-
-const productId = v.union(
-  v.literal("yearly"),
-  v.literal("monthly"),
-  v.literal("family")
-);
 
 export const getMySubscription = query({
   args: {},
@@ -54,6 +49,7 @@ export const claimMockSubscription = mutation({
       status: "active",
       source: "mock",
       claimedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
 
     return await ctx.db.get(subscriptionId);

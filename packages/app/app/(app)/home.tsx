@@ -12,8 +12,8 @@ export default function Home() {
   const { state, dispatch } = useOnboardingState();
   const { user } = useUser();
   const router = useRouter();
-  const profile = useQuery(api.users.getMyProfile);
-  const upsertProfile = useMutation(api.users.upsertProfile);
+  const profile = useQuery(api.lib.users.getMyProfile);
+  const upsertProfile = useMutation(api.lib.users.upsertProfile);
   const uploadedRef = useRef(false);
 
   useEffect(() => {

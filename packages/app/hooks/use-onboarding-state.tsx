@@ -131,7 +131,7 @@ export function OnboardingProvider({
     }
     writeTimer.current = setTimeout(() => {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(
-        () => undefined,
+        () => undefined
       );
     }, 200);
     return () => {
@@ -152,7 +152,7 @@ export function useOnboardingState() {
   const ctx = useContext(OnboardingContext);
   if (!ctx) {
     throw new Error(
-      "useOnboardingState must be used inside OnboardingProvider",
+      "useOnboardingState must be used inside OnboardingProvider"
     );
   }
   return ctx;

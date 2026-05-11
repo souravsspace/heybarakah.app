@@ -12,10 +12,10 @@ import {
   PRAYER_CACHE_TTL_MS,
   roundCoordinate,
   slicePrayerDays,
-} from "../src/prayer";
-import { internal } from "./_generated/api";
-import type { Doc } from "./_generated/dataModel";
-import { action, internalMutation, query } from "./_generated/server";
+} from "../../src/prayer";
+import { internal } from "../_generated/api";
+import type { Doc } from "../_generated/dataModel";
+import { action, internalMutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
 const args = {
@@ -163,7 +163,7 @@ export const refreshPrayerTimes: ReturnType<typeof action> = action({
     };
 
     return await ctx.runMutation(
-      internal.prayerTimes.upsertPrayerTimesCache,
+      internal.lib.prayerTimes.upsertPrayerTimesCache,
       payload
     );
   },
