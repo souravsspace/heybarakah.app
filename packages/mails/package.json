@@ -1,0 +1,25 @@
+{
+  "name": "@barakah/mails",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./emails/verify-otp": "./emails/verify-otp.tsx"
+  },
+  "scripts": {
+    "dev": "email dev"
+  },
+  "dependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-email": "6.1.1"
+  },
+  "devDependencies": {
+    "@barakah/tsconfig": "workspace:*",
+    "@react-email/ui": "6.1.1",
+    "@types/bun": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": "catalog:"
+  }
+}
