@@ -1,1 +1,9 @@
-{ "extends": "@barakah/tsconfig/base.json" }
+{
+  "extends": "@barakah/tsconfig/base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "paths": {
+      "@barakah/mails/*": ["../mails/emails/*"]
+    }
+  }
+}

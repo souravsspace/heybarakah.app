@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@barakah/mails": "workspace:*",
     "@better-auth/expo": "catalog:",
     "@convex-dev/better-auth": "catalog:",
     "@convex-dev/resend": "^0.2.3",
