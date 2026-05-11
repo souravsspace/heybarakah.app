@@ -6,6 +6,9 @@ export const env = createEnv({
   client: {
     PUBLIC_CONVEX_URL: z.url(),
   },
-  runtimeEnv: process.env,
+  runtimeEnv: {
+    PUBLIC_CONVEX_URL:
+      import.meta.env.PUBLIC_CONVEX_URL ?? process.env.PUBLIC_CONVEX_URL,
+  },
   emptyStringAsUndefined: true,
 });
