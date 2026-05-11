@@ -26,7 +26,9 @@
       "convex": "^1.38.0",
       "better-auth": "~1.6.9",
       "@better-auth/expo": "~1.6.9",
-      "@convex-dev/better-auth": "^0.12.2"
+      "@convex-dev/better-auth": "^0.12.2",
+      "react": "19.1.0",
+      "react-dom": "19.1.0"
     }
   },
   "devDependencies": {
