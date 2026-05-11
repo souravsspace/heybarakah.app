@@ -29,7 +29,7 @@ function Bead({
   useEffect(() => {
     p.value = withDelay(
       delay,
-      withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) }),
+      withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) })
     );
   }, [p, delay]);
 
