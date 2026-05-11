@@ -8,14 +8,15 @@ import { components } from "../_generated/api";
 import type { DataModel } from "../_generated/dataModel";
 import { query } from "../_generated/server";
 import authConfig from "../auth.config";
+import { requireEnv } from "./env";
 import { sendOTPVerification } from "./resend";
 
-const siteUrl = process.env.SITE_URL || "http://localhost:8081";
-const nativeAppUrl = process.env.NATIVE_APP_URL || "barakah://";
+const siteUrl = requireEnv("SITE_URL");
+const nativeAppUrl = requireEnv("NATIVE_APP_URL");
 // TODO: disabled for now add it letter
 // const appleBundleId = process.env.APPLE_APP_BUNDLE_IDENTIFIER || "";
-const googleClientId = process.env.GOOGLE_CLIENT_ID || "";
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
+const googleClientId = requireEnv("GOOGLE_CLIENT_ID");
+const googleClientSecret = requireEnv("GOOGLE_CLIENT_SECRET");
 
 export const authComponent = createClient<DataModel>(components.betterAuth);
 
