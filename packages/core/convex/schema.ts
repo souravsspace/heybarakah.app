@@ -116,6 +116,7 @@ export default defineSchema({
     timings: v.array(
       v.object({
         date: v.string(),
+        hijriDate: v.optional(v.string()),
         timezone: v.string(),
         method: v.number(),
         school: v.number(),
