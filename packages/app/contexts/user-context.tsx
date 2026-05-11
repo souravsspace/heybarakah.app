@@ -28,7 +28,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       user: queryResult ?? null,
       isLoading: queryResult === undefined,
     }),
-    [queryResult]
+    [queryResult],
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
