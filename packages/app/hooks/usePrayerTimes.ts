@@ -41,7 +41,7 @@ function mapSchool(madhab?: Madhab): number {
 
 function mapMethod(
   calcMethod: CalcMethod | undefined,
-  isBangladesh: boolean,
+  isBangladesh: boolean
 ): number {
   if (calcMethod) {
     return CALC_METHOD_MAP[calcMethod];
@@ -119,7 +119,7 @@ export function usePrayerTimes() {
       city: location.city ?? undefined,
       method: mapMethod(
         state.calcMethod as CalcMethod | undefined,
-        location.isBangladesh,
+        location.isBangladesh
       ),
       school: mapSchool(state.madhab as Madhab | undefined),
       startDate: todayDateKey(),
@@ -128,10 +128,10 @@ export function usePrayerTimes() {
   }, [location, state.calcMethod, state.madhab]);
 
   const cached = useQuery(
-    api.prayerTimes.getCachedPrayerTimes,
-    requestArgs ?? "skip",
+    api.lib.prayerTimes.getCachedPrayerTimes,
+    requestArgs ?? "skip"
   );
-  const refreshAction = useAction(api.prayerTimes.refreshPrayerTimes);
+  const refreshAction = useAction(api.lib.prayerTimes.refreshPrayerTimes);
 
   useEffect(() => {
     let cancelled = false;
