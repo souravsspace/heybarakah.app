@@ -4,14 +4,7 @@ import { v } from "convex/values";
 import { Resend } from "resend";
 import { parseWaitlistEmail, welcomeEmail } from "../../src/marketing";
 import { action } from "../_generated/server";
-
-function requireEnv(name: string) {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} is not configured`);
-  }
-  return value;
-}
+import { requireEnv } from "./env";
 
 export const joinWaitlist = action({
   args: { email: v.string() },
@@ -39,14 +32,14 @@ export const joinWaitlist = action({
       return { ok: false, error: "Could not save your email." };
     }
 
-    const { subject, text, html } = welcomeEmail();
+    const { subject, text, html } = await welcomeEmail();
     const send = await resend.emails.send({
       from: requireEnv("RESEND_FROM"),
       to: parsed.email,
       subject,
       text,
       html,
-      replyTo: process.env.RESEND_REPLY_TO,
+      replyTo: requireEnv("RESEND_REPLY_TO"),
     });
 
     if (send.error) {
