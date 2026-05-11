@@ -9,7 +9,6 @@
  */
 
 import type * as _lib_resend_emails from "../_lib/resend/emails.js";
-import type * as _lib_resend_emails_verifyOTP from "../_lib/resend/emails/verifyOTP.js";
 import type * as _lib_resend_sendEmails from "../_lib/resend/sendEmails.js";
 import type * as auth from "../auth.js";
 import type * as healthCheck from "../healthCheck.js";
@@ -26,7 +25,6 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "_lib/resend/emails": typeof _lib_resend_emails;
-  "_lib/resend/emails/verifyOTP": typeof _lib_resend_emails_verifyOTP;
   "_lib/resend/sendEmails": typeof _lib_resend_sendEmails;
   auth: typeof auth;
   healthCheck: typeof healthCheck;
