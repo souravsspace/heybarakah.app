@@ -10,6 +10,7 @@
 
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_env from "../lib/env.js";
 import type * as lib_healthCheck from "../lib/healthCheck.js";
 import type * as lib_marketing from "../lib/marketing.js";
 import type * as lib_polar from "../lib/polar.js";
@@ -27,6 +28,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/auth": typeof lib_auth;
+  "lib/env": typeof lib_env;
   "lib/healthCheck": typeof lib_healthCheck;
   "lib/marketing": typeof lib_marketing;
   "lib/polar": typeof lib_polar;
