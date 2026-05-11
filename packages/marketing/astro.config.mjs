@@ -8,9 +8,28 @@ import { defineConfig } from "astro/config";
 // https://astro.build/config
 export default defineConfig({
   output: "server",
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    entrypointResolution: "auto",
+    imageService: "compile",
+    platformProxy: {
+      enabled: true,
+    },
+  }),
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
+    ssr: {
+      external: [
+        "node:util",
+        "node:stream",
+        "node:events",
+        "node:os",
+        "node:path",
+        "node:crypto",
+        "node:child_process",
+        "child_process",
+        "fs",
+      ],
+    },
   },
 });
