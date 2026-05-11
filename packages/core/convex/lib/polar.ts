@@ -11,6 +11,7 @@ import {
 } from "../../src/polar";
 import { internal } from "../_generated/api";
 import { httpAction, internalMutation } from "../_generated/server";
+import { requireEnv } from "./env";
 import { sendEmail } from "./resend";
 
 export const recordPaidOrder = internalMutation({
@@ -112,7 +113,7 @@ export const webhook = httpAction(async (ctx, request) => {
     headers[key] = value;
   });
 
-  const secret = process.env.POLAR_WEBHOOK_SECRET ?? "";
+  const secret = requireEnv("POLAR_WEBHOOK_SECRET");
   const result = validateWebhook(
     body,
     headers,
@@ -152,7 +153,7 @@ export const webhook = httpAction(async (ctx, request) => {
     raw: order as unknown,
   });
 
-  const { subject, text, html } = purchaseEmail({
+  const { subject, text, html } = await purchaseEmail({
     name,
     totalAmount: order.totalAmount,
     currency: order.currency,
