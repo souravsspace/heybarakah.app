@@ -23,7 +23,7 @@ export function BreathRing({
     p.value = withRepeat(
       withTiming(1, { duration: 5500, easing: Easing.inOut(Easing.cubic) }),
       -1,
-      true,
+      true
     );
   }, [p]);
 
