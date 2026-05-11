@@ -88,7 +88,7 @@ function toPrayerRows(
       maghrib: string;
       isha: string;
     };
-  } | null
+  } | null,
 ): PrayerRowData[] | null {
   if (!todayPrayerTimes) {
     return null;
@@ -232,13 +232,13 @@ export default function PrayerTimes() {
   const liveData = useLivePrayerTimes();
   const liveRows = useMemo(
     () => toPrayerRows(liveData.todayPrayerTimes),
-    [liveData.todayPrayerTimes]
+    [liveData.todayPrayerTimes],
   );
 
   const prayers = liveRows ?? FALLBACK_PRAYERS;
   const nextIdx = useMemo(
     () => (liveRows ? nextPrayerIndexFor(prayers) : nextPrayerIndex()),
-    [liveRows, prayers]
+    [liveRows, prayers],
   );
   const today = useMemo(() => formatToday(), []);
 

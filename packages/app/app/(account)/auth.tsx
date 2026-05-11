@@ -51,7 +51,7 @@ export default function Auth() {
   const { activeSubscription, hydrated, claimPending, isSubscriptionLoading } =
     useSubscription();
   const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(
-    null
+    null,
   );
 
   const mode: Mode = params.mode === "signup" ? "signup" : "signin";
@@ -146,7 +146,7 @@ export default function Auth() {
     if (provider === "apple") {
       Alert.alert(
         "Apple sign-in unavailable",
-        "Apple sign-in is not configured yet."
+        "Apple sign-in is not configured yet.",
       );
       setPendingProvider(null);
       return;
