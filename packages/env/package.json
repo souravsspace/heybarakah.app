@@ -8,7 +8,6 @@
     "./marketing": "./src/marketing.ts"
   },
   "dependencies": {
-    "dotenv": "catalog:",
     "zod": "catalog:",
     "@t3-oss/env-core": "^0.13.11"
   },
