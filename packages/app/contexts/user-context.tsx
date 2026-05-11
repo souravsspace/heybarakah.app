@@ -3,7 +3,7 @@ import { useQuery } from "convex/react";
 import type React from "react";
 import { createContext, useContext, useMemo } from "react";
 
-type User = NonNullable<typeof api.auth.getCurrentUser._returnType>;
+type User = NonNullable<typeof api.lib.auth.getCurrentUser._returnType>;
 
 interface UserContextType {
   isLoading: boolean;
@@ -21,14 +21,14 @@ export function useUser() {
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const queryResult = useQuery(api.auth.getCurrentUser);
+  const queryResult = useQuery(api.lib.auth.getCurrentUser);
 
   const value = useMemo<UserContextType>(
     () => ({
       user: queryResult ?? null,
       isLoading: queryResult === undefined,
     }),
-    [queryResult],
+    [queryResult]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
