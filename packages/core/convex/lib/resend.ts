@@ -2,6 +2,7 @@ import { buildOTPVerificationEmail } from "@barakah/core/auth";
 import { Resend } from "@convex-dev/resend";
 import { components } from "../_generated/api";
 import type { ActionCtx } from "../_generated/server";
+import { requireEnv } from "./env";
 
 export const resendHandler = new Resend(components.resend, {
   testMode: false,
@@ -22,7 +23,7 @@ export const sendEmail = async (
   }
 ) => {
   await resendHandler.sendEmail(ctx, {
-    from: process.env.RESEND_AUTH_EMAIL ?? "",
+    from: requireEnv("RESEND_AUTH_EMAIL"),
     to,
     subject,
     html,
