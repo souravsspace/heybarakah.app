@@ -25,25 +25,6 @@ const previewCode = "482916";
 const defaultExpiresInMinutes = 10;
 const brandIconUrl = "https://heybarakah.app/icon.svg";
 
-export function getVerifyOtpEmailText({
-  code,
-  expiresInMinutes = defaultExpiresInMinutes,
-}: VerifyOtpEmailProps) {
-  return [
-    "Verify your Barakah account",
-    "",
-    "Enter this verification code to continue signing in:",
-    "",
-    code,
-    "",
-    `This code expires in ${expiresInMinutes} minutes.`,
-    "",
-    "For your security, do not share this code with anyone.",
-    "",
-    "If you did not request this code, you can safely ignore this email.",
-  ].join("\n");
-}
-
 export async function renderVerifyOtpEmail({
   code,
   expiresInMinutes = defaultExpiresInMinutes,
@@ -51,7 +32,10 @@ export async function renderVerifyOtpEmail({
   const html = await render(
     <VerifyOtpEmail code={code} expiresInMinutes={expiresInMinutes} />
   );
-  const text = getVerifyOtpEmailText({ code, expiresInMinutes });
+  const text = await render(
+    <VerifyOtpEmail code={code} expiresInMinutes={expiresInMinutes} />,
+    { plainText: true }
+  );
 
   return {
     html,
