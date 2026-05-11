@@ -163,14 +163,14 @@ export async function cancelPrayerNotifications(): Promise<void> {
       } catch {
         return;
       }
-    }),
+    })
   );
 
   await AsyncStorage.removeItem(PRAYER_NOTIFICATION_IDS_KEY);
 }
 
 export async function reschedulePrayerNotifications(
-  options: SchedulePrayerNotificationsOptions,
+  options: SchedulePrayerNotificationsOptions
 ): Promise<ScheduledPrayerNotification[]> {
   await cancelPrayerNotifications();
   return schedulePrayerNotifications(options);
