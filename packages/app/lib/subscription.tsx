@@ -71,7 +71,7 @@ export function SubscriptionProvider({
     setPending(productId);
     await AsyncStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ pending: productId })
+      JSON.stringify({ pending: productId }),
     );
   }, []);
 
@@ -87,7 +87,7 @@ export function SubscriptionProvider({
 
   const restore = useCallback(
     async () => Boolean(activeSubscription),
-    [activeSubscription]
+    [activeSubscription],
   );
 
   const clearPending = useCallback(async () => {
@@ -117,7 +117,7 @@ export function SubscriptionProvider({
       pending,
       purchasePending,
       restore,
-    ]
+    ],
   );
 
   return (
