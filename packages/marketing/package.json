@@ -9,8 +9,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "wrangler deploy",
-    "preview:worker": "wrangler dev",
+    "deploy": "astro build && wrangler deploy",
+    "preview:worker": "astro build && wrangler dev",
     "astro": "astro"
   },
   "dependencies": {
