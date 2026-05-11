@@ -14,6 +14,16 @@
       "id": "9cc9333b56f544e19efa7334e05a5056"
     }
   ],
+  "routes": [
+    {
+      "pattern": "heybarakah.app",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.heybarakah.app",
+      "custom_domain": true
+    }
+  ],
   "observability": {
     "enabled": true
   }
