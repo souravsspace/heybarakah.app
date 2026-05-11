@@ -36,7 +36,7 @@ export interface ReverseGeocodeResult {
 
 export async function reverseGeocodeLocation(
   latitude: number,
-  longitude: number,
+  longitude: number
 ): Promise<ReverseGeocodeResult | null> {
   try {
     const places = await Location.reverseGeocodeAsync({ latitude, longitude });
