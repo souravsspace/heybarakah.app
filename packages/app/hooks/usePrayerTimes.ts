@@ -1,4 +1,5 @@
-import { api, type PrayerDay } from "@barakah/core";
+import { api } from "@barakah/core/convex/_generated/api";
+import type { PrayerDay } from "@barakah/core/prayer";
 import { useAction, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
