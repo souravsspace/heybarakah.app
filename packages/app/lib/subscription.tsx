@@ -1,4 +1,4 @@
-import { api } from "@barakah/core";
+import { api } from "@barakah/core/convex/_generated/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
