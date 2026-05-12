@@ -1,6 +1,13 @@
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import { Text, View } from "react-native";
+import Animated, {
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AreaChart } from "@/components/area-chart";
+import { ScrollBlurHeader } from "@/components/scroll-blur-header";
+import { useTheme } from "@/contexts/theme-context";
 
 const WEEK = [
   { label: "Mon", value: 4 },
@@ -20,113 +27,139 @@ const PRAYER_BREAKDOWN = [
   { name: "Isha", value: 6, of: 7 },
 ];
 
+function segmentedBlocks(value: number, of: number): boolean[] {
+  const blocks: boolean[] = [];
+  for (let i = 0; i < of; i++) {
+    blocks.push(i < value);
+  }
+  return blocks;
+}
+
 export default function Progress() {
   const total = WEEK.reduce((s, d) => s + d.value, 0);
   const possible = WEEK.length * 5;
   const pct = Math.round((total / possible) * 100);
   const streak = 12;
+  const { colors, scheme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 140 }}
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <Animated.ScrollView
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 140 }}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        scrollIndicatorInsets={{ top: insets.top }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="px-md" style={{ paddingTop: 8, gap: 4 }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 8, gap: 4 }}>
           <Text
             style={{
               fontSize: 10,
               fontWeight: "700",
               letterSpacing: 2.4,
-              color: "#6B7280",
+              color: colors.inkMuted,
               textTransform: "uppercase",
             }}
           >
             Progress
           </Text>
           <Text
-            className="font-serif text-ink"
-            style={{ fontSize: 28, lineHeight: 34 }}
+            style={{
+              fontFamily: "LibreBaskerville-Bold",
+              fontSize: 28,
+              lineHeight: 34,
+              color: colors.ink,
+            }}
           >
             This week.
           </Text>
         </View>
 
+        {/* Hero metric card */}
         <View
-          className="mx-md"
           style={{
+            marginHorizontal: 20,
             marginTop: 20,
-            borderRadius: 20,
+            borderRadius: 24,
             borderWidth: 1,
-            borderColor: "#E5E7EB",
-            padding: 20,
-            flexDirection: "row",
+            borderColor: colors.border,
+            backgroundColor: colors.card,
+            padding: 28,
+            alignItems: "center",
+            gap: 6,
           }}
         >
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.6,
-                color: "#6B7280",
-                textTransform: "uppercase",
-              }}
-            >
-              On time
-            </Text>
-            <Text
-              className="font-serif"
-              style={{
-                fontSize: 36,
-                color: "#000",
-                fontVariant: ["tabular-nums"],
-              }}
-            >
-              {pct}%
-            </Text>
-            <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
-              {total} of {possible} prayers
-            </Text>
-          </View>
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "700",
+              letterSpacing: 2.4,
+              color: colors.inkMuted,
+              textTransform: "uppercase",
+            }}
+          >
+            On-time prayers
+          </Text>
+          <Text
+            style={{
+              fontFamily: "LibreBaskerville-Bold",
+              fontSize: 52,
+              lineHeight: 58,
+              color: colors.ink,
+              fontVariant: ["tabular-nums"],
+            }}
+          >
+            {pct}%
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              color: colors.inkMuted,
+              marginTop: 2,
+            }}
+          >
+            {total} of {possible} prayers this week
+          </Text>
           <View
-            style={{ width: 1, backgroundColor: "#EFEFEF", marginVertical: 4 }}
-          />
-          <View style={{ flex: 1, paddingLeft: 20 }}>
+            style={{
+              marginTop: 10,
+              paddingHorizontal: 12,
+              paddingVertical: 5,
+              borderRadius: 999,
+              backgroundColor: colors.primarySoft,
+              borderWidth: 1,
+              borderColor: colors.primary,
+            }}
+          >
             <Text
               style={{
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.6,
-                color: "#6B7280",
-                textTransform: "uppercase",
+                fontSize: 11,
+                fontWeight: "600",
+                color: colors.primary,
               }}
             >
-              Streak
-            </Text>
-            <Text
-              className="font-serif"
-              style={{
-                fontSize: 36,
-                color: "#000",
-                fontVariant: ["tabular-nums"],
-              }}
-            >
-              {streak}
-            </Text>
-            <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
-              days, mā shāʾ Allāh
+              {streak}-day streak · mā shāʾ Allāh
             </Text>
           </View>
         </View>
 
+        {/* Daily prayers chart */}
         <View
-          className="mx-md"
           style={{
+            marginHorizontal: 20,
             marginTop: 16,
             borderRadius: 20,
             borderWidth: 1,
-            borderColor: "#E5E7EB",
+            borderColor: colors.border,
+            backgroundColor: colors.card,
             padding: 16,
             paddingBottom: 8,
           }}
@@ -145,24 +178,32 @@ export default function Progress() {
                 fontSize: 10,
                 fontWeight: "700",
                 letterSpacing: 1.6,
-                color: "#6B7280",
+                color: colors.inkMuted,
                 textTransform: "uppercase",
               }}
             >
               Daily prayers
             </Text>
-            <Text style={{ fontSize: 11, color: "#6B7280" }}>last 7 days</Text>
+            <Text style={{ fontSize: 11, color: colors.inkMuted }}>
+              last 7 days
+            </Text>
           </View>
-          <AreaChart data={WEEK} max={5} />
+          <AreaChart
+            data={WEEK}
+            fill={colors.primary}
+            max={5}
+            stroke={colors.primary}
+          />
         </View>
 
-        <View className="px-md" style={{ marginTop: 24, gap: 12 }}>
+        {/* By prayer — segmented block bars */}
+        <View style={{ paddingHorizontal: 20, marginTop: 24, gap: 12 }}>
           <Text
             style={{
               fontSize: 10,
               fontWeight: "700",
               letterSpacing: 2.4,
-              color: "#6B7280",
+              color: colors.inkMuted,
               textTransform: "uppercase",
             }}
           >
@@ -172,67 +213,70 @@ export default function Progress() {
             style={{
               borderRadius: 20,
               borderWidth: 1,
-              borderColor: "#E5E7EB",
+              borderColor: colors.border,
+              backgroundColor: colors.card,
               overflow: "hidden",
             }}
           >
             {PRAYER_BREAKDOWN.map((p, i) => {
-              const ratio = p.value / p.of;
+              const blocks = segmentedBlocks(p.value, p.of);
               return (
                 <View
                   key={p.name}
                   style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                     paddingHorizontal: 20,
-                    paddingVertical: 14,
+                    paddingVertical: 16,
                     borderTopWidth: i === 0 ? 0 : 1,
-                    borderTopColor: "#EFEFEF",
-                    gap: 8,
+                    borderTopColor: colors.divider,
                   }}
                 >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                    }}
-                  >
+                  <View style={{ gap: 8 }}>
                     <Text
-                      style={{ fontSize: 15, fontWeight: "600", color: "#000" }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        color: colors.ink,
+                      }}
                     >
                       {p.name}
                     </Text>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: "600",
-                        color: "#29603E",
-                        fontVariant: ["tabular-nums"],
-                      }}
-                    >
-                      {p.value}/{p.of}
-                    </Text>
+                    <View style={{ flexDirection: "row", gap: 4 }}>
+                      {blocks.map((filled, bi) => (
+                        <View
+                          key={bi}
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: 3,
+                            backgroundColor: filled
+                              ? colors.primary
+                              : colors.inkSubtle,
+                            opacity: filled ? 1 : 0.35,
+                          }}
+                        />
+                      ))}
+                    </View>
                   </View>
-                  <View
+                  <Text
                     style={{
-                      height: 4,
-                      borderRadius: 999,
-                      backgroundColor: "#F5F5F4",
-                      overflow: "hidden",
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: colors.primary,
+                      fontVariant: ["tabular-nums"],
                     }}
                   >
-                    <View
-                      style={{
-                        height: "100%",
-                        width: `${ratio * 100}%`,
-                        backgroundColor: "#29603E",
-                      }}
-                    />
-                  </View>
+                    {p.value}/{p.of}
+                  </Text>
                 </View>
               );
             })}
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+      <ScrollBlurHeader scrollY={scrollY} />
+    </View>
   );
 }
