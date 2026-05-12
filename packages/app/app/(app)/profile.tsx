@@ -2,42 +2,20 @@ import { api } from "@barakah/core/convex/_generated/api";
 import { useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useMemo } from "react";
+import { Alert, Linking, Pressable, Text, View } from "react-native";
 import Animated, {
-  Easing,
   FadeInDown,
-  interpolate,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useSharedValue,
-  withRepeat,
-  withSequence,
-  withSpring,
-  withTiming,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Circle, Path } from "react-native-svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScrollBlurHeader } from "@/components/scroll-blur-header";
+import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
-
-const COLOR = {
-  ink: "#000000",
-  inkMuted: "#6B7280",
-  inkSubtle: "#9CA3AF",
-  primary: "#29603E",
-  primaryDark: "#1B3F29",
-  primarySoft: "#E8F0EA",
-  surface: "#FFFFFF",
-  surfaceSoft: "#FAFAF7",
-  cream: "#F5EBDB",
-  creamSoft: "#FAF4E8",
-  border: "#E5E7EB",
-  divider: "#EFEFEF",
-  error: "#B42318",
-  errorSoft: "#FBEAE8",
-  neutralSoft: "#F5F5F4",
-};
 
 const MADHAB_LABEL: Record<string, string> = {
   hanafi: "Hanafi",
@@ -46,6 +24,9 @@ const MADHAB_LABEL: Record<string, string> = {
   hanbali: "Ḥanbalī",
   none: "Not specified",
 };
+
+const SPLIT_RE = /\s+/;
+const NON_ALPHANUM_RE = /[^a-z0-9]/g;
 
 const METHOD_LABEL: Record<string, string> = {
   isna: "ISNA",
@@ -56,45 +37,12 @@ const METHOD_LABEL: Record<string, string> = {
   custom: "Custom",
 };
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
-
-function greeting(hour: number) {
-  if (hour < 5) {
-    return "Peaceful night";
-  }
-  if (hour < 12) {
-    return "Good morning";
-  }
-  if (hour < 17) {
-    return "Good afternoon";
-  }
-  return "Good evening";
-}
-
-function hijriDate(): string {
-  try {
-    return new Intl.DateTimeFormat("en-TN-u-ca-islamic", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(new Date());
-  } catch {
-    return "";
-  }
-}
-
 export default function Profile() {
   const router = useRouter();
   const { user } = useUser();
   const profile = useQuery(api.lib.users.getMyProfile);
-
-  const name = profile?.name?.trim() || user?.name?.trim() || "friend";
-  const email = user?.email ?? null;
-  const initial = name.charAt(0).toUpperCase();
-  const hour = useMemo(() => new Date().getHours(), []);
-  const hijri = useMemo(() => hijriDate(), []);
-
+  const { colors, scheme } = useTheme();
+  const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -102,543 +50,601 @@ export default function Profile() {
     },
   });
 
-  const eyebrowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [0, 60], [1, 0], "clamp"),
-    transform: [
-      { translateY: interpolate(scrollY.value, [0, 60], [0, -8], "clamp") },
-    ],
-  }));
+  const name = profile?.name?.trim() || user?.name?.trim() || "friend";
+  const email = user?.email ?? null;
+  const handle = useMemo(
+    () =>
+      `@${(profile?.name || user?.name || "friend")
+        .toLowerCase()
+        .replace(NON_ALPHANUM_RE, "")
+        .slice(0, 18)}`,
+    [profile?.name, user?.name]
+  );
+  const parts = name.split(SPLIT_RE).filter(Boolean);
+  const initials =
+    parts.length >= 2
+      ? `${parts[0][0]}${parts.at(-1)?.[0] ?? ""}`.toUpperCase()
+      : name.slice(0, 2).toUpperCase();
 
   const madhabKey = profile?.madhab ?? "none";
   const methodKey = profile?.calcMethod ?? "mwl";
 
+  const go = (path: string) => {
+    Haptics.selectionAsync().catch(() => undefined);
+    router.push(path as never);
+  };
+
   const handleLogout = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    router.replace("/logging-out" as never);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+      () => undefined
+    );
+    Alert.alert("Log out", "Are you sure you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log out",
+        style: "destructive",
+        onPress: () => router.replace("/logging-out" as never),
+      },
+    ]);
+  };
+
+  const openMail = (to: string, subject: string) => {
+    Haptics.selectionAsync().catch(() => undefined);
+    Linking.openURL(
+      `mailto:${to}?subject=${encodeURIComponent(subject)}`
+    ).catch(() => Alert.alert("Mail unavailable", `Email: ${to}`));
+  };
+
+  const openUrl = (url: string) => {
+    Haptics.selectionAsync().catch(() => undefined);
+    Linking.openURL(url).catch(() => Alert.alert("Cannot open link", url));
+  };
+
+  const openSettings = () => {
+    Haptics.selectionAsync().catch(() => undefined);
+    Linking.openSettings().catch(() => undefined);
+  };
+
+  const confirmDelete = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+      () => undefined
+    );
+    Alert.alert(
+      "Delete account",
+      "This permanently removes your account and data. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "Not yet available",
+              "Account deletion will be enabled shortly. Email support@heybarakah.app to delete manually."
+            ),
+        },
+      ]
+    );
   };
 
   return (
-    <SafeAreaView
-      edges={["top"]}
-      style={{ flex: 1, backgroundColor: COLOR.surface }}
-    >
-      <Animated.View
-        style={[
-          {
-            paddingHorizontal: 24,
-            paddingTop: 8,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-          },
-          eyebrowStyle,
-        ]}
-      >
-        <View
-          style={{ width: 28, height: 1, backgroundColor: COLOR.primary }}
-        />
-        <Text
-          style={{
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 2.4,
-            color: COLOR.inkMuted,
-            textTransform: "uppercase",
-          }}
-        >
-          {greeting(hour)}
-        </Text>
-      </Animated.View>
-
-      <AnimatedScrollView
-        contentContainerStyle={{ paddingBottom: 160, paddingTop: 20 }}
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <Animated.ScrollView
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 140 }}
         onScroll={onScroll}
         scrollEventThrottle={16}
+        scrollIndicatorInsets={{ top: insets.top }}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View
-          entering={FadeInDown.duration(560).springify().damping(18)}
-          style={{ paddingHorizontal: 24 }}
-        >
-          <HeroCard email={email} hijri={hijri} initial={initial} name={name} />
-        </Animated.View>
-
-        <Animated.View
-          entering={FadeInDown.delay(90).duration(540).springify().damping(18)}
-          style={{ marginTop: 36 }}
-        >
-          <SectionHeader title="Practice" />
-          <View
-            style={{
-              paddingHorizontal: 24,
-              marginTop: 14,
-              flexDirection: "row",
-              gap: 12,
-            }}
-          >
-            <StatTile label="Madhab" value={MADHAB_LABEL[madhabKey] ?? "—"} />
-            <StatTile label="Method" value={METHOD_LABEL[methodKey] ?? "—"} />
-          </View>
-        </Animated.View>
-
-        <Animated.View
-          entering={FadeInDown.delay(180).duration(540).springify().damping(18)}
-          style={{ marginTop: 32 }}
-        >
-          <SectionHeader title="Permissions" />
-          <View
-            style={{
-              paddingHorizontal: 24,
-              marginTop: 14,
-              gap: 10,
-            }}
-          >
-            <PermissionRow
-              granted={!!profile?.locationGranted}
-              label="Location"
-              sf="location.fill"
-              sublabel={
-                profile?.locationGranted
-                  ? "Sharing precise location"
-                  : "Tap settings to enable"
-              }
-            />
-            <PermissionRow
-              granted={!!profile?.notifGranted}
-              label="Notifications"
-              sf="bell.fill"
-              sublabel={
-                profile?.notifGranted
-                  ? "Prayer reminders on"
-                  : "Tap settings to enable"
-              }
-            />
-          </View>
-        </Animated.View>
-
-        <Animated.View
-          entering={FadeInDown.delay(270).duration(540).springify().damping(18)}
-          style={{ marginTop: 36, paddingHorizontal: 24 }}
-        >
-          <LogoutButton onPress={handleLogout} />
-        </Animated.View>
-      </AnimatedScrollView>
-    </SafeAreaView>
-  );
-}
-
-function GeometricOrnament() {
-  return (
-    <Svg
-      height={120}
-      style={{ position: "absolute", top: -10, right: -20 }}
-      viewBox="0 0 120 120"
-      width={120}
-    >
-      <Path
-        d="M60 10 L72 38 L102 38 L78 56 L88 86 L60 68 L32 86 L42 56 L18 38 L48 38 Z"
-        fill="none"
-        opacity={0.08}
-        stroke={COLOR.primary}
-        strokeWidth={1}
-      />
-      <Circle
-        cx={60}
-        cy={60}
-        fill="none"
-        opacity={0.06}
-        r={48}
-        stroke={COLOR.primary}
-        strokeWidth={1}
-      />
-    </Svg>
-  );
-}
-
-function HeroCard({
-  email,
-  hijri,
-  initial,
-  name,
-}: {
-  email: string | null;
-  hijri: string;
-  initial: string;
-  name: string;
-}) {
-  const breath = useSharedValue(0);
-  useEffect(() => {
-    breath.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.quad) }),
-        withTiming(0, { duration: 2400, easing: Easing.inOut(Easing.quad) })
-      ),
-      -1,
-      false
-    );
-  }, [breath]);
-
-  const ringOuter = useAnimatedStyle(() => ({
-    opacity: interpolate(breath.value, [0, 1], [0.5, 0.15]),
-    transform: [{ scale: interpolate(breath.value, [0, 1], [1, 1.18]) }],
-  }));
-
-  const ringInner = useAnimatedStyle(() => ({
-    opacity: interpolate(breath.value, [0, 1], [0.9, 0.4]),
-    transform: [{ scale: interpolate(breath.value, [0, 1], [1, 1.08]) }],
-  }));
-
-  return (
-    <View
-      style={{
-        borderRadius: 24,
-        borderWidth: 1,
-        borderColor: COLOR.border,
-        paddingVertical: 28,
-        paddingHorizontal: 24,
-        backgroundColor: COLOR.surface,
-        overflow: "hidden",
-      }}
-    >
-      <GeometricOrnament />
-
-      <View style={{ alignItems: "center", gap: 18 }}>
-        <View
-          style={{
-            width: 96,
-            height: 96,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Animated.View
-            style={[
-              {
-                position: "absolute",
-                width: 96,
-                height: 96,
-                borderRadius: 48,
-                borderWidth: 1,
-                borderColor: COLOR.primary,
-              },
-              ringOuter,
-            ]}
-          />
-          <Animated.View
-            style={[
-              {
-                position: "absolute",
-                width: 84,
-                height: 84,
-                borderRadius: 42,
-                borderWidth: 1,
-                borderColor: COLOR.primary,
-              },
-              ringInner,
-            ]}
-          />
-          <View
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 36,
-              backgroundColor: COLOR.primarySoft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: "LibreBaskerville-Bold",
-                fontSize: 32,
-                color: COLOR.primaryDark,
-              }}
-            >
-              {initial}
-            </Text>
-          </View>
-        </View>
-
-        <View style={{ alignItems: "center", gap: 4 }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
           <Text
-            numberOfLines={1}
             style={{
               fontFamily: "LibreBaskerville-Bold",
-              fontSize: 28,
-              color: COLOR.ink,
-              lineHeight: 34,
-              textAlign: "center",
+              fontSize: 30,
+              color: colors.ink,
+              letterSpacing: -0.5,
             }}
           >
-            {name}
+            Profile
           </Text>
-          {email ? (
+        </View>
+
+        <Animated.View
+          entering={FadeInDown.duration(360).springify().damping(18)}
+          style={{ paddingHorizontal: 20, marginTop: 18 }}
+        >
+          <HeaderCard
+            colors={colors}
+            email={email}
+            handle={handle}
+            initials={initials}
+            name={name}
+            onPress={() => go("/personal-details")}
+          />
+        </Animated.View>
+
+        <Section colors={colors} delay={60} title="Account">
+          <Card colors={colors}>
+            <Row
+              colors={colors}
+              onPress={() => go("/subscription")}
+              sf="crown.fill"
+              title="Subscription"
+              value="Premium"
+            />
+            <Divider colors={colors} />
+            <Row
+              colors={colors}
+              onPress={() => go("/preferences")}
+              sf="slider.horizontal.3"
+              title="Preferences"
+              value={MADHAB_LABEL[madhabKey]}
+            />
+            <Divider colors={colors} />
+            <Row
+              colors={colors}
+              onPress={() => go("/calc-method")}
+              sf="globe"
+              title="Calculation Method"
+              value={METHOD_LABEL[methodKey]}
+            />
+          </Card>
+        </Section>
+
+        <Section colors={colors} delay={140} title="Permissions">
+          <Card colors={colors}>
+            <PermissionRow
+              colors={colors}
+              granted={!!profile?.locationGranted}
+              onEnable={openSettings}
+              sf="location.fill"
+              title="Location"
+            />
+            <Divider colors={colors} />
+            <PermissionRow
+              colors={colors}
+              granted={!!profile?.notifGranted}
+              onEnable={openSettings}
+              sf="bell.fill"
+              title="Notifications"
+            />
+          </Card>
+        </Section>
+
+        <Section colors={colors} delay={220} title="Support & Legal">
+          <Card colors={colors}>
+            <Row
+              colors={colors}
+              onPress={() =>
+                openMail("support@heybarakah.app", "Feature request")
+              }
+              sf="megaphone.fill"
+              title="Request a Feature"
+            />
+            <Divider colors={colors} />
+            <Row
+              colors={colors}
+              onPress={() =>
+                openMail("support@heybarakah.app", "Support request")
+              }
+              sf="envelope.fill"
+              title="Support Email"
+            />
+            <Divider colors={colors} />
+            <Row
+              colors={colors}
+              onPress={() => openUrl("https://heybarakah.app/terms")}
+              sf="doc.text.fill"
+              title="Terms and Conditions"
+            />
+            <Divider colors={colors} />
+            <Row
+              colors={colors}
+              onPress={() => openUrl("https://heybarakah.app/privacy")}
+              sf="lock.shield.fill"
+              title="Privacy Policy"
+            />
+          </Card>
+        </Section>
+
+        <Section colors={colors} delay={280} title="Account Actions">
+          <Card colors={colors}>
+            <Row
+              colors={colors}
+              onPress={handleLogout}
+              sf="rectangle.portrait.and.arrow.right"
+              title="Logout"
+            />
+            <Divider colors={colors} />
+            <Row
+              colors={colors}
+              onPress={confirmDelete}
+              sf="trash.fill"
+              title="Delete Account"
+            />
+          </Card>
+        </Section>
+      </Animated.ScrollView>
+      <ScrollBlurHeader scrollY={scrollY} />
+    </View>
+  );
+}
+
+function HeaderCard({
+  colors,
+  email,
+  handle,
+  initials,
+  name,
+  onPress,
+}: {
+  colors: ThemeColors;
+  email: string | null;
+  handle: string;
+  initials: string;
+  name: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress}>
+      {({ pressed }) => (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            padding: 14,
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.card,
+            gap: 14,
+            opacity: pressed ? 0.92 : 1,
+          }}
+        >
+          <GradientAvatar initials={initials} size={56} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+            >
+              <IconSymbol
+                color={colors.premium}
+                name={"crown.fill" as never}
+                size={12}
+              />
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "700",
+                  letterSpacing: 0.6,
+                  color: colors.premium,
+                  textTransform: "uppercase",
+                }}
+              >
+                Premium
+              </Text>
+            </View>
             <Text
               numberOfLines={1}
               style={{
-                fontSize: 13,
-                color: COLOR.inkMuted,
+                fontFamily: "LibreBaskerville-Bold",
+                fontSize: 18,
+                color: colors.ink,
+                marginTop: 2,
               }}
             >
-              {email}
+              {name}
             </Text>
-          ) : null}
-        </View>
-      </View>
-
-      {hijri ? (
-        <View
-          style={{
-            marginTop: 22,
-            paddingTop: 18,
-            borderTopWidth: 1,
-            borderTopColor: COLOR.divider,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 10,
-          }}
-        >
-          <View
-            style={{
-              width: 5,
-              height: 5,
-              borderRadius: 3,
-              backgroundColor: COLOR.primary,
-            }}
-          />
-          <Text
-            style={{
-              fontSize: 12,
-              color: COLOR.inkMuted,
-              letterSpacing: 0.6,
-              textTransform: "uppercase",
-              fontWeight: "600",
-            }}
-          >
-            {hijri}
-          </Text>
-          <View
-            style={{
-              width: 5,
-              height: 5,
-              borderRadius: 3,
-              backgroundColor: COLOR.primary,
-            }}
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: 12, color: colors.inkMuted, marginTop: 1 }}
+            >
+              {email ?? handle}
+            </Text>
+          </View>
+          <IconSymbol
+            color={colors.chevron}
+            name={"chevron.right" as never}
+            size={16}
           />
         </View>
-      ) : null}
-    </View>
+      )}
+    </Pressable>
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
+function GradientAvatar({
+  initials,
+  size,
+}: {
+  initials: string;
+  size: number;
+}) {
+  const r = size / 2;
   return (
-    <View
-      style={{
-        paddingHorizontal: 24,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-      }}
-    >
-      <View style={{ width: 18, height: 1, backgroundColor: COLOR.primary }} />
-      <Text
+    <View style={{ width: size, height: size }}>
+      <Svg height={size} width={size}>
+        <Defs>
+          <LinearGradient id="avatar-grad" x1="0%" x2="100%" y1="0%" y2="100%">
+            <Stop offset="0%" stopColor="#00E5A0" />
+            <Stop offset="100%" stopColor="#00A98F" />
+          </LinearGradient>
+        </Defs>
+        <Circle cx={r} cy={r} fill="url(#avatar-grad)" r={r} />
+      </Svg>
+      <View
         style={{
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 2.4,
-          color: COLOR.inkMuted,
-          textTransform: "uppercase",
+          position: "absolute",
+          width: size,
+          height: size,
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        {title}
-      </Text>
+        <Text
+          style={{
+            color: "#FFFFFF",
+            fontSize: size * 0.36,
+            fontWeight: "700",
+            letterSpacing: 0.5,
+          }}
+        >
+          {initials}
+        </Text>
+      </View>
     </View>
   );
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+function Section({
+  children,
+  colors,
+  delay,
+  title,
+}: {
+  children: React.ReactNode;
+  colors: ThemeColors;
+  delay: number;
+  title: string;
+}) {
   return (
-    <AnimatedPressable
-      onPressIn={() => {
-        scale.value = withSpring(0.97, { damping: 18, stiffness: 220 });
-        Haptics.selectionAsync();
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 18, stiffness: 220 });
-      }}
-      style={[
-        {
-          flex: 1,
-          paddingHorizontal: 16,
-          paddingVertical: 18,
-          borderRadius: 18,
-          borderWidth: 1,
-          borderColor: COLOR.border,
-          backgroundColor: COLOR.surfaceSoft,
-        },
-        animStyle,
-      ]}
+    <Animated.View
+      entering={FadeInDown.delay(delay).duration(360).springify().damping(18)}
+      style={{ marginTop: 28 }}
     >
       <Text
         style={{
-          fontSize: 10,
+          paddingHorizontal: 20,
+          fontSize: 11,
           fontWeight: "700",
-          letterSpacing: 1.8,
-          color: COLOR.inkMuted,
+          letterSpacing: 2,
+          color: colors.inkMuted,
           textTransform: "uppercase",
           marginBottom: 10,
         }}
       >
-        {label}
+        {title}
       </Text>
-      <Text
-        numberOfLines={2}
-        style={{
-          fontFamily: "LibreBaskerville-Bold",
-          fontSize: 18,
-          color: COLOR.ink,
-          lineHeight: 22,
-        }}
-      >
-        {value}
-      </Text>
-    </AnimatedPressable>
+      <View style={{ paddingHorizontal: 20 }}>{children}</View>
+    </Animated.View>
+  );
+}
+
+function Card({
+  children,
+  colors,
+}: {
+  children: React.ReactNode;
+  colors: ThemeColors;
+}) {
+  return (
+    <View
+      style={{
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.card,
+        overflow: "hidden",
+      }}
+    >
+      {children}
+    </View>
+  );
+}
+
+function Divider({ colors }: { colors: ThemeColors }) {
+  return (
+    <View
+      style={{ height: 1, marginLeft: 66, backgroundColor: colors.divider }}
+    />
+  );
+}
+
+function Row({
+  colors,
+  onPress,
+  sf,
+  subtitle,
+  title,
+  value,
+}: {
+  colors: ThemeColors;
+  onPress: () => void;
+  sf: string;
+  subtitle?: string;
+  title: string;
+  value?: string;
+}) {
+  const iconColor = colors.inkMuted;
+  const iconBg = colors.neutralSoft;
+  const titleColor = colors.ink;
+  return (
+    <Pressable onPress={onPress}>
+      {({ pressed }) => (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 14,
+            paddingVertical: 14,
+            gap: 12,
+            opacity: pressed ? 0.7 : 1,
+          }}
+        >
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 11,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: iconBg,
+            }}
+          >
+            <IconSymbol color={iconColor} name={sf as never} size={20} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: 15, fontWeight: "600", color: titleColor }}
+            >
+              {title}
+            </Text>
+            {subtitle ? (
+              <Text
+                numberOfLines={2}
+                style={{ fontSize: 12, color: colors.inkMuted, marginTop: 2 }}
+              >
+                {subtitle}
+              </Text>
+            ) : null}
+          </View>
+          {value ? (
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: 13, color: colors.inkMuted, maxWidth: 140 }}
+            >
+              {value}
+            </Text>
+          ) : null}
+          <IconSymbol
+            color={colors.chevron}
+            name={"chevron.right" as never}
+            size={14}
+          />
+        </View>
+      )}
+    </Pressable>
   );
 }
 
 function PermissionRow({
+  colors,
   granted,
-  label,
+  onEnable,
   sf,
-  sublabel,
+  title,
 }: {
+  colors: ThemeColors;
   granted: boolean;
-  label: string;
+  onEnable: () => void;
   sf: string;
-  sublabel: string;
+  title: string;
 }) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-  return (
-    <AnimatedPressable
-      onPressIn={() => {
-        scale.value = withSpring(0.99, { damping: 18, stiffness: 240 });
-        Haptics.selectionAsync();
+  const content = (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        gap: 12,
       }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 18, stiffness: 240 });
-      }}
-      style={[
-        {
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: 16,
-          paddingVertical: 14,
-          borderRadius: 18,
-          borderWidth: 1,
-          borderColor: COLOR.border,
-          backgroundColor: COLOR.surface,
-        },
-        animStyle,
-      ]}
     >
       <View
         style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          backgroundColor: granted ? COLOR.primarySoft : COLOR.neutralSoft,
+          width: 40,
+          height: 40,
+          borderRadius: 11,
           alignItems: "center",
           justifyContent: "center",
-          marginRight: 14,
+          backgroundColor: colors.neutralSoft,
         }}
       >
-        <IconSymbol
-          color={granted ? COLOR.primary : COLOR.inkSubtle}
-          name={sf as never}
-          size={18}
-        />
+        <IconSymbol color={colors.inkMuted} name={sf as never} size={20} />
       </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text
-          numberOfLines={1}
-          style={{ fontSize: 15, fontWeight: "600", color: COLOR.ink }}
-        >
-          {label}
-        </Text>
-        <Text
-          numberOfLines={1}
-          style={{ fontSize: 12, color: COLOR.inkMuted, marginTop: 2 }}
-        >
-          {sublabel}
-        </Text>
-      </View>
-      <View
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: granted ? COLOR.primary : COLOR.inkSubtle,
-          marginLeft: 12,
-        }}
-      />
-    </AnimatedPressable>
-  );
-}
-
-function LogoutButton({ onPress }: { onPress: () => void }) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-  return (
-    <AnimatedPressable
-      onPress={onPress}
-      onPressIn={() => {
-        scale.value = withSpring(0.97, { damping: 18, stiffness: 240 });
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 18, stiffness: 240 });
-      }}
-      style={[
-        {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          paddingVertical: 16,
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: COLOR.errorSoft,
-          backgroundColor: COLOR.surface,
-        },
-        animStyle,
-      ]}
-    >
-      <IconSymbol
-        color={COLOR.error}
-        name={"rectangle.portrait.and.arrow.right" as never}
-        size={16}
-        style={{ marginRight: 10 }}
-      />
       <Text
+        numberOfLines={1}
         style={{
-          fontSize: 14,
-          fontWeight: "700",
-          color: COLOR.error,
-          letterSpacing: 0.6,
-          textTransform: "uppercase",
+          flex: 1,
+          fontSize: 15,
+          fontWeight: "600",
+          color: colors.ink,
         }}
       >
-        Log out
+        {title}
       </Text>
-    </AnimatedPressable>
+      {granted ? (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 999,
+            borderWidth: 1,
+            borderColor: colors.primary,
+            backgroundColor: "transparent",
+          }}
+        >
+          <View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.primary,
+            }}
+          />
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: "700",
+              color: colors.primary,
+              letterSpacing: 0.4,
+            }}
+          >
+            ENABLED
+          </Text>
+        </View>
+      ) : (
+        <View
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 999,
+            borderWidth: 1,
+            borderColor: colors.primary,
+            backgroundColor: "transparent",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "700",
+              color: colors.primary,
+              letterSpacing: 0.4,
+            }}
+          >
+            Enable
+          </Text>
+        </View>
+      )}
+    </View>
   );
+
+  if (granted) {
+    return content;
+  }
+  return <Pressable onPress={onEnable}>{content}</Pressable>;
 }
