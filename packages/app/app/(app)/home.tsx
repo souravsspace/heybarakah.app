@@ -1,9 +1,16 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import type { PrayerDay } from "@barakah/core/prayer";
 import { useMutation, useQuery } from "convex/react";
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, View } from "react-native";
+import Animated, {
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScrollBlurHeader } from "@/components/scroll-blur-header";
+import { useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
@@ -85,6 +92,14 @@ export default function Home() {
   const profile = useQuery(api.lib.users.getMyProfile);
   const upsertProfile = useMutation(api.lib.users.upsertProfile);
   const uploadedRef = useRef(false);
+  const { colors, scheme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
 
   useEffect(() => {
     if (uploadedRef.current) {
@@ -143,36 +158,41 @@ export default function Home() {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 140 }}
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <Animated.ScrollView
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 140 }}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        scrollIndicatorInsets={{ top: insets.top }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="px-md" style={{ paddingTop: 8, gap: 4 }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 8, gap: 4 }}>
           <Text
-            className="font-sans"
             style={{
               fontSize: 10,
               fontWeight: "700",
               letterSpacing: 2.4,
-              color: "#6B7280",
+              color: colors.inkMuted,
               textTransform: "uppercase",
             }}
           >
             {dateLabel}
           </Text>
           <Text
-            className="font-serif text-ink"
-            style={{ fontSize: 28, lineHeight: 34 }}
+            style={{
+              fontFamily: "LibreBaskerville-Bold",
+              fontSize: 28,
+              lineHeight: 34,
+              color: colors.ink,
+            }}
           >
             Assalāmu ʿalaykum,{"\n"}
             {name}.
           </Text>
           {hijri ? (
             <Text
-              className="font-sans"
-              style={{ color: "#6B7280", fontSize: 13, marginTop: 2 }}
+              style={{ color: colors.inkMuted, fontSize: 13, marginTop: 2 }}
             >
               {hijri}
             </Text>
@@ -180,11 +200,11 @@ export default function Home() {
         </View>
 
         <View
-          className="mx-md"
           style={{
             marginTop: 24,
+            marginHorizontal: 20,
             borderRadius: 24,
-            backgroundColor: "#29603E",
+            backgroundColor: colors.primary,
             overflow: "hidden",
           }}
         >
@@ -229,8 +249,8 @@ export default function Home() {
 
             <View style={{ gap: 6 }}>
               <Text
-                className="font-serif"
                 style={{
+                  fontFamily: "LibreBaskerville-Bold",
                   color: "#FFFFFF",
                   fontSize: 44,
                   lineHeight: 48,
@@ -265,14 +285,13 @@ export default function Home() {
           </View>
         </View>
 
-        <View className="px-md" style={{ marginTop: 28, gap: 12 }}>
+        <View style={{ paddingHorizontal: 20, marginTop: 28, gap: 12 }}>
           <Text
-            className="font-sans"
             style={{
               fontSize: 10,
               fontWeight: "700",
               letterSpacing: 2.4,
-              color: "#6B7280",
+              color: colors.inkMuted,
               textTransform: "uppercase",
             }}
           >
@@ -283,18 +302,18 @@ export default function Home() {
             style={{
               borderRadius: 20,
               borderWidth: 1,
-              borderColor: "#E5E7EB",
-              backgroundColor: "#FFFFFF",
+              borderColor: colors.border,
+              backgroundColor: colors.card,
               overflow: "hidden",
             }}
           >
-            {PRAYER_ORDER.map((name, i) => {
-              const time = todayPrayerTimes?.timings[name];
-              const isActive = active === name;
-              const isNext = nextPrayer?.name === name;
+            {PRAYER_ORDER.map((pname, i) => {
+              const time = todayPrayerTimes?.timings[pname];
+              const isActive = active === pname;
+              const isNext = nextPrayer?.name === pname;
               return (
                 <View
-                  key={name}
+                  key={pname}
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
@@ -302,8 +321,10 @@ export default function Home() {
                     paddingHorizontal: 20,
                     paddingVertical: 18,
                     borderTopWidth: i === 0 ? 0 : 1,
-                    borderTopColor: "#EFEFEF",
-                    backgroundColor: isActive ? "#E8F0EA" : "transparent",
+                    borderTopColor: colors.divider,
+                    backgroundColor: isActive
+                      ? colors.primarySoft
+                      : "transparent",
                   }}
                 >
                   <View
@@ -318,11 +339,10 @@ export default function Home() {
                         width: 6,
                         height: 6,
                         borderRadius: 3,
-                        backgroundColor: isActive
-                          ? "#29603E"
-                          : isNext
-                            ? "#29603E"
-                            : "#D1D5DB",
+                        backgroundColor:
+                          isActive || isNext
+                            ? colors.primary
+                            : colors.inkSubtle,
                         opacity: isNext && !isActive ? 0.5 : 1,
                       }}
                     />
@@ -330,17 +350,17 @@ export default function Home() {
                       style={{
                         fontSize: 16,
                         fontWeight: isActive ? "700" : "500",
-                        color: "#000",
+                        color: colors.ink,
                       }}
                     >
-                      {PRAYER_LABEL[name]}
+                      {PRAYER_LABEL[pname]}
                     </Text>
                   </View>
                   <Text
                     style={{
                       fontSize: 16,
                       fontWeight: isActive ? "700" : "500",
-                      color: isActive ? "#29603E" : "#000",
+                      color: isActive ? colors.primary : colors.ink,
                       fontVariant: ["tabular-nums"],
                     }}
                   >
@@ -352,14 +372,13 @@ export default function Home() {
           </View>
         </View>
 
-        <View className="px-md" style={{ marginTop: 28, gap: 12 }}>
+        <View style={{ paddingHorizontal: 20, marginTop: 28, gap: 12 }}>
           <Text
-            className="font-sans"
             style={{
               fontSize: 10,
               fontWeight: "700",
               letterSpacing: 2.4,
-              color: "#6B7280",
+              color: colors.inkMuted,
               textTransform: "uppercase",
             }}
           >
@@ -369,25 +388,36 @@ export default function Home() {
             style={{
               borderRadius: 20,
               borderWidth: 1,
-              borderColor: "#E5E7EB",
+              borderColor: colors.border,
+              backgroundColor: colors.card,
               padding: 20,
               gap: 8,
             }}
           >
             <Text
-              className="font-serif"
-              style={{ fontSize: 20, color: "#000" }}
+              style={{
+                fontFamily: "LibreBaskerville-Bold",
+                fontSize: 20,
+                color: colors.ink,
+              }}
             >
               Phone unlocks at {nextPrayer ? fmt12(nextPrayer.time) : "—"}
             </Text>
-            <Text style={{ color: "#6B7280", fontSize: 14, lineHeight: 20 }}>
+            <Text
+              style={{
+                color: colors.inkMuted,
+                fontSize: 14,
+                lineHeight: 20,
+              }}
+            >
               Five times a day, social apps stay quiet so you can pray with
               presence, in shāʾ Allāh.
             </Text>
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+      <ScrollBlurHeader scrollY={scrollY} />
+    </View>
   );
 }
 
