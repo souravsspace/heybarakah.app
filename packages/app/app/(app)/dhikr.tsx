@@ -1,7 +1,14 @@
 import * as Haptics from "expo-haptics";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Pressable, Text, View } from "react-native";
+import Animated, {
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScrollBlurHeader } from "@/components/scroll-blur-header";
+import { useTheme } from "@/contexts/theme-context";
 
 interface Preset {
   arabic: string;
@@ -45,6 +52,14 @@ const PRESETS: Preset[] = [
 export default function Dhikr() {
   const [activeId, setActiveId] = useState(PRESETS[0].id);
   const [count, setCount] = useState(0);
+  const { colors, scheme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
 
   const active = useMemo(
     () => PRESETS.find((p) => p.id === activeId) ?? PRESETS[0],
@@ -73,34 +88,42 @@ export default function Dhikr() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 140 }}
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <Animated.ScrollView
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 140 }}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        scrollIndicatorInsets={{ top: insets.top }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="px-md" style={{ paddingTop: 8, gap: 4 }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 8, gap: 4 }}>
           <Text
             style={{
               fontSize: 10,
               fontWeight: "700",
               letterSpacing: 2.4,
-              color: "#6B7280",
+              color: colors.inkMuted,
               textTransform: "uppercase",
             }}
           >
             Tasbih
           </Text>
           <Text
-            className="font-serif text-ink"
-            style={{ fontSize: 28, lineHeight: 34 }}
+            style={{
+              fontFamily: "LibreBaskerville-Bold",
+              fontSize: 28,
+              lineHeight: 34,
+              color: colors.ink,
+            }}
           >
             Remember Him.
           </Text>
         </View>
 
         <View
-          className="px-md"
           style={{
+            paddingHorizontal: 20,
             marginTop: 20,
             flexDirection: "row",
             gap: 8,
@@ -121,15 +144,15 @@ export default function Dhikr() {
                   paddingVertical: 8,
                   borderRadius: 999,
                   borderWidth: 1,
-                  borderColor: on ? "#29603E" : "#E5E7EB",
-                  backgroundColor: on ? "#E8F0EA" : "#FFFFFF",
+                  borderColor: on ? colors.primary : colors.border,
+                  backgroundColor: on ? colors.primarySoft : colors.card,
                 }}
               >
                 <Text
                   style={{
                     fontSize: 13,
                     fontWeight: "600",
-                    color: on ? "#29603E" : "#000",
+                    color: on ? colors.primary : colors.ink,
                   }}
                 >
                   {p.translit}
@@ -139,12 +162,18 @@ export default function Dhikr() {
           })}
         </View>
 
-        <View className="mx-md" style={{ marginTop: 24, alignItems: "center" }}>
+        <View
+          style={{
+            marginHorizontal: 20,
+            marginTop: 24,
+            alignItems: "center",
+          }}
+        >
           <Text
             style={{
               fontSize: 42,
               lineHeight: 56,
-              color: "#000",
+              color: colors.ink,
               textAlign: "center",
               fontFamily: "Inter",
               fontWeight: "500",
@@ -156,7 +185,7 @@ export default function Dhikr() {
             style={{
               marginTop: 6,
               fontSize: 14,
-              color: "#6B7280",
+              color: colors.inkMuted,
               textAlign: "center",
             }}
           >
@@ -171,7 +200,7 @@ export default function Dhikr() {
             marginHorizontal: 24,
             borderRadius: 999,
             aspectRatio: 1,
-            backgroundColor: "#29603E",
+            backgroundColor: colors.primary,
             justifyContent: "center",
             alignItems: "center",
             transform: [{ scale: pressed ? 0.985 : 1 }],
@@ -201,8 +230,8 @@ export default function Dhikr() {
             Tap to count
           </Text>
           <Text
-            className="font-serif"
             style={{
+              fontFamily: "LibreBaskerville-Bold",
               color: "#FFFFFF",
               fontSize: 120,
               lineHeight: 130,
@@ -223,12 +252,12 @@ export default function Dhikr() {
         </Pressable>
 
         <View
-          className="mx-md"
           style={{
+            marginHorizontal: 20,
             marginTop: 20,
             height: 4,
             borderRadius: 999,
-            backgroundColor: "#F5F5F4",
+            backgroundColor: colors.neutralSoft,
             overflow: "hidden",
           }}
         >
@@ -236,14 +265,14 @@ export default function Dhikr() {
             style={{
               height: "100%",
               width: `${progress * 100}%`,
-              backgroundColor: "#29603E",
+              backgroundColor: colors.primary,
             }}
           />
         </View>
 
         <View
-          className="mx-md"
           style={{
+            marginHorizontal: 20,
             marginTop: 16,
             flexDirection: "row",
             justifyContent: "space-between",
@@ -253,7 +282,7 @@ export default function Dhikr() {
           <Text
             style={{
               fontSize: 13,
-              color: "#6B7280",
+              color: colors.inkMuted,
               fontVariant: ["tabular-nums"],
             }}
           >
@@ -268,15 +297,19 @@ export default function Dhikr() {
               paddingVertical: 8,
               borderRadius: 999,
               borderWidth: 1,
-              borderColor: "#E5E7EB",
+              borderColor: colors.border,
+              backgroundColor: colors.card,
             }}
           >
-            <Text style={{ fontSize: 13, fontWeight: "600", color: "#000" }}>
+            <Text
+              style={{ fontSize: 13, fontWeight: "600", color: colors.ink }}
+            >
               Reset
             </Text>
           </Pressable>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+      <ScrollBlurHeader scrollY={scrollY} />
+    </View>
   );
 }
