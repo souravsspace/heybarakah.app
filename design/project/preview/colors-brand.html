@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Colors — Brand</title>
+    <style>
+    @font-face {
+      font-family: "Inter";
+      src: url("../fonts/Inter.ttf") format("truetype");
+      font-weight: 100 900;
+      font-display: swap;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: "Inter", system-ui, sans-serif;
+      color: #000;
+      background: #fff;
+    }
+    body {
+      padding: 28px 32px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chip {
+      width: 100%;
+      height: 88px;
+      border-radius: 12px;
+    }
+    .name {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .hex {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    .role {
+      font-size: 10px;
+      line-height: 1.4;
+      color: #9ca3af;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="grid">
+      <div class="swatch">
+        <div class="chip" style="background:#29603E"></div>
+        <div class="name">Primary</div>
+        <div class="hex">#29603E</div>
+        <div class="role">Brand mark · main CTA · selected fills · success</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#1B3F29"></div>
+        <div class="name">Primary press</div>
+        <div class="hex">#1B3F29</div>
+        <div class="role">Pressed state · dense green surfaces</div>
+      </div>
+      <div class="swatch">
+        <div
+          class="chip"
+          style="background:#E8F0EA;border:1px solid #E5E7EB"
+        ></div>
+        <div class="name">Primary soft</div>
+        <div class="hex">#E8F0EA</div>
+        <div class="role">Selected option fill · gentle success surface</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#234F34"></div>
+        <div class="name">Primary hover</div>
+        <div class="hex">#234F34</div>
+        <div class="role">Web hover only</div>
+      </div>
+    </div>
+  </body>
+</html>

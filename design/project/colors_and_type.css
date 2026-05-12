@@ -1,0 +1,235 @@
+/* ============================================================
+   Barakah — Colors & Type tokens
+   Source of truth: packages/marketing/src/styles/global.css
+                    + DESIGN.md component tokens
+   ============================================================ */
+
+@font-face {
+  font-family: "Libre Baskerville";
+  src: url("fonts/LibreBaskerville-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* -- Brand & accent ------------------------------------- */
+  --color-primary: #29603e; /* mosque green — the ONLY accent */
+  --color-primary-hover: #234f34;
+  --color-primary-press: #1b3f29; /* aka primary-dark in DESIGN.md */
+  --color-primary-soft: #e8f0ea; /* selection fill */
+  --color-primary-soft-2: #eaf2ec; /* marketing variant */
+
+  /* -- Ink / foreground ----------------------------------- */
+  --color-ink: #000000;
+  --color-ink-soft: #0f1311;
+  --color-fg: #000000;
+  --color-fg-muted: #6b7280; /* tertiary — body hints, captions */
+  --color-fg-subtle: #9ca3af; /* placeholder, very low emphasis */
+
+  /* -- Surface / background ------------------------------- */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3f4f6;
+  --color-surface-soft: #fafaf7;
+  --color-cream: #f5ebdb; /* editorial warm support */
+  --color-cream-soft: #faf4e8;
+  --color-card-rest: #f4f2ee; /* unselected paywall fill */
+
+  /* -- Lines / dividers ----------------------------------- */
+  --color-border: #e5e7eb; /* neutral */
+  --color-border-strong: #d1d5db;
+  --color-divider: #efefef; /* in-card hairline */
+  --color-neutral-soft: #f5f5f4; /* chips, pills */
+
+  /* -- Status -------------------------------------------- */
+  --color-error: #b42318;
+  --color-success: #29603e;
+
+  /* -- Chart support tones (data only, not brand) -------- */
+  --color-chart-competitor: #eab5a8; /* peach */
+  --color-chart-barakah: #b5cfc0; /* sage */
+
+  /* -- Typography families ------------------------------- */
+  --font-serif:
+    "Libre Baskerville", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* -- Type scale (from DESIGN.md typography) ------------ */
+  --t-display-size: 38px;
+  --t-display-lh: 1.2;
+  --t-display-w: 700;
+  --t-h1-size: 31px;
+  --t-h1-lh: 1.2;
+  --t-h1-w: 700;
+  --t-h2-size: 24px;
+  --t-h2-lh: 1.25;
+  --t-h2-w: 700;
+  --t-h3-size: 20px;
+  --t-h3-lh: 1.2;
+  --t-h3-w: 600;
+  --t-body-lg: 18px;
+  --t-body-lh: 1.5;
+  --t-body-md: 18px;
+  --t-body-sm: 14px;
+  --t-label-lg: 16px;
+  --t-label-md: 14px;
+  --t-label-sm: 12px;
+  --t-caption: 12px;
+  --t-overline: 12px;
+
+  /* -- Radius -------------------------------------------- */
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px; /* button + card default */
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* -- Spacing scale ------------------------------------- */
+  --space-xs: 6px;
+  --space-sm: 14px;
+  --space-md: 24px;
+  --space-lg: 40px;
+  --space-xl: 100px;
+  --gutter: 24px;
+
+  /* -- Elevation (used sparingly; only welcome swipe cards) */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-swipe: 0 8px 18px rgba(11, 23, 16, 0.08);
+  --shadow-cta: 0 8px 24px rgba(41, 96, 62, 0.28);
+
+  /* -- Motion -------------------------------------------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 160ms;
+  --dur-med: 220ms;
+  --dur-slow: 800ms;
+}
+
+/* ============================================================
+   Semantic text styles
+   ============================================================ */
+html,
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  text-rendering: optimizeLegibility;
+}
+
+.t-display,
+h1.t-display {
+  font-family: var(--font-serif);
+  font-size: var(--t-display-size);
+  font-weight: var(--t-display-w);
+  line-height: var(--t-display-lh);
+  color: var(--color-ink);
+  letter-spacing: 0;
+}
+
+.t-h1 {
+  font-family: var(--font-serif);
+  font-size: var(--t-h1-size);
+  font-weight: 700;
+  line-height: var(--t-h1-lh);
+}
+
+.t-h2 {
+  font-family: var(--font-serif);
+  font-size: var(--t-h2-size);
+  font-weight: 700;
+  line-height: var(--t-h2-lh);
+}
+
+.t-h3 {
+  font-family: var(--font-sans);
+  font-size: var(--t-h3-size);
+  font-weight: 600;
+  line-height: var(--t-h3-lh);
+}
+
+.t-body-lg {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.t-body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.t-body-sm {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-fg-muted);
+}
+
+.t-label-lg {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.t-label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.t-label-sm {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.t-caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--color-fg-muted);
+}
+
+/* Tiny uppercase eyebrow above section headers / setup screens */
+.t-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+}
+.t-eyebrow::before {
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  margin-right: 10px;
+  vertical-align: middle;
+  content: "";
+  background: var(--color-primary);
+  transform: translateY(-3px);
+}
+
+/* All-caps button label — only place we use uppercase besides eyebrow / announcement bar */
+.t-cta {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}

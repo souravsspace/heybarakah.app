@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Barakah — App UI Kit</title>
+    <style>
+    @font-face {
+      font-family: "Inter";
+      src: url("../../fonts/Inter.ttf") format("truetype");
+      font-weight: 100 900;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Libre Baskerville";
+      src: url("../../fonts/LibreBaskerville-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-display: swap;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      min-height: 100vh;
+      padding: 0;
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: #f4f2ee;
+    }
+    .stage {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 36px;
+    }
+    .frame-label { ...font-family: Inter; text-align: center; margin-top: 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #6B7280; }
+                .frame-col { display: flex; flex-direction: column; align-items: center; }
+                .nav-strip {
+                  position: fixed; bottom: 20px; left: 50%; 
+                  z-index: 9999;
+                  display: flex; gap: 4px; padding: 6px; color: #fff; 
+                  background: #0F1311; border-radius: 9999px;box-shadow: 0 12px 32px rgba(11,23,16,0.18);transform: translateX(-50%);
+                }
+                .nav-strip button {
+                  padding: 8px 18px; 
+                  font: 600 12px/1 "Inter"; color: rgba(255,255,255,0.65);letter-spacing: 0.02em;cursor: pointer;
+                  background: transparent; border: 0; border-radius: 9999px;
+                }
+                .nav-strip button.active { color: #fff; background: #29603E; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
+
+    <script type="text/babel" src="ios-frame.jsx"></script>
+    <script type="text/babel" src="components.jsx"></script>
+    <script type="text/babel" src="screens.jsx"></script>
+
+    <script type="text/babel">
+  const screens = [
+    { id: 'welcome',  label: '01 Welcome',     Comp: WelcomeScreen },
+    { id: 'promise',  label: '02 Promise',     Comp: PromiseScreen },
+    { id: 'lock',     label: '03 Lock preview',Comp: LockPreviewScreen },
+    { id: 'madhab',   label: '04 Madhab',      Comp: MadhabScreen },
+    { id: 'paywall',  label: '05 Paywall',     Comp: PaywallScreen },
+  ];
+
+  function App() {
+    const [active, setActive] = React.useState('welcome');
+    const next = (cur) => () => {
+      const i = screens.findIndex(s => s.id === cur);
+      setActive(screens[Math.min(i + 1, screens.length - 1)].id);
+    };
+    const back = (cur) => () => {
+      const i = screens.findIndex(s => s.id === cur);
+      setActive(screens[Math.max(i - 1, 0)].id);
+    };
+
+    return (
+      <React.Fragment>
+        <div className="stage">
+          {screens.map(s => {
+            const isActive = s.id === active;
+            const Comp = s.Comp;
+            const props = { onNext: next(s.id), onBack: back(s.id) };
+            return (
+              <div className="frame-col" key={s.id} data-screen-label={s.label}>
+                <IOSDevice>
+                  <Comp {...props}/>
+                </IOSDevice>
+                <div className="frame-label" style={{ opacity: isActive ? 1 : 0.55, color: isActive ? '#29603E' : '#6B7280' }}>{s.label}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="nav-strip">
+          {screens.map(s => (
+            <button key={s.id} className={s.id === active ? 'active' : ''} onClick={() => setActive(s.id)}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </React.Fragment>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+  </body>
+</html>

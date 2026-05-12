@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Input</title>
+    <style>
+    @font-face {
+      font-family: "Inter";
+      src: url("../fonts/Inter.ttf") format("truetype");
+      font-weight: 100 900;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      color: #000;
+      background: #fff;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 28px 36px;
+    }
+    .field-label {
+      margin-bottom: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+    .input {
+      width: 100%;
+      height: 60px;
+      padding: 0 18px;
+      font-family: "Inter";
+      font-size: 18px;
+      font-weight: 500;
+      color: #000;
+      background: #fff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 18px;
+    }
+    .input::placeholder {
+      font-weight: 500;
+      color: #9ca3af;
+    }
+    .input.focused {
+      outline: none;
+      border-color: #29603e;
+    }
+    .input.error {
+      border-color: #b42318;
+    }
+    .err {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #b42318;
+    }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div class="field-label">Email</div>
+      <input class="input" placeholder="you@email.com">
+    </div>
+    <div>
+      <div class="field-label">Name</div>
+      <input class="input focused" value="Sana">
+    </div>
+    <div>
+      <div class="field-label">Code</div>
+      <input class="input error" value="00000">
+      <div class="err">That code didn't match. Try again.</div>
+    </div>
+  </body>
+</html>

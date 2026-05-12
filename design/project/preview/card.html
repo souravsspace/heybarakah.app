@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Card</title>
+    <style>
+    @font-face {
+      font-family: "Inter";
+      src: url("../fonts/Inter.ttf") format("truetype");
+      font-weight: 100 900;
+    }
+    @font-face {
+      font-family: "Libre Baskerville";
+      src: url("../fonts/LibreBaskerville-Bold.ttf") format("truetype");
+      font-weight: 700;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      color: #000;
+      background: #fff;
+    }
+    body {
+      display: flex;
+      gap: 18px;
+      padding: 28px 36px;
+    }
+
+    .card {
+      flex: 1;
+      padding: 24px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+    }
+    .eyebrow {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #29603e;
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+    }
+    .eyebrow::before {
+      display: inline-block;
+      width: 28px;
+      height: 1px;
+      content: "";
+      background: #29603e;
+    }
+    .title {
+      margin-top: 14px;
+      font-family: "Libre Baskerville", serif;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+    .body {
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #6b7280;
+    }
+    .divider {
+      height: 1px;
+      margin: 16px 0;
+      background: #efefef;
+    }
+    .kv {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+    .kv .v {
+      font-weight: 600;
+      color: #29603e;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="eyebrow">Daily adab</div>
+      <div class="title">Eat with intention</div>
+      <div class="body">Begin meals with gratitude and du'a.</div>
+      <div class="divider"></div>
+      <div class="kv"><span>Duration</span><span class="v">5 min</span></div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Worldwide</div>
+      <div class="title">12,847</div>
+      <div class="body">Muslims praying with Barakah, this moment.</div>
+      <div class="divider"></div>
+      <div class="kv"><span>Growing</span><span class="v">every day</span></div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Colors — Neutrals</title>
+    <style>
+    @font-face {
+      font-family: "Inter";
+      src: url("../fonts/Inter.ttf") format("truetype");
+      font-weight: 100 900;
+      font-display: swap;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: "Inter", system-ui, sans-serif;
+      color: #000;
+      background: #fff;
+    }
+    body {
+      padding: 28px 32px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chip {
+      width: 100%;
+      height: 88px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 12px;
+    }
+    .name {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .hex {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    .role {
+      font-size: 10px;
+      line-height: 1.4;
+      color: #9ca3af;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="grid">
+      <div class="swatch">
+        <div class="chip" style="background:#000;border-color:#000"></div>
+        <div class="name">Ink</div>
+        <div class="hex">#000000</div>
+        <div class="role">Headlines, primary text</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#0F1311"></div>
+        <div class="name">Ink soft</div>
+        <div class="hex">#0F1311</div>
+        <div class="role">Dense badges, small icons</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#6B7280"></div>
+        <div class="name">Tertiary</div>
+        <div class="hex">#6B7280</div>
+        <div class="role">Hints, captions, inactive</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#9CA3AF"></div>
+        <div class="name">Placeholder</div>
+        <div class="hex">#9CA3AF</div>
+        <div class="role">Input placeholder · pending</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#D1D5DB"></div>
+        <div class="name">Border strong</div>
+        <div class="hex">#D1D5DB</div>
+        <div class="role">Pressed-state borders</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#E5E7EB"></div>
+        <div class="name">Neutral</div>
+        <div class="hex">#E5E7EB</div>
+        <div class="role">Default borders, dividers</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#EFEFEF"></div>
+        <div class="name">Divider</div>
+        <div class="hex">#EFEFEF</div>
+        <div class="role">In-card hairlines</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#FAFAF7"></div>
+        <div class="name">Surface soft</div>
+        <div class="hex">#FAFAF7</div>
+        <div class="role">Quiet utility backgrounds</div>
+      </div>
+    </div>
+  </body>
+</html>

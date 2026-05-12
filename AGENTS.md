@@ -6,12 +6,16 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Design System Reference
 
-When designing or implementing any UI, components, layouts, or visual features, **always read `DESIGN.md` first**. This file is the single source of truth for the Barakah brand. Do not assume tokens, colors, or patterns — look them up.
+When designing or implementing any UI, components, layouts, or visual features, **always consult the `design/` directory first**. It is the single source of truth for the Barakah brand. Do not assume tokens, colors, or patterns — look them up.
 
 **Read these files in order:**
 
-1. **`DESIGN.md`** — Comprehensive design specification with the full color system, typography scale, layout rules, elevation and depth guidelines, shape language, component definitions, and do's/don'ts. Use this as the single source of truth for design decisions.
-2. **`assets/`** — App icons, platform-specific iconsets (android, ios, web), font files, and SVG marks. Use these whenever brand assets are needed.
+1. **`design/README.md`** — Handoff overview from Claude Design. Read it first.
+2. **`design/chats/`** — Conversation transcripts that capture intent and the user's final decisions.
+3. **`design/project/README.md`** — Brand context, content fundamentals, visual foundations, iconography.
+4. **`design/project/colors_and_type.css`** — Canonical CSS custom properties and semantic type classes.
+5. **`design/project/preview/`** — Per-component HTML cards (tokens, buttons, inputs, option rows, plan cards, etc.).
+6. **`design/project/assets/`** and **`design/project/fonts/`** — Brand marks, icons, font files.
 
 **Key rules to internalize:**
 - Mosque green `#29603E` is the **only** accent. Everything else is black, white, and cool grays.
@@ -21,7 +25,7 @@ When designing or implementing any UI, components, layouts, or visual features, 
 - Sentence case everywhere except the announcement bar and primary CTA label (all-caps).
 - Always honor Islamic typographic conventions: **Allah, ﷺ, Qur'an, du'a, salah, fajr, dhuhr, asr, maghrib, isha**.
 
-All design work must align with the rules and tokens defined in `DESIGN.md`.
+All design work must align with the tokens, components, and rules in `design/`.
 
 ---
 
