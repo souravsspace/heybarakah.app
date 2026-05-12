@@ -1,11 +1,16 @@
 import { Redirect } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
+import { Platform } from "react-native";
 import { AuthLoading } from "@/components/auth-loading";
 import { useUser } from "@/contexts/user-context";
 import { useSubscription } from "@/lib/subscription";
 
 const PRIMARY = "#29603E";
+const PRIMARY_BRIGHT = "#4FB07A";
 const INK_MUTED = "#6B7280";
+const ON_PRIMARY = "#FFFFFF";
+const SELECTED_CONTENT =
+  Platform.OS === "android" ? ON_PRIMARY : PRIMARY_BRIGHT;
 
 export default function AppLayout() {
   const { user, isLoading } = useUser();
@@ -23,12 +28,13 @@ export default function AppLayout() {
 
   return (
     <NativeTabs
-      blurEffect="systemChromeMaterial"
-      iconColor={{ default: INK_MUTED, selected: PRIMARY }}
+      backgroundColor="#FFFFFF"
+      disableTransparentOnScrollEdge
+      iconColor={{ default: INK_MUTED, selected: SELECTED_CONTENT }}
       indicatorColor={PRIMARY}
       labelStyle={{
         default: { color: INK_MUTED },
-        selected: { color: PRIMARY },
+        selected: { color: SELECTED_CONTENT },
       }}
       tintColor={PRIMARY}
     >
