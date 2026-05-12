@@ -2,41 +2,29 @@ import { Redirect } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { Platform } from "react-native";
 import { AuthLoading } from "@/components/auth-loading";
+import { useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
 import { useSubscription } from "@/lib/subscription";
 
-const PRIMARY = "#29603E";
-const PRIMARY_BRIGHT = "#4FB07A";
-const INK_MUTED = "#6B7280";
-const ON_PRIMARY = "#FFFFFF";
-const SELECTED_CONTENT =
-  Platform.OS === "android" ? ON_PRIMARY : PRIMARY_BRIGHT;
+const PRIMARY_BRIGHT = "#00D26A";
 
-export default function AppLayout() {
-  const { user, isLoading } = useUser();
-  const { activeSubscription, isSubscriptionLoading } = useSubscription();
-
-  if (isLoading || isSubscriptionLoading) {
-    return <AuthLoading />;
-  }
-  if (!user) {
-    return <Redirect href={"/(onboarding)/welcome" as never} />;
-  }
-  if (!activeSubscription) {
-    return <Redirect href="/no-active-sub" />;
-  }
+function TabsWithTheme() {
+  const { colors, scheme } = useTheme();
+  const selectedContent =
+    Platform.OS === "android" ? "#FFFFFF" : PRIMARY_BRIGHT;
+  const tabBg = scheme === "dark" ? "#0A0A0A" : "#FFFFFF";
 
   return (
     <NativeTabs
-      backgroundColor="#FFFFFF"
+      backgroundColor={tabBg}
       disableTransparentOnScrollEdge
-      iconColor={{ default: INK_MUTED, selected: SELECTED_CONTENT }}
-      indicatorColor={PRIMARY}
+      iconColor={{ default: colors.inkMuted, selected: selectedContent }}
+      indicatorColor={colors.primary}
       labelStyle={{
-        default: { color: INK_MUTED },
-        selected: { color: SELECTED_CONTENT },
+        default: { color: colors.inkMuted },
+        selected: { color: selectedContent },
       }}
-      tintColor={PRIMARY}
+      tintColor={colors.primary}
     >
       <NativeTabs.Trigger name="home">
         <Icon sf={{ default: "house", selected: "house.fill" }} />
@@ -73,4 +61,21 @@ export default function AppLayout() {
       <NativeTabs.Trigger hidden name="logging-out" />
     </NativeTabs>
   );
+}
+
+export default function AppLayout() {
+  const { user, isLoading } = useUser();
+  const { activeSubscription, isSubscriptionLoading } = useSubscription();
+
+  if (isLoading || isSubscriptionLoading) {
+    return <AuthLoading />;
+  }
+  if (!user) {
+    return <Redirect href={"/(onboarding)/welcome" as never} />;
+  }
+  if (!activeSubscription) {
+    return <Redirect href="/no-active-sub" />;
+  }
+
+  return <TabsWithTheme />;
 }
