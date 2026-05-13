@@ -1,7 +1,7 @@
 import { BlurView } from "expo-blur";
 import Animated, {
-  type SharedValue,
   interpolate,
+  type SharedValue,
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
