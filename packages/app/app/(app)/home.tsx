@@ -15,7 +15,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
-import { useTheme } from "@/contexts/theme-context";
+import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import {
@@ -26,50 +26,6 @@ import {
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 
 type PrayerName = LoggablePrayerName;
-type Scheme = "light" | "dark";
-
-interface Palette {
-  accent: string;
-  accentSoft: string;
-  hairline: string;
-  hairlineSoft: string;
-  ink: string;
-  inkMuted: string;
-  inkSubtle: string;
-  overlay: string;
-  paper: string;
-  paperRaised: string;
-}
-
-const LIGHT: Palette = {
-  paper: "#F7F7F8",
-  paperRaised: "#FDFDFE",
-  ink: "#1B1D22",
-  inkMuted: "#6E7177",
-  inkSubtle: "#B0B2B6",
-  hairline: "#E2E3E6",
-  hairlineSoft: "#EDEEF0",
-  accent: "#29603E",
-  accentSoft: "#E8F0EA",
-  overlay: "rgba(20,22,26,0.42)",
-};
-
-const DARK: Palette = {
-  paper: "#0F1114",
-  paperRaised: "#16181C",
-  ink: "#F4F4F5",
-  inkMuted: "#9CA0A6",
-  inkSubtle: "#5E6168",
-  hairline: "#262A30",
-  hairlineSoft: "#1C1F24",
-  accent: "#5FB07F",
-  accentSoft: "#142519",
-  overlay: "rgba(0,0,0,0.55)",
-};
-
-function paletteFor(scheme: Scheme): Palette {
-  return scheme === "dark" ? DARK : LIGHT;
-}
 
 const PRAYER_ORDER: PrayerName[] = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
 
@@ -223,11 +179,7 @@ export default function Home() {
   const profile = useQuery(api.lib.users.getMyProfile);
   const upsertProfile = useMutation(api.lib.users.upsertProfile);
   const uploadedRef = useRef(false);
-  const { scheme } = useTheme();
-  const palette = useMemo(
-    () => paletteFor(scheme === "dark" ? "dark" : "light"),
-    [scheme]
-  );
+  const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler({
@@ -400,25 +352,30 @@ export default function Home() {
     active && !realWeek.getStatus(today, active) ? active : null;
 
   const heroLabel = activeUnlogged ? "In progress" : "Next prayer";
+  const focusedPrayer = active ?? nextPrayer?.name ?? PRAYER_ORDER[0];
 
   return (
-    <View style={{ flex: 1, backgroundColor: palette.paper }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Animated.ScrollView
-        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 140 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingTop: insets.top,
+          paddingBottom: 140,
+        }}
         onScroll={onScroll}
         scrollEventThrottle={16}
         scrollIndicatorInsets={{ top: insets.top }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Greeting — single combined date line */}
+        {/* Greeting: single combined date line */}
         <View style={{ paddingHorizontal: 20, paddingTop: 10, gap: 8 }}>
           <Text
             style={{
               fontSize: 10,
               fontWeight: "700",
               letterSpacing: 2,
-              color: palette.inkMuted,
+              color: colors.inkMuted,
             }}
           >
             {dateLine}
@@ -428,7 +385,7 @@ export default function Home() {
               fontFamily: "LibreBaskerville-Bold",
               fontSize: 26,
               lineHeight: 32,
-              color: palette.ink,
+              color: colors.ink,
             }}
           >
             Assalāmu ʿalaykum,{"\n"}
@@ -436,15 +393,15 @@ export default function Home() {
           </Text>
         </View>
 
-        {/* Focal card — hairline border, paper bg, accent only on ghost pill */}
+        {/* Focal card: hairline border, paper bg, accent only on ghost pill */}
         <View
           style={{
             marginTop: 22,
             marginHorizontal: 20,
             borderRadius: 20,
             borderWidth: 1,
-            borderColor: palette.hairline,
-            backgroundColor: palette.paperRaised,
+            borderColor: colors.border,
+            backgroundColor: colors.card,
             overflow: "hidden",
           }}
         >
@@ -461,7 +418,7 @@ export default function Home() {
                   fontSize: 10,
                   fontWeight: "700",
                   letterSpacing: 2,
-                  color: activeUnlogged ? palette.accent : palette.inkMuted,
+                  color: activeUnlogged ? colors.primary : colors.inkMuted,
                   textTransform: "uppercase",
                 }}
               >
@@ -472,7 +429,7 @@ export default function Home() {
                   fontSize: 10,
                   fontWeight: "700",
                   letterSpacing: 1.6,
-                  color: palette.inkSubtle,
+                  color: colors.inkSubtle,
                   textTransform: "uppercase",
                 }}
               >
@@ -484,7 +441,7 @@ export default function Home() {
               <Text
                 style={{
                   fontFamily: "LibreBaskerville-Bold",
-                  color: palette.ink,
+                  color: colors.ink,
                   fontSize: 48,
                   lineHeight: 52,
                 }}
@@ -497,7 +454,7 @@ export default function Home() {
               </Text>
               <Text
                 style={{
-                  color: palette.inkMuted,
+                  color: colors.inkMuted,
                   fontSize: 18,
                   fontVariant: ["tabular-nums"],
                 }}
@@ -516,7 +473,7 @@ export default function Home() {
                   fontSize: 11,
                   fontWeight: "700",
                   letterSpacing: 2,
-                  color: palette.inkMuted,
+                  color: colors.inkMuted,
                   textTransform: "uppercase",
                   fontVariant: ["tabular-nums"],
                 }}
@@ -530,7 +487,7 @@ export default function Home() {
             <View
               style={{
                 borderTopWidth: 1,
-                borderTopColor: palette.hairlineSoft,
+                borderTopColor: colors.divider,
                 paddingHorizontal: 22,
                 paddingVertical: 14,
                 flexDirection: "row",
@@ -542,7 +499,7 @@ export default function Home() {
               <Text
                 style={{
                   flex: 1,
-                  color: palette.inkMuted,
+                  color: colors.inkMuted,
                   fontSize: 13,
                   lineHeight: 18,
                 }}
@@ -550,19 +507,21 @@ export default function Home() {
                 You are inside the window.
               </Text>
               <Pressable
-                onPress={() => onMarkPrayed(activeUnlogged)}
+                onPress={() => {
+                  onMarkPrayed(activeUnlogged).catch(() => undefined);
+                }}
                 style={({ pressed }) => ({
                   paddingHorizontal: 18,
                   paddingVertical: 10,
                   borderRadius: 999,
                   borderWidth: 1,
-                  borderColor: palette.accent,
-                  backgroundColor: pressed ? palette.accentSoft : "transparent",
+                  borderColor: colors.primary,
+                  backgroundColor: pressed ? colors.primarySoft : "transparent",
                 })}
               >
                 <Text
                   style={{
-                    color: palette.accent,
+                    color: colors.primary,
                     fontSize: 13,
                     fontWeight: "700",
                     letterSpacing: 0.4,
@@ -575,8 +534,14 @@ export default function Home() {
           ) : null}
         </View>
 
-        {/* Today list — bordered card, window ranges, active progress */}
-        <View style={{ paddingHorizontal: 20, marginTop: 28, gap: 12 }}>
+        {/* Today board: compact prayer log */}
+        <View
+          style={{
+            paddingHorizontal: 20,
+            marginTop: 28,
+            gap: 12,
+          }}
+        >
           <View
             style={{
               flexDirection: "row",
@@ -589,7 +554,7 @@ export default function Home() {
                 fontSize: 10,
                 fontWeight: "700",
                 letterSpacing: 2.4,
-                color: palette.inkMuted,
+                color: colors.inkMuted,
                 textTransform: "uppercase",
               }}
             >
@@ -598,46 +563,56 @@ export default function Home() {
             <Text
               style={{
                 fontSize: 10,
-                fontWeight: "600",
+                fontWeight: "700",
                 letterSpacing: 1.6,
-                color: palette.inkSubtle,
+                color: colors.primary,
                 textTransform: "uppercase",
               }}
             >
-              five anchors
+              Log prayer
             </Text>
           </View>
 
           <View
             style={{
-              borderRadius: 18,
+              borderRadius: 20,
               borderWidth: 1,
-              borderColor: palette.hairline,
-              backgroundColor: palette.paperRaised,
+              borderColor: colors.border,
+              backgroundColor: colors.card,
+              paddingHorizontal: 10,
+              paddingVertical: 10,
               overflow: "hidden",
             }}
           >
             {PRAYER_ORDER.map((pname, i) => {
-              const time = todayPrayerTimes?.timings[pname];
-              const isActive = active === pname;
               const status = realWeek.getStatus(today, pname);
-              const at = prayerDateFor(pname);
+              const start = prayerDateFor(pname);
               const end = windowEndFor(pname);
-              const isPast = at ? at.getTime() <= Date.now() : false;
+              const isPast = start ? start.getTime() <= Date.now() : false;
+              const isFocused = focusedPrayer === pname;
               return (
-                <PrayerRow
-                  isActive={isActive}
+                <PrayerSlot
+                  colors={colors}
+                  index={i + 1}
                   isFirst={i === 0}
+                  isFocused={isFocused}
                   isPast={isPast}
                   key={pname}
                   loading={loading}
-                  onPress={() => setSheet(pname)}
-                  palette={palette}
+                  onPress={() => {
+                    if (activeUnlogged === pname) {
+                      onMarkPrayed(pname).catch(() => undefined);
+                      return;
+                    }
+                    if (isPast || status) {
+                      setSheet(pname);
+                    }
+                  }}
                   prayer={pname}
+                  progress={windowProgress(start, end)}
+                  range={formatWindowRange(start, end)}
                   status={status}
-                  time={time}
-                  windowEnd={end}
-                  windowStart={at}
+                  time={todayPrayerTimes?.timings[pname]}
                 />
               );
             })}
@@ -647,79 +622,60 @@ export default function Home() {
       <ScrollBlurHeader scrollY={scrollY} />
 
       <LogSheet
+        colors={colors}
         existing={sheet ? realWeek.getStatus(today, sheet) : undefined}
         onClear={onClear}
         onClose={() => setSheet(null)}
         onPick={onPickStatus}
-        palette={palette}
         prayer={sheet}
       />
     </View>
   );
 }
 
-function PrayerRow({
+function PrayerSlot({
+  colors,
+  index,
   prayer,
   time,
-  isActive,
+  isFocused,
   isPast,
   isFirst,
   status,
-  palette,
   loading,
-  windowEnd,
-  windowStart,
+  progress,
+  range,
   onPress,
 }: {
+  colors: ThemeColors;
+  index: number;
   prayer: PrayerName;
   time: string | undefined;
-  isActive: boolean;
+  isFocused: boolean;
   isPast: boolean;
   isFirst: boolean;
   status: PrayerStatus | undefined;
-  palette: Palette;
   loading: boolean;
-  windowEnd: Date | null;
-  windowStart: Date | null;
+  progress: number;
+  range: string;
   onPress: () => void;
 }) {
-  const interactive = isPast || !!status;
-  const progress = windowProgress(windowStart, windowEnd);
-  const range = formatWindowRange(windowStart, windowEnd);
-  const isLogged = !!status;
-  const nameWeight: "400" | "500" | "600" | "700" =
-    isActive || status === "on_time"
-      ? "700"
-      : status === "missed"
-        ? "400"
-        : "500";
-  const nameColor =
-    status === "missed"
-      ? palette.inkSubtle
-      : status === "qada"
-        ? palette.inkMuted
-        : palette.ink;
-  const rangeColor =
-    status === "missed"
-      ? palette.inkSubtle
-      : isActive
-        ? palette.accent
-        : palette.inkMuted;
-  const Container = interactive ? Pressable : View;
+  const logged = !!status;
+  const rowBg = isFocused ? colors.primarySoft : colors.card;
+  const pressedBg = isFocused ? colors.primarySoft : colors.neutralSoft;
+
   return (
-    <Container
-      onPress={interactive ? onPress : undefined}
-      style={({ pressed }: { pressed?: boolean } = {}) => ({
-        minHeight: 72,
-        paddingHorizontal: 18,
-        paddingVertical: 14,
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        minHeight: isFocused ? 112 : 90,
+        paddingHorizontal: 16,
+        paddingVertical: isFocused ? 20 : 18,
+        borderRadius: 14,
         borderTopWidth: isFirst ? 0 : 1,
-        borderTopColor: palette.hairlineSoft,
-        backgroundColor: isActive
-          ? palette.accentSoft
-          : pressed
-            ? palette.hairlineSoft
-            : "transparent",
+        borderTopColor: colors.divider,
+        backgroundColor: pressed ? pressedBg : rowBg,
+        justifyContent: "space-between",
       })}
     >
       <View
@@ -727,170 +683,200 @@ function PrayerRow({
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 16,
+          gap: 18,
         }}
       >
-        <View style={{ flex: 1, gap: 5 }}>
+        <View style={{ flex: 1, gap: 9 }}>
           <View
             style={{
               flexDirection: "row",
-              alignItems: "baseline",
-              gap: 8,
+              alignItems: "center",
+              gap: 14,
             }}
           >
-            {isActive ? (
-              <Text
-                style={{
-                  color: palette.accent,
-                  fontSize: 17,
-                  fontWeight: "700",
-                }}
-              >
-                ›
-              </Text>
-            ) : null}
-            <Text
+            <View
               style={{
-                fontSize: 18,
-                fontWeight: nameWeight,
-                color: nameColor,
+                width: 26,
+                height: 26,
+                borderRadius: 13,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                borderColor: isFocused ? colors.primary : colors.divider,
+                backgroundColor: isFocused
+                  ? colors.primary
+                  : colors.surfaceSoft,
               }}
             >
-              {PRAYER_LABEL[prayer]}
-            </Text>
+              <Text
+                style={{
+                  color: isFocused ? colors.bg : colors.inkSubtle,
+                  fontSize: 10,
+                  fontWeight: "700",
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
+                {pad(index)}
+              </Text>
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text
+                style={{
+                  color:
+                    status === "missed"
+                      ? colors.inkSubtle
+                      : isFocused
+                        ? colors.primary
+                        : colors.ink,
+                  fontFamily: "Inter",
+                  fontSize: 17,
+                  fontWeight: isFocused || logged ? "700" : "600",
+                  lineHeight: 22,
+                }}
+              >
+                {PRAYER_LABEL[prayer]}
+              </Text>
+              <Text
+                style={{
+                  color: isFocused ? colors.inkMuted : colors.inkSubtle,
+                  fontSize: 11,
+                  fontStyle: status === "late" ? "italic" : "normal",
+                  fontVariant: ["tabular-nums"],
+                  fontWeight: "600",
+                  letterSpacing: status === "qada" ? 1 : 0.2,
+                  textTransform: status === "qada" ? "uppercase" : "none",
+                }}
+              >
+                {range}
+              </Text>
+            </View>
           </View>
-          <Text
-            style={{
-              color: rangeColor,
-              fontSize: 11,
-              fontStyle: status === "late" ? "italic" : "normal",
-              fontVariant: ["tabular-nums"],
-              fontWeight: isActive ? "700" : "500",
-              letterSpacing: status === "qada" ? 1.1 : 0.3,
-              textTransform: status === "qada" ? "uppercase" : "none",
-            }}
-          >
-            {range}
-          </Text>
         </View>
-        <View style={{ alignItems: "flex-end", gap: 5 }}>
+        <View style={{ alignItems: "flex-end", gap: 8, minWidth: 70 }}>
           <Text
             style={{
-              color: status === "missed" ? palette.inkSubtle : palette.ink,
-              fontSize: 17,
+              color: status === "missed" ? colors.inkSubtle : colors.ink,
+              fontSize: 16,
               fontVariant: ["tabular-nums"],
               fontWeight: "700",
             }}
           >
             {time ? fmt12(time) : loading ? "…" : "—"}
           </Text>
-          <RowTrailing
+          <StatusGlyph
+            colors={colors}
             isPast={isPast}
             loading={loading}
-            palette={palette}
+            showLabel={isFocused}
             status={status}
-            time={time}
           />
         </View>
       </View>
-      {isActive ? (
+      {isFocused ? (
         <View
           style={{
-            height: 1,
-            marginTop: 12,
-            backgroundColor: palette.hairline,
+            height: 2,
+            marginLeft: 40,
+            marginRight: 2,
+            marginTop: 16,
+            borderRadius: 999,
+            backgroundColor: colors.surface,
             overflow: "hidden",
           }}
         >
           <View
             style={{
-              width: `${Math.max(8, progress * 100)}%`,
-              height: 1,
-              backgroundColor: palette.accent,
-              opacity: isLogged ? 0.45 : 1,
+              width: `${Math.max(6, progress * 100)}%`,
+              height: "100%",
+              backgroundColor: colors.primary,
+              opacity: status ? 0.45 : 1,
             }}
           />
         </View>
       ) : null}
-    </Container>
+    </Pressable>
   );
 }
 
-function RowTrailing({
+function StatusGlyph({
+  colors,
   status,
   isPast,
-  time,
   loading,
-  palette,
+  showLabel = false,
 }: {
+  colors: ThemeColors;
   status: PrayerStatus | undefined;
   isPast: boolean;
-  time: string | undefined;
   loading: boolean;
-  palette: Palette;
+  showLabel?: boolean;
 }) {
   if (status === "on_time") {
     return (
-      <Text
-        style={{
-          color: palette.accent,
-          fontSize: 16,
-          fontWeight: "700",
-          lineHeight: 18,
-        }}
-      >
-        ✓
-      </Text>
+      <StatusPill
+        colors={colors}
+        label={showLabel ? "On time" : "Done"}
+        tone="success"
+      />
     );
   }
   if (status) {
-    const glyph = status === "late" ? "~" : status === "qada" ? "◌" : "–";
-    const color = status === "missed" ? palette.inkSubtle : palette.inkMuted;
-    return (
-      <Text
-        style={{
-          color,
-          fontSize: status === "qada" ? 15 : 16,
-          fontWeight: "700",
-          lineHeight: 18,
-        }}
-      >
-        {glyph}
-      </Text>
-    );
+    return <StatusPill colors={colors} label={STATUS_LABEL[status]} />;
   }
   if (isPast) {
-    return (
+    return <StatusPill colors={colors} label="Log" tone="action" />;
+  }
+  return <StatusPill colors={colors} label={loading ? "…" : "Later"} />;
+}
+
+function StatusPill({
+  colors,
+  label,
+  tone = "muted",
+}: {
+  colors: ThemeColors;
+  label: string;
+  tone?: "action" | "muted" | "success";
+}) {
+  const active = tone === "action" || tone === "success";
+  return (
+    <View
+      style={{
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: active ? colors.primary : colors.divider,
+        backgroundColor: active ? colors.primarySoft : colors.surfaceSoft,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+      }}
+    >
       <Text
         style={{
-          fontSize: 13,
+          color: active ? colors.primary : colors.inkMuted,
+          fontSize: 10,
           fontWeight: "700",
-          color: palette.accent,
-          letterSpacing: 0.4,
+          letterSpacing: 0.6,
+          lineHeight: 12,
+          textTransform: "uppercase",
         }}
       >
-        Log
+        {label}
       </Text>
-    );
-  }
-  return (
-    <Text style={{ fontSize: 13, color: palette.inkSubtle }}>
-      {time ? "·" : loading ? "…" : "·"}
-    </Text>
+    </View>
   );
 }
 
 function LogSheet({
   prayer,
   existing,
-  palette,
+  colors,
   onPick,
   onClear,
   onClose,
 }: {
   prayer: PrayerName | null;
   existing: PrayerStatus | undefined;
-  palette: Palette;
+  colors: ThemeColors;
   onPick: (p: PrayerName, s: PrayerStatus) => void;
   onClear: (p: PrayerName) => void;
   onClose: () => void;
@@ -906,17 +892,17 @@ function LogSheet({
     >
       <Pressable
         onPress={onClose}
-        style={{ flex: 1, backgroundColor: palette.overlay }}
+        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.42)" }}
       />
       <View
         style={{
-          backgroundColor: palette.paperRaised,
+          backgroundColor: colors.card,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
           paddingTop: 12,
           paddingBottom: 28,
           borderTopWidth: 1,
-          borderTopColor: palette.hairline,
+          borderTopColor: colors.border,
         }}
       >
         <View
@@ -924,7 +910,7 @@ function LogSheet({
             width: 36,
             height: 4,
             borderRadius: 2,
-            backgroundColor: palette.hairline,
+            backgroundColor: colors.border,
             alignSelf: "center",
             marginBottom: 16,
           }}
@@ -935,7 +921,7 @@ function LogSheet({
               fontSize: 10,
               fontWeight: "700",
               letterSpacing: 2.4,
-              color: palette.inkMuted,
+              color: colors.inkMuted,
               textTransform: "uppercase",
             }}
           >
@@ -945,7 +931,7 @@ function LogSheet({
             style={{
               fontFamily: "LibreBaskerville-Bold",
               fontSize: 22,
-              color: palette.ink,
+              color: colors.ink,
             }}
           >
             {prayer ? PRAYER_LABEL[prayer] : ""}
@@ -964,10 +950,8 @@ function LogSheet({
                   justifyContent: "space-between",
                   paddingVertical: 16,
                   borderTopWidth: i === 0 ? 0 : 1,
-                  borderTopColor: palette.hairlineSoft,
-                  backgroundColor: pressed
-                    ? palette.hairlineSoft
-                    : "transparent",
+                  borderTopColor: colors.divider,
+                  backgroundColor: pressed ? colors.neutralSoft : "transparent",
                 })}
               >
                 <View
@@ -981,7 +965,7 @@ function LogSheet({
                     style={{
                       fontSize: 11,
                       fontWeight: "600",
-                      color: palette.inkSubtle,
+                      color: colors.inkSubtle,
                       width: 14,
                       fontVariant: ["tabular-nums"],
                     }}
@@ -992,7 +976,7 @@ function LogSheet({
                     style={{
                       fontSize: 17,
                       fontWeight: selected ? "700" : "500",
-                      color: selected ? palette.accent : palette.ink,
+                      color: selected ? colors.primary : colors.ink,
                     }}
                   >
                     {STATUS_LABEL[s]}
@@ -1003,7 +987,7 @@ function LogSheet({
                     style={{
                       fontSize: 11,
                       fontWeight: "700",
-                      color: palette.accent,
+                      color: colors.primary,
                       letterSpacing: 0.6,
                       textTransform: "uppercase",
                     }}
@@ -1024,14 +1008,14 @@ function LogSheet({
               paddingVertical: 14,
               alignItems: "center",
               borderRadius: 14,
-              backgroundColor: pressed ? palette.hairlineSoft : "transparent",
+              backgroundColor: pressed ? colors.neutralSoft : "transparent",
             })}
           >
             <Text
               style={{
                 fontSize: 13,
                 fontWeight: "700",
-                color: palette.inkMuted,
+                color: colors.inkMuted,
                 letterSpacing: 0.6,
                 textTransform: "uppercase",
               }}
