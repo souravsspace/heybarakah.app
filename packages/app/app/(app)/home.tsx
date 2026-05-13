@@ -8,13 +8,7 @@ import {
 import { useMutation, useQuery } from "convex/react";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Modal,
-  Pressable,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { Modal, Pressable, Text, View } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -186,7 +180,6 @@ export default function Home() {
   const upsertProfile = useMutation(api.lib.users.upsertProfile);
   const uploadedRef = useRef(false);
   const { colors, scheme } = useTheme();
-  const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler({
@@ -360,13 +353,6 @@ export default function Home() {
 
   const heroLabel = activeUnlogged ? "In progress" : "Next prayer";
   const focusedPrayer = active ?? nextPrayer?.name ?? PRAYER_ORDER[0];
-  const todayCardHeight = Math.max(430, height - insets.top - 352);
-  const todayCardInset = 10;
-  const todayCardInnerHeight = todayCardHeight - todayCardInset * 2;
-  const focusedRowHeight = Math.round(todayCardInnerHeight * 0.24);
-  const regularRowHeight = Math.floor(
-    (todayCardInnerHeight - focusedRowHeight) / (PRAYER_ORDER.length - 1)
-  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -593,9 +579,8 @@ export default function Home() {
               borderWidth: 1,
               borderColor: colors.border,
               backgroundColor: colors.card,
-              height: todayCardHeight,
-              paddingHorizontal: todayCardInset,
-              paddingVertical: todayCardInset,
+              paddingHorizontal: 10,
+              paddingVertical: 10,
               overflow: "hidden",
             }}
           >
@@ -626,7 +611,6 @@ export default function Home() {
                   prayer={pname}
                   progress={windowProgress(start, end)}
                   range={formatWindowRange(start, end)}
-                  rowHeight={isFocused ? focusedRowHeight : regularRowHeight}
                   status={status}
                   time={todayPrayerTimes?.timings[pname]}
                 />
@@ -661,7 +645,6 @@ function PrayerSlot({
   loading,
   progress,
   range,
-  rowHeight,
   onPress,
 }: {
   colors: ThemeColors;
@@ -675,7 +658,6 @@ function PrayerSlot({
   loading: boolean;
   progress: number;
   range: string;
-  rowHeight: number;
   onPress: () => void;
 }) {
   const logged = !!status;
@@ -686,9 +668,9 @@ function PrayerSlot({
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        height: rowHeight,
+        minHeight: isFocused ? 104 : 78,
         paddingHorizontal: 16,
-        paddingVertical: isFocused ? 18 : 14,
+        paddingVertical: isFocused ? 18 : 16,
         borderRadius: 14,
         borderTopWidth: isFirst ? 0 : 1,
         borderTopColor: colors.divider,
