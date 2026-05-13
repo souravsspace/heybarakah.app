@@ -8,7 +8,13 @@ import {
 import { useMutation, useQuery } from "convex/react";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Pressable, Text, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -180,6 +186,7 @@ export default function Home() {
   const upsertProfile = useMutation(api.lib.users.upsertProfile);
   const uploadedRef = useRef(false);
   const { colors, scheme } = useTheme();
+  const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler({
@@ -353,6 +360,7 @@ export default function Home() {
 
   const heroLabel = activeUnlogged ? "In progress" : "Next prayer";
   const focusedPrayer = active ?? nextPrayer?.name ?? PRAYER_ORDER[0];
+  const todayCardHeight = Math.max(430, height - insets.top - 352);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -579,6 +587,7 @@ export default function Home() {
               borderWidth: 1,
               borderColor: colors.border,
               backgroundColor: colors.card,
+              height: todayCardHeight,
               paddingHorizontal: 10,
               paddingVertical: 10,
               overflow: "hidden",
@@ -611,6 +620,7 @@ export default function Home() {
                   prayer={pname}
                   progress={windowProgress(start, end)}
                   range={formatWindowRange(start, end)}
+                  rowFlex={isFocused ? 1.18 : 1}
                   status={status}
                   time={todayPrayerTimes?.timings[pname]}
                 />
@@ -645,6 +655,7 @@ function PrayerSlot({
   loading,
   progress,
   range,
+  rowFlex,
   onPress,
 }: {
   colors: ThemeColors;
@@ -658,6 +669,7 @@ function PrayerSlot({
   loading: boolean;
   progress: number;
   range: string;
+  rowFlex: number;
   onPress: () => void;
 }) {
   const logged = !!status;
@@ -668,9 +680,10 @@ function PrayerSlot({
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        minHeight: isFocused ? 112 : 90,
+        flex: rowFlex,
+        minHeight: isFocused ? 102 : 76,
         paddingHorizontal: 16,
-        paddingVertical: isFocused ? 20 : 18,
+        paddingVertical: isFocused ? 18 : 16,
         borderRadius: 14,
         borderTopWidth: isFirst ? 0 : 1,
         borderTopColor: colors.divider,
@@ -729,9 +742,9 @@ function PrayerSlot({
                         ? colors.primary
                         : colors.ink,
                   fontFamily: "Inter",
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: isFocused || logged ? "700" : "600",
-                  lineHeight: 22,
+                  lineHeight: 23,
                 }}
               >
                 {PRAYER_LABEL[prayer]}
