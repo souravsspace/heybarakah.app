@@ -361,6 +361,12 @@ export default function Home() {
   const heroLabel = activeUnlogged ? "In progress" : "Next prayer";
   const focusedPrayer = active ?? nextPrayer?.name ?? PRAYER_ORDER[0];
   const todayCardHeight = Math.max(430, height - insets.top - 352);
+  const todayCardInset = 10;
+  const todayCardInnerHeight = todayCardHeight - todayCardInset * 2;
+  const focusedRowHeight = Math.round(todayCardInnerHeight * 0.24);
+  const regularRowHeight = Math.floor(
+    (todayCardInnerHeight - focusedRowHeight) / (PRAYER_ORDER.length - 1)
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -588,8 +594,8 @@ export default function Home() {
               borderColor: colors.border,
               backgroundColor: colors.card,
               height: todayCardHeight,
-              paddingHorizontal: 10,
-              paddingVertical: 10,
+              paddingHorizontal: todayCardInset,
+              paddingVertical: todayCardInset,
               overflow: "hidden",
             }}
           >
@@ -620,7 +626,7 @@ export default function Home() {
                   prayer={pname}
                   progress={windowProgress(start, end)}
                   range={formatWindowRange(start, end)}
-                  rowFlex={isFocused ? 1.18 : 1}
+                  rowHeight={isFocused ? focusedRowHeight : regularRowHeight}
                   status={status}
                   time={todayPrayerTimes?.timings[pname]}
                 />
@@ -655,7 +661,7 @@ function PrayerSlot({
   loading,
   progress,
   range,
-  rowFlex,
+  rowHeight,
   onPress,
 }: {
   colors: ThemeColors;
@@ -669,7 +675,7 @@ function PrayerSlot({
   loading: boolean;
   progress: number;
   range: string;
-  rowFlex: number;
+  rowHeight: number;
   onPress: () => void;
 }) {
   const logged = !!status;
@@ -680,10 +686,9 @@ function PrayerSlot({
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        flex: rowFlex,
-        minHeight: isFocused ? 102 : 76,
+        height: rowHeight,
         paddingHorizontal: 16,
-        paddingVertical: isFocused ? 18 : 16,
+        paddingVertical: isFocused ? 18 : 14,
         borderRadius: 14,
         borderTopWidth: isFirst ? 0 : 1,
         borderTopColor: colors.divider,
@@ -742,9 +747,9 @@ function PrayerSlot({
                         ? colors.primary
                         : colors.ink,
                   fontFamily: "Inter",
-                  fontSize: 18,
+                  fontSize: isFocused ? 20 : 18,
                   fontWeight: isFocused || logged ? "700" : "600",
-                  lineHeight: 23,
+                  lineHeight: isFocused ? 25 : 23,
                 }}
               >
                 {PRAYER_LABEL[prayer]}
@@ -770,6 +775,7 @@ function PrayerSlot({
             style={{
               color: status === "missed" ? colors.inkSubtle : colors.ink,
               fontSize: 16,
+              lineHeight: 20,
               fontVariant: ["tabular-nums"],
               fontWeight: "700",
             }}
