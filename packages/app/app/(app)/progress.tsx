@@ -1,4 +1,6 @@
+import type { LoggablePrayerName } from "@barakah/core/prayer";
 import { StatusBar } from "expo-status-bar";
+import { useMemo } from "react";
 import { Text, View } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
@@ -6,40 +8,55 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AreaChart } from "@/components/area-chart";
+import { PrayerMatrix } from "@/components/prayer-matrix";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { useTheme } from "@/contexts/theme-context";
+import { useWeekLogs } from "@/hooks/usePrayerLogs";
 
-const WEEK = [
-  { label: "Mon", value: 4 },
-  { label: "Tue", value: 5 },
-  { label: "Wed", value: 3 },
-  { label: "Thu", value: 5 },
-  { label: "Fri", value: 5 },
-  { label: "Sat", value: 4 },
-  { label: "Sun", value: 5 },
+const PRAYERS: LoggablePrayerName[] = [
+  "fajr",
+  "dhuhr",
+  "asr",
+  "maghrib",
+  "isha",
+];
+const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+const MONTH_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
-const PRAYER_BREAKDOWN = [
-  { name: "Fajr", value: 5, of: 7 },
-  { name: "Dhuhr", value: 7, of: 7 },
-  { name: "Asr", value: 6, of: 7 },
-  { name: "Maghrib", value: 7, of: 7 },
-  { name: "Isha", value: 6, of: 7 },
-];
+function pad2(n: number): string {
+  return n.toString().padStart(2, "0");
+}
 
-function segmentedBlocks(value: number, of: number): boolean[] {
-  const blocks: boolean[] = [];
-  for (let i = 0; i < of; i++) {
-    blocks.push(i < value);
-  }
-  return blocks;
+function dateKey(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function addDays(d: Date, days: number): Date {
+  const next = new Date(d);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function mondayOf(d: Date): Date {
+  const day = d.getDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  return addDays(d, offset);
 }
 
 export default function Progress() {
-  const total = WEEK.reduce((s, d) => s + d.value, 0);
-  const possible = WEEK.length * 5;
-  const pct = Math.round((total / possible) * 100);
-  const streak = 12;
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
@@ -48,6 +65,79 @@ export default function Progress() {
       scrollY.value = e.contentOffset.y;
     },
   });
+
+  const { todayKey, days, startKey, rangeLabel } = useMemo(() => {
+    const now = new Date();
+    const today = dateKey(now);
+    const start = mondayOf(now);
+    const list = Array.from({ length: 7 }, (_, i) => {
+      const dt = addDays(start, i);
+      return { date: dateKey(dt), label: DAY_LABELS[i], jsDate: dt };
+    });
+    const first = list[0].jsDate;
+    const last = list.at(-1)?.jsDate ?? first;
+    const sameMonth = first.getMonth() === last.getMonth();
+    const range = sameMonth
+      ? `${MONTH_SHORT[first.getMonth()]} ${first.getDate()} – ${last.getDate()}`
+      : `${MONTH_SHORT[first.getMonth()]} ${first.getDate()} – ${MONTH_SHORT[last.getMonth()]} ${last.getDate()}`;
+    return {
+      todayKey: today,
+      days: list,
+      startKey: list[0].date,
+      rangeLabel: range,
+    };
+  }, []);
+
+  const week = useWeekLogs(startKey);
+
+  const dailyOnTime = useMemo(
+    () =>
+      days.map((d) => {
+        let count = 0;
+        for (const p of PRAYERS) {
+          if (week.getStatus(d.date, p) === "on_time") {
+            count += 1;
+          }
+        }
+        return { label: d.label, value: count };
+      }),
+    [days, week]
+  );
+
+  const possible = days.length * PRAYERS.length;
+  const onTime = week.onTimeCount;
+
+  const { currentStreak, longestStreak } = useMemo(() => {
+    const dayHasOnTime = (date: string) =>
+      PRAYERS.some((p) => week.getStatus(date, p) === "on_time");
+    let longest = 0;
+    let run = 0;
+    for (const d of days) {
+      if (dayHasOnTime(d.date)) {
+        run += 1;
+        if (run > longest) {
+          longest = run;
+        }
+      } else {
+        run = 0;
+      }
+    }
+    let current = 0;
+    for (let i = days.length - 1; i >= 0; i--) {
+      const d = days[i];
+      if (d.date > todayKey) {
+        continue;
+      }
+      if (dayHasOnTime(d.date)) {
+        current += 1;
+      } else {
+        break;
+      }
+    }
+    return { currentStreak: current, longestStreak: longest };
+  }, [days, todayKey, week]);
+
+  const empty = !week.loading && week.totalLogged === 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -69,7 +159,7 @@ export default function Progress() {
               textTransform: "uppercase",
             }}
           >
-            Progress
+            This week
           </Text>
           <Text
             style={{
@@ -79,83 +169,61 @@ export default function Progress() {
               color: colors.ink,
             }}
           >
-            This week.
+            {empty ? "Begin this week." : "Mā shāʾ Allāh."}
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.inkMuted, marginTop: 2 }}>
+            {rangeLabel}
           </Text>
         </View>
 
-        {/* Hero metric card */}
+        {/* Hero count */}
         <View
           style={{
-            marginHorizontal: 20,
-            marginTop: 20,
-            borderRadius: 24,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.card,
-            padding: 28,
+            paddingHorizontal: 20,
+            paddingTop: 28,
+            paddingBottom: 24,
             alignItems: "center",
-            gap: 6,
           }}
         >
           <Text
             style={{
-              fontSize: 10,
-              fontWeight: "700",
-              letterSpacing: 2.4,
-              color: colors.inkMuted,
-              textTransform: "uppercase",
-            }}
-          >
-            On-time prayers
-          </Text>
-          <Text
-            style={{
               fontFamily: "LibreBaskerville-Bold",
-              fontSize: 52,
-              lineHeight: 58,
+              fontSize: 64,
+              lineHeight: 68,
               color: colors.ink,
               fontVariant: ["tabular-nums"],
             }}
           >
-            {pct}%
+            {onTime}
+            <Text style={{ color: colors.inkSubtle }}>/{possible}</Text>
           </Text>
           <Text
             style={{
-              fontSize: 14,
+              fontSize: 11,
+              fontWeight: "700",
+              letterSpacing: 2,
               color: colors.inkMuted,
-              marginTop: 2,
+              textTransform: "uppercase",
+              marginTop: 6,
             }}
           >
-            {total} of {possible} prayers this week
+            On-time prayers
           </Text>
-          <View
-            style={{
-              marginTop: 10,
-              paddingHorizontal: 12,
-              paddingVertical: 5,
-              borderRadius: 999,
-              backgroundColor: colors.primarySoft,
-              borderWidth: 1,
-              borderColor: colors.primary,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 11,
-                fontWeight: "600",
-                color: colors.primary,
-              }}
-            >
-              {streak}-day streak · mā shāʾ Allāh
-            </Text>
-          </View>
         </View>
 
-        {/* Daily prayers chart */}
+        <View
+          style={{
+            height: 1,
+            backgroundColor: colors.divider,
+            marginHorizontal: 20,
+          }}
+        />
+
+        {/* Daily chart */}
         <View
           style={{
             marginHorizontal: 20,
-            marginTop: 16,
+            marginTop: 24,
             borderRadius: 20,
             borderWidth: 1,
             borderColor: colors.border,
@@ -182,24 +250,25 @@ export default function Progress() {
                 textTransform: "uppercase",
               }}
             >
-              Daily prayers
+              Daily on-time
             </Text>
             <Text style={{ fontSize: 11, color: colors.inkMuted }}>
               last 7 days
             </Text>
           </View>
           <AreaChart
-            data={WEEK}
+            data={dailyOnTime}
             fill={colors.primary}
             max={5}
             stroke={colors.primary}
           />
         </View>
 
-        {/* By prayer — segmented block bars */}
-        <View style={{ paddingHorizontal: 20, marginTop: 24, gap: 12 }}>
+        {/* Matrix */}
+        <View style={{ marginTop: 28, gap: 14 }}>
           <Text
             style={{
+              paddingHorizontal: 20,
               fontSize: 10,
               fontWeight: "700",
               letterSpacing: 2.4,
@@ -209,72 +278,100 @@ export default function Progress() {
           >
             By prayer
           </Text>
-          <View
-            style={{
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.card,
-              overflow: "hidden",
-            }}
-          >
-            {PRAYER_BREAKDOWN.map((p, i) => {
-              const blocks = segmentedBlocks(p.value, p.of);
-              return (
-                <View
-                  key={p.name}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    paddingHorizontal: 20,
-                    paddingVertical: 16,
-                    borderTopWidth: i === 0 ? 0 : 1,
-                    borderTopColor: colors.divider,
-                  }}
-                >
-                  <View style={{ gap: 8 }}>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "600",
-                        color: colors.ink,
-                      }}
-                    >
-                      {p.name}
-                    </Text>
-                    <View style={{ flexDirection: "row", gap: 4 }}>
-                      {blocks.map((filled, bi) => (
-                        <View
-                          key={bi}
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: 3,
-                            backgroundColor: filled
-                              ? colors.primary
-                              : colors.inkSubtle,
-                            opacity: filled ? 1 : 0.35,
-                          }}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: colors.primary,
-                      fontVariant: ["tabular-nums"],
-                    }}
-                  >
-                    {p.value}/{p.of}
-                  </Text>
-                </View>
-              );
-            })}
+          <PrayerMatrix
+            days={days}
+            getStatus={week.getStatus}
+            todayKey={todayKey}
+          />
+        </View>
+
+        {/* Streak strip */}
+        <View
+          style={{
+            marginHorizontal: 20,
+            marginTop: 24,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.card,
+            paddingHorizontal: 20,
+            paddingVertical: 18,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ gap: 4 }}>
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 1.8,
+                color: colors.inkMuted,
+                textTransform: "uppercase",
+              }}
+            >
+              Current streak
+            </Text>
+            <Text
+              style={{
+                fontFamily: "LibreBaskerville-Bold",
+                fontSize: 26,
+                lineHeight: 30,
+                color: colors.ink,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {currentStreak}
+              <Text style={{ fontSize: 14, color: colors.inkMuted }}>
+                {" "}
+                {currentStreak === 1 ? "day" : "days"}
+              </Text>
+            </Text>
+          </View>
+          <View style={{ alignItems: "flex-end", gap: 4 }}>
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 1.8,
+                color: colors.inkMuted,
+                textTransform: "uppercase",
+              }}
+            >
+              Longest
+            </Text>
+            <Text
+              style={{
+                fontFamily: "LibreBaskerville-Bold",
+                fontSize: 26,
+                lineHeight: 30,
+                color: colors.ink,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {longestStreak}
+              <Text style={{ fontSize: 14, color: colors.inkMuted }}>
+                {" "}
+                {longestStreak === 1 ? "day" : "days"}
+              </Text>
+            </Text>
           </View>
         </View>
+
+        {empty ? (
+          <Text
+            style={{
+              marginHorizontal: 20,
+              marginTop: 18,
+              fontSize: 13,
+              color: colors.inkMuted,
+              textAlign: "center",
+            }}
+          >
+            Log your prayers and watch this week take shape, in shāʾ Allāh.
+          </Text>
+        ) : null}
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
     </View>
