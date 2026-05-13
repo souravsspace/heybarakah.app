@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Spacing</title>
+    <style>
+    @font-face {
+      font-family: "Inter";
+      src: url("../fonts/Inter.ttf") format("truetype");
+      font-weight: 100 900;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      color: #000;
+      background: #fff;
+    }
+    body {
+      padding: 28px 32px;
+    }
+    .row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      height: 22px;
+      margin-bottom: 12px;
+    }
+    .name {
+      width: 80px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .bar {
+      height: 14px;
+      background: #29603e;
+      border-radius: 4px;
+    }
+    .spec {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <div class="name">xs</div>
+      <div class="bar" style="width:6px"></div>
+      <div class="spec">6px</div>
+    </div>
+    <div class="row">
+      <div class="name">sm</div>
+      <div class="bar" style="width:14px"></div>
+      <div class="spec">14px</div>
+    </div>
+    <div class="row">
+      <div class="name">md · gutter</div>
+      <div class="bar" style="width:24px"></div>
+      <div class="spec">24px</div>
+    </div>
+    <div class="row">
+      <div class="name">lg</div>
+      <div class="bar" style="width:40px"></div>
+      <div class="spec">40px</div>
+    </div>
+    <div class="row">
+      <div class="name">xl</div>
+      <div class="bar" style="width:100px"></div>
+      <div class="spec">100px · section gap</div>
+    </div>
+  </body>
+</html>

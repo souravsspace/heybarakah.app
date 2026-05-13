@@ -1,0 +1,58 @@
+<!-- Shared base for all preview cards. Each card is ~700×<h>px, no titles (asset name renders outside). -->
+<style>
+@import url("../colors_and_type.css");
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-surface);
+}
+body {
+  padding: 28px 32px;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.swatch .chip {
+  width: 100%;
+  aspect-ratio: 1.6 / 1;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+}
+.swatch .name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.swatch .hex {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: var(--color-fg-muted);
+}
+.label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+</style>

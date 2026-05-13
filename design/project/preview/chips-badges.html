@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Chips & badges</title>
+    <style>
+    @font-face {
+      font-family: "Inter";
+      src: url("../fonts/Inter.ttf") format("truetype");
+      font-weight: 100 900;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      color: #000;
+      background: #fff;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 28px 36px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+    }
+
+    .chip-neutral {
+      padding: 6px 12px;
+      font-size: 12px;
+      color: #6b7280;
+      background: #f5f5f4;
+      border-radius: 9999px;
+    }
+    .chip-soft {
+      padding: 6px 12px;
+      font-size: 12px;
+      color: #6b7280;
+      background: #f5f5f4;
+      border-radius: 9999px;
+    }
+
+    .badge-trial {
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.06em;
+      background: #29603e;
+      border-radius: 9999px;
+    }
+    .badge-family {
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.06em;
+      background: #0f1311;
+      border-radius: 9999px;
+    }
+    .badge-next {
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #29603e;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      background: #e8f0ea;
+      border-radius: 9999px;
+    }
+    .badge-best {
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.06em;
+      background: #29603e;
+      border-radius: 9999px;
+    }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div class="label">Chips · utility (neutral-soft)</div>
+      <div class="row" style="margin-top:8px">
+        <span class="chip-neutral">T&Cs · Privacy</span
+        ><span class="chip-neutral">Subscribed?</span
+        ><span class="chip-neutral">Restore</span>
+      </div>
+    </div>
+    <div>
+      <div class="label">Badges · promotional (use sparingly)</div>
+      <div class="row" style="margin-top:8px">
+        <span class="badge-trial">7 DAY FREE TRIAL</span>
+        <span class="badge-best">BEST VALUE</span>
+        <span class="badge-family">UP TO 5 MEMBERS</span>
+        <span class="badge-next">NEXT</span>
+      </div>
+    </div>
+  </body>
+</html>

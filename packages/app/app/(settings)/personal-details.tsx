@@ -1,0 +1,371 @@
+import { api } from "@barakah/core/convex/_generated/api";
+import { useMutation, useQuery } from "convex/react";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { type ThemeColors, useTheme } from "@/contexts/theme-context";
+
+const SPLIT_RE = /\s+/;
+const NON_ALPHANUM_RE = /[^a-z0-9]/g;
+
+function splitName(full: string): { first: string; last: string } {
+  const trimmed = full.trim();
+  if (!trimmed) {
+    return { first: "", last: "" };
+  }
+  const parts = trimmed.split(SPLIT_RE);
+  if (parts.length === 1) {
+    return { first: parts[0], last: "" };
+  }
+  return {
+    first: parts.slice(0, -1).join(" "),
+    last: parts.at(-1) ?? "",
+  };
+}
+
+function deriveUsername(name: string): string {
+  return name.toLowerCase().replace(NON_ALPHANUM_RE, "").slice(0, 24);
+}
+
+export default function PersonalDetails() {
+  const router = useRouter();
+  const { colors, scheme } = useTheme();
+  const profile = useQuery(api.lib.users.getMyProfile);
+  const upsertProfile = useMutation(api.lib.users.upsertProfile);
+  const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
+  const [username, setUsername] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (profile !== undefined && !hydrated) {
+      const split = splitName(profile?.name ?? "");
+      setFirst(split.first);
+      setLast(split.last);
+      setUsername(deriveUsername(profile?.name ?? ""));
+      setHydrated(true);
+    }
+  }, [profile, hydrated]);
+
+  const joinedName = [first.trim(), last.trim()].filter(Boolean).join(" ");
+  const dirty = hydrated && joinedName !== (profile?.name ?? "");
+
+  const save = async () => {
+    if (saving) {
+      return;
+    }
+    setSaving(true);
+    Haptics.selectionAsync().catch(() => undefined);
+    try {
+      if (dirty) {
+        await upsertProfile({ name: joinedName || undefined });
+      }
+      router.back();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const initial = (first.charAt(0) || "S").toUpperCase();
+  const secondInitial = (last.charAt(0) || "").toUpperCase();
+  const initials = `${initial}${secondInitial}`;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
+        <Header
+          colors={colors}
+          onBack={() => router.back()}
+          title="Edit Profile"
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 40 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={{ alignItems: "center", marginTop: 24, gap: 12 }}>
+              <View>
+                <GradientAvatar initials={initials} size={120} />
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync().catch(() => undefined);
+                  }}
+                  style={{
+                    position: "absolute",
+                    right: -2,
+                    bottom: 6,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: colors.bgElevated,
+                    borderWidth: 2,
+                    borderColor: colors.bg,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <IconSymbol
+                    color={colors.ink}
+                    name={"pencil" as never}
+                    size={14}
+                  />
+                </Pressable>
+              </View>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: colors.inkMuted,
+                  fontWeight: "500",
+                }}
+              >
+                Change Photo
+              </Text>
+            </View>
+
+            <View
+              style={{
+                paddingHorizontal: 20,
+                marginTop: 28,
+                gap: 12,
+              }}
+            >
+              <FloatingInput
+                autoCapitalize="words"
+                colors={colors}
+                label="First Name"
+                onChangeText={setFirst}
+                placeholder="First name"
+                value={first}
+              />
+              <FloatingInput
+                autoCapitalize="words"
+                colors={colors}
+                label="Last Name"
+                onChangeText={setLast}
+                placeholder="Last name"
+                value={last}
+              />
+              <FloatingInput
+                autoCapitalize="none"
+                colors={colors}
+                label="Username"
+                onChangeText={setUsername}
+                placeholder="username"
+                value={username}
+              />
+            </View>
+          </ScrollView>
+
+          <View
+            style={{
+              paddingHorizontal: 20,
+              paddingBottom: 20,
+            }}
+          >
+            <Pressable
+              disabled={saving}
+              onPress={save}
+              style={({ pressed }) => ({
+                paddingVertical: 18,
+                borderRadius: 999,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: scheme === "dark" ? "#FFFFFF" : colors.ink,
+                opacity: pressed ? 0.92 : 1,
+              })}
+            >
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "700",
+                  color: scheme === "dark" ? "#000000" : "#FFFFFF",
+                  letterSpacing: 0.2,
+                }}
+              >
+                {saving ? "Saving…" : "Continue"}
+              </Text>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+function GradientAvatar({
+  initials,
+  size,
+}: {
+  initials: string;
+  size: number;
+}) {
+  const r = size / 2;
+  return (
+    <View style={{ width: size, height: size }}>
+      <Svg height={size} width={size}>
+        <Defs>
+          <LinearGradient id="grad" x1="0%" x2="100%" y1="0%" y2="100%">
+            <Stop offset="0%" stopColor="#00E5A0" />
+            <Stop offset="100%" stopColor="#00A98F" />
+          </LinearGradient>
+        </Defs>
+        <Circle cx={r} cy={r} fill="url(#grad)" r={r} />
+      </Svg>
+      <View
+        style={{
+          position: "absolute",
+          width: size,
+          height: size,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text
+          style={{
+            color: "#FFFFFF",
+            fontSize: size * 0.36,
+            fontWeight: "700",
+            letterSpacing: 1,
+          }}
+        >
+          {initials}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function FloatingInput({
+  autoCapitalize,
+  colors,
+  label,
+  onChangeText,
+  placeholder,
+  value,
+}: {
+  autoCapitalize: "none" | "words" | "sentences" | "characters";
+  colors: ThemeColors;
+  label: string;
+  onChangeText: (v: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <View
+      style={{
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 12,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: focused ? colors.ink : colors.border,
+        backgroundColor: colors.card,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 11,
+          fontWeight: "500",
+          color: colors.inkMuted,
+          marginBottom: 2,
+        }}
+      >
+        {label}
+      </Text>
+      <TextInput
+        autoCapitalize={autoCapitalize}
+        autoCorrect={false}
+        onBlur={() => setFocused(false)}
+        onChangeText={onChangeText}
+        onFocus={() => setFocused(true)}
+        placeholder={placeholder}
+        placeholderTextColor={colors.inkSubtle}
+        style={{
+          fontSize: 17,
+          fontWeight: "500",
+          color: colors.ink,
+          padding: 0,
+          margin: 0,
+        }}
+        value={value}
+      />
+    </View>
+  );
+}
+
+function Header({
+  colors,
+  onBack,
+  title,
+}: {
+  colors: ThemeColors;
+  onBack: () => void;
+  title: string;
+}) {
+  return (
+    <View
+      style={{
+        paddingHorizontal: 16,
+        paddingTop: 6,
+        paddingBottom: 8,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+      }}
+    >
+      <Pressable
+        onPress={() => {
+          Haptics.selectionAsync().catch(() => undefined);
+          onBack();
+        }}
+        style={({ pressed }) => ({
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.surfaceSoft,
+          opacity: pressed ? 0.8 : 1,
+        })}
+      >
+        <IconSymbol
+          color={colors.ink}
+          name={"chevron.left" as never}
+          size={16}
+        />
+      </Pressable>
+      <Text
+        style={{
+          flex: 1,
+          textAlign: "center",
+          fontSize: 16,
+          fontWeight: "700",
+          color: colors.ink,
+          marginRight: 38,
+        }}
+      >
+        {title}
+      </Text>
+    </View>
+  );
+}

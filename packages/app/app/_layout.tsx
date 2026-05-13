@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
+import { ThemeProvider as BarakahThemeProvider } from "@/contexts/theme-context";
 import { UserProvider } from "@/contexts/user-context";
 import { OnboardingProvider } from "@/hooks/use-onboarding-state";
 import { authClient } from "@/lib/auth-client";
@@ -50,22 +51,24 @@ export default function RootLayout() {
           <ThemeProvider value={DefaultTheme}>
             <SubscriptionProvider>
               <OnboardingProvider>
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: "#FFFFFF" },
-                  }}
-                >
-                  <Stack.Screen name="index" />
-                  <Stack.Screen name="(onboarding)" />
-                  <Stack.Screen name="(account)" />
-                  <Stack.Screen name="(app)" />
-                  <Stack.Screen
-                    name="modal"
-                    options={{ presentation: "modal", title: "Modal" }}
-                  />
-                </Stack>
-                <StatusBar style="dark" />
+                <BarakahThemeProvider>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                    }}
+                  >
+                    <Stack.Screen name="index" />
+                    <Stack.Screen name="(onboarding)" />
+                    <Stack.Screen name="(account)" />
+                    <Stack.Screen name="(app)" />
+                    <Stack.Screen name="(settings)" />
+                    <Stack.Screen
+                      name="modal"
+                      options={{ presentation: "modal", title: "Modal" }}
+                    />
+                  </Stack>
+                  <StatusBar style="dark" />
+                </BarakahThemeProvider>
               </OnboardingProvider>
             </SubscriptionProvider>
           </ThemeProvider>

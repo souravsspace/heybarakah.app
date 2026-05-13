@@ -1,4 +1,4 @@
-import { api } from "@barakah/core";
+import { api } from "@barakah/core/convex/_generated/api";
 import { useQuery } from "convex/react";
 import type React from "react";
 import { createContext, useContext, useMemo } from "react";

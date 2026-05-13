@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Option row</title>
+    <style>
+    @font-face {
+      font-family: "Inter";
+      src: url("../fonts/Inter.ttf") format("truetype");
+      font-weight: 100 900;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      color: #000;
+      background: #fff;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 28px 36px;
+    }
+
+    .opt {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      min-height: 60px;
+      padding: 12px 20px;
+      background: #fff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 12px;
+    }
+    .opt.selected {
+      background: #e8f0ea;
+      border-color: #29603e;
+    }
+    .opt .body {
+      flex: 1;
+    }
+    .opt .label {
+      font-size: 16px;
+      font-weight: 500;
+      color: #000;
+    }
+    .opt.selected .label {
+      font-weight: 600;
+      color: #29603e;
+    }
+    .opt .hint {
+      margin-top: 2px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .dot {
+      width: 22px;
+      height: 22px;
+      border: 1px solid #e5e7eb;
+      border-radius: 9999px;
+    }
+    .dot.checked {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      background: #29603e;
+      border-color: #29603e;
+    }
+    .dot.checked svg {
+      width: 14px;
+      height: 14px;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="opt">
+      <div class="body">
+        <div class="label">Hanafi</div>
+        <div class="hint">South & Central Asia, Turkey</div>
+      </div>
+      <div class="dot"></div>
+    </div>
+    <div class="opt selected">
+      <div class="body">
+        <div class="label">Shafi'i</div>
+        <div class="hint">Egypt, Levant, Southeast Asia</div>
+      </div>
+      <div class="dot checked">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="5 13 10 18 19 7" />
+        </svg>
+      </div>
+    </div>
+    <div class="opt">
+      <div class="body">
+        <div class="label">Maliki</div>
+        <div class="hint">North & West Africa</div>
+      </div>
+      <div class="dot"></div>
+    </div>
+  </body>
+</html>

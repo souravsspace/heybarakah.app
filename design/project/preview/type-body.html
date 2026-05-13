@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Type — Body & Labels</title>
+    <style>
+    @font-face {
+      font-family: "Inter";
+      src: url("../fonts/Inter.ttf") format("truetype");
+      font-weight: 100 900;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      color: #000;
+      background: #fff;
+    }
+    body {
+      padding: 28px 36px;
+    }
+    .spec {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 10px;
+      color: #9ca3af;
+      letter-spacing: 0.04em;
+    }
+    .row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+    .row:last-child {
+      margin-bottom: 0;
+    }
+    .muted {
+      color: #6b7280;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <div class="spec">H3 · Inter · 20 / 24 · 600</div>
+      <div style="font-size:20px;line-height:24px;font-weight:600">
+        Welcome back.
+      </div>
+    </div>
+    <div class="row">
+      <div class="spec">BODY LG / MD · Inter · 18 / 27 · 400</div>
+      <div style="font-size:18px;line-height:27px">
+        Barakah quietly locks distractions during salah.
+      </div>
+    </div>
+    <div class="row">
+      <div class="spec">BODY SM · Inter · 14 / 21 · 400 · muted (#6B7280)</div>
+      <div class="muted" style="font-size:14px;line-height:21px">
+        Just <strong style="font-weight:700;color:#000">5 minutes</strong> a day
+        with prayer-lock lessons.
+      </div>
+    </div>
+    <div class="row">
+      <div class="spec">LABEL LG · Inter · 16 / 22 · 500</div>
+      <div style="font-size:16px;font-weight:500">Continue with Apple</div>
+    </div>
+    <div class="row">
+      <div class="spec">LABEL MD · Inter · 14 / 20 · 500</div>
+      <div style="font-size:14px;font-weight:500">Hanafi</div>
+    </div>
+    <div class="row">
+      <div class="spec">CAPTION · Inter · 12 / 17 · 400 · muted</div>
+      <div class="muted" style="font-size:12px;line-height:17px">
+        Lock applies only inside salah windows.
+      </div>
+    </div>
+  </body>
+</html>
