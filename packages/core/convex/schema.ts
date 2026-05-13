@@ -107,4 +107,25 @@ export default defineSchema({
     .index("by_userCacheKey", ["userCacheKey"])
     .index("by_userId", ["userId"])
     .index("by_expiry", ["expiresAt"]),
+  prayerLogs: defineTable({
+    authUserId: v.string(),
+    date: v.string(),
+    prayer: v.union(
+      v.literal("fajr"),
+      v.literal("dhuhr"),
+      v.literal("asr"),
+      v.literal("maghrib"),
+      v.literal("isha")
+    ),
+    status: v.union(
+      v.literal("on_time"),
+      v.literal("late"),
+      v.literal("qada"),
+      v.literal("missed")
+    ),
+    prayedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_user_date_prayer", ["authUserId", "date", "prayer"])
+    .index("by_user_updated", ["authUserId", "updatedAt"]),
 });
