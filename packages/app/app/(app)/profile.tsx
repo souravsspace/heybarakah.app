@@ -11,8 +11,8 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
+import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
