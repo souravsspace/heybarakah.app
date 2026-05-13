@@ -99,9 +99,9 @@ export function AreaChart({
           marginTop: -8,
         }}
       >
-        {data.map((d) => (
+        {data.map((d, i) => (
           <Text
-            key={d.label}
+            key={`${i}-${d.label}`}
             style={{ fontSize: 10, color: "#6B7280", fontWeight: "600" }}
           >
             {d.label}
