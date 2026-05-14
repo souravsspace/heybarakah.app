@@ -15,17 +15,17 @@ const WINDOW_TITLE: Record<PrayerWindow, string> = {
 };
 
 interface ShieldTimes {
-  fajr: string;
-  dhuhr: string;
   asr: string;
-  maghrib: string;
+  dhuhr: string;
+  fajr: string;
   isha: string;
+  maghrib: string;
 }
 
 interface ScheduleOptions {
   date?: Date;
-  windows: PrayerWindow[];
   times: ShieldTimes;
+  windows: PrayerWindow[];
 }
 
 function parseTime(baseDate: Date, hhmm: string): Date | null {
@@ -82,7 +82,7 @@ export async function cancelShieldNotifications(): Promise<void> {
       } catch {
         return;
       }
-    }),
+    })
   );
   await AsyncStorage.removeItem(SHIELD_NOTIFICATION_IDS_KEY);
 }
