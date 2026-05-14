@@ -144,27 +144,31 @@ export default function LogPrayerScreen() {
       ? `Begins ${fmtRangeTime(rangeStart)} · ends ${fmtRangeTime(rangeEnd)}`
       : "Window pending";
 
+  const dismiss = () => {
+    if (router.canGoBack()) {
+      router.back();
+    }
+  };
+
   const handlePick = (status: PrayerStatus) => {
+    dismiss();
     logPrayer({
       date,
       prayer,
       status,
       prayedAt: Date.now(),
-    })
-      .then(() => router.back())
-      .catch(() => undefined);
+    }).catch(() => undefined);
   };
 
   const handleClear = () => {
-    clearPrayer({ date, prayer })
-      .then(() => router.back())
-      .catch(() => undefined);
+    dismiss();
+    clearPrayer({ date, prayer }).catch(() => undefined);
   };
 
   return (
     <View style={{ flex: 1 }}>
       <View style={[StyleSheet.absoluteFill, { backgroundColor: sheetBg }]} />
-      <View style={{ paddingHorizontal: 24, paddingTop: 18 }}>
+      <View style={{ paddingHorizontal: 24, paddingVertical: 18 }}>
         <Text
           style={{
             fontSize: 11,
