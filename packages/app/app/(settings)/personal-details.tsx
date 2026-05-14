@@ -37,6 +37,7 @@ export default function PersonalDetails() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [imageChanged, setImageChanged] = useState(false);
 
   useEffect(() => {
     if (profile !== undefined && !hydrated) {
@@ -45,7 +46,8 @@ export default function PersonalDetails() {
     }
   }, [profile, hydrated]);
 
-  const dirty = hydrated && name.trim() !== (profile?.name ?? "");
+  const nameDirty = hydrated && name.trim() !== (profile?.name ?? "");
+  const dirty = nameDirty || imageChanged;
   const imageUrl = profile?.imageUrl ?? null;
 
   const parts = name.trim().split(SPLIT_RE).filter(Boolean);
@@ -90,6 +92,7 @@ export default function PersonalDetails() {
       }
       const { storageId } = (await res.json()) as { storageId: string };
       await setAvatar({ storageId: storageId as never });
+      setImageChanged(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
         () => undefined
       );
@@ -104,16 +107,21 @@ export default function PersonalDetails() {
   };
 
   const save = async () => {
-    if (saving) {
+    if (saving || !dirty) {
       return;
     }
     setSaving(true);
     Haptics.selectionAsync().catch(() => undefined);
     try {
-      if (dirty) {
+      if (nameDirty) {
         await upsertProfile({ name: name.trim() || undefined });
       }
       router.back();
+    } catch (err) {
+      Alert.alert(
+        "Save failed",
+        err instanceof Error ? err.message : "Please try again."
+      );
     } finally {
       setSaving(false);
     }
@@ -125,7 +133,11 @@ export default function PersonalDetails() {
       <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
         <Header
           colors={colors}
+          doneDisabled={!dirty || saving}
+          doneLabel={saving ? "Saving…" : "Done"}
+          doneVisible={dirty || saving}
           onBack={() => router.back()}
+          onDone={save}
           title="Edit Profile"
         />
         <KeyboardAvoidingView
@@ -193,32 +205,6 @@ export default function PersonalDetails() {
               />
             </View>
           </ScrollView>
-
-          <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
-            <Pressable
-              disabled={saving}
-              onPress={save}
-              style={({ pressed }) => ({
-                paddingVertical: 18,
-                borderRadius: 999,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: scheme === "dark" ? "#FFFFFF" : colors.ink,
-                opacity: pressed ? 0.92 : 1,
-              })}
-            >
-              <Text
-                style={{
-                  fontSize: 15,
-                  fontWeight: "700",
-                  color: scheme === "dark" ? "#000000" : "#FFFFFF",
-                  letterSpacing: 0.2,
-                }}
-              >
-                {saving ? "Saving…" : "Continue"}
-              </Text>
-            </Pressable>
-          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -383,11 +369,19 @@ function FloatingInput({
 
 function Header({
   colors,
+  doneDisabled,
+  doneLabel,
+  doneVisible,
   onBack,
+  onDone,
   title,
 }: {
   colors: ThemeColors;
+  doneDisabled: boolean;
+  doneLabel: string;
+  doneVisible: boolean;
   onBack: () => void;
+  onDone: () => void;
   title: string;
 }) {
   return (
@@ -429,11 +423,42 @@ function Header({
           fontSize: 16,
           fontWeight: "700",
           color: colors.ink,
-          marginRight: 38,
         }}
       >
         {title}
       </Text>
+      <View
+        style={{
+          minWidth: 56,
+          alignItems: "flex-end",
+          justifyContent: "center",
+        }}
+      >
+        {doneVisible ? (
+          <Pressable
+            disabled={doneDisabled}
+            hitSlop={8}
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => undefined);
+              onDone();
+            }}
+          >
+            {({ pressed }) => (
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "700",
+                  color: colors.primary,
+                  opacity: doneDisabled ? 0.5 : pressed ? 0.6 : 1,
+                  letterSpacing: 0.2,
+                }}
+              >
+                {doneLabel}
+              </Text>
+            )}
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
