@@ -14,6 +14,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
@@ -28,6 +29,7 @@ import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 type PrayerName = LoggablePrayerName;
 
 const PRAYER_ORDER: PrayerName[] = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+const BARAKAH_GREEN = "#29603E";
 
 const PRAYER_LABEL: Record<PrayerName, string> = {
   fajr: "Fajr",
@@ -359,10 +361,24 @@ export default function Home() {
     active && !realWeek.getStatus(today, active) ? active : null;
 
   const heroLabel = activeUnlogged ? "In progress" : "Next prayer";
+  const homeSurface =
+    scheme === "dark" ? "rgba(26,26,26,0.56)" : "rgba(255,255,255,0.3)";
+  const homeActiveSurface =
+    scheme === "dark" ? "rgba(14,42,27,0.52)" : "rgba(232,240,234,0.34)";
+  const homePressedSurface =
+    scheme === "dark" ? "rgba(26,26,26,0.64)" : "rgba(244,244,242,0.38)";
+  const homeRowSurface =
+    scheme === "dark" ? "rgba(26,26,26,0.26)" : "rgba(255,255,255,0.18)";
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: scheme === "dark" ? "#0E1311" : "#F8FAF8",
+      }}
+    >
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <HomeMeshGradient dark={scheme === "dark"} />
       <Animated.ScrollView
         contentContainerStyle={{
           flexGrow: 1,
@@ -405,8 +421,9 @@ export default function Home() {
             marginHorizontal: 20,
             borderRadius: 20,
             borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.card,
+            borderColor:
+              scheme === "dark" ? colors.border : "rgba(41,96,62,0.16)",
+            backgroundColor: homeSurface,
             overflow: "hidden",
           }}
         >
@@ -539,8 +556,9 @@ export default function Home() {
             marginTop: 32,
             borderRadius: 20,
             borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.card,
+            borderColor:
+              scheme === "dark" ? colors.border : "rgba(41,96,62,0.16)",
+            backgroundColor: homeSurface,
             padding: 18,
             gap: 14,
           }}
@@ -583,6 +601,7 @@ export default function Home() {
               return (
                 <View key={pname}>
                   <LedgerRow
+                    activeSurface={homeActiveSurface}
                     colors={colors}
                     isActive={isActive}
                     isPast={isPast}
@@ -597,9 +616,11 @@ export default function Home() {
                       }
                     }}
                     prayer={pname}
+                    pressedSurface={homePressedSurface}
                     progress={windowProgress(start, end)}
                     rangeEnd={end}
                     rangeStart={start}
+                    restingSurface={homeRowSurface}
                     status={status}
                     time={todayPrayerTimes?.timings[pname]}
                   />
@@ -617,6 +638,19 @@ export default function Home() {
             })}
           </View>
         </View>
+
+        <View style={{ marginHorizontal: 24, marginTop: 24 }}>
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "700",
+              lineHeight: 18,
+              color: colors.inkMuted,
+            }}
+          >
+            "Remember Me; I will remember you", 2:152
+          </Text>
+        </View>
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
 
@@ -632,8 +666,87 @@ export default function Home() {
   );
 }
 
+function HomeMeshGradient({ dark }: { dark: boolean }) {
+  const base = dark ? "#0E1311" : "#F8FAF8";
+  const greenOpacity = dark ? 0.34 : 0.52;
+  const mistOpacity = dark ? 0.2 : 0.58;
+  const lightOpacity = dark ? 0.04 : 0.82;
+
+  return (
+    <Svg
+      height="100%"
+      pointerEvents="none"
+      preserveAspectRatio="none"
+      style={{
+        position: "absolute",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+      }}
+      viewBox="0 0 320 220"
+      width="100%"
+    >
+      <Defs>
+        <RadialGradient cx="18%" cy="6%" id="homeMeshNorth" r="72%">
+          <Stop offset="0" stopColor="#DDE8E1" stopOpacity={mistOpacity} />
+          <Stop
+            offset="0.48"
+            stopColor={BARAKAH_GREEN}
+            stopOpacity={greenOpacity}
+          />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="92%" cy="0%" id="homeMeshEast" r="72%">
+          <Stop offset="0" stopColor="#F7F9F7" stopOpacity={lightOpacity} />
+          <Stop
+            offset="0.5"
+            stopColor={BARAKAH_GREEN}
+            stopOpacity={dark ? 0.2 : 0.34}
+          />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="92%" cy="106%" id="homeMeshSouth" r="78%">
+          <Stop
+            offset="0"
+            stopColor={BARAKAH_GREEN}
+            stopOpacity={dark ? 0.42 : 0.62}
+          />
+          <Stop
+            offset="0.58"
+            stopColor={BARAKAH_GREEN}
+            stopOpacity={dark ? 0.16 : 0.28}
+          />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="0%" cy="88%" id="homeMeshPaper" r="76%">
+          <Stop
+            offset="0"
+            stopColor={dark ? "#111816" : "#FFFFFF"}
+            stopOpacity={dark ? 0.28 : 0.96}
+          />
+          <Stop
+            offset="0.6"
+            stopColor={dark ? "#111816" : "#FFFFFF"}
+            stopOpacity={dark ? 0.12 : 0.4}
+          />
+          <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect fill={base} height="220" width="320" x="0" y="0" />
+      <Rect fill="url(#homeMeshNorth)" height="220" width="320" x="0" y="0" />
+      <Rect fill="url(#homeMeshEast)" height="220" width="320" x="0" y="0" />
+      <Rect fill="url(#homeMeshSouth)" height="220" width="320" x="0" y="0" />
+      <Rect fill="url(#homeMeshPaper)" height="220" width="320" x="0" y="0" />
+    </Svg>
+  );
+}
+
 function LedgerRow({
   colors,
+  activeSurface,
+  pressedSurface,
+  restingSurface,
   prayer,
   time,
   rangeStart,
@@ -646,6 +759,9 @@ function LedgerRow({
   onPress,
 }: {
   colors: ThemeColors;
+  activeSurface: string;
+  pressedSurface: string;
+  restingSurface: string;
   prayer: PrayerName;
   time: string | undefined;
   rangeStart: Date | null;
@@ -677,10 +793,10 @@ function LedgerRow({
         borderColor: isActive ? colors.primary : colors.border,
         borderRadius: 18,
         backgroundColor: pressed
-          ? colors.neutralSoft
+          ? pressedSurface
           : isActive
-            ? colors.primarySoft
-            : colors.card,
+            ? activeSurface
+            : restingSurface,
         paddingHorizontal: 18,
         paddingVertical: isActive ? 20 : 16,
       })}
