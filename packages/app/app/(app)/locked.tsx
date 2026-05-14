@@ -1,20 +1,6 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import { ALL_WINDOWS, type PrayerWindow } from "@barakah/core/shieldSelection";
 import { useMutation, useQuery } from "convex/react";
-import {
-  type AndroidBlockableApp,
-  BlockedAppsNativeList,
-  type FamilyActivityPickerSelectionEvent,
-  FamilyActivityPickerView,
-  getBlockConfiguration,
-  getInstalledApps,
-  getPermissionStatus,
-  type IOSBlockedItem,
-  type PermissionStatus,
-  requestPermissions,
-  setBlockConfiguration,
-  setBlockedApps,
-} from "expo-app-blocker";
 import * as Haptics from "expo-haptics";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -34,6 +20,20 @@ import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { useTheme } from "@/contexts/theme-context";
 import { usePrayerShield } from "@/hooks/usePrayerShield";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import {
+  type AndroidBlockableApp,
+  BlockedAppsNativeList,
+  type FamilyActivityPickerSelectionEvent,
+  FamilyActivityPickerView,
+  getBlockConfiguration,
+  getInstalledApps,
+  getPermissionStatus,
+  type IOSBlockedItem,
+  type PermissionStatus,
+  requestPermissions,
+  setBlockConfiguration,
+  setBlockedApps,
+} from "@/lib/app-blocker";
 
 type Door = "quieted" | "pick";
 
