@@ -170,7 +170,6 @@ export default function Profile() {
               colors={colors}
               onPress={() => go("/subscription")}
               sf="crown.fill"
-              tint="premium"
               title="Subscription"
               value="Premium"
             />
@@ -179,7 +178,6 @@ export default function Profile() {
               colors={colors}
               onPress={() => go("/preferences")}
               sf="slider.horizontal.3"
-              tint="primary"
               title="Preferences"
               value={MADHAB_LABEL[madhabKey]}
             />
@@ -188,7 +186,6 @@ export default function Profile() {
               colors={colors}
               onPress={() => go("/calc-method")}
               sf="globe"
-              tint="primary"
               title="Calculation Method"
               value={METHOD_LABEL[methodKey]}
             />
@@ -223,7 +220,6 @@ export default function Profile() {
                 openMail("support@heybarakah.app", "Feature request")
               }
               sf="megaphone.fill"
-              tint="primary"
               title="Request a Feature"
             />
             <Divider colors={colors} />
@@ -233,7 +229,6 @@ export default function Profile() {
                 openMail("support@heybarakah.app", "Support request")
               }
               sf="envelope.fill"
-              tint="primary"
               title="Support Email"
             />
             <Divider colors={colors} />
@@ -241,7 +236,6 @@ export default function Profile() {
               colors={colors}
               onPress={() => openUrl("https://heybarakah.app/terms")}
               sf="doc.text.fill"
-              tint="primary"
               title="Terms and Conditions"
             />
             <Divider colors={colors} />
@@ -249,7 +243,6 @@ export default function Profile() {
               colors={colors}
               onPress={() => openUrl("https://heybarakah.app/privacy")}
               sf="lock.shield.fill"
-              tint="primary"
               title="Privacy Policy"
             />
           </Card>
@@ -261,7 +254,6 @@ export default function Profile() {
               colors={colors}
               onPress={handleLogout}
               sf="rectangle.portrait.and.arrow.right"
-              tint="primary"
               title="Logout"
             />
             <Divider colors={colors} />
@@ -270,7 +262,6 @@ export default function Profile() {
               danger
               onPress={confirmDelete}
               sf="trash.fill"
-              tint="danger"
               title="Delete Account"
             />
           </Card>
@@ -476,7 +467,6 @@ function Row({
   onPress,
   sf,
   subtitle,
-  tint,
   title,
   value,
 }: {
@@ -485,24 +475,11 @@ function Row({
   onPress: () => void;
   sf: string;
   subtitle?: string;
-  tint?: "primary" | "premium" | "danger";
   title: string;
   value?: string;
 }) {
-  const iconColor =
-    tint === "premium"
-      ? colors.premium
-      : tint === "danger"
-        ? colors.error
-        : tint === "primary"
-          ? colors.primary
-          : colors.inkMuted;
-  const iconBg =
-    tint === "danger"
-      ? colors.errorSoft
-      : tint === "primary"
-        ? colors.primarySoft
-        : colors.neutralSoft;
+  const iconColor = colors.ink;
+  const iconBg = colors.neutralSoft;
   const titleColor = danger ? colors.error : colors.ink;
   return (
     <Pressable onPress={onPress}>
@@ -594,10 +571,10 @@ function PermissionRow({
           borderRadius: 12,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: colors.primarySoft,
+          backgroundColor: colors.neutralSoft,
         }}
       >
-        <IconSymbol color={colors.primary} name={sf as never} size={22} />
+        <IconSymbol color={colors.ink} name={sf as never} size={22} />
       </View>
       <Text
         numberOfLines={1}
