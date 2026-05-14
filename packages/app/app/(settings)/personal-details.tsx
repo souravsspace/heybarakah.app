@@ -448,7 +448,7 @@ function Header({
                 style={{
                   fontSize: 15,
                   fontWeight: "700",
-                  color: colors.primary,
+                  color: colors.ink,
                   opacity: doneDisabled ? 0.5 : pressed ? 0.6 : 1,
                   letterSpacing: 0.2,
                 }}
