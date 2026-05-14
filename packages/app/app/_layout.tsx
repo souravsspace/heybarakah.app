@@ -66,6 +66,19 @@ export default function RootLayout() {
                       name="modal"
                       options={{ presentation: "modal", title: "Modal" }}
                     />
+                    <Stack.Screen
+                      name="log-prayer"
+                      options={{
+                        presentation: "formSheet",
+                        sheetAllowedDetents: [0.55, 0.92],
+                        sheetInitialDetentIndex: 0,
+                        sheetGrabberVisible: true,
+                        sheetCornerRadius: 24,
+                        sheetLargestUndimmedDetentIndex: "none",
+                        gestureEnabled: true,
+                        headerShown: false,
+                      }}
+                    />
                   </Stack>
                   <StatusBar style="dark" />
                 </BarakahThemeProvider>
