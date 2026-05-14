@@ -85,7 +85,7 @@ export function usePrayerShield() {
 
     const windows = computeWindows(
       selection.windows,
-      todayPrayerTimes.timings as Timings,
+      todayPrayerTimes.timings as Timings
     );
     if (windows.length === 0) {
       return;
