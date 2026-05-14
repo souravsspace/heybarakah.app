@@ -478,8 +478,8 @@ function Row({
   title: string;
   value?: string;
 }) {
-  const iconColor = colors.ink;
-  const iconBg = colors.neutralSoft;
+  const iconColor = danger ? colors.error : colors.ink;
+  const iconBg = danger ? colors.errorSoft : colors.neutralSoft;
   const titleColor = danger ? colors.error : colors.ink;
   return (
     <Pressable onPress={onPress}>
