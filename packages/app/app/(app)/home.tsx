@@ -44,6 +44,13 @@ const STATUS_LABEL: Record<PrayerStatus, string> = {
   missed: "Missed",
 };
 
+const LOG_STATUS_OPTIONS: PrayerStatus[] = [
+  "on_time",
+  "late",
+  "qada",
+  "missed",
+];
+
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -86,13 +93,11 @@ function formatHijri(raw: string | null | undefined): string | null {
 }
 
 function formatDateLine(date: Date): string {
-  return date
-    .toLocaleDateString(undefined, {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    })
-    .toUpperCase();
+  return date.toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 }
 
 function fmt12(time: string) {
@@ -100,14 +105,6 @@ function fmt12(time: string) {
   if (Number.isNaN(h) || Number.isNaN(m)) {
     return time;
   }
-  const period = h >= 12 ? "PM" : "AM";
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour}:${pad(m)} ${period}`;
-}
-
-function fmt12FromDate(d: Date) {
-  const h = d.getHours();
-  const m = d.getMinutes();
   const period = h >= 12 ? "PM" : "AM";
   const hour = h % 12 === 0 ? 12 : h % 12;
   return `${hour}:${pad(m)} ${period}`;
@@ -248,16 +245,6 @@ export default function Home() {
   const logPrayer = useLogPrayer();
   const clearPrayer = useClearPrayer();
 
-  const prayedAtFor = useCallback(
-    (prayer: PrayerName): number | null => {
-      const row = realWeek.rows.find(
-        (r) => r.date === today && r.prayer === prayer
-      );
-      return row?.prayedAt ?? null;
-    },
-    [realWeek.rows, today]
-  );
-
   const loggedToday = useMemo(
     () =>
       PRAYER_ORDER.reduce(
@@ -266,22 +253,6 @@ export default function Home() {
       ),
     [realWeek, today]
   );
-
-  const weekDates = useMemo(() => {
-    const out: { key: string; label: string; dayNum: number }[] = [];
-    const base = new Date(`${today}T00:00:00`);
-    const dayLetters = ["S", "M", "T", "W", "T", "F", "S"];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(base);
-      d.setDate(base.getDate() + i);
-      out.push({
-        key: d.toISOString().slice(0, 10),
-        label: dayLetters[d.getDay()],
-        dayNum: d.getDate(),
-      });
-    }
-    return out;
-  }, [today]);
 
   const tomorrowFajr = useMemo(() => {
     const idx = prayerTimes.findIndex((d) => d.date === today);
@@ -407,9 +378,8 @@ export default function Home() {
         <View style={{ paddingHorizontal: 20, paddingTop: 10, gap: 8 }}>
           <Text
             style={{
-              fontSize: 10,
-              fontWeight: "700",
-              letterSpacing: 2,
+              fontSize: 11,
+              fontWeight: "600",
               color: colors.inkMuted,
             }}
           >
@@ -450,22 +420,18 @@ export default function Home() {
             >
               <Text
                 style={{
-                  fontSize: 10,
-                  fontWeight: "700",
-                  letterSpacing: 2,
+                  fontSize: 12,
+                  fontWeight: "600",
                   color: activeUnlogged ? colors.primary : colors.inkMuted,
-                  textTransform: "uppercase",
                 }}
               >
                 {heroLabel}
               </Text>
               <Text
                 style={{
-                  fontSize: 10,
-                  fontWeight: "700",
-                  letterSpacing: 1.6,
+                  fontSize: 12,
+                  fontWeight: "600",
                   color: colors.inkSubtle,
-                  textTransform: "uppercase",
                 }}
               >
                 {location?.city ?? "Locating…"}
@@ -505,15 +471,13 @@ export default function Home() {
             {countdown && !activeUnlogged ? (
               <Text
                 style={{
-                  fontSize: 11,
-                  fontWeight: "700",
-                  letterSpacing: 2,
+                  fontSize: 12,
+                  fontWeight: "600",
                   color: colors.inkMuted,
-                  textTransform: "uppercase",
                   fontVariant: ["tabular-nums"],
                 }}
               >
-                {`in ${countdown.h}h ${pad(countdown.m)}m ${pad(countdown.s)}s`}
+                {`In ${countdown.h}h ${pad(countdown.m)}m ${pad(countdown.s)}s`}
               </Text>
             ) : null}
           </View>
@@ -559,7 +523,6 @@ export default function Home() {
                     color: colors.primary,
                     fontSize: 13,
                     fontWeight: "700",
-                    letterSpacing: 0.4,
                   }}
                 >
                   I prayed
@@ -572,8 +535,13 @@ export default function Home() {
         {/* Today ledger: typeset prayer schedule */}
         <View
           style={{
-            paddingHorizontal: 20,
+            marginHorizontal: 20,
             marginTop: 32,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.card,
+            padding: 18,
             gap: 14,
           }}
         >
@@ -586,22 +554,18 @@ export default function Home() {
           >
             <Text
               style={{
-                fontSize: 10,
+                fontSize: 13,
                 fontWeight: "700",
-                letterSpacing: 2.4,
                 color: colors.inkMuted,
-                textTransform: "uppercase",
               }}
             >
               Today
             </Text>
             <Text
               style={{
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.6,
+                fontSize: 12,
+                fontWeight: "600",
                 color: colors.inkSubtle,
-                textTransform: "uppercase",
                 fontVariant: ["tabular-nums"],
               }}
             >
@@ -610,49 +574,49 @@ export default function Home() {
           </View>
 
           <View>
-            {PRAYER_ORDER.map((pname, i) => {
+            {PRAYER_ORDER.map((pname, index) => {
               const status = realWeek.getStatus(today, pname);
               const start = prayerDateFor(pname);
               const end = windowEndFor(pname);
               const isPast = start ? start.getTime() <= Date.now() : false;
               const isActive = activeUnlogged === pname;
               return (
-                <LedgerRow
-                  colors={colors}
-                  isActive={isActive}
-                  isFirst={i === 0}
-                  isPast={isPast}
-                  key={pname}
-                  loading={loading}
-                  onPress={() => {
-                    if (isActive) {
-                      onMarkPrayed(pname).catch(() => undefined);
-                      return;
-                    }
-                    if (isPast || status) {
-                      setSheet(pname);
-                    }
-                  }}
-                  prayedAt={prayedAtFor(pname)}
-                  prayer={pname}
-                  progress={windowProgress(start, end)}
-                  rangeEnd={end}
-                  rangeStart={start}
-                  status={status}
-                  time={todayPrayerTimes?.timings[pname]}
-                />
+                <View key={pname}>
+                  <LedgerRow
+                    colors={colors}
+                    isActive={isActive}
+                    isPast={isPast}
+                    loading={loading}
+                    onPress={() => {
+                      if (isActive) {
+                        onMarkPrayed(pname).catch(() => undefined);
+                        return;
+                      }
+                      if (isPast || status) {
+                        setSheet(pname);
+                      }
+                    }}
+                    prayer={pname}
+                    progress={windowProgress(start, end)}
+                    rangeEnd={end}
+                    rangeStart={start}
+                    status={status}
+                    time={todayPrayerTimes?.timings[pname]}
+                  />
+                  {index < PRAYER_ORDER.length - 1 ? (
+                    <View
+                      style={{
+                        height: 1,
+                        marginVertical: 8,
+                        backgroundColor: colors.divider,
+                      }}
+                    />
+                  ) : null}
+                </View>
               );
             })}
           </View>
         </View>
-
-        <WeekPulse
-          colors={colors}
-          dates={weekDates}
-          getStatus={realWeek.getStatus}
-          today={today}
-          totalLogged={realWeek.totalLogged}
-        />
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
 
@@ -676,9 +640,7 @@ function LedgerRow({
   rangeEnd,
   isActive,
   isPast,
-  isFirst,
   status,
-  prayedAt,
   loading,
   progress,
   onPress,
@@ -690,17 +652,15 @@ function LedgerRow({
   rangeEnd: Date | null;
   isActive: boolean;
   isPast: boolean;
-  isFirst: boolean;
   status: PrayerStatus | undefined;
-  prayedAt: number | null;
   loading: boolean;
   progress: number;
   onPress: () => void;
 }) {
   const rangeText =
     rangeStart && rangeEnd
-      ? `BEGINS ${fmtRangeTime(rangeStart).toUpperCase()} · ENDS ${fmtRangeTime(rangeEnd).toUpperCase()}`
-      : "WINDOW PENDING";
+      ? `Begins ${fmtRangeTime(rangeStart)} · ends ${fmtRangeTime(rangeEnd)}`
+      : "Window pending";
 
   const nameColor =
     status === "missed"
@@ -713,10 +673,16 @@ function LedgerRow({
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        paddingVertical: 22,
-        borderTopWidth: isFirst ? 0 : 1,
-        borderTopColor: colors.divider,
-        backgroundColor: pressed ? colors.neutralSoft : "transparent",
+        borderWidth: 1,
+        borderColor: isActive ? colors.primary : colors.border,
+        borderRadius: 18,
+        backgroundColor: pressed
+          ? colors.neutralSoft
+          : isActive
+            ? colors.primarySoft
+            : colors.card,
+        paddingHorizontal: 18,
+        paddingVertical: isActive ? 20 : 16,
       })}
     >
       <View
@@ -731,8 +697,8 @@ function LedgerRow({
           <Text
             style={{
               fontFamily: "LibreBaskerville-Bold",
-              fontSize: 22,
-              lineHeight: 26,
+              fontSize: isActive ? 30 : 22,
+              lineHeight: isActive ? 36 : 26,
               color: nameColor,
             }}
           >
@@ -741,10 +707,9 @@ function LedgerRow({
           <View>
             <Text
               style={{
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.6,
-                color: colors.inkSubtle,
+                fontSize: 11,
+                fontWeight: "600",
+                color: colors.inkMuted,
                 fontVariant: ["tabular-nums"],
               }}
             >
@@ -781,7 +746,6 @@ function LedgerRow({
             isActive={isActive}
             isPast={isPast}
             loading={loading}
-            prayedAt={prayedAt}
             status={status}
             time={time}
           />
@@ -795,7 +759,6 @@ function RightAtom({
   colors,
   status,
   time,
-  prayedAt,
   isActive,
   isPast,
   loading,
@@ -803,7 +766,6 @@ function RightAtom({
   colors: ThemeColors;
   status: PrayerStatus | undefined;
   time: string | undefined;
-  prayedAt: number | null;
   isActive: boolean;
   isPast: boolean;
   loading: boolean;
@@ -812,9 +774,11 @@ function RightAtom({
     return (
       <Text
         style={{
-          fontSize: 18,
+          fontSize: isActive ? 24 : 18,
+          fontFamily: isActive ? "LibreBaskerville-Bold" : undefined,
           fontWeight: "700",
           fontVariant: ["tabular-nums"],
+          lineHeight: isActive ? 29 : 24,
           color: isActive
             ? colors.primary
             : isPast
@@ -827,309 +791,28 @@ function RightAtom({
     );
   }
   if (status === "on_time") {
-    return (
-      <View style={{ alignItems: "flex-end", gap: 3 }}>
-        <Text
-          style={{
-            fontSize: 11,
-            fontWeight: "700",
-            color: colors.primary,
-            letterSpacing: 0.4,
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          {prayedAt ? `prayed ${fmt12FromDate(new Date(prayedAt))}` : "prayed"}
-        </Text>
-        <Text
-          style={{
-            fontSize: 11,
-            color: colors.inkSubtle,
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          {time ? fmt12(time) : ""}
-        </Text>
-      </View>
-    );
+    return <StatusAtom color={colors.primary} label={STATUS_LABEL[status]} />;
   }
   if (status === "late") {
-    return (
-      <View style={{ alignItems: "flex-end", gap: 3 }}>
-        <Text
-          style={{
-            fontSize: 11,
-            color: colors.inkMuted,
-            fontStyle: "italic",
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          {prayedAt ? `late · ${fmt12FromDate(new Date(prayedAt))}` : "late"}
-        </Text>
-        <Text
-          style={{
-            fontSize: 11,
-            color: colors.inkSubtle,
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          {time ? fmt12(time) : ""}
-        </Text>
-      </View>
-    );
+    return <StatusAtom color={colors.inkMuted} label={STATUS_LABEL[status]} />;
   }
   if (status === "qada") {
-    return (
-      <Text
-        style={{
-          fontSize: 10,
-          fontWeight: "700",
-          color: colors.inkMuted,
-          letterSpacing: 1.6,
-        }}
-      >
-        QADĀ
-      </Text>
-    );
+    return <StatusAtom color={colors.inkMuted} label={STATUS_LABEL[status]} />;
   }
+  return <StatusAtom color={colors.inkMuted} label={STATUS_LABEL[status]} />;
+}
+
+function StatusAtom({ color, label }: { color: string; label: string }) {
   return (
     <Text
       style={{
-        fontSize: 11,
-        color: colors.inkSubtle,
-        fontStyle: "italic",
+        color,
+        fontSize: 12,
+        fontWeight: "700",
       }}
     >
-      passed
+      {label}
     </Text>
-  );
-}
-
-function WeekPulse({
-  colors,
-  dates,
-  getStatus,
-  today,
-  totalLogged,
-}: {
-  colors: ThemeColors;
-  dates: { key: string; label: string; dayNum: number }[];
-  getStatus: (date: string, prayer: PrayerName) => PrayerStatus | undefined;
-  today: string;
-  totalLogged: number;
-}) {
-  return (
-    <View
-      style={{
-        paddingHorizontal: 20,
-        marginTop: 36,
-        gap: 16,
-      }}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 2.4,
-            color: colors.inkMuted,
-            textTransform: "uppercase",
-          }}
-        >
-          This week
-        </Text>
-        <Text
-          style={{
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 1.6,
-            color: colors.inkSubtle,
-            textTransform: "uppercase",
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          {`${totalLogged} prayers`}
-        </Text>
-      </View>
-
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "stretch",
-          justifyContent: "space-between",
-          paddingVertical: 14,
-          borderTopWidth: 1,
-          borderTopColor: colors.divider,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.divider,
-        }}
-      >
-        {dates.map((d) => {
-          const isToday = d.key === today;
-          const isPast = d.key < today;
-          return (
-            <View
-              key={d.key}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontWeight: "700",
-                  letterSpacing: 1.2,
-                  color: isToday ? colors.primary : colors.inkSubtle,
-                  textTransform: "uppercase",
-                }}
-              >
-                {d.label}
-              </Text>
-              <View style={{ gap: 5, alignItems: "center" }}>
-                {PRAYER_ORDER.map((p) => {
-                  const s = getStatus(d.key, p);
-                  return (
-                    <PulseDot
-                      colors={colors}
-                      isFuture={!(isPast || isToday)}
-                      isPast={isPast}
-                      key={p}
-                      status={s}
-                    />
-                  );
-                })}
-              </View>
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontWeight: "700",
-                  color: isToday ? colors.primary : colors.inkSubtle,
-                  fontVariant: ["tabular-nums"],
-                }}
-              >
-                {d.dayNum}
-              </Text>
-              {isToday ? (
-                <View
-                  style={{
-                    height: 1,
-                    width: 14,
-                    backgroundColor: colors.primary,
-                    marginTop: -4,
-                  }}
-                />
-              ) : null}
-            </View>
-          );
-        })}
-      </View>
-
-      <Text
-        style={{
-          fontFamily: "LibreBaskerville-Bold",
-          fontSize: 14,
-          lineHeight: 22,
-          color: colors.inkMuted,
-          textAlign: "center",
-          paddingHorizontal: 8,
-          marginTop: 4,
-          fontWeight: "400",
-        }}
-      >
-        “Indeed, prayer prohibits immorality and wrongdoing.”
-      </Text>
-      <Text
-        style={{
-          fontSize: 9,
-          fontWeight: "700",
-          letterSpacing: 2,
-          color: colors.inkSubtle,
-          textTransform: "uppercase",
-          textAlign: "center",
-          marginTop: -10,
-        }}
-      >
-        Qur'an 29:45
-      </Text>
-    </View>
-  );
-}
-
-function PulseDot({
-  colors,
-  status,
-  isPast,
-  isFuture,
-}: {
-  colors: ThemeColors;
-  status: PrayerStatus | undefined;
-  isPast: boolean;
-  isFuture: boolean;
-}) {
-  if (status === "on_time") {
-    return (
-      <View
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: colors.primary,
-        }}
-      />
-    );
-  }
-  if (status === "late" || status === "qada") {
-    return (
-      <View
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          borderWidth: 1,
-          borderColor: colors.primary,
-        }}
-      />
-    );
-  }
-  if (status === "missed" || isPast) {
-    return (
-      <View
-        style={{
-          width: 6,
-          height: 1,
-          backgroundColor: colors.inkSubtle,
-        }}
-      />
-    );
-  }
-  if (isFuture) {
-    return (
-      <View
-        style={{
-          width: 3,
-          height: 3,
-          borderRadius: 1.5,
-          backgroundColor: colors.divider,
-        }}
-      />
-    );
-  }
-  return (
-    <View
-      style={{
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: colors.divider,
-      }}
-    />
   );
 }
 
@@ -1149,7 +832,17 @@ function LogSheet({
   onClose: () => void;
 }) {
   const open = !!prayer;
-  const options: PrayerStatus[] = ["on_time", "late", "qada", "missed"];
+  const insets = useSafeAreaInsets();
+  const isDark = colors.bg === "#000000";
+  const sheetBg = isDark ? "#141414" : "#FFFFFF";
+  const pressedRowBg = isDark ? "#262626" : "#F4F4F2";
+  const sheetFg = isDark ? "#F7F7F4" : "#0F1311";
+  const sheetMuted = isDark ? "#A1A1AA" : "#6B7280";
+  const sheetSubtle = isDark ? "#5E5E62" : "#E5E7EB";
+  const selectedBg = "#29603E";
+  const selectedFg = "#FFFFFF";
+  const sheetPrimary = "#29603E";
+
   return (
     <Modal
       animationType="slide"
@@ -1163,13 +856,13 @@ function LogSheet({
       />
       <View
         style={{
-          backgroundColor: colors.card,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
+          backgroundColor: sheetBg,
+          borderTopLeftRadius: 28,
+          borderTopRightRadius: 28,
           paddingTop: 12,
-          paddingBottom: 28,
+          paddingBottom: Math.max(insets.bottom, 18) + 14,
           borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopColor: sheetSubtle,
         }}
       >
         <View
@@ -1177,119 +870,175 @@ function LogSheet({
             width: 36,
             height: 4,
             borderRadius: 2,
-            backgroundColor: colors.border,
+            backgroundColor: sheetSubtle,
             alignSelf: "center",
-            marginBottom: 16,
+            marginBottom: 18,
           }}
         />
-        <View style={{ paddingHorizontal: 24, gap: 4, marginBottom: 12 }}>
-          <Text
+        <View style={{ paddingHorizontal: 20 }}>
+          <View
             style={{
-              fontSize: 10,
-              fontWeight: "700",
-              letterSpacing: 2.4,
-              color: colors.inkMuted,
-              textTransform: "uppercase",
+              flexDirection: "row",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 16,
+              marginBottom: 18,
             }}
           >
-            Log prayer
-          </Text>
-          <Text
-            style={{
-              fontFamily: "LibreBaskerville-Bold",
-              fontSize: 22,
-              color: colors.ink,
-            }}
-          >
-            {prayer ? PRAYER_LABEL[prayer] : ""}
-          </Text>
+            <View style={{ flex: 1, gap: 5 }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "700",
+                  color: sheetMuted,
+                }}
+              >
+                Log prayer
+              </Text>
+              <Text
+                style={{
+                  fontFamily: "LibreBaskerville-Bold",
+                  fontSize: 26,
+                  lineHeight: 31,
+                  color: sheetFg,
+                }}
+              >
+                {prayer ? PRAYER_LABEL[prayer] : ""}
+              </Text>
+            </View>
+            <Pressable
+              onPress={onClose}
+              style={({ pressed }) => ({
+                borderWidth: 1,
+                borderColor: sheetSubtle,
+                borderRadius: 999,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                backgroundColor: pressed ? pressedRowBg : "transparent",
+              })}
+            >
+              <Text
+                style={{
+                  color: sheetMuted,
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                Done
+              </Text>
+            </Pressable>
+          </View>
         </View>
-        <View style={{ paddingHorizontal: 24 }}>
-          {options.map((s, i) => {
-            const selected = existing === s;
+        <View style={{ gap: 10, paddingHorizontal: 20 }}>
+          {LOG_STATUS_OPTIONS.map((statusOption) => {
+            const selected = existing === statusOption;
+            const labelColor = selected ? selectedFg : sheetFg;
             return (
               <Pressable
-                key={s}
-                onPress={() => prayer && onPick(prayer, s)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                key={statusOption}
+                onPress={() => prayer && onPick(prayer, statusOption)}
                 style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  paddingVertical: 16,
-                  borderTopWidth: i === 0 ? 0 : 1,
-                  borderTopColor: colors.divider,
-                  backgroundColor: pressed ? colors.neutralSoft : "transparent",
+                  justifyContent: "center",
+                  height: 54,
+                  width: "100%",
+                  borderWidth: selected ? 1.5 : 0,
+                  borderColor: sheetPrimary,
+                  borderRadius: 12,
+                  paddingHorizontal: selected ? 14 : 2,
+                  backgroundColor: pressed
+                    ? pressedRowBg
+                    : selected
+                      ? selectedBg
+                      : "transparent",
                 })}
               >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "baseline",
-                    gap: 14,
-                  }}
-                >
-                  <Text
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
                     style={{
-                      fontSize: 11,
-                      fontWeight: "600",
-                      color: colors.inkSubtle,
-                      width: 14,
-                      fontVariant: ["tabular-nums"],
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 22,
+                      height: 22,
+                      borderRadius: 11,
+                      borderWidth: 1,
+                      borderColor: selected ? "#FFFFFF" : sheetSubtle,
+                      backgroundColor: selected ? "#FFFFFF" : "transparent",
                     }}
                   >
-                    {i + 1}
-                  </Text>
+                    {selected ? (
+                      <View
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: 3.5,
+                          backgroundColor: sheetPrimary,
+                        }}
+                      />
+                    ) : null}
+                  </View>
                   <Text
                     style={{
-                      fontSize: 17,
-                      fontWeight: selected ? "700" : "500",
-                      color: selected ? colors.primary : colors.ink,
+                      color: labelColor,
+                      fontSize: 18,
+                      fontWeight: selected ? "700" : "600",
+                      includeFontPadding: false,
+                      lineHeight: 22,
+                      marginLeft: 12,
+                      textAlignVertical: "center",
                     }}
                   >
-                    {STATUS_LABEL[s]}
+                    {STATUS_LABEL[statusOption]}
                   </Text>
                 </View>
-                {selected ? (
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: "700",
-                      color: colors.primary,
-                      letterSpacing: 0.6,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Current
-                  </Text>
-                ) : null}
               </Pressable>
             );
           })}
         </View>
         {existing ? (
-          <Pressable
-            onPress={() => prayer && onClear(prayer)}
-            style={({ pressed }) => ({
-              marginTop: 8,
-              marginHorizontal: 24,
-              paddingVertical: 14,
+          <View
+            style={{
+              flexDirection: "row",
               alignItems: "center",
-              borderRadius: 14,
-              backgroundColor: pressed ? colors.neutralSoft : "transparent",
-            })}
+              justifyContent: "space-between",
+              marginTop: 16,
+              marginHorizontal: 20,
+              paddingTop: 16,
+              borderTopWidth: 1,
+              borderTopColor: sheetSubtle,
+            }}
           >
             <Text
               style={{
-                fontSize: 13,
-                fontWeight: "700",
-                color: colors.inkMuted,
-                letterSpacing: 0.6,
-                textTransform: "uppercase",
+                flex: 1,
+                color: sheetMuted,
+                fontSize: 12,
+                lineHeight: 17,
               }}
             >
-              Clear log
+              Current status: {STATUS_LABEL[existing]}
             </Text>
-          </Pressable>
+            <Pressable
+              onPress={() => prayer && onClear(prayer)}
+              style={({ pressed }) => ({
+                borderRadius: 999,
+                paddingHorizontal: 14,
+                paddingVertical: 9,
+                backgroundColor: pressed ? pressedRowBg : "transparent",
+              })}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "700",
+                  color: sheetMuted,
+                }}
+              >
+                Clear log
+              </Text>
+            </Pressable>
+          </View>
         ) : null}
       </View>
     </Modal>
