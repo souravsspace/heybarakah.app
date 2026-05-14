@@ -5,9 +5,24 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Alert, Linking, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
+
+type ProductId = "yearly" | "monthly" | "family" | "lifetime";
+
+const PLAN_LABEL: Record<ProductId, string> = {
+  yearly: "Barakah Premium",
+  monthly: "Barakah Premium",
+  family: "Barakah Family",
+  lifetime: "Barakah Lifetime",
+};
+
+const PLAN_PRICE: Record<ProductId, { amount: string; period: string }> = {
+  yearly: { amount: "$39.99", period: "/year" },
+  monthly: { amount: "$4.99", period: "/month" },
+  family: { amount: "$59.99", period: "/year" },
+  lifetime: { amount: "$99.99", period: "one-time" },
+};
 
 const BENEFITS: { sf: string; title: string; subtitle: string }[] = [
   {
@@ -32,13 +47,28 @@ const BENEFITS: { sf: string; title: string; subtitle: string }[] = [
   },
 ];
 
+function formatDate(iso: string | undefined): string | null {
+  if (!iso) {
+    return null;
+  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return null;
+  }
+  return d.toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export default function Subscription() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
-  const profile = useQuery(api.lib.users.getMyProfile);
-  const isPremium = true; // placeholder until billing wired
-
-  const renewsLabel = profile ? "Renews May 12, 2026" : "Active";
+  const subscription = useQuery(api.lib.subscriptions.getMySubscription);
+  const loading = subscription === undefined;
+  const isPremium = !!subscription;
+  const productId = (subscription?.productId ?? "monthly") as ProductId;
 
   const openSupport = () => {
     Haptics.selectionAsync().catch(() => undefined);
@@ -67,6 +97,11 @@ export default function Subscription() {
     );
   };
 
+  const upgrade = () => {
+    Haptics.selectionAsync().catch(() => undefined);
+    router.push("/no-active-sub" as never);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
@@ -77,11 +112,21 @@ export default function Subscription() {
           title="Subscription"
         />
         <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
-          <PlanCard
-            colors={colors}
-            isPremium={isPremium}
-            renewsLabel={renewsLabel}
-          />
+          {isPremium ? (
+            <PlanCard
+              colors={colors}
+              expiresAt={subscription?.expiresAt}
+              onManage={manage}
+              onRestore={restore}
+              productId={productId}
+            />
+          ) : (
+            <UpgradeCard
+              colors={colors}
+              loading={loading}
+              onUpgrade={upgrade}
+            />
+          )}
         </View>
 
         <Section colors={colors} title="What's included">
@@ -100,30 +145,32 @@ export default function Subscription() {
           </Card>
         </Section>
 
-        <Section colors={colors} title="Manage">
-          <Card colors={colors}>
-            <ActionRow
-              colors={colors}
-              onPress={manage}
-              sf="creditcard.fill"
-              title="Manage subscription"
-            />
-            <Divider colors={colors} />
-            <ActionRow
-              colors={colors}
-              onPress={restore}
-              sf="arrow.clockwise"
-              title="Restore purchases"
-            />
-            <Divider colors={colors} />
-            <ActionRow
-              colors={colors}
-              onPress={openSupport}
-              sf="envelope.fill"
-              title="Billing support"
-            />
-          </Card>
-        </Section>
+        {isPremium ? (
+          <Section colors={colors} title="Manage">
+            <Card colors={colors}>
+              <ActionRow
+                colors={colors}
+                onPress={manage}
+                sf="creditcard.fill"
+                title="Manage subscription"
+              />
+              <Divider colors={colors} />
+              <ActionRow
+                colors={colors}
+                onPress={restore}
+                sf="arrow.clockwise"
+                title="Restore purchases"
+              />
+              <Divider colors={colors} />
+              <ActionRow
+                colors={colors}
+                onPress={openSupport}
+                sf="envelope.fill"
+                title="Billing support"
+              />
+            </Card>
+          </Section>
+        ) : null}
       </SafeAreaView>
     </View>
   );
@@ -131,169 +178,257 @@ export default function Subscription() {
 
 function PlanCard({
   colors,
-  isPremium,
-  renewsLabel,
+  expiresAt,
+  onManage,
+  onRestore,
+  productId,
 }: {
   colors: ThemeColors;
-  isPremium: boolean;
-  renewsLabel: string;
+  expiresAt: string | undefined;
+  onManage: () => void;
+  onRestore: () => void;
+  productId: ProductId;
 }) {
+  const planName = PLAN_LABEL[productId];
+  const { amount, period } = PLAN_PRICE[productId];
+  const renewsDate = formatDate(expiresAt);
+  const renewsLabel =
+    productId === "lifetime"
+      ? "Lifetime access"
+      : renewsDate
+        ? `Renews ${renewsDate}`
+        : "Auto-renews monthly";
+
   return (
     <View
       style={{
-        borderRadius: 22,
-        overflow: "hidden",
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: colors.border,
+        backgroundColor: colors.card,
+        padding: 22,
+        gap: 18,
       }}
     >
       <View
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <Svg height="100%" width="100%">
-          <Defs>
-            <LinearGradient id="plan-grad" x1="0" x2="1" y1="0" y2="1">
-              <Stop offset="0" stopColor={colors.premium} stopOpacity="0.18" />
-              <Stop offset="1" stopColor={colors.primary} stopOpacity="0.06" />
-            </LinearGradient>
-          </Defs>
-          <Rect fill={colors.card} height="100%" width="100%" />
-          <Rect fill="url(#plan-grad)" height="100%" width="100%" />
-        </Svg>
-      </View>
-
-      <View style={{ padding: 20, gap: 18 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <View
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 14,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: colors.premium,
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.primary,
+            }}
+          />
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "700",
+              letterSpacing: 1.6,
+              color: colors.primary,
+              textTransform: "uppercase",
             }}
           >
-            <IconSymbol
-              color="#FFFFFF"
-              name={"crown.fill" as never}
-              size={24}
-            />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "700",
-                  letterSpacing: 0.6,
-                  color: colors.premium,
-                  textTransform: "uppercase",
-                }}
-              >
-                Current plan
-              </Text>
-              <View
-                style={{
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: colors.primary,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                <View
-                  style={{
-                    width: 5,
-                    height: 5,
-                    borderRadius: 3,
-                    backgroundColor: colors.primary,
-                  }}
-                />
-                <Text
-                  style={{
-                    fontSize: 9,
-                    fontWeight: "700",
-                    color: colors.primary,
-                    letterSpacing: 0.4,
-                  }}
-                >
-                  ACTIVE
-                </Text>
-              </View>
-            </View>
-            <Text
-              style={{
-                fontFamily: "LibreBaskerville-Bold",
-                fontSize: 22,
-                color: colors.ink,
-                marginTop: 4,
-              }}
-            >
-              {isPremium ? "Barakah Premium" : "Free"}
-            </Text>
-          </View>
+            Current plan · Active
+          </Text>
         </View>
+        <IconSymbol
+          color={colors.premium}
+          name={"crown.fill" as never}
+          size={18}
+        />
+      </View>
 
-        <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4 }}>
+      <View>
+        <Text
+          style={{
+            fontFamily: "LibreBaskerville-Bold",
+            fontSize: 26,
+            color: colors.ink,
+            letterSpacing: -0.3,
+          }}
+        >
+          {planName}
+        </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-end",
+            gap: 4,
+            marginTop: 8,
+          }}
+        >
           <Text
             style={{
               fontFamily: "LibreBaskerville-Bold",
-              fontSize: 34,
+              fontSize: 32,
               color: colors.ink,
-              lineHeight: 36,
+              lineHeight: 34,
             }}
           >
-            $4.99
+            {amount}
           </Text>
           <Text
             style={{
               fontSize: 14,
               fontWeight: "600",
               color: colors.inkMuted,
-              marginBottom: 4,
+              marginBottom: 3,
             }}
           >
-            /month
-          </Text>
-        </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            paddingTop: 14,
-            borderTopWidth: 1,
-            borderTopColor: colors.divider,
-          }}
-        >
-          <IconSymbol
-            color={colors.inkMuted}
-            name={"calendar" as never}
-            size={14}
-          />
-          <Text style={{ fontSize: 13, color: colors.inkMuted, flex: 1 }}>
-            {renewsLabel}
+            {period}
           </Text>
         </View>
       </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          paddingTop: 14,
+          borderTopWidth: 1,
+          borderTopColor: colors.divider,
+        }}
+      >
+        <IconSymbol
+          color={colors.inkMuted}
+          name={"calendar" as never}
+          size={13}
+        />
+        <Text style={{ fontSize: 13, color: colors.inkMuted, flex: 1 }}>
+          {renewsLabel}
+        </Text>
+      </View>
+
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        <GhostButton colors={colors} label="Manage" onPress={onManage} />
+        <GhostButton colors={colors} label="Restore" onPress={onRestore} />
+      </View>
     </View>
+  );
+}
+
+function UpgradeCard({
+  colors,
+  loading,
+  onUpgrade,
+}: {
+  colors: ThemeColors;
+  loading: boolean;
+  onUpgrade: () => void;
+}) {
+  return (
+    <View
+      style={{
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.card,
+        padding: 22,
+        gap: 16,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <IconSymbol
+          color={colors.premium}
+          name={"crown.fill" as never}
+          size={16}
+        />
+        <Text
+          style={{
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.6,
+            color: colors.premium,
+            textTransform: "uppercase",
+          }}
+        >
+          Free plan
+        </Text>
+      </View>
+      <Text
+        style={{
+          fontFamily: "LibreBaskerville-Bold",
+          fontSize: 24,
+          color: colors.ink,
+          letterSpacing: -0.3,
+        }}
+      >
+        Unlock Barakah Premium
+      </Text>
+      <Text style={{ fontSize: 13, color: colors.inkMuted, lineHeight: 19 }}>
+        Adaptive reminders, lifetime streaks, cloud backup, and every counter
+        unlocked.
+      </Text>
+      <Pressable
+        disabled={loading}
+        onPress={onUpgrade}
+        style={({ pressed }) => ({
+          paddingVertical: 14,
+          borderRadius: 999,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.primary,
+          opacity: pressed || loading ? 0.85 : 1,
+        })}
+      >
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "700",
+            color: "#FFFFFF",
+            letterSpacing: 0.3,
+          }}
+        >
+          {loading ? "Loading…" : "UPGRADE"}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function GhostButton({
+  colors,
+  label,
+  onPress,
+}: {
+  colors: ThemeColors;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 999,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: "transparent",
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Text
+        style={{
+          fontSize: 13,
+          fontWeight: "700",
+          color: colors.ink,
+          letterSpacing: 0.2,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -325,10 +460,10 @@ function BenefitRow({
           borderRadius: 11,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: colors.neutralSoft,
+          backgroundColor: colors.primarySoft,
         }}
       >
-        <IconSymbol color={colors.inkMuted} name={sf as never} size={20} />
+        <IconSymbol color={colors.primary} name={sf as never} size={20} />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ fontSize: 15, fontWeight: "600", color: colors.ink }}>
@@ -378,10 +513,10 @@ function ActionRow({
               borderRadius: 11,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: colors.neutralSoft,
+              backgroundColor: colors.primarySoft,
             }}
           >
-            <IconSymbol color={colors.inkMuted} name={sf as never} size={20} />
+            <IconSymbol color={colors.primary} name={sf as never} size={20} />
           </View>
           <Text
             style={{
