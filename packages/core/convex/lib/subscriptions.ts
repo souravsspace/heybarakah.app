@@ -1,4 +1,3 @@
-import { v } from "convex/values";
 import { productId } from "../../src/subscriptions/validators";
 import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
