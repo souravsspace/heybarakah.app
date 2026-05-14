@@ -1,10 +1,14 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -19,50 +23,85 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 
 const SPLIT_RE = /\s+/;
-const NON_ALPHANUM_RE = /[^a-z0-9]/g;
-
-function splitName(full: string): { first: string; last: string } {
-  const trimmed = full.trim();
-  if (!trimmed) {
-    return { first: "", last: "" };
-  }
-  const parts = trimmed.split(SPLIT_RE);
-  if (parts.length === 1) {
-    return { first: parts[0], last: "" };
-  }
-  return {
-    first: parts.slice(0, -1).join(" "),
-    last: parts.at(-1) ?? "",
-  };
-}
-
-function deriveUsername(name: string): string {
-  return name.toLowerCase().replace(NON_ALPHANUM_RE, "").slice(0, 24);
-}
+const MAX_DIMENSION = 512;
+const COMPRESS_QUALITY = 0.85;
 
 export default function PersonalDetails() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
   const profile = useQuery(api.lib.users.getMyProfile);
   const upsertProfile = useMutation(api.lib.users.upsertProfile);
-  const [first, setFirst] = useState("");
-  const [last, setLast] = useState("");
-  const [username, setUsername] = useState("");
+  const generateUploadUrl = useMutation(api.lib.users.generateAvatarUploadUrl);
+  const setAvatar = useMutation(api.lib.users.setAvatar);
+  const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     if (profile !== undefined && !hydrated) {
-      const split = splitName(profile?.name ?? "");
-      setFirst(split.first);
-      setLast(split.last);
-      setUsername(deriveUsername(profile?.name ?? ""));
+      setName(profile?.name ?? "");
       setHydrated(true);
     }
   }, [profile, hydrated]);
 
-  const joinedName = [first.trim(), last.trim()].filter(Boolean).join(" ");
-  const dirty = hydrated && joinedName !== (profile?.name ?? "");
+  const dirty = hydrated && name.trim() !== (profile?.name ?? "");
+  const imageUrl = profile?.imageUrl ?? null;
+
+  const parts = name.trim().split(SPLIT_RE).filter(Boolean);
+  const initials =
+    parts.length >= 2
+      ? `${parts[0][0]}${parts.at(-1)?.[0] ?? ""}`.toUpperCase()
+      : (parts[0]?.slice(0, 2) ?? "S").toUpperCase();
+
+  const pickImage = async () => {
+    Haptics.selectionAsync().catch(() => undefined);
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(
+        "Permission required",
+        "Enable photo access in Settings to upload a picture."
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+    const asset = result.assets[0];
+
+    setUploading(true);
+    try {
+      const manipulated = await manipulateToWebp(asset.uri);
+      const uploadUrl = await generateUploadUrl();
+      const blob = await (await fetch(manipulated.uri)).blob();
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": manipulated.mime },
+        body: blob,
+      });
+      if (!res.ok) {
+        throw new Error(`Upload failed: ${res.status}`);
+      }
+      const { storageId } = (await res.json()) as { storageId: string };
+      await setAvatar({ storageId: storageId as never });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+        () => undefined
+      );
+    } catch (err) {
+      Alert.alert(
+        "Upload failed",
+        err instanceof Error ? err.message : "Please try again."
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const save = async () => {
     if (saving) {
@@ -72,17 +111,13 @@ export default function PersonalDetails() {
     Haptics.selectionAsync().catch(() => undefined);
     try {
       if (dirty) {
-        await upsertProfile({ name: joinedName || undefined });
+        await upsertProfile({ name: name.trim() || undefined });
       }
       router.back();
     } finally {
       setSaving(false);
     }
   };
-
-  const initial = (first.charAt(0) || "S").toUpperCase();
-  const secondInitial = (last.charAt(0) || "").toUpperCase();
-  const initials = `${initial}${secondInitial}`;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -103,84 +138,63 @@ export default function PersonalDetails() {
             showsVerticalScrollIndicator={false}
           >
             <View style={{ alignItems: "center", marginTop: 24, gap: 12 }}>
-              <View>
-                <GradientAvatar initials={initials} size={120} />
-                <Pressable
-                  onPress={() => {
-                    Haptics.selectionAsync().catch(() => undefined);
-                  }}
+              <Pressable disabled={uploading} onPress={pickImage}>
+                <View>
+                  <AvatarView
+                    imageUrl={imageUrl}
+                    initials={initials}
+                    size={120}
+                    uploading={uploading}
+                  />
+                  <View
+                    style={{
+                      position: "absolute",
+                      right: -2,
+                      bottom: 6,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: colors.bgElevated,
+                      borderWidth: 2,
+                      borderColor: colors.bg,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <IconSymbol
+                      color={colors.ink}
+                      name={"pencil" as never}
+                      size={14}
+                    />
+                  </View>
+                </View>
+              </Pressable>
+              <Pressable disabled={uploading} onPress={pickImage}>
+                <Text
                   style={{
-                    position: "absolute",
-                    right: -2,
-                    bottom: 6,
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: colors.bgElevated,
-                    borderWidth: 2,
-                    borderColor: colors.bg,
-                    alignItems: "center",
-                    justifyContent: "center",
+                    fontSize: 12,
+                    color: colors.inkMuted,
+                    fontWeight: "500",
                   }}
                 >
-                  <IconSymbol
-                    color={colors.ink}
-                    name={"pencil" as never}
-                    size={14}
-                  />
-                </Pressable>
-              </View>
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: colors.inkMuted,
-                  fontWeight: "500",
-                }}
-              >
-                Change Photo
-              </Text>
+                  {uploading ? "Uploading…" : "Change Photo"}
+                </Text>
+              </Pressable>
             </View>
 
-            <View
-              style={{
-                paddingHorizontal: 20,
-                marginTop: 28,
-                gap: 12,
-              }}
-            >
+            <View style={{ paddingHorizontal: 20, marginTop: 28, gap: 12 }}>
               <FloatingInput
                 autoCapitalize="words"
                 colors={colors}
-                label="First Name"
-                onChangeText={setFirst}
-                placeholder="First name"
-                value={first}
-              />
-              <FloatingInput
-                autoCapitalize="words"
-                colors={colors}
-                label="Last Name"
-                onChangeText={setLast}
-                placeholder="Last name"
-                value={last}
-              />
-              <FloatingInput
-                autoCapitalize="none"
-                colors={colors}
-                label="Username"
-                onChangeText={setUsername}
-                placeholder="username"
-                value={username}
+                label="Name"
+                onChangeText={setName}
+                placeholder="Your name"
+                value={name}
               />
             </View>
           </ScrollView>
 
-          <View
-            style={{
-              paddingHorizontal: 20,
-              paddingBottom: 20,
-            }}
-          >
+          <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
             <Pressable
               disabled={saving}
               onPress={save}
@@ -209,6 +223,60 @@ export default function PersonalDetails() {
       </SafeAreaView>
     </View>
   );
+}
+
+async function manipulateToWebp(
+  uri: string
+): Promise<{ uri: string; mime: string }> {
+  const actions: ImageManipulator.Action[] = [
+    { resize: { width: MAX_DIMENSION, height: MAX_DIMENSION } },
+  ];
+  try {
+    const result = await ImageManipulator.manipulateAsync(uri, actions, {
+      compress: COMPRESS_QUALITY,
+      format: ImageManipulator.SaveFormat.WEBP,
+    });
+    return { uri: result.uri, mime: "image/webp" };
+  } catch {
+    const fallback = await ImageManipulator.manipulateAsync(uri, actions, {
+      compress: COMPRESS_QUALITY,
+      format: ImageManipulator.SaveFormat.JPEG,
+    });
+    return { uri: fallback.uri, mime: "image/jpeg" };
+  }
+}
+
+function AvatarView({
+  imageUrl,
+  initials,
+  size,
+  uploading,
+}: {
+  imageUrl: string | null;
+  initials: string;
+  size: number;
+  uploading: boolean;
+}) {
+  if (imageUrl) {
+    return (
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          overflow: "hidden",
+          opacity: uploading ? 0.6 : 1,
+        }}
+      >
+        <Image
+          contentFit="cover"
+          source={{ uri: imageUrl }}
+          style={{ width: size, height: size }}
+        />
+      </View>
+    );
+  }
+  return <GradientAvatar initials={initials} size={size} />;
 }
 
 function GradientAvatar({
