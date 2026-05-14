@@ -114,6 +114,7 @@ export default function Subscription() {
         <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
           {isPremium ? (
             <PlanCard
+              activatedAt={subscription?.activatedAt ?? subscription?.claimedAt}
               colors={colors}
               expiresAt={subscription?.expiresAt}
               onManage={manage}
@@ -177,12 +178,14 @@ export default function Subscription() {
 }
 
 function PlanCard({
+  activatedAt,
   colors,
   expiresAt,
   onManage,
   onRestore,
   productId,
 }: {
+  activatedAt: string | undefined;
   colors: ThemeColors;
   expiresAt: string | undefined;
   onManage: () => void;
@@ -192,12 +195,13 @@ function PlanCard({
   const planName = PLAN_LABEL[productId];
   const { amount, period } = PLAN_PRICE[productId];
   const renewsDate = formatDate(expiresAt);
-  const renewsLabel =
+  const startedDate = formatDate(activatedAt);
+  const billingDescriptor =
     productId === "lifetime"
-      ? "Lifetime access"
-      : renewsDate
-        ? `Renews ${renewsDate}`
-        : "Auto-renews monthly";
+      ? `${amount} · One-time purchase`
+      : `${amount}${period} · ${periodLabel(productId)} billing`;
+  const nextChargeValue =
+    productId === "lifetime" ? "Never" : (renewsDate ?? "Auto-renews");
 
   return (
     <View
@@ -206,112 +210,176 @@ function PlanCard({
         borderWidth: 1,
         borderColor: colors.border,
         backgroundColor: colors.card,
-        padding: 22,
-        gap: 18,
+        overflow: "hidden",
       }}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <View
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: colors.primary,
-            }}
-          />
+      <View style={{ flexDirection: "row" }}>
+        <View style={{ width: 3, backgroundColor: colors.primary }} />
+        <View style={{ flex: 1, padding: 22, gap: 14 }}>
           <Text
             style={{
               fontSize: 10,
               fontWeight: "700",
-              letterSpacing: 1.6,
+              letterSpacing: 2,
               color: colors.primary,
               textTransform: "uppercase",
             }}
           >
-            Current plan · Active
+            Active subscription
           </Text>
-        </View>
-        <IconSymbol
-          color={colors.premium}
-          name={"crown.fill" as never}
-          size={18}
-        />
-      </View>
 
-      <View>
-        <Text
-          style={{
-            fontFamily: "LibreBaskerville-Bold",
-            fontSize: 26,
-            color: colors.ink,
-            letterSpacing: -0.3,
-          }}
-        >
-          {planName}
-        </Text>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "flex-end",
-            gap: 4,
-            marginTop: 8,
-          }}
-        >
           <Text
             style={{
               fontFamily: "LibreBaskerville-Bold",
               fontSize: 32,
               color: colors.ink,
-              lineHeight: 34,
+              letterSpacing: -0.5,
+              lineHeight: 36,
             }}
           >
-            {amount}
+            {planName}
           </Text>
+
           <Text
             style={{
-              fontSize: 14,
-              fontWeight: "600",
+              fontSize: 13,
               color: colors.inkMuted,
-              marginBottom: 3,
+              letterSpacing: 0.1,
             }}
           >
-            {period}
+            {billingDescriptor}
           </Text>
         </View>
       </View>
 
       <View
         style={{
+          height: 1,
+          backgroundColor: colors.divider,
+          marginHorizontal: 22,
+        }}
+      />
+
+      <View
+        style={{
           flexDirection: "row",
-          alignItems: "center",
-          gap: 8,
-          paddingTop: 14,
-          borderTopWidth: 1,
-          borderTopColor: colors.divider,
+          paddingHorizontal: 22,
+          paddingVertical: 18,
         }}
       >
-        <IconSymbol
-          color={colors.inkMuted}
-          name={"calendar" as never}
-          size={13}
+        <MetaCell colors={colors} label="Next charge" value={nextChargeValue} />
+        <View
+          style={{
+            width: 1,
+            backgroundColor: colors.divider,
+            marginHorizontal: 16,
+          }}
         />
-        <Text style={{ fontSize: 13, color: colors.inkMuted, flex: 1 }}>
-          {renewsLabel}
-        </Text>
+        <MetaCell colors={colors} label="Started" value={startedDate ?? "—"} />
       </View>
 
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <GhostButton colors={colors} label="Manage" onPress={onManage} />
-        <GhostButton colors={colors} label="Restore" onPress={onRestore} />
+      <View
+        style={{
+          height: 1,
+          backgroundColor: colors.divider,
+          marginHorizontal: 22,
+        }}
+      />
+
+      <View
+        style={{
+          flexDirection: "row",
+          paddingHorizontal: 22,
+          paddingVertical: 14,
+          alignItems: "center",
+        }}
+      >
+        <InlineAction
+          colors={colors}
+          label="Manage subscription"
+          onPress={onManage}
+        />
+        <View style={{ flex: 1 }} />
+        <InlineAction colors={colors} label="Restore" onPress={onRestore} />
       </View>
     </View>
+  );
+}
+
+function periodLabel(productId: ProductId): string {
+  switch (productId) {
+    case "yearly":
+      return "Yearly";
+    case "family":
+      return "Yearly family";
+    case "lifetime":
+      return "Lifetime";
+    default:
+      return "Monthly";
+  }
+}
+
+function MetaCell({
+  colors,
+  label,
+  value,
+}: {
+  colors: ThemeColors;
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={{ flex: 1, gap: 6 }}>
+      <Text
+        style={{
+          fontSize: 9,
+          fontWeight: "700",
+          letterSpacing: 1.4,
+          color: colors.inkMuted,
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={{
+          fontSize: 14,
+          fontWeight: "600",
+          color: colors.ink,
+        }}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function InlineAction({
+  colors,
+  label,
+  onPress,
+}: {
+  colors: ThemeColors;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable hitSlop={8} onPress={onPress}>
+      {({ pressed }) => (
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: "700",
+            color: colors.ink,
+            letterSpacing: 0.2,
+            opacity: pressed ? 0.5 : 1,
+          }}
+        >
+          {label}
+        </Text>
+      )}
+    </Pressable>
   );
 }
 
@@ -391,44 +459,6 @@ function UpgradeCard({
         </Text>
       </Pressable>
     </View>
-  );
-}
-
-function GhostButton({
-  colors,
-  label,
-  onPress,
-}: {
-  colors: ThemeColors;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 999,
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: "transparent",
-        opacity: pressed ? 0.7 : 1,
-      })}
-    >
-      <Text
-        style={{
-          fontSize: 13,
-          fontWeight: "700",
-          color: colors.ink,
-          letterSpacing: 0.2,
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 
