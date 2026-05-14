@@ -1,6 +1,8 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import type { PrayerWindow } from "@barakah/core/shieldSelection";
 import { useQuery } from "convex/react";
+import { useCallback, useEffect, useRef } from "react";
+import { AppState, Platform } from "react-native";
 import {
   clearAllBlocks,
   getBlockConfiguration,
@@ -11,9 +13,7 @@ import {
   startMonitoring,
   stopMonitoring,
   temporaryUnlock,
-} from "expo-app-blocker";
-import { useCallback, useEffect, useRef } from "react";
-import { AppState, Platform } from "react-native";
+} from "@/lib/app-blocker";
 import {
   cancelShieldNotifications,
   scheduleShieldNotifications,
