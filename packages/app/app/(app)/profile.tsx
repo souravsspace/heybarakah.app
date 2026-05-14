@@ -1,6 +1,7 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import { useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useMemo } from "react";
@@ -158,6 +159,7 @@ export default function Profile() {
             colors={colors}
             email={email}
             handle={handle}
+            imageUrl={profile?.imageUrl ?? null}
             initials={initials}
             name={name}
             onPress={() => go("/personal-details")}
@@ -276,6 +278,7 @@ function HeaderCard({
   colors,
   email,
   handle,
+  imageUrl,
   initials,
   name,
   onPress,
@@ -283,6 +286,7 @@ function HeaderCard({
   colors: ThemeColors;
   email: string | null;
   handle: string;
+  imageUrl: string | null;
   initials: string;
   name: string;
   onPress: () => void;
@@ -303,7 +307,24 @@ function HeaderCard({
             opacity: pressed ? 0.92 : 1,
           }}
         >
-          <GradientAvatar initials={initials} size={56} />
+          {imageUrl ? (
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                overflow: "hidden",
+              }}
+            >
+              <Image
+                contentFit="cover"
+                source={{ uri: imageUrl }}
+                style={{ width: 56, height: 56 }}
+              />
+            </View>
+          ) : (
+            <GradientAvatar initials={initials} size={56} />
+          )}
           <View style={{ flex: 1, minWidth: 0 }}>
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
