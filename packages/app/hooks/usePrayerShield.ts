@@ -14,6 +14,11 @@ import {
 } from "expo-app-blocker";
 import { useCallback, useEffect, useRef } from "react";
 import { AppState, Platform } from "react-native";
+import {
+  cancelShieldNotifications,
+  scheduleShieldNotifications,
+} from "@/lib/prayer-shield-notifications";
+import { registerPrayerShieldTask } from "@/lib/prayer-shield-task";
 import { usePrayerTimes } from "./usePrayerTimes";
 
 const WINDOW_DURATION_MIN = 20;
@@ -66,15 +71,21 @@ export function usePrayerShield() {
       } catch {
         // noop — library may throw on simulator or pre-permission
       }
+      cancelShieldNotifications().catch(() => null);
       return;
     }
     if (!todayPrayerTimes) {
       return;
     }
 
+    scheduleShieldNotifications({
+      windows: selection.windows,
+      times: todayPrayerTimes.timings as Timings,
+    }).catch(() => null);
+
     const windows = computeWindows(
       selection.windows,
-      todayPrayerTimes.timings as Timings
+      todayPrayerTimes.timings as Timings,
     );
     if (windows.length === 0) {
       return;
@@ -120,6 +131,10 @@ export function usePrayerShield() {
       stopMonitoring();
     }
   }, [selection, todayPrayerTimes]);
+
+  useEffect(() => {
+    registerPrayerShieldTask().catch(() => null);
+  }, []);
 
   useEffect(() => {
     sync();
