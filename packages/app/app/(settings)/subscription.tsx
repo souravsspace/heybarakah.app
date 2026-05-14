@@ -460,10 +460,10 @@ function BenefitRow({
           borderRadius: 11,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: colors.primarySoft,
+          backgroundColor: colors.neutralSoft,
         }}
       >
-        <IconSymbol color={colors.primary} name={sf as never} size={20} />
+        <IconSymbol color={colors.ink} name={sf as never} size={20} />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ fontSize: 15, fontWeight: "600", color: colors.ink }}>
@@ -513,10 +513,10 @@ function ActionRow({
               borderRadius: 11,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: colors.primarySoft,
+              backgroundColor: colors.neutralSoft,
             }}
           >
-            <IconSymbol color={colors.primary} name={sf as never} size={20} />
+            <IconSymbol color={colors.ink} name={sf as never} size={20} />
           </View>
           <Text
             style={{
