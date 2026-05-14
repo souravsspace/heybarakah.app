@@ -1,8 +1,8 @@
 import type { LoggablePrayerName, PrayerStatus } from "@barakah/core/prayer";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
-import { Pressable, Text, View } from "react-native";
-import { useTheme } from "@/contexts/theme-context";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useClearPrayer,
   useLogPrayer,
@@ -71,7 +71,7 @@ export default function LogPrayerScreen() {
   const prayer = params.prayer;
   const date = params.date;
 
-  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { todayPrayerTimes, prayerTimes } = usePrayerTimes();
   const week = useWeekLogs(date ?? "");
   const logPrayer = useLogPrayer();
@@ -130,13 +130,13 @@ export default function LogPrayerScreen() {
     return null;
   }
 
-  const isDark = colors.bg === "#000000";
-  const sheetBg = isDark ? "#0E1311" : "#FBFBF8";
-  const fg = isDark ? "#F7F7F4" : "#0F1311";
-  const muted = isDark ? "#A1A1AA" : "#6B7280";
-  const subtle = isDark ? "#5E5E62" : "#B8BCB6";
-  const hairline = isDark ? "rgba(255,255,255,0.09)" : "rgba(15,19,17,0.09)";
-  const pressedBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(15,19,17,0.04)";
+  const sheetBg = "#0E1311";
+  const fg = "#F7F7F4";
+  const muted = "#A1A1AA";
+  const subtle = "#5E5E62";
+  const hairline = "rgba(255,255,255,0.09)";
+  const pressedBg = "rgba(255,255,255,0.05)";
+  const selectedBg = "rgba(41,96,62,0.12)";
   const accent = BARAKAH_GREEN;
 
   const rangeText =
@@ -162,7 +162,8 @@ export default function LogPrayerScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: sheetBg }}>
+    <View style={{ flex: 1 }}>
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: sheetBg }]} />
       <View style={{ paddingHorizontal: 24, paddingTop: 18 }}>
         <Text
           style={{
@@ -213,27 +214,29 @@ export default function LogPrayerScreen() {
           const isLast = idx === LOG_STATUS_OPTIONS.length - 1;
           return (
             <Pressable
-              accessibilityRole="radio"
+              accessibilityRole="button"
               accessibilityState={{ selected }}
               key={statusOption}
               onPress={() => handlePick(statusOption)}
               style={({ pressed }) => ({
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingVertical: 18,
-                paddingHorizontal: 24,
+                backgroundColor: selected
+                  ? selectedBg
+                  : pressed
+                    ? pressedBg
+                    : "transparent",
                 borderBottomWidth: isLast ? 0 : 1,
                 borderBottomColor: hairline,
-                backgroundColor: pressed ? pressedBg : "transparent",
               })}
             >
               <View
                 style={{
                   flexDirection: "row",
-                  alignItems: "flex-start",
-                  gap: 18,
-                  flex: 1,
+                  alignItems: "center",
+                  paddingVertical: 18,
+                  paddingLeft: selected ? 21 : 24,
+                  paddingRight: 24,
+                  borderLeftWidth: selected ? 3 : 0,
+                  borderLeftColor: accent,
                 }}
               >
                 <Text
@@ -242,18 +245,20 @@ export default function LogPrayerScreen() {
                     fontSize: 13,
                     color: selected ? accent : subtle,
                     width: 22,
-                    paddingTop: 3,
+                    marginRight: 18,
                     fontVariant: ["tabular-nums"],
                   }}
                 >
                   {ROMAN_NUMERALS[idx]}
                 </Text>
-                <View style={{ flex: 1, gap: 3 }}>
+                <View style={{ flex: 1, marginRight: 16 }}>
                   <Text
                     style={{
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: selected ? "700" : "600",
                       color: selected ? accent : fg,
+                      marginBottom: 3,
+                      letterSpacing: selected ? 0.2 : 0,
                     }}
                   >
                     {STATUS_LABEL[statusOption]}
@@ -262,36 +267,25 @@ export default function LogPrayerScreen() {
                     style={{
                       fontSize: 12,
                       lineHeight: 16,
-                      color: muted,
+                      color: selected ? muted : subtle,
                     }}
                   >
                     {STATUS_HINT[statusOption]}
                   </Text>
                 </View>
-              </View>
-              <View
-                style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: 9,
-                  borderWidth: 1,
-                  borderColor: selected ? accent : subtle,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: selected ? accent : "transparent",
-                  marginTop: 4,
-                }}
-              >
-                {selected ? (
-                  <View
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor: "#FFFFFF",
-                    }}
-                  />
-                ) : null}
+                <Text
+                  style={{
+                    fontFamily: "LibreBaskerville-Bold",
+                    fontSize: selected ? 22 : 20,
+                    lineHeight: 26,
+                    color: selected ? accent : subtle,
+                    minWidth: 18,
+                    textAlign: "right",
+                    includeFontPadding: false,
+                  }}
+                >
+                  {selected ? "✓" : "›"}
+                </Text>
               </View>
             </Pressable>
           );
@@ -342,6 +336,7 @@ export default function LogPrayerScreen() {
           </Pressable>
         </View>
       ) : null}
+      <View style={{ height: insets.bottom + 16 }} />
     </View>
   );
 }
