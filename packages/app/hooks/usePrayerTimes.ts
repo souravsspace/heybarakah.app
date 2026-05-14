@@ -32,8 +32,13 @@ const CALC_METHOD_MAP: Record<CalcMethod, number> = {
   custom: 3,
 };
 
+function pad2(n: number): string {
+  return n.toString().padStart(2, "0");
+}
+
 function todayDateKey() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
 function mapSchool(madhab?: Madhab): number {

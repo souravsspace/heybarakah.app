@@ -16,6 +16,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
+import { MosqueMinaret } from "@/components/onboarding/illustrations/mosque-minaret";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
@@ -43,12 +44,13 @@ const STATUS_LABEL: Record<PrayerStatus, string> = {
   missed: "Missed",
 };
 
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function pad(n: number) {
   return n.toString().padStart(2, "0");
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 const HIJRI_MONTHS = [
@@ -403,6 +405,20 @@ export default function Home() {
             overflow: "hidden",
           }}
         >
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              right: -7,
+              bottom: -10,
+            }}
+          >
+            <MosqueMinaret
+              color={scheme === "dark" ? "#FFFFFF" : BARAKAH_GREEN}
+              opacity={scheme === "dark" ? 0.22 : 0.16}
+              size={132}
+            />
+          </View>
           <View style={{ padding: 22, gap: 14 }}>
             <View
               style={{

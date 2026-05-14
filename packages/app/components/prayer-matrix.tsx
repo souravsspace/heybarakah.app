@@ -19,7 +19,7 @@ const PRAYERS: { key: LoggablePrayerName; label: string }[] = [
   { key: "isha", label: "Isha" },
 ];
 
-const ROW_LABEL_WIDTH = 64;
+const ROW_LABEL_WIDTH = 78;
 const CELL_GAP = 6;
 
 export function PrayerMatrix({ days, todayKey, getStatus }: Props) {
@@ -64,7 +64,9 @@ export function PrayerMatrix({ days, todayKey, getStatus }: Props) {
         style={{
           flexDirection: "row",
           alignItems: "center",
+          justifyContent: "space-between",
           paddingLeft: ROW_LABEL_WIDTH,
+          paddingRight: 14,
           marginBottom: 10,
         }}
       >
@@ -74,7 +76,7 @@ export function PrayerMatrix({ days, todayKey, getStatus }: Props) {
             <View
               key={d.date}
               style={{
-                flex: 1,
+                width: 28,
                 alignItems: "center",
               }}
             >
@@ -118,6 +120,7 @@ export function PrayerMatrix({ days, todayKey, getStatus }: Props) {
           >
             <View style={{ width: ROW_LABEL_WIDTH - 14 }}>
               <Text
+                numberOfLines={1}
                 style={{
                   fontSize: 13,
                   fontWeight: "600",
@@ -131,6 +134,7 @@ export function PrayerMatrix({ days, todayKey, getStatus }: Props) {
               style={{
                 flex: 1,
                 flexDirection: "row",
+                justifyContent: "space-between",
                 gap: CELL_GAP,
               }}
             >
@@ -143,8 +147,8 @@ export function PrayerMatrix({ days, todayKey, getStatus }: Props) {
                   <View
                     key={d.date}
                     style={{
-                      flex: 1,
-                      aspectRatio: 1,
+                      width: 32,
+                      height: 32,
                       borderRadius: 6,
                       borderWidth: 1,
                       ...style,

@@ -1,7 +1,7 @@
 import type { LoggablePrayerName } from "@barakah/core/prayer";
 import { StatusBar } from "expo-status-bar";
-import { useMemo } from "react";
-import { Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { AppState, Text, View } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -11,8 +11,7 @@ import { AreaChart } from "@/components/area-chart";
 import { PrayerMatrix } from "@/components/prayer-matrix";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { useTheme } from "@/contexts/theme-context";
-import { useWeekLogs, type WeekLogs } from "@/hooks/usePrayerLogs";
-import { buildDummyWeek, USE_DEV_DUMMY } from "@/lib/dev-prayer-dummy";
+import { useWeekLogs } from "@/hooks/usePrayerLogs";
 
 const PRAYERS: LoggablePrayerName[] = [
   "fajr",
@@ -21,7 +20,7 @@ const PRAYERS: LoggablePrayerName[] = [
   "maghrib",
   "isha",
 ];
-const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+const DAY_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const MONTH_SHORT = [
   "Jan",
   "Feb",
@@ -67,6 +66,16 @@ export default function Progress() {
     },
   });
 
+  const [nowTick, setNowTick] = useState(0);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (s) => {
+      if (s === "active") {
+        setNowTick((t) => t + 1);
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
   const { todayKey, days, startKey, rangeLabel } = useMemo(() => {
     const now = new Date();
     const today = dateKey(now);
@@ -87,13 +96,9 @@ export default function Progress() {
       startKey: list[0].date,
       rangeLabel: range,
     };
-  }, []);
+  }, [nowTick]);
 
-  const realWeek = useWeekLogs(startKey);
-  const week = useMemo<WeekLogs>(
-    () => (USE_DEV_DUMMY ? buildDummyWeek(days) : realWeek),
-    [days, realWeek]
-  );
+  const week = useWeekLogs(startKey);
 
   const dailyOnTime = useMemo(
     () =>
@@ -109,38 +114,9 @@ export default function Progress() {
     [days, week]
   );
 
-  const possible = days.length * PRAYERS.length;
+  const elapsedDays = days.filter((d) => d.date <= todayKey).length;
+  const possible = elapsedDays * PRAYERS.length;
   const onTime = week.onTimeCount;
-
-  const { currentStreak, longestStreak } = useMemo(() => {
-    const dayHasOnTime = (date: string) =>
-      PRAYERS.some((p) => week.getStatus(date, p) === "on_time");
-    let longest = 0;
-    let run = 0;
-    for (const d of days) {
-      if (dayHasOnTime(d.date)) {
-        run += 1;
-        if (run > longest) {
-          longest = run;
-        }
-      } else {
-        run = 0;
-      }
-    }
-    let current = 0;
-    for (let i = days.length - 1; i >= 0; i--) {
-      const d = days[i];
-      if (d.date > todayKey) {
-        continue;
-      }
-      if (dayHasOnTime(d.date)) {
-        current += 1;
-      } else {
-        break;
-      }
-    }
-    return { currentStreak: current, longestStreak: longest };
-  }, [days, todayKey, week]);
 
   const empty = !week.loading && week.totalLogged === 0;
 
@@ -258,7 +234,7 @@ export default function Progress() {
               Daily on-time
             </Text>
             <Text style={{ fontSize: 11, color: colors.inkMuted }}>
-              last 7 days
+              this week
             </Text>
           </View>
           <AreaChart
@@ -288,80 +264,6 @@ export default function Progress() {
             getStatus={week.getStatus}
             todayKey={todayKey}
           />
-        </View>
-
-        {/* Streak strip */}
-        <View
-          style={{
-            marginHorizontal: 20,
-            marginTop: 24,
-            borderRadius: 20,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.card,
-            paddingHorizontal: 20,
-            paddingVertical: 18,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ gap: 4 }}>
-            <Text
-              style={{
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.8,
-                color: colors.inkMuted,
-                textTransform: "uppercase",
-              }}
-            >
-              Current streak
-            </Text>
-            <Text
-              style={{
-                fontFamily: "LibreBaskerville-Bold",
-                fontSize: 26,
-                lineHeight: 30,
-                color: colors.ink,
-                fontVariant: ["tabular-nums"],
-              }}
-            >
-              {currentStreak}
-              <Text style={{ fontSize: 14, color: colors.inkMuted }}>
-                {" "}
-                {currentStreak === 1 ? "day" : "days"}
-              </Text>
-            </Text>
-          </View>
-          <View style={{ alignItems: "flex-end", gap: 4 }}>
-            <Text
-              style={{
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.8,
-                color: colors.inkMuted,
-                textTransform: "uppercase",
-              }}
-            >
-              Longest
-            </Text>
-            <Text
-              style={{
-                fontFamily: "LibreBaskerville-Bold",
-                fontSize: 26,
-                lineHeight: 30,
-                color: colors.ink,
-                fontVariant: ["tabular-nums"],
-              }}
-            >
-              {longestStreak}
-              <Text style={{ fontSize: 14, color: colors.inkMuted }}>
-                {" "}
-                {longestStreak === 1 ? "day" : "days"}
-              </Text>
-            </Text>
-          </View>
         </View>
 
         {empty ? (
