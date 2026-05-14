@@ -6,9 +6,10 @@ import {
   type PrayerStatus,
 } from "@barakah/core/prayer";
 import { useMutation, useQuery } from "convex/react";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -19,11 +20,7 @@ import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
-import {
-  useClearPrayer,
-  useLogPrayer,
-  useWeekLogs,
-} from "@/hooks/usePrayerLogs";
+import { useLogPrayer, useWeekLogs } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 
 type PrayerName = LoggablePrayerName;
@@ -45,13 +42,6 @@ const STATUS_LABEL: Record<PrayerStatus, string> = {
   qada: "Qadā",
   missed: "Missed",
 };
-
-const LOG_STATUS_OPTIONS: PrayerStatus[] = [
-  "on_time",
-  "late",
-  "qada",
-  "missed",
-];
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -245,7 +235,6 @@ export default function Home() {
 
   const realWeek = useWeekLogs(today);
   const logPrayer = useLogPrayer();
-  const clearPrayer = useClearPrayer();
 
   const loggedToday = useMemo(
     () =>
@@ -284,8 +273,6 @@ export default function Home() {
     [todayPrayerTimes, timezone, today, tomorrowFajr]
   );
 
-  const [sheet, setSheet] = useState<PrayerName | null>(null);
-
   const onMarkPrayed = useCallback(
     async (prayer: PrayerName) => {
       const status = classifyNow(prayer);
@@ -299,25 +286,14 @@ export default function Home() {
     [classifyNow, logPrayer, today]
   );
 
-  const onPickStatus = useCallback(
-    async (prayer: PrayerName, status: PrayerStatus) => {
-      await logPrayer({
-        date: today,
-        prayer,
-        status,
-        prayedAt: Date.now(),
+  const openSheet = useCallback(
+    (prayer: PrayerName) => {
+      router.push({
+        pathname: "/log-prayer",
+        params: { prayer, date: today },
       });
-      setSheet(null);
     },
-    [logPrayer, today]
-  );
-
-  const onClear = useCallback(
-    async (prayer: PrayerName) => {
-      await clearPrayer({ date: today, prayer });
-      setSheet(null);
-    },
-    [clearPrayer, today]
+    [today]
   );
 
   const prayerDateFor = useCallback(
@@ -369,9 +345,6 @@ export default function Home() {
     scheme === "dark" ? "rgba(26,26,26,0.36)" : "rgba(244,244,242,0.22)";
   const homeRowSurface =
     scheme === "dark" ? "rgba(26,26,26,0.1)" : "rgba(255,255,255,0.06)";
-
-  const sheetStart = sheet ? prayerDateFor(sheet) : null;
-  const sheetEnd = sheet ? windowEndFor(sheet) : null;
 
   return (
     <View
@@ -614,7 +587,7 @@ export default function Home() {
                         onMarkPrayed(pname).catch(() => undefined);
                         return;
                       }
-                      setSheet(pname);
+                      openSheet(pname);
                     }}
                     prayer={pname}
                     pressedSurface={homePressedSurface}
@@ -654,17 +627,6 @@ export default function Home() {
         </View>
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
-
-      <LogSheet
-        colors={colors}
-        existing={sheet ? realWeek.getStatus(today, sheet) : undefined}
-        onClear={onClear}
-        onClose={() => setSheet(null)}
-        onPick={onPickStatus}
-        prayer={sheet}
-        rangeEnd={sheetEnd}
-        rangeStart={sheetStart}
-      />
     </View>
   );
 }
@@ -932,281 +894,5 @@ function StatusAtom({ color, label }: { color: string; label: string }) {
     >
       {label}
     </Text>
-  );
-}
-
-const ROMAN_NUMERALS = ["i", "ii", "iii", "iv"] as const;
-
-function LogSheet({
-  prayer,
-  existing,
-  colors,
-  rangeStart,
-  rangeEnd,
-  onPick,
-  onClear,
-  onClose,
-}: {
-  prayer: PrayerName | null;
-  existing: PrayerStatus | undefined;
-  colors: ThemeColors;
-  rangeStart: Date | null;
-  rangeEnd: Date | null;
-  onPick: (p: PrayerName, s: PrayerStatus) => void;
-  onClear: (p: PrayerName) => void;
-  onClose: () => void;
-}) {
-  const open = !!prayer;
-  const insets = useSafeAreaInsets();
-  const isDark = colors.bg === "#000000";
-  const sheetBg = isDark ? "#0E1311" : "#FBFBF8";
-  const fg = isDark ? "#F7F7F4" : "#0F1311";
-  const muted = isDark ? "#A1A1AA" : "#6B7280";
-  const subtle = isDark ? "#5E5E62" : "#B8BCB6";
-  const hairline = isDark ? "rgba(255,255,255,0.09)" : "rgba(15,19,17,0.09)";
-  const pressedBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(15,19,17,0.035)";
-  const accent = BARAKAH_GREEN;
-
-  const rangeText =
-    rangeStart && rangeEnd
-      ? `Begins ${fmtRangeTime(rangeStart)} · ends ${fmtRangeTime(rangeEnd)}`
-      : "Window pending";
-
-  return (
-    <Modal
-      animationType="slide"
-      onRequestClose={onClose}
-      transparent
-      visible={open}
-    >
-      <Pressable
-        onPress={onClose}
-        style={{ flex: 1, backgroundColor: "rgba(14,19,17,0.58)" }}
-      />
-      <View
-        style={{
-          backgroundColor: sheetBg,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          paddingTop: 10,
-          paddingBottom: Math.max(insets.bottom, 18) + 14,
-          borderTopWidth: 1,
-          borderTopColor: hairline,
-        }}
-      >
-        <View
-          style={{
-            width: 32,
-            height: 3,
-            borderRadius: 2,
-            backgroundColor: hairline,
-            alignSelf: "center",
-            marginBottom: 24,
-          }}
-        />
-
-        <View style={{ paddingHorizontal: 24 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              gap: 16,
-            }}
-          >
-            <View style={{ flex: 1, gap: 8 }}>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "700",
-                  letterSpacing: 0.6,
-                  color: muted,
-                }}
-              >
-                Log prayer
-              </Text>
-              <Text
-                style={{
-                  fontFamily: "LibreBaskerville-Bold",
-                  fontSize: 36,
-                  lineHeight: 42,
-                  color: fg,
-                }}
-              >
-                {prayer ? PRAYER_LABEL[prayer] : ""}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "600",
-                  color: muted,
-                  fontVariant: ["tabular-nums"],
-                  marginTop: 2,
-                }}
-              >
-                {rangeText}
-              </Text>
-            </View>
-            <Pressable
-              hitSlop={10}
-              onPress={onClose}
-              style={({ pressed }) => ({
-                width: 34,
-                height: 34,
-                borderRadius: 17,
-                borderWidth: 1,
-                borderColor: hairline,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: pressed ? pressedBg : "transparent",
-              })}
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  lineHeight: 20,
-                  color: muted,
-                  fontWeight: "400",
-                }}
-              >
-                ×
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View
-          style={{
-            height: 1,
-            marginTop: 24,
-            marginHorizontal: 24,
-            backgroundColor: hairline,
-          }}
-        />
-
-        <View>
-          {LOG_STATUS_OPTIONS.map((statusOption, idx) => {
-            const selected = existing === statusOption;
-            const isLast = idx === LOG_STATUS_OPTIONS.length - 1;
-            return (
-              <Pressable
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-                key={statusOption}
-                onPress={() => prayer && onPick(prayer, statusOption)}
-                style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  paddingVertical: 20,
-                  paddingHorizontal: 24,
-                  borderBottomWidth: isLast ? 0 : 1,
-                  borderBottomColor: hairline,
-                  backgroundColor: pressed ? pressedBg : "transparent",
-                })}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 18,
-                    flex: 1,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: "LibreBaskerville-Bold",
-                      fontSize: 13,
-                      color: selected ? accent : subtle,
-                      width: 22,
-                      fontVariant: ["tabular-nums"],
-                    }}
-                  >
-                    {ROMAN_NUMERALS[idx]}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: selected ? "700" : "500",
-                      color: selected ? accent : fg,
-                    }}
-                  >
-                    {STATUS_LABEL[statusOption]}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 9,
-                    borderWidth: 1,
-                    borderColor: selected ? accent : subtle,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: selected ? accent : "transparent",
-                  }}
-                >
-                  {selected ? (
-                    <View
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: 3,
-                        backgroundColor: "#FFFFFF",
-                      }}
-                    />
-                  ) : null}
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {existing ? (
-          <View
-            style={{
-              marginTop: 8,
-              marginHorizontal: 24,
-              paddingTop: 16,
-              borderTopWidth: 1,
-              borderTopColor: hairline,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Text
-              style={{
-                flex: 1,
-                color: muted,
-                fontSize: 12,
-                lineHeight: 17,
-              }}
-            >
-              Currently {STATUS_LABEL[existing].toLowerCase()}
-            </Text>
-            <Pressable
-              onPress={() => prayer && onClear(prayer)}
-              style={({ pressed }) => ({
-                paddingHorizontal: 4,
-                paddingVertical: 9,
-                backgroundColor: pressed ? pressedBg : "transparent",
-              })}
-            >
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "700",
-                  color: muted,
-                  textDecorationLine: "underline",
-                }}
-              >
-                Clear log
-              </Text>
-            </Pressable>
-          </View>
-        ) : null}
-      </View>
-    </Modal>
   );
 }
