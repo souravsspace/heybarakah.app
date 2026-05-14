@@ -105,19 +105,20 @@ function fmt12(time: string) {
   return `${hour}:${pad(m)} ${period}`;
 }
 
+function fmt12FromDate(d: Date) {
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const period = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}:${pad(m)} ${period}`;
+}
+
 function fmtRangeTime(date: Date): string {
   const h = date.getHours();
   const m = date.getMinutes();
   const period = h >= 12 ? "p" : "a";
   const hour = h % 12 === 0 ? 12 : h % 12;
   return `${hour}:${pad(m)}${period}`;
-}
-
-function formatWindowRange(start: Date | null, end: Date | null): string {
-  if (!(start && end)) {
-    return "Window pending";
-  }
-  return `${fmtRangeTime(start)} to ${fmtRangeTime(end)}`;
 }
 
 function windowProgress(start: Date | null, end: Date | null): number {
@@ -247,6 +248,25 @@ export default function Home() {
   const logPrayer = useLogPrayer();
   const clearPrayer = useClearPrayer();
 
+  const prayedAtFor = useCallback(
+    (prayer: PrayerName): number | null => {
+      const row = realWeek.rows.find(
+        (r) => r.date === today && r.prayer === prayer
+      );
+      return row?.prayedAt ?? null;
+    },
+    [realWeek.rows, today]
+  );
+
+  const loggedToday = useMemo(
+    () =>
+      PRAYER_ORDER.reduce(
+        (n, p) => n + (realWeek.getStatus(today, p) ? 1 : 0),
+        0
+      ),
+    [realWeek, today]
+  );
+
   const tomorrowFajr = useMemo(() => {
     const idx = prayerTimes.findIndex((d) => d.date === today);
     return idx >= 0 ? (prayerTimes[idx + 1]?.timings.fajr ?? null) : null;
@@ -352,7 +372,6 @@ export default function Home() {
     active && !realWeek.getStatus(today, active) ? active : null;
 
   const heroLabel = activeUnlogged ? "In progress" : "Next prayer";
-  const focusedPrayer = active ?? nextPrayer?.name ?? PRAYER_ORDER[0];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -534,12 +553,12 @@ export default function Home() {
           ) : null}
         </View>
 
-        {/* Today board: compact prayer log */}
+        {/* Today ledger: typeset prayer schedule */}
         <View
           style={{
             paddingHorizontal: 20,
-            marginTop: 28,
-            gap: 12,
+            marginTop: 32,
+            gap: 14,
           }}
         >
           <View
@@ -565,42 +584,32 @@ export default function Home() {
                 fontSize: 10,
                 fontWeight: "700",
                 letterSpacing: 1.6,
-                color: colors.primary,
+                color: colors.inkSubtle,
                 textTransform: "uppercase",
+                fontVariant: ["tabular-nums"],
               }}
             >
-              Log prayer
+              {`${loggedToday} of 5 logged`}
             </Text>
           </View>
 
-          <View
-            style={{
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.card,
-              paddingHorizontal: 10,
-              paddingVertical: 10,
-              overflow: "hidden",
-            }}
-          >
+          <View>
             {PRAYER_ORDER.map((pname, i) => {
               const status = realWeek.getStatus(today, pname);
               const start = prayerDateFor(pname);
               const end = windowEndFor(pname);
               const isPast = start ? start.getTime() <= Date.now() : false;
-              const isFocused = focusedPrayer === pname;
+              const isActive = activeUnlogged === pname;
               return (
-                <PrayerSlot
+                <LedgerRow
                   colors={colors}
-                  index={i + 1}
+                  isActive={isActive}
                   isFirst={i === 0}
-                  isFocused={isFocused}
                   isPast={isPast}
                   key={pname}
                   loading={loading}
                   onPress={() => {
-                    if (activeUnlogged === pname) {
+                    if (isActive) {
                       onMarkPrayed(pname).catch(() => undefined);
                       return;
                     }
@@ -608,9 +617,11 @@ export default function Home() {
                       setSheet(pname);
                     }
                   }}
+                  prayedAt={prayedAtFor(pname)}
                   prayer={pname}
                   progress={windowProgress(start, end)}
-                  range={formatWindowRange(start, end)}
+                  rangeEnd={end}
+                  rangeStart={start}
                   status={status}
                   time={todayPrayerTimes?.timings[pname]}
                 />
@@ -633,237 +644,239 @@ export default function Home() {
   );
 }
 
-function PrayerSlot({
+function LedgerRow({
   colors,
-  index,
   prayer,
   time,
-  isFocused,
+  rangeStart,
+  rangeEnd,
+  isActive,
   isPast,
   isFirst,
   status,
+  prayedAt,
   loading,
   progress,
-  range,
   onPress,
 }: {
   colors: ThemeColors;
-  index: number;
   prayer: PrayerName;
   time: string | undefined;
-  isFocused: boolean;
+  rangeStart: Date | null;
+  rangeEnd: Date | null;
+  isActive: boolean;
   isPast: boolean;
   isFirst: boolean;
   status: PrayerStatus | undefined;
+  prayedAt: number | null;
   loading: boolean;
   progress: number;
-  range: string;
   onPress: () => void;
 }) {
-  const logged = !!status;
-  const rowBg = isFocused ? colors.primarySoft : colors.card;
-  const pressedBg = isFocused ? colors.primarySoft : colors.neutralSoft;
+  const rangeText =
+    rangeStart && rangeEnd
+      ? `BEGINS ${fmtRangeTime(rangeStart).toUpperCase()} · ENDS ${fmtRangeTime(rangeEnd).toUpperCase()}`
+      : "WINDOW PENDING";
+
+  const nameColor =
+    status === "missed"
+      ? colors.inkSubtle
+      : isActive
+        ? colors.primary
+        : colors.ink;
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        minHeight: isFocused ? 104 : 78,
-        paddingHorizontal: 16,
-        paddingVertical: isFocused ? 18 : 16,
-        borderRadius: 14,
+        paddingVertical: 18,
         borderTopWidth: isFirst ? 0 : 1,
         borderTopColor: colors.divider,
-        backgroundColor: pressed ? pressedBg : rowBg,
-        justifyContent: "space-between",
+        backgroundColor: pressed ? colors.neutralSoft : "transparent",
       })}
     >
       <View
         style={{
           flexDirection: "row",
-          alignItems: "center",
+          alignItems: "flex-start",
           justifyContent: "space-between",
-          gap: 18,
+          gap: 16,
         }}
       >
-        <View style={{ flex: 1, gap: 9 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 14,
-            }}
-          >
-            <View
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 13,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 1,
-                borderColor: isFocused ? colors.primary : colors.divider,
-                backgroundColor: isFocused
-                  ? colors.primary
-                  : colors.surfaceSoft,
-              }}
-            >
-              <Text
-                style={{
-                  color: isFocused ? colors.bg : colors.inkSubtle,
-                  fontSize: 10,
-                  fontWeight: "700",
-                  fontVariant: ["tabular-nums"],
-                }}
-              >
-                {pad(index)}
-              </Text>
-            </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text
-                style={{
-                  color:
-                    status === "missed"
-                      ? colors.inkSubtle
-                      : isFocused
-                        ? colors.primary
-                        : colors.ink,
-                  fontFamily: "Inter",
-                  fontSize: isFocused ? 20 : 18,
-                  fontWeight: isFocused || logged ? "700" : "600",
-                  lineHeight: isFocused ? 25 : 23,
-                }}
-              >
-                {PRAYER_LABEL[prayer]}
-              </Text>
-              <Text
-                style={{
-                  color: isFocused ? colors.inkMuted : colors.inkSubtle,
-                  fontSize: 11,
-                  fontStyle: status === "late" ? "italic" : "normal",
-                  fontVariant: ["tabular-nums"],
-                  fontWeight: "600",
-                  letterSpacing: status === "qada" ? 1 : 0.2,
-                  textTransform: status === "qada" ? "uppercase" : "none",
-                }}
-              >
-                {range}
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View style={{ alignItems: "flex-end", gap: 8, minWidth: 70 }}>
+        <View style={{ flex: 1, gap: 6 }}>
           <Text
             style={{
-              color: status === "missed" ? colors.inkSubtle : colors.ink,
-              fontSize: 16,
-              lineHeight: 20,
-              fontVariant: ["tabular-nums"],
-              fontWeight: "700",
+              fontFamily: "LibreBaskerville-Bold",
+              fontSize: 22,
+              lineHeight: 26,
+              color: nameColor,
             }}
           >
-            {time ? fmt12(time) : loading ? "…" : "—"}
+            {PRAYER_LABEL[prayer]}
           </Text>
-          <StatusGlyph
+          <View>
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 1.6,
+                color: colors.inkSubtle,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {rangeText}
+            </Text>
+            {isActive ? (
+              <View
+                style={{
+                  height: 1,
+                  marginTop: 5,
+                  backgroundColor: colors.divider,
+                }}
+              >
+                <View
+                  style={{
+                    height: 1,
+                    width: `${Math.max(4, progress * 100)}%`,
+                    backgroundColor: colors.primary,
+                  }}
+                />
+              </View>
+            ) : null}
+          </View>
+        </View>
+        <View
+          style={{
+            alignItems: "flex-end",
+            minWidth: 96,
+            paddingTop: 4,
+          }}
+        >
+          <RightAtom
             colors={colors}
+            isActive={isActive}
             isPast={isPast}
             loading={loading}
-            showLabel={isFocused}
+            prayedAt={prayedAt}
             status={status}
+            time={time}
           />
         </View>
       </View>
-      {isFocused ? (
-        <View
-          style={{
-            height: 2,
-            marginLeft: 40,
-            marginRight: 2,
-            marginTop: 16,
-            borderRadius: 999,
-            backgroundColor: colors.surface,
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              width: `${Math.max(6, progress * 100)}%`,
-              height: "100%",
-              backgroundColor: colors.primary,
-              opacity: status ? 0.45 : 1,
-            }}
-          />
-        </View>
-      ) : null}
     </Pressable>
   );
 }
 
-function StatusGlyph({
+function RightAtom({
   colors,
   status,
+  time,
+  prayedAt,
+  isActive,
   isPast,
   loading,
-  showLabel = false,
 }: {
   colors: ThemeColors;
   status: PrayerStatus | undefined;
+  time: string | undefined;
+  prayedAt: number | null;
+  isActive: boolean;
   isPast: boolean;
   loading: boolean;
-  showLabel?: boolean;
 }) {
-  if (status === "on_time") {
+  if (!status) {
     return (
-      <StatusPill
-        colors={colors}
-        label={showLabel ? "On time" : "Done"}
-        tone="success"
-      />
-    );
-  }
-  if (status) {
-    return <StatusPill colors={colors} label={STATUS_LABEL[status]} />;
-  }
-  if (isPast) {
-    return <StatusPill colors={colors} label="Log" tone="action" />;
-  }
-  return <StatusPill colors={colors} label={loading ? "…" : "Later"} />;
-}
-
-function StatusPill({
-  colors,
-  label,
-  tone = "muted",
-}: {
-  colors: ThemeColors;
-  label: string;
-  tone?: "action" | "muted" | "success";
-}) {
-  const active = tone === "action" || tone === "success";
-  return (
-    <View
-      style={{
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: active ? colors.primary : colors.divider,
-        backgroundColor: active ? colors.primarySoft : colors.surfaceSoft,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-      }}
-    >
       <Text
         style={{
-          color: active ? colors.primary : colors.inkMuted,
-          fontSize: 10,
+          fontSize: 18,
           fontWeight: "700",
-          letterSpacing: 0.6,
-          lineHeight: 12,
-          textTransform: "uppercase",
+          fontVariant: ["tabular-nums"],
+          color: isActive
+            ? colors.primary
+            : isPast
+              ? colors.inkSubtle
+              : colors.ink,
         }}
       >
-        {label}
+        {time ? fmt12(time) : loading ? "…" : "—"}
       </Text>
-    </View>
+    );
+  }
+  if (status === "on_time") {
+    return (
+      <View style={{ alignItems: "flex-end", gap: 3 }}>
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "700",
+            color: colors.primary,
+            letterSpacing: 0.4,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {prayedAt ? `prayed ${fmt12FromDate(new Date(prayedAt))}` : "prayed"}
+        </Text>
+        <Text
+          style={{
+            fontSize: 11,
+            color: colors.inkSubtle,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {time ? fmt12(time) : ""}
+        </Text>
+      </View>
+    );
+  }
+  if (status === "late") {
+    return (
+      <View style={{ alignItems: "flex-end", gap: 3 }}>
+        <Text
+          style={{
+            fontSize: 11,
+            color: colors.inkMuted,
+            fontStyle: "italic",
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {prayedAt ? `late · ${fmt12FromDate(new Date(prayedAt))}` : "late"}
+        </Text>
+        <Text
+          style={{
+            fontSize: 11,
+            color: colors.inkSubtle,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {time ? fmt12(time) : ""}
+        </Text>
+      </View>
+    );
+  }
+  if (status === "qada") {
+    return (
+      <Text
+        style={{
+          fontSize: 10,
+          fontWeight: "700",
+          color: colors.inkMuted,
+          letterSpacing: 1.6,
+        }}
+      >
+        QADĀ
+      </Text>
+    );
+  }
+  return (
+    <Text
+      style={{
+        fontSize: 11,
+        color: colors.inkSubtle,
+        fontStyle: "italic",
+      }}
+    >
+      passed
+    </Text>
   );
 }
 
