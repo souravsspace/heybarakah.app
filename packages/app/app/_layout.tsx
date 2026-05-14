@@ -70,13 +70,14 @@ export default function RootLayout() {
                       name="log-prayer"
                       options={{
                         presentation: "formSheet",
-                        sheetAllowedDetents: [0.55, 0.92],
+                        sheetAllowedDetents: [0.62, 0.95],
                         sheetInitialDetentIndex: 0,
                         sheetGrabberVisible: true,
                         sheetCornerRadius: 24,
                         sheetLargestUndimmedDetentIndex: "none",
                         gestureEnabled: true,
                         headerShown: false,
+                        contentStyle: { backgroundColor: "#0E1311" },
                       }}
                     />
                   </Stack>
