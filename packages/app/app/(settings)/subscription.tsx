@@ -11,17 +11,10 @@ import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 type ProductId = "yearly" | "monthly" | "family" | "lifetime";
 
 const PLAN_LABEL: Record<ProductId, string> = {
-  yearly: "Barakah Premium",
-  monthly: "Barakah Premium",
-  family: "Barakah Family",
-  lifetime: "Barakah Lifetime",
-};
-
-const PLAN_PRICE: Record<ProductId, { amount: string; period: string }> = {
-  yearly: { amount: "$39.99", period: "/year" },
-  monthly: { amount: "$4.99", period: "/month" },
-  family: { amount: "$59.99", period: "/year" },
-  lifetime: { amount: "$99.99", period: "one-time" },
+  yearly: "Premium",
+  monthly: "Premium",
+  family: "Family",
+  lifetime: "Lifetime",
 };
 
 const BENEFITS: { sf: string; title: string; subtitle: string }[] = [
@@ -46,21 +39,6 @@ const BENEFITS: { sf: string; title: string; subtitle: string }[] = [
     subtitle: "Sync across all your devices.",
   },
 ];
-
-function formatDate(iso: string | undefined): string | null {
-  if (!iso) {
-    return null;
-  }
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return null;
-  }
-  return d.toLocaleDateString(undefined, {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 export default function Subscription() {
   const router = useRouter();
@@ -113,14 +91,7 @@ export default function Subscription() {
         />
         <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
           {isPremium ? (
-            <PlanCard
-              activatedAt={subscription?.activatedAt ?? subscription?.claimedAt}
-              colors={colors}
-              expiresAt={subscription?.expiresAt}
-              onManage={manage}
-              onRestore={restore}
-              productId={productId}
-            />
+            <PlanCard colors={colors} productId={productId} />
           ) : (
             <UpgradeCard
               colors={colors}
@@ -178,30 +149,21 @@ export default function Subscription() {
 }
 
 function PlanCard({
-  activatedAt,
   colors,
-  expiresAt,
-  onManage,
-  onRestore,
   productId,
 }: {
-  activatedAt: string | undefined;
   colors: ThemeColors;
-  expiresAt: string | undefined;
-  onManage: () => void;
-  onRestore: () => void;
   productId: ProductId;
 }) {
   const planName = PLAN_LABEL[productId];
-  const { amount, period } = PLAN_PRICE[productId];
-  const renewsDate = formatDate(expiresAt);
-  const startedDate = formatDate(activatedAt);
-  const billingDescriptor =
-    productId === "lifetime"
-      ? `${amount} · One-time purchase`
-      : `${amount}${period} · ${periodLabel(productId)} billing`;
-  const nextChargeValue =
-    productId === "lifetime" ? "Never" : (renewsDate ?? "Auto-renews");
+  const cadence =
+    productId === "yearly"
+      ? "Yearly"
+      : productId === "family"
+        ? "Family · Yearly"
+        : productId === "lifetime"
+          ? "Lifetime access"
+          : "Monthly";
 
   return (
     <View
@@ -210,176 +172,56 @@ function PlanCard({
         borderWidth: 1,
         borderColor: colors.border,
         backgroundColor: colors.card,
-        overflow: "hidden",
+        paddingHorizontal: 24,
+        paddingVertical: 28,
+        gap: 16,
       }}
     >
-      <View style={{ flexDirection: "row" }}>
-        <View style={{ width: 3, backgroundColor: colors.primary }} />
-        <View style={{ flex: 1, padding: 22, gap: 14 }}>
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: "700",
-              letterSpacing: 2,
-              color: colors.primary,
-              textTransform: "uppercase",
-            }}
-          >
-            Active subscription
-          </Text>
-
-          <Text
-            style={{
-              fontFamily: "LibreBaskerville-Bold",
-              fontSize: 32,
-              color: colors.ink,
-              letterSpacing: -0.5,
-              lineHeight: 36,
-            }}
-          >
-            {planName}
-          </Text>
-
-          <Text
-            style={{
-              fontSize: 13,
-              color: colors.inkMuted,
-              letterSpacing: 0.1,
-            }}
-          >
-            {billingDescriptor}
-          </Text>
-        </View>
-      </View>
-
-      <View
-        style={{
-          height: 1,
-          backgroundColor: colors.divider,
-          marginHorizontal: 22,
-        }}
-      />
-
-      <View
-        style={{
-          flexDirection: "row",
-          paddingHorizontal: 22,
-          paddingVertical: 18,
-        }}
-      >
-        <MetaCell colors={colors} label="Next charge" value={nextChargeValue} />
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <View
           style={{
-            width: 1,
-            backgroundColor: colors.divider,
-            marginHorizontal: 16,
+            width: 6,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: colors.primary,
           }}
         />
-        <MetaCell colors={colors} label="Started" value={startedDate ?? "—"} />
+        <Text
+          style={{
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 2,
+            color: colors.primary,
+            textTransform: "uppercase",
+          }}
+        >
+          Active plan
+        </Text>
       </View>
 
-      <View
-        style={{
-          height: 1,
-          backgroundColor: colors.divider,
-          marginHorizontal: 22,
-        }}
-      />
-
-      <View
-        style={{
-          flexDirection: "row",
-          paddingHorizontal: 22,
-          paddingVertical: 14,
-          alignItems: "center",
-        }}
-      >
-        <InlineAction
-          colors={colors}
-          label="Manage subscription"
-          onPress={onManage}
-        />
-        <View style={{ flex: 1 }} />
-        <InlineAction colors={colors} label="Restore" onPress={onRestore} />
-      </View>
-    </View>
-  );
-}
-
-function periodLabel(productId: ProductId): string {
-  switch (productId) {
-    case "yearly":
-      return "Yearly";
-    case "family":
-      return "Yearly family";
-    case "lifetime":
-      return "Lifetime";
-    default:
-      return "Monthly";
-  }
-}
-
-function MetaCell({
-  colors,
-  label,
-  value,
-}: {
-  colors: ThemeColors;
-  label: string;
-  value: string;
-}) {
-  return (
-    <View style={{ flex: 1, gap: 6 }}>
-      <Text
-        style={{
-          fontSize: 9,
-          fontWeight: "700",
-          letterSpacing: 1.4,
-          color: colors.inkMuted,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </Text>
-      <Text
-        numberOfLines={1}
-        style={{
-          fontSize: 14,
-          fontWeight: "600",
-          color: colors.ink,
-        }}
-      >
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-function InlineAction({
-  colors,
-  label,
-  onPress,
-}: {
-  colors: ThemeColors;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable hitSlop={8} onPress={onPress}>
-      {({ pressed }) => (
+      <View style={{ gap: 6 }}>
+        <Text
+          style={{
+            fontFamily: "LibreBaskerville-Bold",
+            fontSize: 36,
+            color: colors.ink,
+            letterSpacing: -0.6,
+            lineHeight: 40,
+          }}
+        >
+          {planName}
+        </Text>
         <Text
           style={{
             fontSize: 13,
-            fontWeight: "700",
-            color: colors.ink,
-            letterSpacing: 0.2,
-            opacity: pressed ? 0.5 : 1,
+            color: colors.inkMuted,
+            letterSpacing: 0.1,
           }}
         >
-          {label}
+          {cadence}
         </Text>
-      )}
-    </Pressable>
+      </View>
+    </View>
   );
 }
 
