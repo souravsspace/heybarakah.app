@@ -267,6 +267,22 @@ export default function Home() {
     [realWeek, today]
   );
 
+  const weekDates = useMemo(() => {
+    const out: { key: string; label: string; dayNum: number }[] = [];
+    const base = new Date(`${today}T00:00:00`);
+    const dayLetters = ["S", "M", "T", "W", "T", "F", "S"];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      out.push({
+        key: d.toISOString().slice(0, 10),
+        label: dayLetters[d.getDay()],
+        dayNum: d.getDate(),
+      });
+    }
+    return out;
+  }, [today]);
+
   const tomorrowFajr = useMemo(() => {
     const idx = prayerTimes.findIndex((d) => d.date === today);
     return idx >= 0 ? (prayerTimes[idx + 1]?.timings.fajr ?? null) : null;
@@ -629,6 +645,14 @@ export default function Home() {
             })}
           </View>
         </View>
+
+        <WeekPulse
+          colors={colors}
+          dates={weekDates}
+          getStatus={realWeek.getStatus}
+          today={today}
+          totalLogged={realWeek.totalLogged}
+        />
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
 
@@ -689,7 +713,7 @@ function LedgerRow({
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        paddingVertical: 18,
+        paddingVertical: 22,
         borderTopWidth: isFirst ? 0 : 1,
         borderTopColor: colors.divider,
         backgroundColor: pressed ? colors.neutralSoft : "transparent",
@@ -703,7 +727,7 @@ function LedgerRow({
           gap: 16,
         }}
       >
-        <View style={{ flex: 1, gap: 6 }}>
+        <View style={{ flex: 1, gap: 9 }}>
           <Text
             style={{
               fontFamily: "LibreBaskerville-Bold",
@@ -877,6 +901,235 @@ function RightAtom({
     >
       passed
     </Text>
+  );
+}
+
+function WeekPulse({
+  colors,
+  dates,
+  getStatus,
+  today,
+  totalLogged,
+}: {
+  colors: ThemeColors;
+  dates: { key: string; label: string; dayNum: number }[];
+  getStatus: (date: string, prayer: PrayerName) => PrayerStatus | undefined;
+  today: string;
+  totalLogged: number;
+}) {
+  return (
+    <View
+      style={{
+        paddingHorizontal: 20,
+        marginTop: 36,
+        gap: 16,
+      }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 2.4,
+            color: colors.inkMuted,
+            textTransform: "uppercase",
+          }}
+        >
+          This week
+        </Text>
+        <Text
+          style={{
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.6,
+            color: colors.inkSubtle,
+            textTransform: "uppercase",
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {`${totalLogged} prayers`}
+        </Text>
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "stretch",
+          justifyContent: "space-between",
+          paddingVertical: 14,
+          borderTopWidth: 1,
+          borderTopColor: colors.divider,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.divider,
+        }}
+      >
+        {dates.map((d) => {
+          const isToday = d.key === today;
+          const isPast = d.key < today;
+          return (
+            <View
+              key={d.key}
+              style={{
+                flex: 1,
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "700",
+                  letterSpacing: 1.2,
+                  color: isToday ? colors.primary : colors.inkSubtle,
+                  textTransform: "uppercase",
+                }}
+              >
+                {d.label}
+              </Text>
+              <View style={{ gap: 5, alignItems: "center" }}>
+                {PRAYER_ORDER.map((p) => {
+                  const s = getStatus(d.key, p);
+                  return (
+                    <PulseDot
+                      colors={colors}
+                      isFuture={!(isPast || isToday)}
+                      isPast={isPast}
+                      key={p}
+                      status={s}
+                    />
+                  );
+                })}
+              </View>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "700",
+                  color: isToday ? colors.primary : colors.inkSubtle,
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
+                {d.dayNum}
+              </Text>
+              {isToday ? (
+                <View
+                  style={{
+                    height: 1,
+                    width: 14,
+                    backgroundColor: colors.primary,
+                    marginTop: -4,
+                  }}
+                />
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
+
+      <Text
+        style={{
+          fontFamily: "LibreBaskerville-Bold",
+          fontSize: 14,
+          lineHeight: 22,
+          color: colors.inkMuted,
+          textAlign: "center",
+          paddingHorizontal: 8,
+          marginTop: 4,
+          fontWeight: "400",
+        }}
+      >
+        “Indeed, prayer prohibits immorality and wrongdoing.”
+      </Text>
+      <Text
+        style={{
+          fontSize: 9,
+          fontWeight: "700",
+          letterSpacing: 2,
+          color: colors.inkSubtle,
+          textTransform: "uppercase",
+          textAlign: "center",
+          marginTop: -10,
+        }}
+      >
+        Qur'an 29:45
+      </Text>
+    </View>
+  );
+}
+
+function PulseDot({
+  colors,
+  status,
+  isPast,
+  isFuture,
+}: {
+  colors: ThemeColors;
+  status: PrayerStatus | undefined;
+  isPast: boolean;
+  isFuture: boolean;
+}) {
+  if (status === "on_time") {
+    return (
+      <View
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: colors.primary,
+        }}
+      />
+    );
+  }
+  if (status === "late" || status === "qada") {
+    return (
+      <View
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 3,
+          borderWidth: 1,
+          borderColor: colors.primary,
+        }}
+      />
+    );
+  }
+  if (status === "missed" || isPast) {
+    return (
+      <View
+        style={{
+          width: 6,
+          height: 1,
+          backgroundColor: colors.inkSubtle,
+        }}
+      />
+    );
+  }
+  if (isFuture) {
+    return (
+      <View
+        style={{
+          width: 3,
+          height: 3,
+          borderRadius: 1.5,
+          backgroundColor: colors.divider,
+        }}
+      />
+    );
+  }
+  return (
+    <View
+      style={{
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: colors.divider,
+      }}
+    />
   );
 }
 
