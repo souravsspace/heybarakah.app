@@ -12,12 +12,12 @@ import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_env from "../lib/env.js";
 import type * as lib_healthCheck from "../lib/healthCheck.js";
-import type * as lib_lockedApps from "../lib/lockedApps.js";
 import type * as lib_marketing from "../lib/marketing.js";
 import type * as lib_polar from "../lib/polar.js";
 import type * as lib_prayerLogs from "../lib/prayerLogs.js";
 import type * as lib_prayerTimes from "../lib/prayerTimes.js";
 import type * as lib_resend from "../lib/resend.js";
+import type * as lib_shieldSelection from "../lib/shieldSelection.js";
 import type * as lib_subscriptions from "../lib/subscriptions.js";
 import type * as lib_users from "../lib/users.js";
 
@@ -32,12 +32,12 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/env": typeof lib_env;
   "lib/healthCheck": typeof lib_healthCheck;
-  "lib/lockedApps": typeof lib_lockedApps;
   "lib/marketing": typeof lib_marketing;
   "lib/polar": typeof lib_polar;
   "lib/prayerLogs": typeof lib_prayerLogs;
   "lib/prayerTimes": typeof lib_prayerTimes;
   "lib/resend": typeof lib_resend;
+  "lib/shieldSelection": typeof lib_shieldSelection;
   "lib/subscriptions": typeof lib_subscriptions;
   "lib/users": typeof lib_users;
 }>;

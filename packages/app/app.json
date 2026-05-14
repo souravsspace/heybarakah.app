@@ -10,7 +10,14 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.souravsspace.Barakah"
+      "bundleIdentifier": "com.souravsspace.Barakah",
+      "appleTeamId": "TODO_APPLE_TEAM_ID",
+      "entitlements": {
+        "com.apple.developer.family-controls": true,
+        "com.apple.security.application-groups": [
+          "group.com.souravsspace.Barakah.shield"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -46,11 +53,82 @@
         {
           "photosPermission": "Allow Barakah to access your photos to set a profile picture."
         }
-      ]
+      ],
+      [
+        "expo-app-blocker",
+        {
+          "ios": {
+            "appGroup": "group.com.souravsspace.Barakah.shield",
+            "shield": {
+              "title": "Quiet at salah.",
+              "subtitle": "{appName} rests for prayer.",
+              "primaryButtonLabel": "Hold for du'a",
+              "secondaryButtonLabel": null,
+              "primaryButtonColor": "#29603E",
+              "titleColor": "#0A0A0A",
+              "subtitleColor": "#6B7280",
+              "backgroundColor": "#FFFFFF",
+              "backgroundBlurStyle": "systemThickMaterial",
+              "countSuffix": " {count} apps are quiet.",
+              "tempUnlockTitle": "Almost there.",
+              "tempUnlockSubtitle": "Quiet lifts in a moment.",
+              "tempUnlockButtonLabel": "OK"
+            },
+            "notification": {
+              "title": "Barakah",
+              "body": "Return to complete your prayer.",
+              "attachIcon": false
+            }
+          }
+        }
+      ],
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "DeviceActivityMonitor",
+                  "bundleIdentifier": "com.souravsspace.Barakah.DeviceActivityMonitor",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "targetName": "ShieldAction",
+                  "bundleIdentifier": "com.souravsspace.Barakah.ShieldAction",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "targetName": "ShieldConfiguration",
+                  "bundleIdentifier": "com.souravsspace.Barakah.ShieldConfiguration",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
     }
   }
 }

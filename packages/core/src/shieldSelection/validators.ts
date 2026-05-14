@@ -12,13 +12,11 @@ export const ALL_WINDOWS = ["fajr", "dhuhr", "asr", "maghrib", "isha"] as const;
 
 export type PrayerWindow = (typeof ALL_WINDOWS)[number];
 
-export const lockedAppFields = {
-  appId: v.string(),
-  bundleId: v.string(),
-  scheme: v.string(),
-  name: v.string(),
-  installed: v.boolean(),
-  enabled: v.boolean(),
+export const shieldSelectionFields = {
+  iosSelectionData: v.optional(v.string()),
+  iosItemCount: v.optional(v.number()),
+  androidPackageNames: v.optional(v.array(v.string())),
   windows: v.array(prayerWindow),
-  addedAt: v.number(),
+  enabled: v.boolean(),
+  updatedAt: v.number(),
 };

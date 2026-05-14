@@ -1,6 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { lockedAppFields } from "../src/lockedApps/validators";
+import { shieldSelectionFields } from "../src/shieldSelection/validators";
 import { productId } from "../src/subscriptions/validators";
 import { profileFields } from "../src/users/validators";
 
@@ -129,7 +129,8 @@ export default defineSchema({
   })
     .index("by_user_date_prayer", ["authUserId", "date", "prayer"])
     .index("by_user_updated", ["authUserId", "updatedAt"]),
-  lockedApps: defineTable({ authUserId: v.string(), ...lockedAppFields })
-    .index("by_user", ["authUserId"])
-    .index("by_user_app", ["authUserId", "appId"]),
+  shieldSelection: defineTable({
+    authUserId: v.string(),
+    ...shieldSelectionFields,
+  }).index("by_user", ["authUserId"]),
 });
