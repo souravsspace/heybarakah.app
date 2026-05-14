@@ -387,7 +387,8 @@ export default function Home() {
           </Text>
           <Text
             style={{
-              fontFamily: "LibreBaskerville-Bold",
+              fontFamily: "Inter",
+              fontWeight: "700",
               fontSize: 26,
               lineHeight: 32,
               color: colors.ink,
