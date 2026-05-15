@@ -46,7 +46,8 @@ function parseTime(baseDate: Date, hhmm: string): Date | null {
     return null;
   }
   const scheduled = new Date(baseDate);
-  scheduled.setHours(hour, minute - LEAD_TIME_MIN, 0, 0);
+  scheduled.setHours(hour, minute, 0, 0);
+  scheduled.setTime(scheduled.getTime() - LEAD_TIME_MIN * 60_000);
   return scheduled;
 }
 
