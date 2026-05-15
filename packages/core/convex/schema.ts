@@ -43,6 +43,7 @@ export default defineSchema({
     invoiceNumber: v.optional(v.string()),
     eventType: v.string(),
     receivedAt: v.string(),
+    confirmedEmailAt: v.optional(v.string()),
     raw: v.optional(v.any()),
   })
     .index("by_polarOrderId", ["polarOrderId"])
