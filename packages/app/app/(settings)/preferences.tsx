@@ -35,7 +35,7 @@ export default function Preferences() {
         >
           <Pressable
             onPress={() => {
-              Haptics.selectionAsync();
+              Haptics.selectionAsync().catch(() => undefined);
               if (router.canGoBack()) {
                 router.back();
               } else {
@@ -204,7 +204,7 @@ function ThemeTile({
   return (
     <Pressable
       onPress={() => {
-        Haptics.selectionAsync();
+        Haptics.selectionAsync().catch(() => undefined);
         onPress();
       }}
       style={{ flex: 1, alignItems: "center", gap: 8 }}
@@ -406,7 +406,7 @@ function ToggleRow({
       <Switch
         ios_backgroundColor={colors.neutralSoft}
         onValueChange={(v) => {
-          Haptics.selectionAsync();
+          Haptics.selectionAsync().catch(() => undefined);
           onValueChange(v);
         }}
         thumbColor="#FFFFFF"
