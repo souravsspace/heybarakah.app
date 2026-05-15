@@ -1,5 +1,8 @@
 import { v } from "convex/values";
-import { profileFields } from "../../src/users/validators";
+import {
+  profileFields,
+  validateProfileInput,
+} from "../../src/users/validators";
 import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
@@ -27,6 +30,7 @@ export const getMyProfile = query({
 export const upsertProfile = mutation({
   args: profileFields,
   handler: async (ctx, args) => {
+    validateProfileInput(args);
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("Not authenticated");
