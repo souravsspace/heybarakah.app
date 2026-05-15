@@ -10,6 +10,7 @@ import type {
   TemporaryUnlockResult,
 } from "expo-app-blocker";
 import React from "react";
+import { Platform } from "react-native";
 
 export type {
   AndroidBlockableApp,
@@ -37,7 +38,7 @@ export const isAppBlockerAvailable = mod !== null;
 const STUB_PERMISSION: PermissionStatus = {
   allGranted: false,
   details: {
-    platform: "ios",
+    platform: Platform.OS === "android" ? "android" : "ios",
     authorized: false,
     status: "notDetermined",
   } as PermissionStatus["details"],
