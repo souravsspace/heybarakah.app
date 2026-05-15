@@ -22,6 +22,10 @@ export const getMySubscription = query({
 export const claimMockSubscription = mutation({
   args: { productId },
   handler: async (ctx, args) => {
+    if (process.env.CONVEX_ENV === "production") {
+      throw new Error("Mock subscriptions are not allowed in production");
+    }
+
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("Not authenticated");
@@ -42,13 +46,14 @@ export const claimMockSubscription = mutation({
       return existing;
     }
 
+    const now = new Date().toISOString();
     const subscriptionId = await ctx.db.insert("subscriptions", {
       authUserId: user._id,
       productId: args.productId,
       status: "active",
       source: "mock",
-      claimedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      claimedAt: now,
+      updatedAt: now,
     });
 
     return await ctx.db.get(subscriptionId);
