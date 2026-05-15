@@ -10,6 +10,7 @@ import {
   validateWebhook,
 } from "../../src/polar";
 import { internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
 import { httpAction, internalMutation } from "../_generated/server";
 import { requireEnv } from "./env";
 import { sendEmail } from "./resend";
@@ -36,7 +37,12 @@ export const recordPaidOrder = internalMutation({
       )
       .unique();
 
+    let orderId: Id<"polarOrders">;
+    let alreadyConfirmed: boolean;
+
     if (existingOrder) {
+      alreadyConfirmed = Boolean(existingOrder.confirmedEmailAt);
+      orderId = existingOrder._id;
       await ctx.db.patch(existingOrder._id, {
         polarCustomerId: args.polarCustomerId,
         customerEmail: args.customerEmail,
@@ -49,7 +55,8 @@ export const recordPaidOrder = internalMutation({
         raw: args.raw,
       });
     } else {
-      await ctx.db.insert(
+      alreadyConfirmed = false;
+      orderId = await ctx.db.insert(
         "polarOrders",
         buildPolarOrderDoc(
           {
@@ -68,12 +75,19 @@ export const recordPaidOrder = internalMutation({
       );
     }
 
-    const existingSub = await ctx.db
-      .query("subscriptions")
-      .withIndex("by_customerEmail", (q) =>
-        q.eq("customerEmail", args.customerEmail)
-      )
-      .unique();
+    const existingSub = args.polarCustomerId
+      ? await ctx.db
+          .query("subscriptions")
+          .withIndex("by_polarCustomerId", (q) =>
+            q.eq("polarCustomerId", args.polarCustomerId)
+          )
+          .unique()
+      : await ctx.db
+          .query("subscriptions")
+          .withIndex("by_customerEmail", (q) =>
+            q.eq("customerEmail", args.customerEmail)
+          )
+          .unique();
 
     if (existingSub) {
       await ctx.db.patch(existingSub._id, {
@@ -86,7 +100,7 @@ export const recordPaidOrder = internalMutation({
         activatedAt: now,
         updatedAt: now,
       });
-      return existingSub._id;
+      return { subId: existingSub._id, orderId, alreadyConfirmed };
     }
 
     const subId = await ctx.db.insert(
@@ -102,7 +116,16 @@ export const recordPaidOrder = internalMutation({
       )
     );
 
-    return subId;
+    return { subId, orderId, alreadyConfirmed };
+  },
+});
+
+export const markOrderEmailConfirmed = internalMutation({
+  args: { orderId: v.id("polarOrders") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.orderId, {
+      confirmedEmailAt: new Date().toISOString(),
+    });
   },
 });
 
@@ -141,7 +164,7 @@ export const webhook = httpAction(async (ctx, request) => {
   const email = rawEmail.toLowerCase().trim();
   const name = order.customer?.name ?? order.billingName ?? null;
 
-  await ctx.runMutation(internal.lib.polar.recordPaidOrder, {
+  const recorded = await ctx.runMutation(internal.lib.polar.recordPaidOrder, {
     polarOrderId: order.id,
     polarCustomerId: order.customer?.id,
     customerEmail: email,
@@ -152,6 +175,10 @@ export const webhook = httpAction(async (ctx, request) => {
     invoiceNumber: order.invoiceNumber ?? undefined,
     raw: order as unknown,
   });
+
+  if (recorded.alreadyConfirmed) {
+    return new Response("ok", { status: 200 });
+  }
 
   const { subject, text, html } = await purchaseEmail({
     name,
@@ -167,8 +194,11 @@ export const webhook = httpAction(async (ctx, request) => {
       html,
       text,
     });
-  } catch {
-    return new Response("email failed", { status: 502 });
+    await ctx.runMutation(internal.lib.polar.markOrderEmailConfirmed, {
+      orderId: recorded.orderId,
+    });
+  } catch (err) {
+    console.error("[polar webhook] purchase email failed", email, err);
   }
 
   return new Response("ok", { status: 200 });

@@ -40,7 +40,7 @@ export default function Calculating() {
   }, []);
 
   return (
-    <ScreenShell scroll={false} showBack={false}>
+    <ScreenShell scroll={false}>
       <View
         className="flex-1 items-center justify-between"
         style={{ paddingTop: 32, paddingBottom: 24 }}

@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { type LayoutChangeEvent, Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 
 interface Point {
@@ -26,7 +26,13 @@ export function AreaChart({
   stroke = "#29603E",
   fill = "#29603E",
 }: AreaChartProps) {
-  const width = 320;
+  const [width, setWidth] = useState(320);
+  const onLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0 && w !== width) {
+      setWidth(w);
+    }
+  };
   const ceil = max ?? Math.max(...data.map((d) => d.value), 1);
 
   const { areaPath, linePath, dots } = useMemo(() => {
@@ -61,10 +67,10 @@ export function AreaChart({
     const area = `${line} L ${pts.at(-1)?.x} ${PAD_TOP + innerH} L ${pts[0].x} ${PAD_TOP + innerH} Z`;
 
     return { areaPath: area, linePath: line, dots: pts };
-  }, [ceil, data, height]);
+  }, [ceil, data, height, width]);
 
   return (
-    <View>
+    <View onLayout={onLayout}>
       <Svg height={height} viewBox={`0 0 ${width} ${height}`} width="100%">
         <Defs>
           <LinearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1">

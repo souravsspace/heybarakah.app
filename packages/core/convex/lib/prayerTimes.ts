@@ -13,7 +13,7 @@ import {
   roundCoordinate,
   slicePrayerDays,
 } from "../../src/prayer";
-import { internal } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import type { Doc } from "../_generated/dataModel";
 import { action, internalMutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
@@ -35,6 +35,16 @@ const args = {
 
 const SUPPORTED_METHODS = new Set<number>(Object.values(ALADHAN_METHOD_IDS));
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const TUNE_PATTERN = /^-?\d+(,-?\d+){0,8}$/;
+
+function isValidTimezone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function validatePrayerRequest(request: {
   latitude: number;
@@ -42,6 +52,7 @@ function validatePrayerRequest(request: {
   timezone: string;
   method: number;
   school: number;
+  tune?: string;
   startDate: string;
   days?: number;
 }) {
@@ -51,7 +62,7 @@ function validatePrayerRequest(request: {
   if (request.longitude < -180 || request.longitude > 180) {
     throw new Error("Invalid longitude");
   }
-  if (!request.timezone.trim()) {
+  if (!(request.timezone.trim() && isValidTimezone(request.timezone))) {
     throw new Error("Invalid timezone");
   }
   if (!SUPPORTED_METHODS.has(request.method)) {
@@ -59,6 +70,9 @@ function validatePrayerRequest(request: {
   }
   if (request.school !== 0 && request.school !== 1) {
     throw new Error("Unsupported school");
+  }
+  if (request.tune !== undefined && !TUNE_PATTERN.test(request.tune)) {
+    throw new Error("Invalid tune format");
   }
   if (!DATE_KEY_PATTERN.test(request.startDate)) {
     throw new Error("Invalid startDate format");
@@ -81,7 +95,7 @@ export const getCachedPrayerTimes = query({
     const hit = await ctx.db
       .query("prayerTimeCaches")
       .withIndex("by_userCacheKey", (q) => q.eq("userCacheKey", userCacheKey))
-      .unique();
+      .first();
 
     if (!hit || hit.expiresAt <= Date.now() || !hit.timings?.length) {
       return null;
@@ -95,6 +109,14 @@ export const refreshPrayerTimes: ReturnType<typeof action> = action({
   args,
   handler: async (ctx, request): Promise<Doc<"prayerTimeCaches"> | null> => {
     validatePrayerRequest(request);
+
+    const cached = await ctx.runQuery(
+      api.lib.prayerTimes.getCachedPrayerTimes,
+      request
+    );
+    if (cached) {
+      return cached;
+    }
 
     const user = await authComponent.safeGetAuthUser(ctx);
     const days = DEFAULT_PRAYER_DAYS;
@@ -232,7 +254,7 @@ export const upsertPrayerTimesCache = internalMutation({
       .withIndex("by_userCacheKey", (q) =>
         q.eq("userCacheKey", request.userCacheKey)
       )
-      .unique();
+      .first();
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -291,7 +313,8 @@ async function fetchAndNormalize(request: {
     }
 
     return slicePrayerDays(parsedDays, request.startDate, request.days);
-  } catch {
+  } catch (err) {
+    console.error("[prayerTimes] AlAdhan fetch failed", err);
     return [];
   }
 }

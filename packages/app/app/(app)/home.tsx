@@ -150,7 +150,16 @@ function useCountdown(target: Date | null) {
     if (!target) {
       return;
     }
-    const id = setInterval(() => setNow(new Date()), 1000);
+    if (target.getTime() - Date.now() <= 0) {
+      return;
+    }
+    const id = setInterval(() => {
+      const current = new Date();
+      setNow(current);
+      if (target.getTime() - current.getTime() <= 0) {
+        clearInterval(id);
+      }
+    }, 1000);
     return () => clearInterval(id);
   }, [target]);
   if (!target) {

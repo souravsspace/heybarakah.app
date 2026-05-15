@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -91,19 +92,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>("system");
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((v) => {
-      if (v === "light" || v === "dark" || v === "system") {
-        setModeState(v);
-      }
-    });
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((v) => {
+        if (v === "light" || v === "dark" || v === "system") {
+          setModeState(v);
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
-  const setMode = (m: ThemeMode) => {
+  const setMode = useCallback((m: ThemeMode) => {
     setModeState(m);
-    AsyncStorage.setItem(STORAGE_KEY, m).catch(() => {
-      // ignore persistence failure — in-memory state still updated
-    });
-  };
+    AsyncStorage.setItem(STORAGE_KEY, m).catch(() => undefined);
+  }, []);
 
   const scheme: ColorScheme = useMemo(() => {
     if (mode === "system") {
@@ -119,7 +120,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       colors: scheme === "dark" ? DARK : LIGHT,
       setMode,
     }),
-    [mode, scheme]
+    [mode, scheme, setMode]
   );
 
   return (

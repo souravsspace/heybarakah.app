@@ -74,7 +74,7 @@ export default function Auth() {
           strictness: state.strictness ?? "full-window",
           plan: "yearly",
           trialStartedAt: state.trialStartedAt ?? new Date().toISOString(),
-          name: state.name ?? "Sana",
+          name: state.name,
         },
       });
     } else {

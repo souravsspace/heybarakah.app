@@ -1,7 +1,12 @@
 import { v } from "convex/values";
-import { prayerWindow } from "../../src/shieldSelection/validators";
+import {
+  ALL_WINDOWS,
+  prayerWindow,
+} from "../../src/shieldSelection/validators";
 import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
+
+const DEFAULT_WINDOWS = [...ALL_WINDOWS];
 
 export const getMine = query({
   args: {},
@@ -45,7 +50,7 @@ export const upsertIos = mutation({
       authUserId: user._id,
       iosSelectionData: args.iosSelectionData,
       iosItemCount: args.iosItemCount,
-      windows: ["fajr", "dhuhr", "asr", "maghrib", "isha"],
+      windows: DEFAULT_WINDOWS,
       enabled: args.iosItemCount > 0,
       updatedAt: now,
     });
@@ -75,7 +80,7 @@ export const upsertAndroid = mutation({
     return await ctx.db.insert("shieldSelection", {
       authUserId: user._id,
       androidPackageNames: args.androidPackageNames,
-      windows: ["fajr", "dhuhr", "asr", "maghrib", "isha"],
+      windows: DEFAULT_WINDOWS,
       enabled: args.androidPackageNames.length > 0,
       updatedAt: now,
     });

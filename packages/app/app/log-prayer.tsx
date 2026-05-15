@@ -55,6 +55,11 @@ function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
 
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 function fmtRangeTime(date: Date): string {
   const h = date.getHours();
   const m = date.getMinutes();
@@ -73,7 +78,7 @@ export default function LogPrayerScreen() {
 
   const insets = useSafeAreaInsets();
   const { todayPrayerTimes, prayerTimes } = usePrayerTimes();
-  const week = useWeekLogs(date ?? "");
+  const week = useWeekLogs(date ?? todayKey());
   const logPrayer = useLogPrayer();
   const clearPrayer = useClearPrayer();
 

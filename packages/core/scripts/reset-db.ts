@@ -20,7 +20,10 @@ interface ListTablesOptions {
 
 type ListTables = (options: ListTablesOptions) => Promise<string[]>;
 
-const EMPTY_JSONL_PATH = ".convex-reset-empty.jsonl";
+const EMPTY_JSONL_PATH = new URL(
+  "../.convex-reset-empty.jsonl",
+  import.meta.url
+).pathname;
 const GENERATED_API_PATH = new URL(
   "../convex/_generated/api.d.ts",
   import.meta.url

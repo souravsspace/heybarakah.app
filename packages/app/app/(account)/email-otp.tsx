@@ -40,7 +40,7 @@ export default function EmailOtp() {
     try {
       const { error } = await authClient.emailOtp.sendVerificationOtp({
         email: trimmed,
-        type: "sign-in",
+        type: mode === "signup" ? "email-verification" : "sign-in",
       });
       if (error) {
         Alert.alert("Could not send code", error.message ?? "Try again.");

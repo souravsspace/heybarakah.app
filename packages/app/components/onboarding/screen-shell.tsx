@@ -6,8 +6,6 @@ interface Props {
   footer?: React.ReactNode;
   hero?: React.ReactNode;
   scroll?: boolean;
-  showBack?: boolean;
-  showProgress?: boolean;
   topSafe?: boolean;
   variant?: "default" | "filled-green";
 }

@@ -123,7 +123,7 @@ export default function Locked() {
 
   const toggleWindow = useCallback(
     async (w: PrayerWindow) => {
-      Haptics.selectionAsync();
+      Haptics.selectionAsync().catch(() => undefined);
       const next = windows.includes(w)
         ? windows.filter((x) => x !== w)
         : [...windows, w];
@@ -575,7 +575,16 @@ function PickDoor({
       </View>
     );
   }
-  if (!perm?.allGranted) {
+  if (perm === null) {
+    return (
+      <View style={{ paddingHorizontal: 20, paddingTop: 28 }}>
+        <Text style={{ color: colors.inkMuted, fontSize: 14 }}>
+          Checking permissions…
+        </Text>
+      </View>
+    );
+  }
+  if (!perm.allGranted) {
     const cta =
       Platform.OS === "ios" ? "Enable Screen Time" : "Enable usage access";
     return (

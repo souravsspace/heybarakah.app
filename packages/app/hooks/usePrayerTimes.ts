@@ -2,6 +2,7 @@ import { api } from "@barakah/core/convex/_generated/api";
 import type { PrayerDay } from "@barakah/core/prayer";
 import { useAction, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AppState } from "react-native";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import {
   getCurrentLocation,
@@ -82,20 +83,41 @@ function pickNextPrayer(days: PrayerDay[]) {
     }
   }
 
-  const tomorrow = days[1];
+  const tomorrowDate = new Date(now);
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowKey = `${tomorrowDate.getFullYear()}-${pad2(tomorrowDate.getMonth() + 1)}-${pad2(tomorrowDate.getDate())}`;
+  const tomorrow = days.find((item) => item.date === tomorrowKey);
   if (!tomorrow) {
     return null;
   }
+  const [fh, fm] = tomorrow.timings.fajr.split(":").map(Number);
+  if (Number.isNaN(fh) || Number.isNaN(fm)) {
+    return null;
+  }
+  const at = new Date(now);
+  at.setDate(at.getDate() + 1);
+  at.setHours(fh, fm, 0, 0);
 
   return {
     name: "fajr" as const,
     time: tomorrow.timings.fajr,
-    at: new Date(`${tomorrow.date}T${tomorrow.timings.fajr}:00`),
+    at,
   };
 }
 
 export function usePrayerTimes() {
   const { state } = useOnboardingState();
+  const [today, setToday] = useState(todayDateKey);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (status) => {
+      if (status === "active") {
+        const current = todayDateKey();
+        setToday((prev) => (prev === current ? prev : current));
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   const [location, setLocation] = useState<{
     latitude: number;
@@ -128,10 +150,10 @@ export function usePrayerTimes() {
         location.isBangladesh
       ),
       school: mapSchool(state.madhab as Madhab | undefined),
-      startDate: todayDateKey(),
+      startDate: today,
       days: DEFAULT_DAYS,
     };
-  }, [location, state.calcMethod, state.madhab]);
+  }, [location, state.calcMethod, state.madhab, today]);
 
   const cached = useQuery(
     api.lib.prayerTimes.getCachedPrayerTimes,
@@ -253,10 +275,10 @@ export function usePrayerTimes() {
     return [] as PrayerDay[];
   }, [cached?.timings, refreshResult]);
 
-  const todayPrayerTimes = useMemo(() => {
-    const today = todayDateKey();
-    return prayerTimes.find((item) => item.date === today) ?? null;
-  }, [prayerTimes]);
+  const todayPrayerTimes = useMemo(
+    () => prayerTimes.find((item) => item.date === today) ?? null,
+    [prayerTimes, today]
+  );
 
   const nextPrayer = useMemo(() => pickNextPrayer(prayerTimes), [prayerTimes]);
 

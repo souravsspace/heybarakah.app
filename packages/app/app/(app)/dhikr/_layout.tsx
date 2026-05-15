@@ -91,19 +91,21 @@ function DhikrProvider({ children }: { children: ReactNode }) {
   const [totals, setTotals] = useState<Lifetime>({});
 
   useEffect(() => {
-    AsyncStorage.getItem(LIFETIME_KEY).then((raw) => {
-      if (!raw) {
-        return;
-      }
-      try {
-        const parsed = JSON.parse(raw) as Lifetime;
-        if (parsed && typeof parsed === "object") {
-          setTotals(parsed);
+    AsyncStorage.getItem(LIFETIME_KEY)
+      .then((raw) => {
+        if (!raw) {
+          return;
         }
-      } catch {
-        // ignore malformed
-      }
-    });
+        try {
+          const parsed = JSON.parse(raw) as Lifetime;
+          if (parsed && typeof parsed === "object") {
+            setTotals(parsed);
+          }
+        } catch {
+          // ignore malformed
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
   const addLifetime = useCallback((id: string, n = 1) => {

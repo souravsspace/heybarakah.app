@@ -1,5 +1,25 @@
 import { v } from "convex/values";
 
+export const PROFILE_NAME_MAX_LENGTH = 120;
+export const PROFILE_COMPLETED_AT_MAX_LENGTH = 64;
+
+export function validateProfileInput(input: {
+  name?: string;
+  completedAt?: string;
+}) {
+  if (input.name !== undefined && input.name.length > PROFILE_NAME_MAX_LENGTH) {
+    throw new Error(`name exceeds ${PROFILE_NAME_MAX_LENGTH} characters`);
+  }
+  if (
+    input.completedAt !== undefined &&
+    input.completedAt.length > PROFILE_COMPLETED_AT_MAX_LENGTH
+  ) {
+    throw new Error(
+      `completedAt exceeds ${PROFILE_COMPLETED_AT_MAX_LENGTH} characters`
+    );
+  }
+}
+
 export const profileFields = {
   name: v.optional(v.string()),
   gender: v.optional(v.union(v.literal("male"), v.literal("female"))),
