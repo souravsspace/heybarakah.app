@@ -82,5 +82,3 @@ export function calculateAdhanJsPrayerDays(
     };
   });
 }
-
-export const createAdhanFallbackDays = calculateAdhanJsPrayerDays;
