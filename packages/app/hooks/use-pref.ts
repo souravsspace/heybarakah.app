@@ -16,6 +16,7 @@ export function usePref(key: string, defaultValue: boolean) {
           setValue(false);
         }
       })
+      .catch(() => undefined)
       .finally(() => setHydrated(true));
   }, [key]);
 
