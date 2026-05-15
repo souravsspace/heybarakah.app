@@ -102,7 +102,7 @@ export default function Welcome() {
       Animated.timing(swipe, {
         toValue: { x: exitX, y: exitY },
         duration: 320,
-        easing: Easing.out(Easing.cubic),
+        easing: Easing.out(Easing.ease),
         useNativeDriver: false,
       }).start(({ finished }) => {
         if (finished) {
@@ -179,7 +179,7 @@ export default function Welcome() {
   );
 
   return (
-    <ScreenShell scroll={false} showBack={false} showProgress={false}>
+    <ScreenShell scroll={false}>
       <FadeSlideIn className="flex-1 items-center" delay={120}>
         <View className="items-center gap-xs" style={{ width: columnWidth }}>
           <Text className="text-center font-serif text-display text-ink">
