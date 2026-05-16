@@ -25,5 +25,5 @@ export function lockBoundsMinutes(
 ): { start: number; end: number } {
   const mid = midpointMinutesForPrayer(window, adhanMinutes);
   const half = LOCK_DURATION_MIN / 2;
-  return { start: mid - half, end: mid + half };
+  return { start: Math.floor(mid - half), end: Math.ceil(mid + half) };
 }
