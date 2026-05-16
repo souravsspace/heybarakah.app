@@ -25,6 +25,7 @@ import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import {
   type AndroidBlockableApp,
   BlockedAppsNativeList,
+  clearAllBlocks,
   type FamilyActivityPickerSelectionEvent,
   FamilyActivityPickerView,
   getBlockConfiguration,
@@ -147,6 +148,8 @@ export default function Locked() {
           blockedItems: items,
           isActive: true,
         });
+      } else {
+        clearAllBlocks();
       }
       await upsertIos({
         iosSelectionData: selectionData,
@@ -158,10 +161,9 @@ export default function Locked() {
 
   const onPickerChange = useCallback(
     async (event: FamilyActivityPickerSelectionEvent) => {
-      const filtered = event.items;
-      setIosItems(filtered);
+      setIosItems(event.items);
       setIosSelectionLocal(event.selectionData);
-      await persistIos(filtered, event.selectionData);
+      await persistIos(event.items, event.selectionData);
     },
     [persistIos]
   );
@@ -185,18 +187,25 @@ export default function Locked() {
   const toggleAndroid = useCallback(
     async (pkg: string) => {
       Haptics.selectionAsync().catch(() => undefined);
-      const next = new Set(pendingAndroid);
-      if (next.has(pkg)) {
-        next.delete(pkg);
-      } else {
-        next.add(pkg);
+      let snapshot: string[] = [];
+      setPendingAndroid((prev) => {
+        const next = new Set(prev);
+        if (next.has(pkg)) {
+          next.delete(pkg);
+        } else {
+          next.add(pkg);
+        }
+        snapshot = [...next];
+        return next;
+      });
+      setBlockedApps(snapshot);
+      try {
+        await upsertAndroid({ androidPackageNames: snapshot });
+      } catch {
+        // best-effort; last-write-wins resolves later taps
       }
-      const pkgs = [...next];
-      setPendingAndroid(next);
-      setBlockedApps(pkgs);
-      await upsertAndroid({ androidPackageNames: pkgs });
     },
-    [pendingAndroid, upsertAndroid]
+    [upsertAndroid]
   );
 
   const onSocialTap = useCallback(
@@ -412,6 +421,8 @@ function PrayerRhythm({
           const time = timings?.[w];
           return (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
               activeOpacity={0.7}
               key={w}
               onPress={() => onToggle(w)}
@@ -422,10 +433,13 @@ function PrayerRhythm({
                 borderRadius: 12,
                 borderWidth: 1,
                 flex: 1,
+                paddingHorizontal: 2,
                 paddingVertical: 10,
               }}
             >
               <Text
+                adjustsFontSizeToFit
+                numberOfLines={1}
                 style={{
                   color: on ? "#FFFFFF" : colors.ink,
                   fontSize: 12,
@@ -435,6 +449,7 @@ function PrayerRhythm({
                 {WINDOW_LABELS[w]}
               </Text>
               <Text
+                numberOfLines={1}
                 style={{
                   color: on ? "#FFFFFF" : colors.inkSubtle,
                   fontSize: 10,
