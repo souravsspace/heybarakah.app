@@ -34,7 +34,14 @@ const INACTIVE_STATE = /inactive|background/;
 
 function parseHHmm(time: string) {
   const [h, m] = time.split(":").map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) {
+  if (
+    Number.isNaN(h) ||
+    Number.isNaN(m) ||
+    h < 0 ||
+    h > 23 ||
+    m < 0 ||
+    m > 59
+  ) {
     return null;
   }
   return h * 60 + m;
@@ -48,7 +55,10 @@ function computeWindows(windows: PrayerWindow[], timings: Timings) {
       continue;
     }
     const { start, end } = lockBoundsMinutes(name, adhan);
-    out.push({ name, start, end });
+    if (start >= 1440) {
+      continue;
+    }
+    out.push({ name, start, end: Math.min(end, 1440) });
   }
   return out.sort((a, b) => a.start - b.start);
 }
