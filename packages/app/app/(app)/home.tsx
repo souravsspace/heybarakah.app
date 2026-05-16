@@ -228,7 +228,7 @@ export default function Home() {
     profile?.name?.trim() ||
     state.name?.trim() ||
     user?.name?.trim() ||
-    "friend";
+    "Friend";
 
   const { todayPrayerTimes, nextPrayer, location, loading, prayerTimes } =
     usePrayerTimes();
@@ -249,10 +249,10 @@ export default function Home() {
 
   const loggedToday = useMemo(
     () =>
-      PRAYER_ORDER.reduce(
-        (n, p) => n + (realWeek.getStatus(today, p) ? 1 : 0),
-        0
-      ),
+      PRAYER_ORDER.reduce((n, p) => {
+        const s = realWeek.getStatus(today, p);
+        return n + (s && s !== "missed" ? 1 : 0);
+      }, 0),
     [realWeek, today]
   );
 
@@ -336,12 +336,11 @@ export default function Home() {
       if (Number.isNaN(h) || Number.isNaN(m)) {
         return null;
       }
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      d.setHours(h, m, 0, 0);
+      const [ty, tm, td] = today.split("-").map(Number);
+      const d = new Date(ty, tm - 1, td + 1, h, m, 0, 0);
       return d;
     },
-    [prayerDateFor, tomorrowFajr]
+    [prayerDateFor, tomorrowFajr, today]
   );
 
   const activeUnlogged =
@@ -370,11 +369,11 @@ export default function Home() {
         contentContainerStyle={{
           flexGrow: 1,
           paddingTop: insets.top,
-          paddingBottom: 140,
+          paddingBottom: insets.bottom + 96,
         }}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        scrollIndicatorInsets={{ top: insets.top }}
+        scrollIndicatorInsets={{ top: insets.top, bottom: insets.bottom }}
         showsVerticalScrollIndicator={false}
       >
         {/* Greeting: single combined date line */}
@@ -469,7 +468,9 @@ export default function Home() {
                   ? PRAYER_LABEL[activeUnlogged]
                   : nextPrayer
                     ? PRAYER_LABEL[nextPrayer.name]
-                    : "—"}
+                    : loading
+                      ? "…"
+                      : "—"}
               </Text>
               <Text
                 style={{
@@ -482,7 +483,9 @@ export default function Home() {
                   ? fmt12(todayPrayerTimes.timings[activeUnlogged])
                   : nextPrayer
                     ? fmt12(nextPrayer.time)
-                    : "Loading…"}
+                    : loading
+                      ? "…"
+                      : "—"}
               </Text>
             </View>
 
@@ -524,6 +527,8 @@ export default function Home() {
                 You are inside the window.
               </Text>
               <Pressable
+                accessibilityLabel={`Mark ${PRAYER_LABEL[activeUnlogged]} as prayed`}
+                accessibilityRole="button"
                 onPress={() => {
                   onMarkPrayed(activeUnlogged).catch(() => undefined);
                 }}
@@ -775,8 +780,14 @@ function LedgerRow({
         ? colors.primary
         : colors.ink;
 
+  const a11yLabel = status
+    ? `${PRAYER_LABEL[prayer]}, ${STATUS_LABEL[status]}`
+    : `${PRAYER_LABEL[prayer]}${time ? `, ${fmt12(time)}` : ""}${isActive ? ", in progress" : ""}`;
+
   return (
     <Pressable
+      accessibilityLabel={a11yLabel}
+      accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => ({
         borderWidth: 1,
@@ -832,7 +843,7 @@ function LedgerRow({
                 <View
                   style={{
                     height: 1,
-                    width: `${Math.max(4, progress * 100)}%`,
+                    width: `${progress * 100}%`,
                     backgroundColor: colors.primary,
                   }}
                 />
