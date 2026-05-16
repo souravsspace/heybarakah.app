@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Image,
   Platform,
   Text,
   TextInput,
@@ -17,6 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
+import { SOCIAL_APPS, type SocialApp } from "@/constants/social-apps";
 import { useTheme } from "@/contexts/theme-context";
 import { usePrayerShield } from "@/hooks/usePrayerShield";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
@@ -30,12 +32,21 @@ import {
   getPermissionStatus,
   type IOSBlockedItem,
   type PermissionStatus,
+  presentFamilyActivityPicker,
   requestPermissions,
   setBlockConfiguration,
   setBlockedApps,
 } from "@/lib/app-blocker";
 
-type Door = "quieted" | "pick";
+interface Timings {
+  asr: string;
+  dhuhr: string;
+  fajr: string;
+  isha: string;
+  maghrib: string;
+}
+
+type ThemeColors = ReturnType<typeof useTheme>["colors"];
 
 const WINDOW_LABELS: Record<PrayerWindow, string> = {
   fajr: "Fajr",
@@ -56,7 +67,7 @@ function fmt12(time: string) {
 }
 
 export default function Locked() {
-  const { nextPrayer } = usePrayerTimes();
+  const { nextPrayer, todayPrayerTimes } = usePrayerTimes();
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
@@ -68,13 +79,13 @@ export default function Locked() {
 
   usePrayerShield();
 
-  const [door, setDoor] = useState<Door>("quieted");
   const [perm, setPerm] = useState<PermissionStatus | null>(null);
   const [iosItems, setIosItems] = useState<IOSBlockedItem[]>([]);
   const [iosSelectionLocal, setIosSelectionLocal] = useState<string>("");
   const [installed, setInstalled] = useState<AndroidBlockableApp[]>([]);
   const [search, setSearch] = useState("");
   const [pendingAndroid, setPendingAndroid] = useState<Set<string>>(new Set());
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const selection = useQuery(api.lib.shieldSelection.getMine);
   const upsertIos = useMutation(api.lib.shieldSelection.upsertIos);
@@ -110,10 +121,7 @@ export default function Locked() {
   const itemCount =
     Platform.OS === "ios"
       ? (selection?.iosItemCount ?? iosItems.length)
-      : (selection?.androidPackageNames?.length ?? 0);
-
-  const upcoming = nextPrayer ? fmt12(nextPrayer.time) : null;
-  const upcomingName = nextPrayer ? nextPrayer.name : null;
+      : pendingAndroid.size;
 
   const windows = useMemo<PrayerWindow[]>(
     () =>
@@ -132,43 +140,77 @@ export default function Locked() {
     [windows, setWindowsMut]
   );
 
-  const onPickerChange = useCallback(
-    async (event: FamilyActivityPickerSelectionEvent) => {
-      const filtered = event.items;
-      setIosItems(filtered);
-      setIosSelectionLocal(event.selectionData);
-      if (filtered.length > 0) {
+  const persistIos = useCallback(
+    async (items: IOSBlockedItem[], selectionData: string) => {
+      if (items.length > 0) {
         await setBlockConfiguration({
-          blockedItems: filtered,
+          blockedItems: items,
           isActive: true,
         });
       }
       await upsertIos({
-        iosSelectionData: event.selectionData,
-        iosItemCount: filtered.length,
+        iosSelectionData: selectionData,
+        iosItemCount: items.length,
       });
     },
     [upsertIos]
   );
 
-  const toggleAndroid = useCallback((pkg: string) => {
-    setPendingAndroid((prev) => {
-      const next = new Set(prev);
+  const onPickerChange = useCallback(
+    async (event: FamilyActivityPickerSelectionEvent) => {
+      const filtered = event.items;
+      setIosItems(filtered);
+      setIosSelectionLocal(event.selectionData);
+      await persistIos(filtered, event.selectionData);
+    },
+    [persistIos]
+  );
+
+  const openIosPickerModal = useCallback(async () => {
+    if (pickerOpen) {
+      return;
+    }
+    setPickerOpen(true);
+    try {
+      const items = await presentFamilyActivityPicker();
+      setIosItems(items);
+      await persistIos(items, iosSelectionLocal);
+    } catch {
+      // user cancelled
+    } finally {
+      setPickerOpen(false);
+    }
+  }, [iosSelectionLocal, persistIos, pickerOpen]);
+
+  const toggleAndroid = useCallback(
+    async (pkg: string) => {
+      Haptics.selectionAsync().catch(() => undefined);
+      const next = new Set(pendingAndroid);
       if (next.has(pkg)) {
         next.delete(pkg);
       } else {
         next.add(pkg);
       }
-      return next;
-    });
-  }, []);
+      const pkgs = [...next];
+      setPendingAndroid(next);
+      setBlockedApps(pkgs);
+      await upsertAndroid({ androidPackageNames: pkgs });
+    },
+    [pendingAndroid, upsertAndroid]
+  );
 
-  const saveAndroid = useCallback(async () => {
-    const pkgs = [...pendingAndroid];
-    setBlockedApps(pkgs);
-    await upsertAndroid({ androidPackageNames: pkgs });
-    setDoor("quieted");
-  }, [pendingAndroid, upsertAndroid]);
+  const onSocialTap = useCallback(
+    (app: SocialApp) => {
+      if (Platform.OS === "ios") {
+        openIosPickerModal();
+        return;
+      }
+      if (Platform.OS === "android") {
+        toggleAndroid(app.androidPackageName);
+      }
+    },
+    [openIosPickerModal, toggleAndroid]
+  );
 
   const requestPerm = useCallback(async () => {
     const result = await requestPermissions();
@@ -187,11 +229,15 @@ export default function Locked() {
     return [...list].sort((a, b) => a.name.localeCompare(b.name));
   }, [installed, search]);
 
+  const upcoming = nextPrayer ? fmt12(nextPrayer.time) : null;
+  const upcomingName = nextPrayer ? nextPrayer.name : null;
+  const timings = todayPrayerTimes?.timings as Timings | undefined;
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ backgroundColor: colors.bg, flex: 1 }}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Animated.ScrollView
-        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 160 }}
+        contentContainerStyle={{ paddingBottom: 160, paddingTop: insets.top }}
         onScroll={onScroll}
         scrollEventThrottle={16}
         scrollIndicatorInsets={{ top: insets.top }}
@@ -199,71 +245,35 @@ export default function Locked() {
       >
         <Hero
           colors={colors}
-          itemCount={itemCount}
+          count={itemCount}
           upcoming={upcoming}
           upcomingName={upcomingName}
         />
-        <WindowPills
+        <PrayerRhythm
           colors={colors}
           onToggle={toggleWindow}
+          timings={timings}
           windows={windows}
         />
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 24,
-            paddingHorizontal: 20,
-            paddingTop: 20,
-          }}
-        >
-          <DoorTab
-            active={door === "quieted"}
-            color={colors.ink}
-            label="Quieted"
-            mutedColor={colors.inkSubtle}
-            onPress={() => setDoor("quieted")}
-          />
-          <DoorTab
-            active={door === "pick"}
-            color={colors.ink}
-            label="Pick"
-            mutedColor={colors.inkSubtle}
-            onPress={() => setDoor("pick")}
-          />
-        </View>
-        <View
-          style={{
-            backgroundColor: colors.divider,
-            height: 1,
-            marginTop: 10,
-          }}
+        <SuggestedRow
+          colors={colors}
+          onTap={onSocialTap}
+          selected={pendingAndroid}
         />
-
-        {door === "quieted" ? (
-          <QuietedDoor
-            androidPackageNames={selection?.androidPackageNames ?? []}
-            colors={colors}
-            installed={installed}
-            iosItems={iosItems}
-            iosSelectionLocal={iosSelectionLocal}
-            onSwitchToPick={() => setDoor("pick")}
-          />
-        ) : (
-          <PickDoor
-            colors={colors}
-            filteredInstalled={filteredInstalled}
-            iosSelectionLocal={iosSelectionLocal}
-            onPickerChange={onPickerChange}
-            onRequestPerm={requestPerm}
-            onSaveAndroid={saveAndroid}
-            onSearchChange={setSearch}
-            onToggleAndroid={toggleAndroid}
-            pendingAndroid={pendingAndroid}
-            perm={perm}
-            scheme={scheme}
-            search={search}
-          />
-        )}
+        <PickMore
+          colors={colors}
+          filteredInstalled={filteredInstalled}
+          iosItems={iosItems}
+          iosSelectionLocal={iosSelectionLocal}
+          onPickerChange={onPickerChange}
+          onRequestPerm={requestPerm}
+          onSearchChange={setSearch}
+          onToggleAndroid={toggleAndroid}
+          pendingAndroid={pendingAndroid}
+          perm={perm}
+          scheme={scheme}
+          search={search}
+        />
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
     </View>
@@ -272,280 +282,297 @@ export default function Locked() {
 
 function Hero({
   colors,
-  itemCount,
+  count,
   upcoming,
   upcomingName,
 }: {
-  colors: ReturnType<typeof useTheme>["colors"];
-  itemCount: number;
+  colors: ThemeColors;
+  count: number;
   upcoming: string | null;
   upcomingName: string | null;
 }) {
   return (
-    <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
-      <Text
-        style={{
-          color: colors.inkMuted,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 2.4,
-          textTransform: "uppercase",
-        }}
-      >
-        Quiet apps
-      </Text>
-      <View
-        style={{
-          alignItems: "flex-end",
-          flexDirection: "row",
-          gap: 16,
-          marginTop: 6,
-        }}
-      >
+    <View style={{ paddingHorizontal: 24, paddingTop: 8 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <Text
           style={{
-            color: colors.ink,
-            fontFamily: "LibreBaskerville-Bold",
-            fontSize: 64,
-            lineHeight: 64,
+            color: colors.inkMuted,
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 2.4,
+            textTransform: "uppercase",
           }}
         >
-          {itemCount}
+          Quiet at salah
         </Text>
-        <View style={{ flex: 1, paddingBottom: 10 }}>
-          <Text
-            style={{
-              color: colors.ink,
-              fontFamily: "LibreBaskerville-Bold",
-              fontSize: 18,
-              lineHeight: 22,
-            }}
-          >
-            Quiet at salah.
-          </Text>
-          {upcoming ? (
+        {upcoming ? (
+          <View style={{ alignItems: "flex-end" }}>
             <Text
               style={{
-                color: colors.inkMuted,
-                fontSize: 13,
+                color: colors.inkSubtle,
+                fontSize: 9,
+                fontWeight: "700",
+                letterSpacing: 2,
+                textTransform: "uppercase",
+              }}
+            >
+              Next
+            </Text>
+            <Text
+              style={{
+                color: colors.ink,
+                fontSize: 14,
+                fontWeight: "600",
                 marginTop: 4,
               }}
             >
-              Next quiet at {upcoming} {upcomingName}.
+              {upcoming}
             </Text>
-          ) : null}
-        </View>
-        <View style={{ flexDirection: "row", gap: 4, paddingBottom: 10 }}>
-          {ALL_WINDOWS.map((w) => (
-            <View
-              key={w}
-              style={{
-                backgroundColor: colors.ink,
-                height: 18,
-                opacity: 0.85,
-                width: 2,
-              }}
-            />
-          ))}
-        </View>
+            {upcomingName ? (
+              <Text
+                style={{
+                  color: colors.inkMuted,
+                  fontSize: 11,
+                  marginTop: 1,
+                  textTransform: "capitalize",
+                }}
+              >
+                {upcomingName}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
       </View>
+
+      <Text
+        style={{
+          color: colors.ink,
+          fontFamily: "LibreBaskerville-Bold",
+          fontSize: 36,
+          letterSpacing: -0.6,
+          lineHeight: 40,
+          marginTop: 28,
+        }}
+      >
+        Five times.
+      </Text>
+      <Text
+        style={{
+          color: colors.primary,
+          fontFamily: "LibreBaskerville-Bold",
+          fontSize: 36,
+          fontStyle: "italic",
+          letterSpacing: -0.6,
+          lineHeight: 40,
+        }}
+      >
+        Hands quiet.
+      </Text>
+
+      <Text
+        style={{
+          color: colors.inkMuted,
+          fontSize: 14,
+          lineHeight: 22,
+          marginTop: 16,
+          maxWidth: 320,
+        }}
+      >
+        {count > 0
+          ? `${count} ${count === 1 ? "app goes" : "apps go"} quiet for 15 minutes at each prayer.`
+          : "Pick the apps that pull at you. Each will go quiet for 15 minutes at each prayer."}
+      </Text>
     </View>
   );
 }
 
-function WindowPills({
+function PrayerRhythm({
   colors,
   onToggle,
+  timings,
   windows,
 }: {
-  colors: ReturnType<typeof useTheme>["colors"];
+  colors: ThemeColors;
   onToggle: (w: PrayerWindow) => void;
+  timings: Timings | undefined;
   windows: PrayerWindow[];
 }) {
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 8,
-        paddingHorizontal: 20,
-        paddingTop: 20,
-      }}
-    >
-      {ALL_WINDOWS.map((w) => {
-        const on = windows.includes(w);
-        return (
-          <TouchableOpacity
-            key={w}
-            onPress={() => onToggle(w)}
-            style={{
-              backgroundColor: on ? colors.primarySoft : "transparent",
-              borderColor: on ? colors.primary : colors.border,
-              borderRadius: 999,
-              borderWidth: 1,
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: on ? colors.primary : colors.ink,
-                fontSize: 13,
-                fontWeight: "600",
-              }}
-            >
-              {WINDOW_LABELS[w]}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-}
-
-function DoorTab({
-  active,
-  color,
-  label,
-  mutedColor,
-  onPress,
-}: {
-  active: boolean;
-  color: string;
-  label: string;
-  mutedColor: string;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity onPress={onPress}>
-      <Text
-        style={{
-          color: active ? color : mutedColor,
-          fontFamily: "LibreBaskerville-Bold",
-          fontSize: 18,
-        }}
-      >
-        {label}
-      </Text>
+    <View style={{ paddingHorizontal: 24, paddingTop: 36 }}>
+      <SectionEyebrow color={colors.inkMuted} label="Windows" />
       <View
         style={{
-          backgroundColor: active ? color : "transparent",
-          height: 1,
-          marginTop: 6,
+          flexDirection: "row",
+          gap: 6,
+          marginTop: 14,
         }}
-      />
-    </TouchableOpacity>
-  );
-}
-
-function QuietedDoor({
-  androidPackageNames,
-  colors,
-  installed,
-  iosItems,
-  iosSelectionLocal,
-  onSwitchToPick,
-}: {
-  androidPackageNames: string[];
-  colors: ReturnType<typeof useTheme>["colors"];
-  installed: AndroidBlockableApp[];
-  iosItems: IOSBlockedItem[];
-  iosSelectionLocal: string;
-  onSwitchToPick: () => void;
-}) {
-  if (Platform.OS === "ios") {
-    if (iosItems.length === 0) {
-      return (
-        <EmptyState
-          colors={colors}
-          onPress={onSwitchToPick}
-          subtitle="Tap Pick to choose the apps you want quiet at salah."
-          title="Pick the apps that pull at you."
-        />
-      );
-    }
-    return (
-      <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>
-        <BlockedAppsNativeList
-          items={iosItems}
-          selectionData={iosSelectionLocal}
-          style={{ minHeight: 220 }}
-        />
-      </View>
-    );
-  }
-  if (Platform.OS === "android") {
-    if (androidPackageNames.length === 0) {
-      return (
-        <EmptyState
-          colors={colors}
-          onPress={onSwitchToPick}
-          subtitle="Tap Pick to choose the apps you want quiet at salah."
-          title="Pick the apps that pull at you."
-        />
-      );
-    }
-    const byPkg = new Map(installed.map((a) => [a.packageName, a]));
-    return (
-      <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
-        {androidPackageNames.map((pkg) => {
-          const meta = byPkg.get(pkg);
+      >
+        {ALL_WINDOWS.map((w) => {
+          const on = windows.includes(w);
+          const time = timings?.[w];
           return (
-            <View
-              key={pkg}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              key={w}
+              onPress={() => onToggle(w)}
               style={{
                 alignItems: "center",
-                borderBottomColor: colors.divider,
-                borderBottomWidth: 1,
-                flexDirection: "row",
-                gap: 14,
-                paddingVertical: 14,
+                backgroundColor: on ? colors.primary : "transparent",
+                borderColor: on ? colors.primary : colors.border,
+                borderRadius: 12,
+                borderWidth: 1,
+                flex: 1,
+                paddingVertical: 10,
               }}
             >
-              <Monogram
-                borderColor={colors.border}
-                color={colors.ink}
-                label={(meta?.name ?? pkg).slice(0, 2)}
-                size={44}
-              />
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    color: colors.ink,
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  {meta?.name ?? pkg}
-                </Text>
-                <Text
-                  style={{ color: colors.inkMuted, fontSize: 12, marginTop: 2 }}
-                >
-                  {pkg}
-                </Text>
-              </View>
-            </View>
+              <Text
+                style={{
+                  color: on ? "#FFFFFF" : colors.ink,
+                  fontSize: 12,
+                  fontWeight: "700",
+                }}
+              >
+                {WINDOW_LABELS[w]}
+              </Text>
+              <Text
+                style={{
+                  color: on ? "#FFFFFF" : colors.inkSubtle,
+                  fontSize: 10,
+                  marginTop: 3,
+                  opacity: on ? 0.85 : 1,
+                }}
+              >
+                {time ? fmt12(time) : "—"}
+              </Text>
+            </TouchableOpacity>
           );
         })}
       </View>
-    );
-  }
-  return (
-    <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
-      <Text style={{ color: colors.inkMuted, fontSize: 14 }}>
-        Locking apps is only available on iOS and Android.
-      </Text>
     </View>
   );
 }
 
-function PickDoor({
+function SuggestedRow({
+  colors,
+  onTap,
+  selected,
+}: {
+  colors: ThemeColors;
+  onTap: (app: SocialApp) => void;
+  selected: Set<string>;
+}) {
+  const hint =
+    Platform.OS === "ios"
+      ? "Tap any to open the picker."
+      : "Tap to quiet at salah.";
+  return (
+    <View style={{ paddingHorizontal: 24, paddingTop: 36 }}>
+      <SectionEyebrow color={colors.inkMuted} label="Suggested" />
+      <Text
+        style={{
+          color: colors.inkSubtle,
+          fontSize: 12,
+          marginTop: 4,
+        }}
+      >
+        {hint}
+      </Text>
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          marginTop: 18,
+          rowGap: 18,
+        }}
+      >
+        {SOCIAL_APPS.map((app) => {
+          const isSelected =
+            Platform.OS === "android" && selected.has(app.androidPackageName);
+          return (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              key={app.id}
+              onPress={() => onTap(app)}
+              style={{
+                alignItems: "center",
+                width: "20%",
+              }}
+            >
+              <View
+                style={{
+                  alignItems: "center",
+                  borderColor: isSelected ? colors.primary : "transparent",
+                  borderRadius: 14,
+                  borderWidth: 1.5,
+                  height: 56,
+                  justifyContent: "center",
+                  padding: 4,
+                  width: 56,
+                }}
+              >
+                <Image
+                  source={app.logo}
+                  style={{
+                    height: 44,
+                    opacity: isSelected ? 1 : 0.95,
+                    width: 44,
+                  }}
+                />
+                {isSelected ? (
+                  <View
+                    style={{
+                      alignItems: "center",
+                      backgroundColor: colors.primary,
+                      borderColor: colors.bg,
+                      borderRadius: 999,
+                      borderWidth: 2,
+                      height: 18,
+                      justifyContent: "center",
+                      position: "absolute",
+                      right: -2,
+                      top: -2,
+                      width: 18,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: 10,
+                        fontWeight: "700",
+                      }}
+                    >
+                      ✓
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: isSelected ? colors.primary : colors.inkMuted,
+                  fontSize: 10,
+                  fontWeight: isSelected ? "700" : "500",
+                  marginTop: 6,
+                  textAlign: "center",
+                }}
+              >
+                {app.name}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function PickMore({
   colors,
   filteredInstalled,
+  iosItems,
   iosSelectionLocal,
   onPickerChange,
   onRequestPerm,
-  onSaveAndroid,
   onSearchChange,
   onToggleAndroid,
   pendingAndroid,
@@ -553,12 +580,12 @@ function PickDoor({
   scheme,
   search,
 }: {
-  colors: ReturnType<typeof useTheme>["colors"];
+  colors: ThemeColors;
   filteredInstalled: AndroidBlockableApp[];
+  iosItems: IOSBlockedItem[];
   iosSelectionLocal: string;
   onPickerChange: (e: FamilyActivityPickerSelectionEvent) => void;
   onRequestPerm: () => void;
-  onSaveAndroid: () => void;
   onSearchChange: (s: string) => void;
   onToggleAndroid: (pkg: string) => void;
   pendingAndroid: Set<string>;
@@ -568,260 +595,246 @@ function PickDoor({
 }) {
   if (Platform.OS === "web") {
     return (
-      <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
-        <Text style={{ color: colors.inkMuted, fontSize: 14 }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: 36 }}>
+        <Text style={{ color: colors.inkMuted, fontSize: 13 }}>
           Locking is unavailable on web.
         </Text>
       </View>
     );
   }
   if (perm === null) {
-    return (
-      <View style={{ paddingHorizontal: 20, paddingTop: 28 }}>
-        <Text style={{ color: colors.inkMuted, fontSize: 14 }}>
-          Checking permissions…
-        </Text>
-      </View>
-    );
+    return null;
   }
   if (!perm.allGranted) {
-    const cta =
-      Platform.OS === "ios" ? "Enable Screen Time" : "Enable usage access";
     return (
-      <View style={{ paddingHorizontal: 20, paddingTop: 28, gap: 16 }}>
-        <Text
-          style={{
-            color: colors.ink,
-            fontFamily: "LibreBaskerville-Bold",
-            fontSize: 20,
-          }}
-        >
-          One permission to begin.
-        </Text>
-        <Text style={{ color: colors.inkMuted, fontSize: 14, lineHeight: 20 }}>
-          Barakah needs system permission to shield apps during prayer windows.
-          You can revoke it any time.
-        </Text>
-        <TouchableOpacity
-          onPress={onRequestPerm}
-          style={{
-            alignItems: "center",
-            backgroundColor: colors.primary,
-            borderRadius: 12,
-            paddingVertical: 14,
-          }}
-        >
-          <Text
-            style={{
-              color: "#FFFFFF",
-              fontSize: 15,
-              fontWeight: "700",
-              letterSpacing: 1,
-              textTransform: "uppercase",
-            }}
-          >
-            {cta}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (Platform.OS === "ios") {
-    return (
-      <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-        <Text
-          style={{
-            color: colors.inkMuted,
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 2,
-            paddingBottom: 12,
-            textTransform: "uppercase",
-          }}
-        >
-          Pick apps
-        </Text>
-        <View
-          style={{
-            borderColor: colors.border,
-            borderRadius: 16,
-            borderWidth: 1,
-            overflow: "hidden",
-          }}
-        >
-          <FamilyActivityPickerView
-            initialSelection={iosSelectionLocal}
-            onSelectionChange={onPickerChange}
-            style={{ height: 520 }}
-            theme={scheme}
-          />
-        </View>
-      </View>
+      <PermissionGate
+        colors={colors}
+        onRequestPerm={onRequestPerm}
+        platform={Platform.OS === "ios" ? "ios" : "android"}
+      />
     );
   }
 
   return (
-    <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-      <View
-        style={{
-          alignItems: "center",
-          borderColor: colors.border,
-          borderRadius: 12,
-          borderWidth: 1,
-          flexDirection: "row",
-          paddingHorizontal: 14,
-        }}
-      >
-        <TextInput
-          autoCapitalize="none"
-          autoCorrect={false}
-          onChangeText={onSearchChange}
-          placeholder="Search apps"
-          placeholderTextColor={colors.inkSubtle}
-          style={{
-            color: colors.ink,
-            flex: 1,
-            fontSize: 15,
-            paddingVertical: 12,
-          }}
-          value={search}
-        />
-      </View>
-      <View style={{ paddingTop: 8 }}>
-        {filteredInstalled.length === 0 ? (
-          <Text
+    <View style={{ paddingHorizontal: 24, paddingTop: 36 }}>
+      <SectionEyebrow color={colors.inkMuted} label="All apps" />
+
+      {Platform.OS === "ios" ? (
+        <View style={{ marginTop: 14 }}>
+          <View
             style={{
-              color: colors.inkMuted,
-              fontSize: 14,
-              paddingVertical: 24,
-              textAlign: "center",
+              borderColor: colors.border,
+              borderRadius: 16,
+              borderWidth: 1,
+              overflow: "hidden",
             }}
           >
-            No matches.
-          </Text>
-        ) : (
-          filteredInstalled.map((app) => {
-            const on = pendingAndroid.has(app.packageName);
-            return (
-              <TouchableOpacity
-                key={app.packageName}
-                onPress={() => onToggleAndroid(app.packageName)}
+            <FamilyActivityPickerView
+              initialSelection={iosSelectionLocal}
+              onSelectionChange={onPickerChange}
+              style={{ height: 480 }}
+              theme={scheme}
+            />
+          </View>
+          {iosItems.length > 0 ? (
+            <View style={{ marginTop: 18 }}>
+              <Text
                 style={{
-                  alignItems: "center",
-                  borderBottomColor: colors.divider,
-                  borderBottomWidth: 1,
-                  flexDirection: "row",
-                  gap: 14,
-                  paddingVertical: 12,
+                  color: colors.inkSubtle,
+                  fontSize: 10,
+                  fontWeight: "700",
+                  letterSpacing: 1.6,
+                  textTransform: "uppercase",
                 }}
               >
-                <Monogram
-                  borderColor={colors.border}
-                  color={colors.ink}
-                  label={app.name.slice(0, 2)}
-                  size={40}
+                Currently quieted
+              </Text>
+              <View style={{ marginTop: 8 }}>
+                <BlockedAppsNativeList
+                  items={iosItems}
+                  selectionData={iosSelectionLocal}
+                  style={{ minHeight: 100 }}
                 />
-                <View style={{ flex: 1 }}>
+              </View>
+            </View>
+          ) : null}
+        </View>
+      ) : (
+        <View style={{ marginTop: 14 }}>
+          <View
+            style={{
+              borderBottomColor: colors.border,
+              borderBottomWidth: 1,
+              paddingBottom: 12,
+            }}
+          >
+            <TextInput
+              autoCapitalize="none"
+              autoCorrect={false}
+              onChangeText={onSearchChange}
+              placeholder="Search apps"
+              placeholderTextColor={colors.inkSubtle}
+              style={{
+                color: colors.ink,
+                fontSize: 15,
+                paddingVertical: 8,
+              }}
+              value={search}
+            />
+          </View>
+          {filteredInstalled.length === 0 ? (
+            <Text
+              style={{
+                color: colors.inkMuted,
+                fontSize: 13,
+                paddingVertical: 32,
+                textAlign: "center",
+              }}
+            >
+              No matches.
+            </Text>
+          ) : (
+            filteredInstalled.map((app) => {
+              const on = pendingAndroid.has(app.packageName);
+              return (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  key={app.packageName}
+                  onPress={() => onToggleAndroid(app.packageName)}
+                  style={{
+                    alignItems: "center",
+                    borderBottomColor: colors.divider,
+                    borderBottomWidth: 1,
+                    flexDirection: "row",
+                    gap: 14,
+                    paddingVertical: 14,
+                  }}
+                >
+                  <Monogram
+                    borderColor={colors.border}
+                    color={colors.ink}
+                    label={app.name.slice(0, 2)}
+                    size={40}
+                  />
                   <Text
                     style={{
                       color: colors.ink,
+                      flex: 1,
                       fontSize: 15,
-                      fontWeight: "600",
+                      fontWeight: "500",
                     }}
                   >
                     {app.name}
                   </Text>
-                </View>
-                <View
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: on ? colors.primary : "transparent",
-                    borderColor: on ? colors.primary : colors.border,
-                    borderRadius: 999,
-                    borderWidth: 1,
-                    height: 24,
-                    justifyContent: "center",
-                    width: 24,
-                  }}
-                >
-                  {on ? (
-                    <Text style={{ color: "#FFFFFF", fontSize: 14 }}>✓</Text>
-                  ) : null}
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
-      </View>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      backgroundColor: on ? colors.primary : "transparent",
+                      borderColor: on ? colors.primary : colors.border,
+                      borderRadius: 999,
+                      borderWidth: 1,
+                      height: 22,
+                      justifyContent: "center",
+                      width: 22,
+                    }}
+                  >
+                    {on ? (
+                      <Text
+                        style={{
+                          color: "#FFFFFF",
+                          fontSize: 12,
+                          fontWeight: "700",
+                        }}
+                      >
+                        ✓
+                      </Text>
+                    ) : null}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function PermissionGate({
+  colors,
+  onRequestPerm,
+  platform,
+}: {
+  colors: ThemeColors;
+  onRequestPerm: () => void;
+  platform: "ios" | "android";
+}) {
+  const cta = platform === "ios" ? "Enable Screen Time" : "Enable usage access";
+  return (
+    <View style={{ paddingHorizontal: 24, paddingTop: 36 }}>
+      <SectionEyebrow color={colors.inkMuted} label="One step left" />
+      <Text
+        style={{
+          color: colors.ink,
+          fontFamily: "LibreBaskerville-Bold",
+          fontSize: 22,
+          lineHeight: 28,
+          marginTop: 14,
+        }}
+      >
+        Grant permission to begin.
+      </Text>
+      <Text
+        style={{
+          color: colors.inkMuted,
+          fontSize: 14,
+          lineHeight: 22,
+          marginTop: 10,
+        }}
+      >
+        Barakah needs system permission to quiet apps during prayer windows. You
+        can revoke it any time.
+      </Text>
       <TouchableOpacity
-        onPress={onSaveAndroid}
+        activeOpacity={0.85}
+        onPress={onRequestPerm}
         style={{
           alignItems: "center",
           backgroundColor: colors.primary,
           borderRadius: 12,
-          marginTop: 16,
+          marginTop: 20,
           paddingVertical: 14,
         }}
       >
         <Text
           style={{
             color: "#FFFFFF",
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: "700",
-            letterSpacing: 1,
+            letterSpacing: 1.6,
             textTransform: "uppercase",
           }}
         >
-          Save ({pendingAndroid.size})
+          {cta}
         </Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-function EmptyState({
-  colors,
-  onPress,
-  subtitle,
-  title,
-}: {
-  colors: ReturnType<typeof useTheme>["colors"];
-  onPress: () => void;
-  subtitle: string;
-  title: string;
-}) {
+function SectionEyebrow({ color, label }: { color: string; label: string }) {
   return (
-    <View style={{ paddingHorizontal: 20, paddingTop: 32, gap: 12 }}>
-      <Text
-        style={{
-          color: colors.ink,
-          fontFamily: "LibreBaskerville-Bold",
-          fontSize: 20,
-        }}
-      >
-        {title}
-      </Text>
-      <Text style={{ color: colors.inkMuted, fontSize: 14, lineHeight: 20 }}>
-        {subtitle}
-      </Text>
-      <TouchableOpacity
-        onPress={onPress}
-        style={{
-          alignSelf: "flex-start",
-          borderColor: colors.ink,
-          borderRadius: 999,
-          borderWidth: 1,
-          marginTop: 4,
-          paddingHorizontal: 16,
-          paddingVertical: 10,
-        }}
-      >
-        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "600" }}>
-          Pick apps
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <Text
+      style={{
+        color,
+        fontSize: 10,
+        fontWeight: "700",
+        letterSpacing: 2.2,
+        textTransform: "uppercase",
+      }}
+    >
+      {label}
+    </Text>
   );
 }
 
