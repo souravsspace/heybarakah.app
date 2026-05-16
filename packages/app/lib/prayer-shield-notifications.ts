@@ -51,10 +51,10 @@ function lockStartAt(
   }
   const adhanMinutes = hour * 60 + minute;
   const { start } = lockBoundsMinutes(window, adhanMinutes);
-  const fireMinutes = start - NOTIF_LEAD_MIN;
+  const offsetFromAdhan = start - adhanMinutes - NOTIF_LEAD_MIN;
   const scheduled = new Date(baseDate);
-  scheduled.setHours(0, 0, 0, 0);
-  scheduled.setTime(scheduled.getTime() + fireMinutes * 60_000);
+  scheduled.setHours(hour, minute, 0, 0);
+  scheduled.setMinutes(scheduled.getMinutes() + offsetFromAdhan);
   return scheduled;
 }
 
