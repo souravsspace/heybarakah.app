@@ -19,9 +19,8 @@ import {
   scheduleShieldNotifications,
 } from "@/lib/prayer-shield-notifications";
 import { registerPrayerShieldTask } from "@/lib/prayer-shield-task";
+import { lockBoundsMinutes } from "@/lib/prayer-window-config";
 import { usePrayerTimes } from "./usePrayerTimes";
-
-const WINDOW_DURATION_MIN = 20;
 
 interface Timings {
   asr: string;
@@ -44,11 +43,12 @@ function parseHHmm(time: string) {
 function computeWindows(windows: PrayerWindow[], timings: Timings) {
   const out: { name: PrayerWindow; start: number; end: number }[] = [];
   for (const name of windows) {
-    const start = parseHHmm(timings[name]);
-    if (start === null) {
+    const adhan = parseHHmm(timings[name]);
+    if (adhan === null) {
       continue;
     }
-    out.push({ name, start, end: start + WINDOW_DURATION_MIN });
+    const { start, end } = lockBoundsMinutes(name, adhan);
+    out.push({ name, start, end });
   }
   return out.sort((a, b) => a.start - b.start);
 }
