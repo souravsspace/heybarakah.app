@@ -501,58 +501,39 @@ export default function Home() {
                 {`In ${countdown.h}h ${pad(countdown.m)}m ${pad(countdown.s)}s`}
               </Text>
             ) : null}
-          </View>
 
-          {activeUnlogged ? (
-            <View
-              style={{
-                borderTopWidth: 1,
-                borderTopColor: colors.divider,
-                paddingHorizontal: 22,
-                paddingVertical: 14,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <Text
-                style={{
-                  flex: 1,
-                  color: colors.inkMuted,
-                  fontSize: 13,
-                  lineHeight: 18,
-                }}
-              >
-                You are inside the window.
-              </Text>
-              <Pressable
-                accessibilityLabel={`Mark ${PRAYER_LABEL[activeUnlogged]} as prayed`}
-                accessibilityRole="button"
-                onPress={() => {
-                  onMarkPrayed(activeUnlogged).catch(() => undefined);
-                }}
-                style={({ pressed }) => ({
-                  paddingHorizontal: 18,
-                  paddingVertical: 10,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: colors.primary,
-                  backgroundColor: pressed ? colors.primarySoft : "transparent",
-                })}
-              >
-                <Text
-                  style={{
-                    color: colors.primary,
-                    fontSize: 13,
-                    fontWeight: "700",
+            {activeUnlogged ? (
+              <View style={{ flexDirection: "row", marginTop: 4 }}>
+                <Pressable
+                  accessibilityLabel={`Mark ${PRAYER_LABEL[activeUnlogged]} as prayed`}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    onMarkPrayed(activeUnlogged).catch(() => undefined);
                   }}
+                  style={({ pressed }) => ({
+                    paddingHorizontal: 18,
+                    paddingVertical: 10,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: colors.primary,
+                    backgroundColor: pressed
+                      ? colors.primarySoft
+                      : "transparent",
+                  })}
                 >
-                  I prayed
-                </Text>
-              </Pressable>
-            </View>
-          ) : null}
+                  <Text
+                    style={{
+                      color: colors.primary,
+                      fontSize: 13,
+                      fontWeight: "700",
+                    }}
+                  >
+                    I prayed
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
         </View>
 
         {/* Today ledger: typeset prayer schedule */}
