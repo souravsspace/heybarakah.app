@@ -8,6 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AreaChart } from "@/components/area-chart";
+import { ProgressMesh } from "@/components/meshes";
 import { PrayerMatrix } from "@/components/prayer-matrix";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { useTheme } from "@/contexts/theme-context";
@@ -123,6 +124,7 @@ export default function Progress() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <ProgressMesh dark={scheme === "dark"} />
       <Animated.ScrollView
         contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 140 }}
         onScroll={onScroll}
