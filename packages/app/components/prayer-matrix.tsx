@@ -8,6 +8,7 @@ interface Props {
     date: string,
     prayer: LoggablePrayerName
   ) => PrayerStatus | undefined;
+  surface?: string;
   todayKey: string;
 }
 
@@ -22,8 +23,9 @@ const PRAYERS: { key: LoggablePrayerName; label: string }[] = [
 const ROW_LABEL_WIDTH = 78;
 const CELL_GAP = 6;
 
-export function PrayerMatrix({ days, todayKey, getStatus }: Props) {
+export function PrayerMatrix({ days, todayKey, getStatus, surface }: Props) {
   const { colors } = useTheme();
+  const cardBg = surface ?? colors.card;
 
   const cellStyle = (status: PrayerStatus | undefined, isPast: boolean) => {
     if (status === "on_time") {
@@ -101,7 +103,7 @@ export function PrayerMatrix({ days, todayKey, getStatus }: Props) {
           borderRadius: 20,
           borderWidth: 1,
           borderColor: colors.border,
-          backgroundColor: colors.card,
+          backgroundColor: cardBg,
           paddingVertical: 14,
           paddingRight: 14,
           paddingLeft: 14,
