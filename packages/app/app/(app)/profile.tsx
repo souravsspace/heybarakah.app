@@ -13,18 +13,11 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
+import { ProfileMesh } from "@/components/meshes";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
-
-const MADHAB_LABEL: Record<string, string> = {
-  hanafi: "Hanafi",
-  shafii: "Shāfiʿī",
-  maliki: "Mālikī",
-  hanbali: "Ḥanbalī",
-  none: "Not specified",
-};
 
 const SPLIT_RE = /\s+/;
 const NON_ALPHANUM_RE = /[^a-z0-9]/g;
@@ -67,8 +60,10 @@ export default function Profile() {
       ? `${parts[0][0]}${parts.at(-1)?.[0] ?? ""}`.toUpperCase()
       : name.slice(0, 2).toUpperCase();
 
-  const madhabKey = profile?.madhab ?? "none";
   const methodKey = profile?.calcMethod ?? "mwl";
+  const themeLabel = scheme === "dark" ? "Dark" : "Light";
+  const cardSurface =
+    scheme === "dark" ? "rgba(20,26,23,0.55)" : "rgba(255,255,255,0.55)";
 
   const go = (path: string) => {
     Haptics.selectionAsync().catch(() => undefined);
@@ -131,6 +126,7 @@ export default function Profile() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <ProfileMesh dark={scheme === "dark"} />
       <Animated.ScrollView
         contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 140 }}
         onScroll={onScroll}
@@ -163,11 +159,12 @@ export default function Profile() {
             initials={initials}
             name={name}
             onPress={() => go("/personal-details")}
+            surface={cardSurface}
           />
         </Animated.View>
 
         <Section colors={colors} delay={60} title="Account">
-          <Card colors={colors}>
+          <Card colors={colors} surface={cardSurface}>
             <Row
               colors={colors}
               onPress={() => go("/subscription")}
@@ -181,7 +178,7 @@ export default function Profile() {
               onPress={() => go("/preferences")}
               sf="slider.horizontal.3"
               title="Preferences"
-              value={MADHAB_LABEL[madhabKey]}
+              value={themeLabel}
             />
             <Divider colors={colors} />
             <Row
@@ -195,7 +192,7 @@ export default function Profile() {
         </Section>
 
         <Section colors={colors} delay={140} title="Permissions">
-          <Card colors={colors}>
+          <Card colors={colors} surface={cardSurface}>
             <PermissionRow
               colors={colors}
               granted={!!profile?.locationGranted}
@@ -215,7 +212,7 @@ export default function Profile() {
         </Section>
 
         <Section colors={colors} delay={220} title="Support & Legal">
-          <Card colors={colors}>
+          <Card colors={colors} surface={cardSurface}>
             <Row
               colors={colors}
               onPress={() =>
@@ -251,7 +248,7 @@ export default function Profile() {
         </Section>
 
         <Section colors={colors} delay={280} title="Account Actions">
-          <Card colors={colors}>
+          <Card colors={colors} surface={cardSurface}>
             <Row
               colors={colors}
               onPress={handleLogout}
@@ -282,6 +279,7 @@ function HeaderCard({
   initials,
   name,
   onPress,
+  surface,
 }: {
   colors: ThemeColors;
   email: string | null;
@@ -290,6 +288,7 @@ function HeaderCard({
   initials: string;
   name: string;
   onPress: () => void;
+  surface: string;
 }) {
   return (
     <Pressable onPress={onPress}>
@@ -302,7 +301,7 @@ function HeaderCard({
             borderRadius: 18,
             borderWidth: 1,
             borderColor: colors.border,
-            backgroundColor: colors.card,
+            backgroundColor: surface,
             gap: 14,
             opacity: pressed ? 0.92 : 1,
           }}
@@ -455,9 +454,11 @@ function Section({
 function Card({
   children,
   colors,
+  surface,
 }: {
   children: React.ReactNode;
   colors: ThemeColors;
+  surface: string;
 }) {
   return (
     <View
@@ -465,7 +466,7 @@ function Card({
         borderRadius: 16,
         borderWidth: 1,
         borderColor: colors.border,
-        backgroundColor: colors.card,
+        backgroundColor: surface,
         overflow: "hidden",
       }}
     >
