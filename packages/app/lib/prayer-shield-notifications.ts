@@ -1,18 +1,16 @@
 import type { PrayerWindow } from "@barakah/core/shieldSelection";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
+import {
+  dateSeed,
+  pickDaily,
+  SHIELD_BODIES,
+  SHIELD_TITLES,
+} from "@/constants/notification-copy";
 import { lockBoundsMinutes, NOTIF_LEAD_MIN } from "@/lib/prayer-window-config";
 
 const SHIELD_NOTIFICATION_IDS_KEY = "shield-notification-ids:v1";
 const SHIELD_TIME_REGEX = /^(\d{1,2}):(\d{2})/;
-
-const WINDOW_TITLE: Record<PrayerWindow, string> = {
-  fajr: "Fajr",
-  dhuhr: "Dhuhr",
-  asr: "Asr",
-  maghrib: "Maghrib",
-  isha: "Isha",
-};
 
 interface ShieldTimes {
   asr: string;
@@ -105,17 +103,19 @@ export async function scheduleShieldNotifications({
     return [];
   }
   const now = new Date();
+  const seed = dateSeed(date);
   const ids: string[] = [];
   for (const w of windows) {
     const fireAt = lockStartAt(date, w, times[w]);
     if (!fireAt || fireAt.getTime() <= now.getTime()) {
       continue;
     }
-    const title = WINDOW_TITLE[w];
+    const title = pickDaily(SHIELD_TITLES[w], `${seed}-${w}-title`);
+    const body = pickDaily(SHIELD_BODIES, `${seed}-${w}-body`);
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: `Quiet starts at ${title}`,
-        body: "Open Barakah to enter salah.",
+        title,
+        body,
         sound: false,
       },
       trigger: {
