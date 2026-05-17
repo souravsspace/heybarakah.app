@@ -120,6 +120,8 @@ export default function Progress() {
   const onTime = week.onTimeCount;
 
   const empty = !week.loading && week.totalLogged === 0;
+  const cardSurface =
+    scheme === "dark" ? "rgba(20,26,23,0.55)" : "rgba(255,255,255,0.55)";
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -210,7 +212,7 @@ export default function Progress() {
             borderRadius: 20,
             borderWidth: 1,
             borderColor: colors.border,
-            backgroundColor: colors.card,
+            backgroundColor: cardSurface,
             padding: 16,
             paddingBottom: 8,
           }}
@@ -264,6 +266,7 @@ export default function Progress() {
           <PrayerMatrix
             days={days}
             getStatus={week.getStatus}
+            surface={cardSurface}
             todayKey={todayKey}
           />
         </View>
