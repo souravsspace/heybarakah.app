@@ -15,7 +15,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
+import { HomeMesh } from "@/components/meshes";
 import { MosqueMinaret } from "@/components/onboarding/illustrations/mosque-minaret";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
@@ -228,7 +228,7 @@ export default function Home() {
     profile?.name?.trim() ||
     state.name?.trim() ||
     user?.name?.trim() ||
-    "friend";
+    "Friend";
 
   const { todayPrayerTimes, nextPrayer, location, loading, prayerTimes } =
     usePrayerTimes();
@@ -249,10 +249,10 @@ export default function Home() {
 
   const loggedToday = useMemo(
     () =>
-      PRAYER_ORDER.reduce(
-        (n, p) => n + (realWeek.getStatus(today, p) ? 1 : 0),
-        0
-      ),
+      PRAYER_ORDER.reduce((n, p) => {
+        const s = realWeek.getStatus(today, p);
+        return n + (s && s !== "missed" ? 1 : 0);
+      }, 0),
     [realWeek, today]
   );
 
@@ -336,12 +336,11 @@ export default function Home() {
       if (Number.isNaN(h) || Number.isNaN(m)) {
         return null;
       }
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      d.setHours(h, m, 0, 0);
+      const [ty, tm, td] = today.split("-").map(Number);
+      const d = new Date(ty, tm - 1, td + 1, h, m, 0, 0);
       return d;
     },
-    [prayerDateFor, tomorrowFajr]
+    [prayerDateFor, tomorrowFajr, today]
   );
 
   const activeUnlogged =
@@ -365,16 +364,16 @@ export default function Home() {
       }}
     >
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <HomeMeshGradient dark={scheme === "dark"} />
+      <HomeMesh dark={scheme === "dark"} />
       <Animated.ScrollView
         contentContainerStyle={{
           flexGrow: 1,
           paddingTop: insets.top,
-          paddingBottom: 140,
+          paddingBottom: insets.bottom + 96,
         }}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        scrollIndicatorInsets={{ top: insets.top }}
+        scrollIndicatorInsets={{ top: insets.top, bottom: insets.bottom }}
         showsVerticalScrollIndicator={false}
       >
         {/* Greeting: single combined date line */}
@@ -469,7 +468,9 @@ export default function Home() {
                   ? PRAYER_LABEL[activeUnlogged]
                   : nextPrayer
                     ? PRAYER_LABEL[nextPrayer.name]
-                    : "—"}
+                    : loading
+                      ? "…"
+                      : "—"}
               </Text>
               <Text
                 style={{
@@ -482,7 +483,9 @@ export default function Home() {
                   ? fmt12(todayPrayerTimes.timings[activeUnlogged])
                   : nextPrayer
                     ? fmt12(nextPrayer.time)
-                    : "Loading…"}
+                    : loading
+                      ? "…"
+                      : "—"}
               </Text>
             </View>
 
@@ -498,56 +501,39 @@ export default function Home() {
                 {`In ${countdown.h}h ${pad(countdown.m)}m ${pad(countdown.s)}s`}
               </Text>
             ) : null}
-          </View>
 
-          {activeUnlogged ? (
-            <View
-              style={{
-                borderTopWidth: 1,
-                borderTopColor: colors.divider,
-                paddingHorizontal: 22,
-                paddingVertical: 14,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <Text
-                style={{
-                  flex: 1,
-                  color: colors.inkMuted,
-                  fontSize: 13,
-                  lineHeight: 18,
-                }}
-              >
-                You are inside the window.
-              </Text>
-              <Pressable
-                onPress={() => {
-                  onMarkPrayed(activeUnlogged).catch(() => undefined);
-                }}
-                style={({ pressed }) => ({
-                  paddingHorizontal: 18,
-                  paddingVertical: 10,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: colors.primary,
-                  backgroundColor: pressed ? colors.primarySoft : "transparent",
-                })}
-              >
-                <Text
-                  style={{
-                    color: colors.primary,
-                    fontSize: 13,
-                    fontWeight: "700",
+            {activeUnlogged ? (
+              <View style={{ flexDirection: "row", marginTop: 4 }}>
+                <Pressable
+                  accessibilityLabel={`Mark ${PRAYER_LABEL[activeUnlogged]} as prayed`}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    onMarkPrayed(activeUnlogged).catch(() => undefined);
                   }}
+                  style={({ pressed }) => ({
+                    paddingHorizontal: 18,
+                    paddingVertical: 10,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: colors.primary,
+                    backgroundColor: pressed
+                      ? colors.primarySoft
+                      : "transparent",
+                  })}
                 >
-                  I prayed
-                </Text>
-              </Pressable>
-            </View>
-          ) : null}
+                  <Text
+                    style={{
+                      color: colors.primary,
+                      fontSize: 13,
+                      fontWeight: "700",
+                    }}
+                  >
+                    I prayed
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
         </View>
 
         {/* Today ledger: typeset prayer schedule */}
@@ -656,82 +642,6 @@ export default function Home() {
   );
 }
 
-function HomeMeshGradient({ dark }: { dark: boolean }) {
-  const base = dark ? "#0E1311" : "#F8FAF8";
-  const greenOpacity = dark ? 0.34 : 0.52;
-  const mistOpacity = dark ? 0.2 : 0.58;
-  const lightOpacity = dark ? 0.04 : 0.82;
-
-  return (
-    <Svg
-      height="100%"
-      pointerEvents="none"
-      preserveAspectRatio="none"
-      style={{
-        position: "absolute",
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-      }}
-      viewBox="0 0 320 220"
-      width="100%"
-    >
-      <Defs>
-        <RadialGradient cx="18%" cy="6%" id="homeMeshNorth" r="72%">
-          <Stop offset="0" stopColor="#DDE8E1" stopOpacity={mistOpacity} />
-          <Stop
-            offset="0.48"
-            stopColor={BARAKAH_GREEN}
-            stopOpacity={greenOpacity}
-          />
-          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
-        </RadialGradient>
-        <RadialGradient cx="92%" cy="0%" id="homeMeshEast" r="72%">
-          <Stop offset="0" stopColor="#F7F9F7" stopOpacity={lightOpacity} />
-          <Stop
-            offset="0.5"
-            stopColor={BARAKAH_GREEN}
-            stopOpacity={dark ? 0.2 : 0.34}
-          />
-          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
-        </RadialGradient>
-        <RadialGradient cx="92%" cy="106%" id="homeMeshSouth" r="78%">
-          <Stop
-            offset="0"
-            stopColor={BARAKAH_GREEN}
-            stopOpacity={dark ? 0.42 : 0.62}
-          />
-          <Stop
-            offset="0.58"
-            stopColor={BARAKAH_GREEN}
-            stopOpacity={dark ? 0.16 : 0.28}
-          />
-          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
-        </RadialGradient>
-        <RadialGradient cx="0%" cy="88%" id="homeMeshPaper" r="76%">
-          <Stop
-            offset="0"
-            stopColor={dark ? "#111816" : "#FFFFFF"}
-            stopOpacity={dark ? 0.28 : 0.96}
-          />
-          <Stop
-            offset="0.6"
-            stopColor={dark ? "#111816" : "#FFFFFF"}
-            stopOpacity={dark ? 0.12 : 0.4}
-          />
-          <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0} />
-        </RadialGradient>
-      </Defs>
-      <Rect fill={base} height="220" width="320" x="0" y="0" />
-      <Rect fill="url(#homeMeshNorth)" height="220" width="320" x="0" y="0" />
-      <Rect fill="url(#homeMeshEast)" height="220" width="320" x="0" y="0" />
-      <Rect fill="url(#homeMeshSouth)" height="220" width="320" x="0" y="0" />
-      <Rect fill="url(#homeMeshPaper)" height="220" width="320" x="0" y="0" />
-    </Svg>
-  );
-}
-
 function LedgerRow({
   colors,
   activeSurface,
@@ -775,8 +685,14 @@ function LedgerRow({
         ? colors.primary
         : colors.ink;
 
+  const a11yLabel = status
+    ? `${PRAYER_LABEL[prayer]}, ${STATUS_LABEL[status]}`
+    : `${PRAYER_LABEL[prayer]}${time ? `, ${fmt12(time)}` : ""}${isActive ? ", in progress" : ""}`;
+
   return (
     <Pressable
+      accessibilityLabel={a11yLabel}
+      accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => ({
         borderWidth: 1,
@@ -832,7 +748,7 @@ function LedgerRow({
                 <View
                   style={{
                     height: 1,
-                    width: `${Math.max(4, progress * 100)}%`,
+                    width: `${progress * 100}%`,
                     backgroundColor: colors.primary,
                   }}
                 />

@@ -1,10 +1,10 @@
 import type { PrayerWindow } from "@barakah/core/shieldSelection";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
+import { lockBoundsMinutes, NOTIF_LEAD_MIN } from "@/lib/prayer-window-config";
 
 const SHIELD_NOTIFICATION_IDS_KEY = "shield-notification-ids:v1";
 const SHIELD_TIME_REGEX = /^(\d{1,2}):(\d{2})/;
-const LEAD_TIME_MIN = 1;
 
 const WINDOW_TITLE: Record<PrayerWindow, string> = {
   fajr: "Fajr",
@@ -28,7 +28,11 @@ interface ScheduleOptions {
   windows: PrayerWindow[];
 }
 
-function parseTime(baseDate: Date, hhmm: string): Date | null {
+function lockStartAt(
+  baseDate: Date,
+  window: PrayerWindow,
+  hhmm: string
+): Date | null {
   const match = SHIELD_TIME_REGEX.exec(hhmm.trim());
   if (!match) {
     return null;
@@ -45,9 +49,12 @@ function parseTime(baseDate: Date, hhmm: string): Date | null {
   ) {
     return null;
   }
+  const adhanMinutes = hour * 60 + minute;
+  const { start } = lockBoundsMinutes(window, adhanMinutes);
+  const offsetFromAdhan = start - adhanMinutes - NOTIF_LEAD_MIN;
   const scheduled = new Date(baseDate);
   scheduled.setHours(hour, minute, 0, 0);
-  scheduled.setTime(scheduled.getTime() - LEAD_TIME_MIN * 60_000);
+  scheduled.setMinutes(scheduled.getMinutes() + offsetFromAdhan);
   return scheduled;
 }
 
@@ -100,7 +107,7 @@ export async function scheduleShieldNotifications({
   const now = new Date();
   const ids: string[] = [];
   for (const w of windows) {
-    const fireAt = parseTime(date, times[w]);
+    const fireAt = lockStartAt(date, w, times[w]);
     if (!fireAt || fireAt.getTime() <= now.getTime()) {
       continue;
     }

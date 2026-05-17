@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { RecordMesh } from "@/components/meshes";
 import { useTheme } from "@/contexts/theme-context";
 import { PRESETS, type Preset, useDhikr } from "./_layout";
 
@@ -27,6 +28,7 @@ export default function DhikrRecord() {
           Platform.OS === "ios" ? "light" : scheme === "dark" ? "light" : "dark"
         }
       />
+      <RecordMesh dark={scheme === "dark"} />
       <View style={{ alignItems: "center", paddingTop: 10 }}>
         <View
           style={{

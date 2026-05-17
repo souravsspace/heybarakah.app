@@ -19,9 +19,8 @@ import {
   scheduleShieldNotifications,
 } from "@/lib/prayer-shield-notifications";
 import { registerPrayerShieldTask } from "@/lib/prayer-shield-task";
+import { lockBoundsMinutes } from "@/lib/prayer-window-config";
 import { usePrayerTimes } from "./usePrayerTimes";
-
-const WINDOW_DURATION_MIN = 20;
 
 interface Timings {
   asr: string;
@@ -35,7 +34,14 @@ const INACTIVE_STATE = /inactive|background/;
 
 function parseHHmm(time: string) {
   const [h, m] = time.split(":").map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) {
+  if (
+    Number.isNaN(h) ||
+    Number.isNaN(m) ||
+    h < 0 ||
+    h > 23 ||
+    m < 0 ||
+    m > 59
+  ) {
     return null;
   }
   return h * 60 + m;
@@ -44,11 +50,15 @@ function parseHHmm(time: string) {
 function computeWindows(windows: PrayerWindow[], timings: Timings) {
   const out: { name: PrayerWindow; start: number; end: number }[] = [];
   for (const name of windows) {
-    const start = parseHHmm(timings[name]);
-    if (start === null) {
+    const adhan = parseHHmm(timings[name]);
+    if (adhan === null) {
       continue;
     }
-    out.push({ name, start, end: start + WINDOW_DURATION_MIN });
+    const { start, end } = lockBoundsMinutes(name, adhan);
+    if (start >= 1440) {
+      continue;
+    }
+    out.push({ name, start, end: Math.min(end, 1440) });
   }
   return out.sort((a, b) => a.start - b.start);
 }

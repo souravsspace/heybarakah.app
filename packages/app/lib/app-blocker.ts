@@ -149,3 +149,10 @@ export function FamilyActivityPickerView(
   }
   return React.createElement(mod.FamilyActivityPickerView, props);
 }
+
+export function presentFamilyActivityPicker(): Promise<IOSBlockedItem[]> {
+  if (!mod) {
+    return Promise.resolve([]);
+  }
+  return mod.presentFamilyActivityPicker();
+}

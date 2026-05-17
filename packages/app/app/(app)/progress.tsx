@@ -8,6 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AreaChart } from "@/components/area-chart";
+import { ProgressMesh } from "@/components/meshes";
 import { PrayerMatrix } from "@/components/prayer-matrix";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { useTheme } from "@/contexts/theme-context";
@@ -119,10 +120,13 @@ export default function Progress() {
   const onTime = week.onTimeCount;
 
   const empty = !week.loading && week.totalLogged === 0;
+  const cardSurface =
+    scheme === "dark" ? "rgba(20,26,23,0.55)" : "rgba(255,255,255,0.55)";
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <ProgressMesh dark={scheme === "dark"} />
       <Animated.ScrollView
         contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 140 }}
         onScroll={onScroll}
@@ -208,7 +212,7 @@ export default function Progress() {
             borderRadius: 20,
             borderWidth: 1,
             borderColor: colors.border,
-            backgroundColor: colors.card,
+            backgroundColor: cardSurface,
             padding: 16,
             paddingBottom: 8,
           }}
@@ -262,6 +266,7 @@ export default function Progress() {
           <PrayerMatrix
             days={days}
             getStatus={week.getStatus}
+            surface={cardSurface}
             todayKey={todayKey}
           />
         </View>
