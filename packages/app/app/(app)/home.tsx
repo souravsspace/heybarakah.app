@@ -15,7 +15,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
+import { HomeMesh } from "@/components/meshes";
 import { MosqueMinaret } from "@/components/onboarding/illustrations/mosque-minaret";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
@@ -364,7 +364,7 @@ export default function Home() {
       }}
     >
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <HomeMeshGradient dark={scheme === "dark"} />
+      <HomeMesh dark={scheme === "dark"} />
       <Animated.ScrollView
         contentContainerStyle={{
           flexGrow: 1,
@@ -639,82 +639,6 @@ export default function Home() {
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
     </View>
-  );
-}
-
-function HomeMeshGradient({ dark }: { dark: boolean }) {
-  const base = dark ? "#0E1311" : "#F8FAF8";
-  const greenOpacity = dark ? 0.34 : 0.52;
-  const mistOpacity = dark ? 0.2 : 0.58;
-  const lightOpacity = dark ? 0.04 : 0.82;
-
-  return (
-    <Svg
-      height="100%"
-      pointerEvents="none"
-      preserveAspectRatio="none"
-      style={{
-        position: "absolute",
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-      }}
-      viewBox="0 0 320 220"
-      width="100%"
-    >
-      <Defs>
-        <RadialGradient cx="18%" cy="6%" id="homeMeshNorth" r="72%">
-          <Stop offset="0" stopColor="#DDE8E1" stopOpacity={mistOpacity} />
-          <Stop
-            offset="0.48"
-            stopColor={BARAKAH_GREEN}
-            stopOpacity={greenOpacity}
-          />
-          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
-        </RadialGradient>
-        <RadialGradient cx="92%" cy="0%" id="homeMeshEast" r="72%">
-          <Stop offset="0" stopColor="#F7F9F7" stopOpacity={lightOpacity} />
-          <Stop
-            offset="0.5"
-            stopColor={BARAKAH_GREEN}
-            stopOpacity={dark ? 0.2 : 0.34}
-          />
-          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
-        </RadialGradient>
-        <RadialGradient cx="92%" cy="106%" id="homeMeshSouth" r="78%">
-          <Stop
-            offset="0"
-            stopColor={BARAKAH_GREEN}
-            stopOpacity={dark ? 0.42 : 0.62}
-          />
-          <Stop
-            offset="0.58"
-            stopColor={BARAKAH_GREEN}
-            stopOpacity={dark ? 0.16 : 0.28}
-          />
-          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
-        </RadialGradient>
-        <RadialGradient cx="0%" cy="88%" id="homeMeshPaper" r="76%">
-          <Stop
-            offset="0"
-            stopColor={dark ? "#111816" : "#FFFFFF"}
-            stopOpacity={dark ? 0.28 : 0.96}
-          />
-          <Stop
-            offset="0.6"
-            stopColor={dark ? "#111816" : "#FFFFFF"}
-            stopOpacity={dark ? 0.12 : 0.4}
-          />
-          <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0} />
-        </RadialGradient>
-      </Defs>
-      <Rect fill={base} height="220" width="320" x="0" y="0" />
-      <Rect fill="url(#homeMeshNorth)" height="220" width="320" x="0" y="0" />
-      <Rect fill="url(#homeMeshEast)" height="220" width="320" x="0" y="0" />
-      <Rect fill="url(#homeMeshSouth)" height="220" width="320" x="0" y="0" />
-      <Rect fill="url(#homeMeshPaper)" height="220" width="320" x="0" y="0" />
-    </Svg>
   );
 }
 
