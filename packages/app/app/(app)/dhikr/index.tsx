@@ -11,6 +11,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DhikrMesh } from "@/components/meshes";
 import { useTheme } from "@/contexts/theme-context";
 import { PRESETS, useDhikr } from "./_layout";
 
@@ -80,6 +81,8 @@ export default function DhikrScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+
+      <DhikrMesh dark={scheme === "dark"} />
 
       <Animated.View
         pointerEvents="none"
