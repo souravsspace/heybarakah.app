@@ -1,5 +1,4 @@
 import { api } from "@barakah/core/convex/_generated/api";
-import { ALL_WINDOWS, type PrayerWindow } from "@barakah/core/shieldSelection";
 import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
 import { StatusBar } from "expo-status-bar";
@@ -39,23 +38,7 @@ import {
   setBlockedApps,
 } from "@/lib/app-blocker";
 
-interface Timings {
-  asr: string;
-  dhuhr: string;
-  fajr: string;
-  isha: string;
-  maghrib: string;
-}
-
 type ThemeColors = ReturnType<typeof useTheme>["colors"];
-
-const WINDOW_LABELS: Record<PrayerWindow, string> = {
-  fajr: "Fajr",
-  dhuhr: "Dhuhr",
-  asr: "Asr",
-  maghrib: "Maghrib",
-  isha: "Isha",
-};
 
 function fmt12(time: string) {
   const [h, m] = time.split(":").map(Number);
@@ -67,8 +50,12 @@ function fmt12(time: string) {
   return `${hour}:${m.toString().padStart(2, "0")} ${period}`;
 }
 
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export default function Locked() {
-  const { nextPrayer, todayPrayerTimes } = usePrayerTimes();
+  const { nextPrayer } = usePrayerTimes();
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
@@ -91,7 +78,6 @@ export default function Locked() {
   const selection = useQuery(api.lib.shieldSelection.getMine);
   const upsertIos = useMutation(api.lib.shieldSelection.upsertIos);
   const upsertAndroid = useMutation(api.lib.shieldSelection.upsertAndroid);
-  const setWindowsMut = useMutation(api.lib.shieldSelection.setWindows);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -123,23 +109,6 @@ export default function Locked() {
     Platform.OS === "ios"
       ? (selection?.iosItemCount ?? iosItems.length)
       : pendingAndroid.size;
-
-  const windows = useMemo<PrayerWindow[]>(
-    () =>
-      (selection?.windows as PrayerWindow[] | undefined) ?? [...ALL_WINDOWS],
-    [selection?.windows]
-  );
-
-  const toggleWindow = useCallback(
-    async (w: PrayerWindow) => {
-      Haptics.selectionAsync().catch(() => undefined);
-      const next = windows.includes(w)
-        ? windows.filter((x) => x !== w)
-        : [...windows, w];
-      await setWindowsMut({ windows: next });
-    },
-    [windows, setWindowsMut]
-  );
 
   const persistIos = useCallback(
     async (items: IOSBlockedItem[], selectionData: string) => {
@@ -239,8 +208,7 @@ export default function Locked() {
   }, [installed, search]);
 
   const upcoming = nextPrayer ? fmt12(nextPrayer.time) : null;
-  const upcomingName = nextPrayer ? nextPrayer.name : null;
-  const timings = todayPrayerTimes?.timings as Timings | undefined;
+  const upcomingName = nextPrayer ? capitalize(nextPrayer.name) : null;
 
   return (
     <View style={{ backgroundColor: colors.bg, flex: 1 }}>
@@ -252,17 +220,18 @@ export default function Locked() {
         scrollIndicatorInsets={{ top: insets.top }}
         showsVerticalScrollIndicator={false}
       >
+        {perm && !perm.allGranted ? (
+          <PermissionCard
+            colors={colors}
+            onRequestPerm={requestPerm}
+            platform={Platform.OS === "ios" ? "ios" : "android"}
+          />
+        ) : null}
         <Hero
           colors={colors}
           count={itemCount}
           upcoming={upcoming}
           upcomingName={upcomingName}
-        />
-        <PrayerRhythm
-          colors={colors}
-          onToggle={toggleWindow}
-          timings={timings}
-          windows={windows}
         />
         <SuggestedRow
           colors={colors}
@@ -275,7 +244,6 @@ export default function Locked() {
           iosItems={iosItems}
           iosSelectionLocal={iosSelectionLocal}
           onPickerChange={onPickerChange}
-          onRequestPerm={requestPerm}
           onSearchChange={setSearch}
           onToggleAndroid={toggleAndroid}
           pendingAndroid={pendingAndroid}
@@ -302,14 +270,17 @@ function Hero({
 }) {
   return (
     <View style={{ paddingHorizontal: 24, paddingTop: 8 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+      <View
+        style={{
+          alignItems: "flex-start",
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
         <Text
           style={{
             color: colors.inkMuted,
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 2.4,
-            textTransform: "uppercase",
+            fontSize: 13,
           }}
         >
           Quiet at salah
@@ -318,21 +289,9 @@ function Hero({
           <View style={{ alignItems: "flex-end" }}>
             <Text
               style={{
-                color: colors.inkSubtle,
-                fontSize: 9,
-                fontWeight: "700",
-                letterSpacing: 2,
-                textTransform: "uppercase",
-              }}
-            >
-              Next
-            </Text>
-            <Text
-              style={{
                 color: colors.ink,
                 fontSize: 14,
                 fontWeight: "600",
-                marginTop: 4,
               }}
             >
               {upcoming}
@@ -341,12 +300,11 @@ function Hero({
               <Text
                 style={{
                   color: colors.inkMuted,
-                  fontSize: 11,
-                  marginTop: 1,
-                  textTransform: "capitalize",
+                  fontSize: 12,
+                  marginTop: 2,
                 }}
               >
-                {upcomingName}
+                Next · {upcomingName}
               </Text>
             ) : null}
           </View>
@@ -359,20 +317,20 @@ function Hero({
           fontFamily: "LibreBaskerville-Bold",
           fontSize: 36,
           letterSpacing: -0.6,
-          lineHeight: 40,
-          marginTop: 28,
+          lineHeight: 42,
+          marginTop: 32,
         }}
       >
         Five times.
       </Text>
       <Text
         style={{
-          color: colors.primary,
+          color: colors.ink,
           fontFamily: "LibreBaskerville-Bold",
           fontSize: 36,
           fontStyle: "italic",
           letterSpacing: -0.6,
-          lineHeight: 40,
+          lineHeight: 42,
         }}
       >
         Hands quiet.
@@ -395,78 +353,6 @@ function Hero({
   );
 }
 
-function PrayerRhythm({
-  colors,
-  onToggle,
-  timings,
-  windows,
-}: {
-  colors: ThemeColors;
-  onToggle: (w: PrayerWindow) => void;
-  timings: Timings | undefined;
-  windows: PrayerWindow[];
-}) {
-  return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 36 }}>
-      <SectionEyebrow color={colors.inkMuted} label="Windows" />
-      <View
-        style={{
-          flexDirection: "row",
-          gap: 6,
-          marginTop: 14,
-        }}
-      >
-        {ALL_WINDOWS.map((w) => {
-          const on = windows.includes(w);
-          const time = timings?.[w];
-          return (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityState={{ selected: on }}
-              activeOpacity={0.7}
-              key={w}
-              onPress={() => onToggle(w)}
-              style={{
-                alignItems: "center",
-                backgroundColor: on ? colors.primary : "transparent",
-                borderColor: on ? colors.primary : colors.border,
-                borderRadius: 12,
-                borderWidth: 1,
-                flex: 1,
-                paddingHorizontal: 2,
-                paddingVertical: 10,
-              }}
-            >
-              <Text
-                adjustsFontSizeToFit
-                numberOfLines={1}
-                style={{
-                  color: on ? "#FFFFFF" : colors.ink,
-                  fontSize: 12,
-                  fontWeight: "700",
-                }}
-              >
-                {WINDOW_LABELS[w]}
-              </Text>
-              <Text
-                numberOfLines={1}
-                style={{
-                  color: on ? "#FFFFFF" : colors.inkSubtle,
-                  fontSize: 10,
-                  marginTop: 3,
-                  opacity: on ? 0.85 : 1,
-                }}
-              >
-                {time ? fmt12(time) : "—"}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
 function SuggestedRow({
   colors,
   onTap,
@@ -481,12 +367,12 @@ function SuggestedRow({
       ? "Tap any to open the picker."
       : "Tap to quiet at salah.";
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 36 }}>
-      <SectionEyebrow color={colors.inkMuted} label="Suggested" />
+    <View style={{ paddingHorizontal: 24, paddingTop: 44 }}>
+      <SectionLabel color={colors.ink} label="Suggested" />
       <Text
         style={{
-          color: colors.inkSubtle,
-          fontSize: 12,
+          color: colors.inkMuted,
+          fontSize: 13,
           marginTop: 4,
         }}
       >
@@ -496,8 +382,8 @@ function SuggestedRow({
         style={{
           flexDirection: "row",
           flexWrap: "wrap",
-          marginTop: 18,
-          rowGap: 18,
+          marginTop: 20,
+          rowGap: 20,
         }}
       >
         {SOCIAL_APPS.map((app) => {
@@ -564,10 +450,10 @@ function SuggestedRow({
               <Text
                 numberOfLines={1}
                 style={{
-                  color: isSelected ? colors.primary : colors.inkMuted,
-                  fontSize: 10,
-                  fontWeight: isSelected ? "700" : "500",
-                  marginTop: 6,
+                  color: isSelected ? colors.ink : colors.inkMuted,
+                  fontSize: 11,
+                  fontWeight: isSelected ? "600" : "400",
+                  marginTop: 8,
                   textAlign: "center",
                 }}
               >
@@ -587,7 +473,6 @@ function PickMore({
   iosItems,
   iosSelectionLocal,
   onPickerChange,
-  onRequestPerm,
   onSearchChange,
   onToggleAndroid,
   pendingAndroid,
@@ -600,7 +485,6 @@ function PickMore({
   iosItems: IOSBlockedItem[];
   iosSelectionLocal: string;
   onPickerChange: (e: FamilyActivityPickerSelectionEvent) => void;
-  onRequestPerm: () => void;
   onSearchChange: (s: string) => void;
   onToggleAndroid: (pkg: string) => void;
   pendingAndroid: Set<string>;
@@ -610,7 +494,7 @@ function PickMore({
 }) {
   if (Platform.OS === "web") {
     return (
-      <View style={{ paddingHorizontal: 24, paddingTop: 36 }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: 44 }}>
         <Text style={{ color: colors.inkMuted, fontSize: 13 }}>
           Locking is unavailable on web.
         </Text>
@@ -621,21 +505,15 @@ function PickMore({
     return null;
   }
   if (!perm.allGranted) {
-    return (
-      <PermissionGate
-        colors={colors}
-        onRequestPerm={onRequestPerm}
-        platform={Platform.OS === "ios" ? "ios" : "android"}
-      />
-    );
+    return null;
   }
 
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 36 }}>
-      <SectionEyebrow color={colors.inkMuted} label="All apps" />
+    <View style={{ paddingHorizontal: 24, paddingTop: 44 }}>
+      <SectionLabel color={colors.ink} label="All apps" />
 
       {Platform.OS === "ios" ? (
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: 16 }}>
           <View
             style={{
               borderColor: colors.border,
@@ -652,19 +530,16 @@ function PickMore({
             />
           </View>
           {iosItems.length > 0 ? (
-            <View style={{ marginTop: 18 }}>
+            <View style={{ marginTop: 20 }}>
               <Text
                 style={{
-                  color: colors.inkSubtle,
-                  fontSize: 10,
-                  fontWeight: "700",
-                  letterSpacing: 1.6,
-                  textTransform: "uppercase",
+                  color: colors.inkMuted,
+                  fontSize: 13,
                 }}
               >
                 Currently quieted
               </Text>
-              <View style={{ marginTop: 8 }}>
+              <View style={{ marginTop: 10 }}>
                 <BlockedAppsNativeList
                   items={iosItems}
                   selectionData={iosSelectionLocal}
@@ -675,7 +550,7 @@ function PickMore({
           ) : null}
         </View>
       ) : (
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: 16 }}>
           <View
             style={{
               borderBottomColor: colors.border,
@@ -775,7 +650,7 @@ function PickMore({
   );
 }
 
-function PermissionGate({
+function PermissionCard({
   colors,
   onRequestPerm,
   platform,
@@ -786,66 +661,108 @@ function PermissionGate({
 }) {
   const cta = platform === "ios" ? "Enable Screen Time" : "Enable usage access";
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 36 }}>
-      <SectionEyebrow color={colors.inkMuted} label="One step left" />
-      <Text
+    <View style={{ paddingBottom: 4, paddingHorizontal: 24, paddingTop: 4 }}>
+      <View
         style={{
-          color: colors.ink,
-          fontFamily: "LibreBaskerville-Bold",
-          fontSize: 22,
-          lineHeight: 28,
-          marginTop: 14,
+          backgroundColor: colors.surfaceSoft,
+          borderColor: colors.border,
+          borderRadius: 18,
+          borderWidth: 1,
+          paddingHorizontal: 18,
+          paddingVertical: 18,
         }}
       >
-        Grant permission to begin.
-      </Text>
-      <Text
-        style={{
-          color: colors.inkMuted,
-          fontSize: 14,
-          lineHeight: 22,
-          marginTop: 10,
-        }}
-      >
-        Barakah needs system permission to quiet apps during prayer windows. You
-        can revoke it any time.
-      </Text>
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={onRequestPerm}
-        style={{
-          alignItems: "center",
-          backgroundColor: colors.primary,
-          borderRadius: 12,
-          marginTop: 20,
-          paddingVertical: 14,
-        }}
-      >
-        <Text
+        <View
           style={{
-            color: "#FFFFFF",
-            fontSize: 13,
-            fontWeight: "700",
-            letterSpacing: 1.6,
-            textTransform: "uppercase",
+            alignItems: "center",
+            flexDirection: "row",
+            gap: 8,
           }}
         >
-          {cta}
+          <View
+            style={{
+              backgroundColor: colors.primary,
+              borderRadius: 999,
+              height: 6,
+              width: 6,
+            }}
+          />
+          <Text
+            style={{
+              color: colors.inkMuted,
+              fontSize: 12,
+              fontWeight: "500",
+            }}
+          >
+            One step left
+          </Text>
+        </View>
+        <Text
+          style={{
+            color: colors.ink,
+            fontFamily: "LibreBaskerville-Bold",
+            fontSize: 20,
+            lineHeight: 26,
+            marginTop: 10,
+          }}
+        >
+          Grant permission to begin.
         </Text>
-      </TouchableOpacity>
+        <Text
+          style={{
+            color: colors.inkMuted,
+            fontSize: 13,
+            lineHeight: 20,
+            marginTop: 6,
+          }}
+        >
+          Barakah needs system permission to quiet apps during prayer. Revoke
+          any time.
+        </Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          activeOpacity={0.7}
+          onPress={onRequestPerm}
+          style={{
+            alignItems: "center",
+            alignSelf: "flex-start",
+            flexDirection: "row",
+            gap: 6,
+            marginTop: 14,
+            paddingVertical: 4,
+          }}
+        >
+          <Text
+            style={{
+              color: colors.primary,
+              fontSize: 14,
+              fontWeight: "600",
+            }}
+          >
+            {cta}
+          </Text>
+          <Text
+            style={{
+              color: colors.primary,
+              fontSize: 14,
+              fontWeight: "600",
+            }}
+          >
+            →
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
-function SectionEyebrow({ color, label }: { color: string; label: string }) {
+function SectionLabel({ color, label }: { color: string; label: string }) {
   return (
     <Text
       style={{
         color,
-        fontSize: 10,
-        fontWeight: "700",
-        letterSpacing: 2.2,
-        textTransform: "uppercase",
+        fontFamily: "LibreBaskerville-Bold",
+        fontSize: 18,
       }}
     >
       {label}
