@@ -1,10 +1,22 @@
+import * as Notifications from "expo-notifications";
 import { Redirect } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { Platform } from "react-native";
 import { AuthLoading } from "@/components/auth-loading";
 import { useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
+import { useDailyAyahNotification } from "@/hooks/useDailyAyahNotification";
 import { useSubscription } from "@/lib/subscription";
+
+Notifications.setNotificationHandler({
+  handleNotification: () =>
+    Promise.resolve({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+});
 
 const PRIMARY_BRIGHT = "#00D26A";
 
@@ -63,6 +75,11 @@ function TabsWithTheme() {
   );
 }
 
+function AuthedShell() {
+  useDailyAyahNotification();
+  return <TabsWithTheme />;
+}
+
 export default function AppLayout() {
   const { user, isLoading } = useUser();
   const { activeSubscription, isSubscriptionLoading } = useSubscription();
@@ -77,5 +94,5 @@ export default function AppLayout() {
     return <Redirect href="/no-active-sub" />;
   }
 
-  return <TabsWithTheme />;
+  return <AuthedShell />;
 }
