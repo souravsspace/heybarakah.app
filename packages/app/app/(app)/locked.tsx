@@ -16,6 +16,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LockedMesh } from "@/components/meshes";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { SOCIAL_APPS, type SocialApp } from "@/constants/social-apps";
 import { useTheme } from "@/contexts/theme-context";
@@ -213,6 +214,7 @@ export default function Locked() {
   return (
     <View style={{ backgroundColor: colors.bg, flex: 1 }}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <LockedMesh dark={scheme === "dark"} />
       <Animated.ScrollView
         contentContainerStyle={{ paddingBottom: 160, paddingTop: insets.top }}
         onScroll={onScroll}
@@ -225,6 +227,11 @@ export default function Locked() {
             colors={colors}
             onRequestPerm={requestPerm}
             platform={Platform.OS === "ios" ? "ios" : "android"}
+            surface={
+              scheme === "dark"
+                ? "rgba(20,26,23,0.55)"
+                : "rgba(255,255,255,0.55)"
+            }
           />
         ) : null}
         <Hero
@@ -654,17 +661,19 @@ function PermissionCard({
   colors,
   onRequestPerm,
   platform,
+  surface,
 }: {
   colors: ThemeColors;
   onRequestPerm: () => void;
   platform: "ios" | "android";
+  surface: string;
 }) {
   const cta = platform === "ios" ? "Enable Screen Time" : "Enable usage access";
   return (
     <View style={{ paddingBottom: 4, paddingHorizontal: 24, paddingTop: 4 }}>
       <View
         style={{
-          backgroundColor: colors.surfaceSoft,
+          backgroundColor: surface,
           borderColor: colors.border,
           borderRadius: 18,
           borderWidth: 1,
