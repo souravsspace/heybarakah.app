@@ -134,4 +134,11 @@ export default defineSchema({
     authUserId: v.string(),
     ...shieldSelectionFields,
   }).index("by_user", ["authUserId"]),
+  dhikrDaily: defineTable({
+    authUserId: v.string(),
+    date: v.string(),
+    count: v.number(),
+    target: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user_date", ["authUserId", "date"]),
 });

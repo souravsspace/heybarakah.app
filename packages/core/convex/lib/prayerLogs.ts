@@ -94,6 +94,50 @@ export const logPrayer = mutation({
   },
 });
 
+const STREAK_MAX_LOOKBACK = 365;
+const ALL_FIVE = 5;
+const STREAK_COUNTABLE_STATUSES = new Set(["on_time", "late", "qada"]);
+
+export const getStreak = query({
+  args: { today: v.string() },
+  handler: async (ctx, { today }) => {
+    if (!DATE_KEY_PATTERN.test(today)) {
+      throw new Error("Invalid today");
+    }
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return { days: 0, asOf: today };
+    }
+    const startDate = addDays(today, -STREAK_MAX_LOOKBACK);
+    const logs = await ctx.db
+      .query("prayerLogs")
+      .withIndex("by_user_date_prayer", (q) =>
+        q.eq("authUserId", user._id).gte("date", startDate).lte("date", today)
+      )
+      .collect();
+    const byDate = new Map<string, Set<string>>();
+    for (const log of logs) {
+      if (!STREAK_COUNTABLE_STATUSES.has(log.status)) {
+        continue;
+      }
+      const set = byDate.get(log.date) ?? new Set<string>();
+      set.add(log.prayer);
+      byDate.set(log.date, set);
+    }
+    const isComplete = (d: string) => (byDate.get(d)?.size ?? 0) >= ALL_FIVE;
+    let days = isComplete(today) ? 1 : 0;
+    let cursor = addDays(today, -1);
+    for (let i = 0; i < STREAK_MAX_LOOKBACK; i++) {
+      if (!isComplete(cursor)) {
+        break;
+      }
+      days++;
+      cursor = addDays(cursor, -1);
+    }
+    return { days, asOf: today };
+  },
+});
+
 export const clearPrayer = mutation({
   args: { date: v.string(), prayer: prayerLiteral },
   handler: async (ctx, args) => {
