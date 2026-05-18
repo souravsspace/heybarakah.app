@@ -16,6 +16,7 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { ProfileMesh } from "@/components/meshes";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { LINKS } from "@/constants/links";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
 
@@ -233,14 +234,14 @@ export default function Profile() {
             <Divider colors={colors} />
             <Row
               colors={colors}
-              onPress={() => openUrl("https://heybarakah.app/terms")}
+              onPress={() => openUrl(LINKS.terms)}
               sf="doc.text.fill"
               title="Terms and Conditions"
             />
             <Divider colors={colors} />
             <Row
               colors={colors}
-              onPress={() => openUrl("https://heybarakah.app/privacy")}
+              onPress={() => openUrl(LINKS.privacy)}
               sf="lock.shield.fill"
               title="Privacy Policy"
             />
