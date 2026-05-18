@@ -43,5 +43,3 @@ export default defineConfig({
     },
   },
 });
-</content>
-</invoke>
