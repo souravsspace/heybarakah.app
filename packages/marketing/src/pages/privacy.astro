@@ -1,0 +1,306 @@
+---
+import LegalLayout from "../layouts/LegalLayout.astro";
+import { appConfig } from "../app-config";
+
+const effective = "May 19, 2026";
+const updated = "May 19, 2026";
+
+const toc = [
+  { id: "principles", label: "Privacy principles" },
+  { id: "collect", label: "What we collect" },
+  { id: "not-collect", label: "What we do not collect" },
+  { id: "use", label: "How we use data" },
+  { id: "sharing", label: "Sharing & processors" },
+  { id: "retention", label: "Retention" },
+  { id: "rights", label: "Your rights" },
+  { id: "children", label: "Children & families" },
+  { id: "security", label: "Security" },
+  { id: "transfers", label: "International transfers" },
+  { id: "notifications", label: "Notifications" },
+  { id: "cookies", label: "Cookies" },
+  { id: "regions", label: "Region-specific notices" },
+  { id: "automated", label: "Automated decisions" },
+  { id: "changes", label: "Changes to this policy" },
+  { id: "contact", label: "Contact" },
+];
+---
+
+<LegalLayout
+  title="Privacy policy — Barakah"
+  description="How Barakah collects, uses, and protects your data. Privacy is amana — a trust — and we take it seriously."
+  heading="Privacy policy"
+  eyebrow="Legal · Privacy"
+  effective={effective}
+  updated={updated}
+  toc={toc}
+>
+  <p class="lead">
+    Privacy is amana — a trust. Barakah is built to support your salah, not to surveil you. This
+    policy explains what we collect, why we collect it, how long we keep it, and how to control it.
+  </p>
+
+  <div class="callout">
+    <p>
+      <strong>The short version:</strong> we do not sell your data, we do not read the contents of
+      your messages or locked apps, and we collect the minimum we need to make prayer locks work.
+      Everything below is the detailed version.
+    </p>
+  </div>
+
+  <section id="principles">
+    <h2 data-index="01">Privacy principles</h2>
+    <ul>
+      <li><strong>Minimum data.</strong> We collect only what the service needs to work.</li>
+      <li><strong>No sale.</strong> We never sell or rent your personal data.</li>
+      <li><strong>On-device by default.</strong> Sensitive settings stay on your device where they can.</li>
+      <li><strong>No surveillance.</strong> We do not track movement, read messages, or scrape contacts.</li>
+      <li><strong>Honest defaults.</strong> Permissions are opt-in and explained in plain language.</li>
+    </ul>
+  </section>
+
+  <section id="collect">
+    <h2 data-index="02">What we collect</h2>
+
+    <h3>Account data</h3>
+    <p>
+      Email address and basic profile information when you sign up or join the waitlist. Used to
+      contact you about your account and to deliver the service.
+    </p>
+
+    <h3>Device and usage data</h3>
+    <p>
+      Limited technical data such as device model, OS version, app version, language, time zone,
+      and anonymized event counts (for example, “prayer lock triggered”). Used to keep Barakah
+      stable and to fix bugs.
+    </p>
+
+    <h3>Prayer settings</h3>
+    <p>
+      Your chosen calculation method, locked-app selections, and prayer-window preferences. Stored
+      on your device. Where you opt in to cloud sync, these are stored under your account.
+    </p>
+
+    <h3>Location</h3>
+    <p>
+      With your permission, your approximate location is used to calculate prayer times. You can
+      grant precise or approximate location at the OS level. We do not track movement and we do not
+      sell location data.
+    </p>
+
+    <h3>Payments</h3>
+    <p>
+      Purchases are processed by our payment provider. We receive a transaction reference, country,
+      and basic billing details. We never see or store your full card number.
+    </p>
+
+    <h3>Support communications</h3>
+    <p>
+      When you email us, we keep your message and our reply so we can help and to keep a record of
+      what was promised.
+    </p>
+  </section>
+
+  <section id="not-collect">
+    <h2 data-index="03">What we do not collect</h2>
+    <ul>
+      <li>The contents of your messages or any locked app.</li>
+      <li>Your contacts, photos, calendar, health data, or microphone audio.</li>
+      <li>Detailed movement traces or continuous background location.</li>
+      <li>Browsing history outside of Barakah.</li>
+      <li>Advertising identifiers for cross-app tracking.</li>
+    </ul>
+  </section>
+
+  <section id="use">
+    <h2 data-index="04">How we use data</h2>
+    <ul>
+      <li><strong>Run the service</strong> — calculate prayer times and apply your prayer locks.</li>
+      <li><strong>Support you</strong> — answer emails and resolve issues.</li>
+      <li><strong>Improve Barakah</strong> — diagnose crashes and measure feature usage in aggregate.</li>
+      <li><strong>Communicate</strong> — send service emails (receipts, security, important updates). Marketing emails are opt-in and unsubscribable.</li>
+      <li><strong>Meet legal obligations</strong> — tax, accounting, and lawful requests.</li>
+    </ul>
+  </section>
+
+  <section id="sharing">
+    <h2 data-index="05">Sharing and processors</h2>
+    <p>
+      We do not sell your personal data. We share it only with the vendors that make Barakah work.
+      Each is bound by a data processing agreement and limited to the purpose we engage them for.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Category</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Application infrastructure</td>
+          <td>Backend, database, and serverless functions powering the app and website.</td>
+        </tr>
+        <tr>
+          <td>Authentication</td>
+          <td>Sign-in, session management, and account security.</td>
+        </tr>
+        <tr>
+          <td>Payments</td>
+          <td>Processing purchases, subscriptions, refunds, and tax compliance.</td>
+        </tr>
+        <tr>
+          <td>Email delivery</td>
+          <td>Transactional and (opt-in) marketing email.</td>
+        </tr>
+        <tr>
+          <td>Analytics and crash reporting</td>
+          <td>Aggregated product usage and stability monitoring.</td>
+        </tr>
+        <tr>
+          <td>Push notifications</td>
+          <td>Delivering prayer reminders and account alerts you opt in to.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      We may disclose data when required by law or to protect the rights, safety, or property of
+      Barakah, its users, or the public.
+    </p>
+  </section>
+
+  <section id="retention">
+    <h2 data-index="06">Retention</h2>
+    <p>
+      Account and purchase records are kept for as long as your account is active and for the
+      period required by law (typically 6–7 years for financial records). Anonymized usage data may
+      be retained for product analytics. You can request deletion at any time.
+    </p>
+  </section>
+
+  <section id="rights">
+    <h2 data-index="07">Your rights</h2>
+    <p>
+      Depending on where you live, you may have the right to:
+    </p>
+    <ul>
+      <li>Access the personal data we hold about you.</li>
+      <li>Correct inaccurate or incomplete data.</li>
+      <li>Delete your data (subject to legal retention).</li>
+      <li>Port your data to another service in a common format.</li>
+      <li>Object to or restrict certain processing.</li>
+      <li>Withdraw consent at any time, without affecting prior processing.</li>
+      <li>Lodge a complaint with your local data-protection authority.</li>
+    </ul>
+    <p>
+      To exercise any of these rights, email
+      <a href={`mailto:${appConfig.contact.email}`}>{appConfig.contact.email}</a>.
+      We respond within 30 days, or sooner where required by law.
+    </p>
+  </section>
+
+  <section id="children">
+    <h2 data-index="08">Children and families</h2>
+    <p>
+      Barakah is not directed at children under 13. We do not knowingly collect personal data from
+      children under 13. If you believe a child has provided us personal data, contact us and we
+      will delete it. Parents and guardians who use Barakah to support a child’s salah practice
+      remain responsible for managing that child’s use of the app.
+    </p>
+  </section>
+
+  <section id="security">
+    <h2 data-index="09">Security</h2>
+    <p>
+      We use encryption in transit (TLS) and at rest where supported by our providers, vetted
+      infrastructure, role-based access, and the principle of least privilege for internal access.
+      No system is perfectly secure, but we work hard to protect your data and will notify you of
+      material incidents as required by law.
+    </p>
+  </section>
+
+  <section id="transfers">
+    <h2 data-index="10">International transfers</h2>
+    <p>
+      Your data may be processed in countries other than your own, including the United States and
+      Europe, where our providers operate. Where required, we rely on standard contractual clauses
+      or equivalent safeguards.
+    </p>
+  </section>
+
+  <section id="notifications">
+    <h2 data-index="11">Notifications</h2>
+    <p>
+      Push notifications (prayer reminders, account alerts) are opt-in and can be turned off in
+      your device settings. We send service emails (receipts, security, important updates) as part
+      of operating the service. Marketing emails are opt-in and include an unsubscribe link.
+    </p>
+  </section>
+
+  <section id="cookies">
+    <h2 data-index="12">Cookies and similar technologies</h2>
+    <p>
+      Our website uses a small number of cookies and similar storage for essential functionality
+      (session, preferences) and privacy-respecting analytics. We honor Global Privacy Control
+      signals where required. You can control cookies in your browser settings.
+    </p>
+  </section>
+
+  <section id="regions">
+    <h2 data-index="13">Region-specific notices</h2>
+
+    <h3>European Economic Area, United Kingdom, and Switzerland</h3>
+    <p>
+      Where the GDPR (or UK GDPR / Swiss FADP) applies, the controller of your personal data is
+      {appConfig.brand.legalName}. Legal bases include performance of contract (delivering the
+      service), legitimate interests (improving Barakah, security), consent (marketing emails,
+      precise location), and legal obligation (tax, accounting). You have the right to lodge a
+      complaint with your supervisory authority.
+    </p>
+
+    <h3>California</h3>
+    <p>
+      California residents have rights under the CCPA/CPRA, including the right to know, delete,
+      correct, and limit the use of sensitive personal information. We do not sell or share
+      personal information for cross-context behavioral advertising.
+    </p>
+
+    <h3>Other regions</h3>
+    <p>
+      Where local law (such as Brazil’s LGPD, Canada’s PIPEDA, or similar) provides additional
+      rights, those rights apply to you in addition to anything else stated here.
+    </p>
+  </section>
+
+  <section id="automated">
+    <h2 data-index="14">Automated decisions</h2>
+    <p>
+      We do not use your personal data for automated decision-making or profiling that produces
+      legal or similarly significant effects on you.
+    </p>
+  </section>
+
+  <section id="changes">
+    <h2 data-index="15">Changes to this policy</h2>
+    <p>
+      We may update this policy as the product evolves. Material changes will be highlighted on
+      this page or communicated to you in-app or by email. The “last updated” date above always
+      reflects the current version.
+    </p>
+  </section>
+
+  <section id="contact">
+    <h2 data-index="16">Contact</h2>
+    <p>
+      Questions, requests, or concerns?
+      <a href={`mailto:${appConfig.contact.email}`}>{appConfig.contact.email}</a>.
+    </p>
+    <address>
+      {appConfig.brand.legalName}<br />
+      Attn: Privacy<br />
+      <a href={`mailto:${appConfig.contact.email}`}>{appConfig.contact.email}</a>
+    </address>
+  </section>
+
+  <hr />
+
+  <p>
+    May Allah accept your salah and grant you barakah in your time, ameen.
+  </p>
+</LegalLayout>
