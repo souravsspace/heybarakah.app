@@ -1,7 +1,8 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
-import { setSnapshot } from "expo-widget-bridge";
+import { consumePendingDhikr, setSnapshot } from "expo-widget-bridge";
 import { useEffect, useMemo, useRef } from "react";
+import { AppState } from "react-native";
 import { useDhikrIncrementBridge } from "@/hooks/useDhikrIncrementBridge";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { pickDailyAyah } from "@/lib/daily-ayah";
@@ -100,7 +101,6 @@ function useDhikrReconciliation(today: string): void {
   useEffect(() => {
     let cancelled = false;
     async function drain(): Promise<void> {
-      const { consumePendingDhikr } = await import("expo-widget-bridge");
       try {
         const n = await consumePendingDhikr();
         if (!cancelled && n > 0) {
@@ -111,8 +111,14 @@ function useDhikrReconciliation(today: string): void {
       }
     }
     drain();
+    const sub = AppState.addEventListener("change", (status) => {
+      if (status === "active") {
+        drain();
+      }
+    });
     return () => {
       cancelled = true;
+      sub.remove();
     };
   }, [increment, today]);
 }
