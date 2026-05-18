@@ -458,3 +458,99 @@ export function ProgressMesh({ dark }: MeshProps) {
     </MeshShell>
   );
 }
+
+export function SplashMesh({ dark }: MeshProps) {
+  if (dark) {
+    return (
+      <MeshShell>
+        <Defs>
+          <RadialGradient cx="20%" cy="18%" id="splashDarkNorth" r="78%">
+            <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.34} />
+            <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.12} />
+            <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient cx="92%" cy="104%" id="splashDarkSouth" r="84%">
+            <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.4} />
+            <Stop offset="0.6" stopColor={BARAKAH_GREEN} stopOpacity={0.14} />
+            <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient cx="50%" cy="50%" id="splashDarkCore" r="48%">
+            <Stop offset="0" stopColor="#1A2A22" stopOpacity={0.6} />
+            <Stop offset="1" stopColor="#0E1311" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect fill="#0E1311" height="220" width="320" x="0" y="0" />
+        <Rect
+          fill="url(#splashDarkNorth)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+        <Rect
+          fill="url(#splashDarkSouth)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+        <Rect
+          fill="url(#splashDarkCore)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+      </MeshShell>
+    );
+  }
+  return (
+    <MeshShell>
+      <Defs>
+        <RadialGradient cx="14%" cy="8%" id="splashLightNorth" r="78%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.16} />
+          <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.06} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="96%" cy="104%" id="splashLightSouth" r="84%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.18} />
+          <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.06} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="50%" cy="50%" id="splashLightCore" r="46%">
+          <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.55} />
+          <Stop offset="0.6" stopColor="#FFFFFF" stopOpacity={0.18} />
+          <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="98%" cy="2%" id="splashLightCream" r="62%">
+          <Stop offset="0" stopColor="#F5EBDB" stopOpacity={0.7} />
+          <Stop offset="0.6" stopColor="#F5EBDB" stopOpacity={0.2} />
+          <Stop offset="1" stopColor="#F5EBDB" stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect fill="#FAF4E8" height="220" width="320" x="0" y="0" />
+      <Rect
+        fill="url(#splashLightCream)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+      <Rect
+        fill="url(#splashLightNorth)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+      <Rect
+        fill="url(#splashLightSouth)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+      <Rect fill="url(#splashLightCore)" height="220" width="320" x="0" y="0" />
+    </MeshShell>
+  );
+}
