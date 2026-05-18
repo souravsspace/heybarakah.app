@@ -7,7 +7,11 @@ const { brand, contact, islamic } = appConfig;
 const checkoutId = Astro.url.searchParams.get("checkout_id");
 ---
 
-<Layout>
+<Layout
+  title="You're on the list — Barakah"
+  description="Seat secured. Barakah will reach you the moment iOS and Android open."
+  noindex
+>
   <SuccessConfetti client:load />
 
   <section class="relative bg-white">
