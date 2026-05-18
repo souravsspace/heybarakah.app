@@ -67,7 +67,8 @@ private struct DhikrView: View {
       let side = min(geo.size.width, geo.size.height)
       let radius = side / 2 - 6
       let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
-      let filled = min(Self.beadCount, Int(round(Double(count % target) / Double(max(target, 1)) * Double(Self.beadCount))))
+      let progress = min(Double(count), Double(target)) / Double(max(target, 1))
+      let filled = min(Self.beadCount, Int(ceil(progress * Double(Self.beadCount))))
       ForEach(0..<Self.beadCount, id: \.self) { i in
         let angle = Double(i) / Double(Self.beadCount) * 2 * .pi - .pi / 2
         let x = center.x + radius * CGFloat(cos(angle))
