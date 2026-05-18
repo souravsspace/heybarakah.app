@@ -1,14 +1,18 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
-import { consumePendingDhikr, setSnapshot } from "expo-widget-bridge";
+import {
+  ackPendingDhikr,
+  peekPendingDhikr,
+  setSnapshot,
+} from "expo-widget-bridge";
 import { useEffect, useMemo, useRef } from "react";
 import { AppState } from "react-native";
-import { useDhikrIncrementBridge } from "@/hooks/useDhikrIncrementBridge";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { pickDailyAyah } from "@/lib/daily-ayah";
 import { buildWidgetSnapshot } from "@/lib/widget-snapshot";
 
 const DEBOUNCE_MS = 800;
+const INCREMENT_CHUNK = 1000;
 
 function pad2(n: number): string {
   return n.toString().padStart(2, "0");
@@ -93,21 +97,38 @@ export function useWidgetSync(): void {
   ]);
 
   useDhikrReconciliation(today);
-  useDhikrIncrementBridge();
 }
 
 function useDhikrReconciliation(today: string): void {
   const increment = useMutation(api.lib.dhikr.increment);
+  const inFlight = useRef(false);
   useEffect(() => {
     let cancelled = false;
     async function drain(): Promise<void> {
+      if (inFlight.current) {
+        return;
+      }
+      inFlight.current = true;
       try {
-        const n = await consumePendingDhikr();
-        if (!cancelled && n > 0) {
-          await increment({ date: today, by: n });
+        const pending = await peekPendingDhikr();
+        if (cancelled || pending <= 0) {
+          return;
+        }
+        let committed = 0;
+        let remaining = pending;
+        while (remaining > 0 && !cancelled) {
+          const chunk = Math.min(remaining, INCREMENT_CHUNK);
+          await increment({ date: today, by: chunk });
+          committed += chunk;
+          remaining -= chunk;
+        }
+        if (committed > 0) {
+          await ackPendingDhikr(committed);
         }
       } catch {
-        // ignore — bridge may be unavailable
+        // bridge unavailable or commit failed — pending count preserved
+      } finally {
+        inFlight.current = false;
       }
     }
     drain();
