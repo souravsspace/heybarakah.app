@@ -13,6 +13,7 @@ enum WidgetSuite {
 struct WidgetSnapshot: Codable, Hashable {
   struct Prayer: Codable, Hashable {
     let name: String
+    let adhanISO: String
     let startISO: String
     let endISO: String
   }
@@ -73,8 +74,32 @@ enum SharedStore {
   }
 
   static func enqueueDhikrIncrement() {
-    let suite = WidgetSuite.defaults()
-    let current = suite?.integer(forKey: WidgetSuite.pendingDhikrKey) ?? 0
-    suite?.set(current + 1, forKey: WidgetSuite.pendingDhikrKey)
+    guard let suite = WidgetSuite.defaults() else { return }
+    let current = suite.integer(forKey: WidgetSuite.pendingDhikrKey)
+    suite.set(current + 1, forKey: WidgetSuite.pendingDhikrKey)
+    bumpSnapshotDhikr(suite: suite)
+  }
+
+  private static func bumpSnapshotDhikr(suite: UserDefaults) {
+    guard let raw = suite.string(forKey: WidgetSuite.snapshotKey),
+          let data = raw.data(using: .utf8),
+          let snapshot = try? decoder.decode(WidgetSnapshot.self, from: data) else {
+      return
+    }
+    let bumped = WidgetSnapshot(
+      v: snapshot.v,
+      generatedAt: snapshot.generatedAt,
+      tz: snapshot.tz,
+      date: snapshot.date,
+      prayers: snapshot.prayers,
+      tomorrowFajrISO: snapshot.tomorrowFajrISO,
+      streak: snapshot.streak,
+      dhikr: .init(count: snapshot.dhikr.count + 1, target: snapshot.dhikr.target),
+      ayah: snapshot.ayah
+    )
+    if let encoded = try? JSONEncoder().encode(bumped),
+       let str = String(data: encoded, encoding: .utf8) {
+      suite.set(str, forKey: WidgetSuite.snapshotKey)
+    }
   }
 }
