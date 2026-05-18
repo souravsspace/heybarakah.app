@@ -1,6 +1,10 @@
 import type { PrayerDay } from "@barakah/core/prayer";
 import type { PrayerName } from "expo-widget-bridge";
-import { endLockActivity, startLockActivity } from "expo-widget-bridge";
+import {
+  endAllLockActivities,
+  endLockActivity,
+  startLockActivity,
+} from "expo-widget-bridge";
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
@@ -74,11 +78,33 @@ export function useLockActivityScheduler(): void {
   const { prayerTimes } = usePrayerTimes();
   const currentActivityId = useRef<string | null>(null);
   const currentKey = useRef<string | null>(null);
+  const inFlight = useRef(false);
+  const bootstrapped = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function tick(): Promise<void> {
+      if (inFlight.current) {
+        return;
+      }
+      inFlight.current = true;
+      try {
+        await tickBody();
+      } finally {
+        inFlight.current = false;
+      }
+    }
+
+    async function tickBody(): Promise<void> {
+      if (!bootstrapped.current) {
+        bootstrapped.current = true;
+        try {
+          await endAllLockActivities();
+        } catch {
+          // ignore
+        }
+      }
       const now = new Date();
       const dayKey = todayKey(now);
       const day = prayerTimes.find((item) => item.date === dayKey);
