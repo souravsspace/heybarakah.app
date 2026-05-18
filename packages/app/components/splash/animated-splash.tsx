@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { StyleSheet, useColorScheme } from "react-native";
+import { StyleSheet, useColorScheme, View } from "react-native";
 import Animated, {
   Easing,
   runOnJS,
@@ -9,14 +9,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import {
-  Circle,
-  Defs,
-  Path,
-  RadialGradient,
-  Stop,
-  Svg,
-} from "react-native-svg";
+import { Path, Svg } from "react-native-svg";
 
 import { SplashMesh } from "@/components/meshes";
 
@@ -29,40 +22,46 @@ const PATH_MID =
 const PATH_TOP =
   "M132.141 209.99C131.551 208.38 129.581 196.73 128.481 188.24C126.871 176.37 126.211 148.98 127.311 137.26C128.411 125.39 130.461 113.75 133.241 102.91C139.831 77.2 155.361 48.05 174.551 25.27C182.311 16.11 198.651 0 200.261 0H201.801L200.481 6.45C196.451 26.45 197.111 48.2 202.381 71.42C204.941 82.55 206.991 89.36 213.441 108.04C219.151 124.52 225.671 145.83 225.161 146.35C224.061 147.45 206.411 132.65 201.141 126.21C196.531 120.57 190.301 110.83 187.081 104.16C185.621 101.23 184.441 99.62 183.641 99.62C182.471 99.62 182.321 100.72 182.321 111.92C182.321 130.52 184.441 149.86 188.841 171.61C191.181 183.18 191.481 182.16 184.591 186.4C173.971 192.77 132.591 211.38 132.151 209.98L132.141 209.99Z";
 
-const MESH_IN = 400;
-const HALO_IN = 650;
-const MARK_DELAY = 120;
-const MARK_IN = 720;
-const HOLD = 280;
-const EXIT = 480;
+const MESH_IN = 420;
+const MARK_DELAY = 140;
+const MARK_IN = 760;
+const UNDERLINE_DELAY = MARK_DELAY + 360;
+const UNDERLINE_IN = 720;
+const HOLD = 360;
+const EXIT = 520;
 
-const ENTRANCE_END = MARK_DELAY + MARK_IN;
+const ENTRANCE_END = UNDERLINE_DELAY + UNDERLINE_IN;
 const EXIT_AT = ENTRANCE_END + HOLD;
-
-const MOSQUE_GREEN = "#29603E";
 
 const ICON_WIDTH = 168;
 const ICON_HEIGHT = 272;
-const HALO_SIZE = 360;
+const UNDERLINE_MAX_WIDTH = 100;
+
+const STROKE_LIGHT = "#29603E";
+const STROKE_DARK = "#F5EBDB";
+const UNDERLINE_LIGHT = "#29603E";
+const UNDERLINE_DARK = "#F5EBDB";
 
 export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
   const meshOpacity = useSharedValue(0);
-  const haloScale = useSharedValue(1.6);
-  const haloOpacity = useSharedValue(0);
   const markOpacity = useSharedValue(0);
-  const markScale = useSharedValue(0.92);
-  const markTranslateY = useSharedValue(10);
+  const markTranslateY = useSharedValue(8);
+  const underlineWidth = useSharedValue(0);
+  const underlineOpacity = useSharedValue(0);
 
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+  const stroke = isDark ? STROKE_DARK : STROKE_LIGHT;
+  const underlineColor = isDark ? UNDERLINE_DARK : UNDERLINE_LIGHT;
 
   useEffect(() => {
     const easeOutCubic = Easing.out(Easing.cubic);
     const easeOutQuad = Easing.out(Easing.quad);
     const easeInCubic = Easing.in(Easing.cubic);
 
-    const haloHold = EXIT_AT - HALO_IN;
     const meshHold = EXIT_AT - MESH_IN;
+    const markHold = EXIT_AT - (MARK_DELAY + MARK_IN);
+    const underlineHold = EXIT_AT - (UNDERLINE_DELAY + UNDERLINE_IN);
 
     meshOpacity.value = withSequence(
       withTiming(1, { duration: MESH_IN, easing: easeOutCubic }),
@@ -72,41 +71,34 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
       )
     );
 
-    haloScale.value = withSequence(
-      withTiming(1, { duration: HALO_IN, easing: easeOutCubic }),
-      withDelay(
-        haloHold,
-        withTiming(1.55, { duration: EXIT, easing: easeInCubic })
-      )
-    );
-    haloOpacity.value = withSequence(
-      withTiming(0.9, { duration: HALO_IN, easing: easeOutQuad }),
-      withDelay(
-        haloHold,
-        withTiming(0, { duration: EXIT, easing: easeInCubic })
-      )
-    );
-
     markTranslateY.value = withDelay(
       MARK_DELAY,
       withTiming(0, { duration: MARK_IN, easing: easeOutCubic })
-    );
-    markScale.value = withDelay(
-      MARK_DELAY,
-      withSequence(
-        withTiming(1, { duration: MARK_IN, easing: easeOutCubic }),
-        withDelay(
-          HOLD,
-          withTiming(1.04, { duration: EXIT, easing: easeInCubic })
-        )
-      )
     );
     markOpacity.value = withDelay(
       MARK_DELAY,
       withSequence(
         withTiming(1, { duration: MARK_IN, easing: easeOutQuad }),
         withDelay(
-          HOLD,
+          markHold,
+          withTiming(0, { duration: EXIT, easing: easeInCubic })
+        )
+      )
+    );
+
+    underlineWidth.value = withDelay(
+      UNDERLINE_DELAY,
+      withTiming(UNDERLINE_MAX_WIDTH, {
+        duration: UNDERLINE_IN,
+        easing: easeOutCubic,
+      })
+    );
+    underlineOpacity.value = withDelay(
+      UNDERLINE_DELAY,
+      withSequence(
+        withTiming(1, { duration: UNDERLINE_IN, easing: easeOutQuad }),
+        withDelay(
+          underlineHold,
           withTiming(0, { duration: EXIT, easing: easeInCubic }, (done) => {
             if (done) {
               runOnJS(onFinish)();
@@ -116,30 +108,26 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
       )
     );
   }, [
-    haloOpacity,
-    haloScale,
     markOpacity,
-    markScale,
     markTranslateY,
     meshOpacity,
     onFinish,
+    underlineOpacity,
+    underlineWidth,
   ]);
 
   const meshStyle = useAnimatedStyle(() => ({
     opacity: meshOpacity.value,
   }));
 
-  const haloStyle = useAnimatedStyle(() => ({
-    opacity: haloOpacity.value,
-    transform: [{ scale: haloScale.value }],
-  }));
-
   const markStyle = useAnimatedStyle(() => ({
     opacity: markOpacity.value,
-    transform: [
-      { translateY: markTranslateY.value },
-      { scale: markScale.value },
-    ],
+    transform: [{ translateY: markTranslateY.value }],
+  }));
+
+  const underlineStyle = useAnimatedStyle(() => ({
+    width: underlineWidth.value,
+    opacity: underlineOpacity.value,
   }));
 
   return (
@@ -151,39 +139,45 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
         <SplashMesh dark={isDark} />
       </Animated.View>
 
-      <Animated.View style={[styles.halo, haloStyle]}>
-        <Svg height={HALO_SIZE} viewBox="0 0 100 100" width={HALO_SIZE}>
-          <Defs>
-            <RadialGradient cx="50%" cy="50%" id="splashHalo" r="50%">
-              <Stop
-                offset="0"
-                stopColor={MOSQUE_GREEN}
-                stopOpacity={isDark ? 0.38 : 0.22}
-              />
-              <Stop
-                offset="0.55"
-                stopColor={MOSQUE_GREEN}
-                stopOpacity={isDark ? 0.14 : 0.08}
-              />
-              <Stop offset="1" stopColor={MOSQUE_GREEN} stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Circle cx="50" cy="50" fill="url(#splashHalo)" r="50" />
-        </Svg>
-      </Animated.View>
-
-      <Animated.View style={markStyle}>
-        <Svg
-          fill="none"
-          height={ICON_HEIGHT}
-          viewBox="0 0 301 488"
-          width={ICON_WIDTH}
-        >
-          <Path d={PATH_TOP} fill={MOSQUE_GREEN} />
-          <Path d={PATH_MID} fill={MOSQUE_GREEN} />
-          <Path d={PATH_OUTER} fill={MOSQUE_GREEN} />
-        </Svg>
-      </Animated.View>
+      <View style={styles.stack}>
+        <Animated.View style={markStyle}>
+          <Svg
+            fill="none"
+            height={ICON_HEIGHT}
+            viewBox="0 0 301 488"
+            width={ICON_WIDTH}
+          >
+            <Path
+              d={PATH_TOP}
+              stroke={stroke}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={4}
+            />
+            <Path
+              d={PATH_MID}
+              stroke={stroke}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={4}
+            />
+            <Path
+              d={PATH_OUTER}
+              stroke={stroke}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={4}
+            />
+          </Svg>
+        </Animated.View>
+        <Animated.View
+          style={[
+            styles.underline,
+            { backgroundColor: underlineColor },
+            underlineStyle,
+          ]}
+        />
+      </View>
     </Animated.View>
   );
 }
@@ -194,9 +188,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 9999,
   },
-  halo: {
+  stack: {
     alignItems: "center",
     justifyContent: "center",
-    position: "absolute",
+  },
+  underline: {
+    height: 1,
+    marginTop: 22,
+    borderRadius: 1,
   },
 });
