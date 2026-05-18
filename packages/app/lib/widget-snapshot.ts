@@ -19,12 +19,6 @@ function pad2(n: number): string {
   return n.toString().padStart(2, "0");
 }
 
-function tzOffsetSuffix(offsetMinutes: number): string {
-  const sign = offsetMinutes >= 0 ? "+" : "-";
-  const abs = Math.abs(offsetMinutes);
-  return `${sign}${pad2(Math.floor(abs / 60))}:${pad2(abs % 60)}`;
-}
-
 function parseHHmm(raw: string): { hour: number; minute: number } | null {
   const [hourText, minuteText] = raw.split(":");
   const hour = Number(hourText);
@@ -42,33 +36,26 @@ function parseHHmm(raw: string): { hour: number; minute: number } | null {
   return { hour, minute };
 }
 
-function localISO(
-  dateKey: string,
-  hour: number,
-  minute: number,
-  tzSuffix: string
-): string {
-  return `${dateKey}T${pad2(hour)}:${pad2(minute)}:00${tzSuffix}`;
-}
-
-function adhanMinutes(hhmm: string): number | null {
-  const parsed = parseHHmm(hhmm);
-  if (!parsed) {
-    return null;
-  }
-  return parsed.hour * 60 + parsed.minute;
+function localISO(dateKey: string, hour: number, minute: number): string {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const local = new Date(y, m - 1, d, hour, minute, 0, 0);
+  const offsetMin = -local.getTimezoneOffset();
+  const sign = offsetMin >= 0 ? "+" : "-";
+  const abs = Math.abs(offsetMin);
+  const tz = `${sign}${pad2(Math.floor(abs / 60))}:${pad2(abs % 60)}`;
+  return `${dateKey}T${pad2(hour)}:${pad2(minute)}:00${tz}`;
 }
 
 function buildPrayerEntry(
   name: PrayerName,
-  day: PrayerDay,
-  tzSuffix: string
+  day: PrayerDay
 ): WidgetPrayerEntry | null {
   const raw = (day.timings as Record<string, string>)[name];
-  const minutes = adhanMinutes(raw);
-  if (minutes === null) {
+  const parsed = parseHHmm(raw);
+  if (!parsed) {
     return null;
   }
+  const minutes = parsed.hour * 60 + parsed.minute;
   const bounds = lockBoundsMinutes(name, minutes);
   const startHour = Math.floor(bounds.start / 60);
   const startMinute = bounds.start % 60;
@@ -76,8 +63,9 @@ function buildPrayerEntry(
   const endMinute = bounds.end % 60;
   return {
     name,
-    startISO: localISO(day.date, startHour, startMinute, tzSuffix),
-    endISO: localISO(day.date, endHour, endMinute, tzSuffix),
+    adhanISO: localISO(day.date, parsed.hour, parsed.minute),
+    startISO: localISO(day.date, startHour, startMinute),
+    endISO: localISO(day.date, endHour, endMinute),
   };
 }
 
@@ -99,12 +87,10 @@ export function buildWidgetSnapshot(
   if (!today) {
     return null;
   }
-  const offsetMinutes = -new Date().getTimezoneOffset();
-  const tzSuffix = tzOffsetSuffix(offsetMinutes);
 
   const prayers: WidgetPrayerEntry[] = [];
   for (const name of PRAYER_ORDER) {
-    const entry = buildPrayerEntry(name, today, tzSuffix);
+    const entry = buildPrayerEntry(name, today);
     if (entry) {
       prayers.push(entry);
     }
@@ -117,12 +103,7 @@ export function buildWidgetSnapshot(
   if (tomorrow) {
     const parsed = parseHHmm(tomorrow.timings.fajr);
     if (parsed) {
-      tomorrowFajrISO = localISO(
-        tomorrow.date,
-        parsed.hour,
-        parsed.minute,
-        tzSuffix
-      );
+      tomorrowFajrISO = localISO(tomorrow.date, parsed.hour, parsed.minute);
     }
   }
 
