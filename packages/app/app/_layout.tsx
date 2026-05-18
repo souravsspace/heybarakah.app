@@ -8,10 +8,11 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { hideAsync, preventAutoHideAsync } from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
+import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { ThemeProvider as BarakahThemeProvider } from "@/contexts/theme-context";
 import { UserProvider } from "@/contexts/user-context";
 import { OnboardingProvider } from "@/hooks/use-onboarding-state";
@@ -33,12 +34,17 @@ export default function RootLayout() {
     Inter: require("../assets/fonts/Inter-Variable.ttf"),
     "LibreBaskerville-Bold": require("../assets/fonts/LibreBaskerville-Bold.ttf"),
   });
+  const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
     if (fontsLoaded) {
       hideAsync().catch(() => undefined);
     }
   }, [fontsLoaded]);
+
+  const handleSplashFinish = useCallback(() => {
+    setSplashDone(true);
+  }, []);
 
   if (!fontsLoaded) {
     return null;
@@ -82,6 +88,9 @@ export default function RootLayout() {
                     />
                   </Stack>
                   <StatusBar style="dark" />
+                  {splashDone ? null : (
+                    <AnimatedSplash onFinish={handleSplashFinish} />
+                  )}
                 </BarakahThemeProvider>
               </OnboardingProvider>
             </SubscriptionProvider>
