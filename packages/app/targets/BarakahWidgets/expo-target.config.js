@@ -8,7 +8,7 @@ module.exports = (config) => {
     type: "widget",
     name: "BarakahWidgets",
     bundleIdentifier: ".BarakahWidgets",
-    deploymentTarget: "18.0",
+    deploymentTarget: "16.2",
     entitlements: {
       "com.apple.security.application-groups": [appGroup],
     },
