@@ -1,6 +1,7 @@
 export type PrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 
 export interface WidgetPrayerEntry {
+  adhanISO: string;
   endISO: string;
   name: PrayerName;
   startISO: string;
@@ -17,8 +18,4 @@ export interface WidgetSnapshot {
   tomorrowFajrISO: string | null;
   tz: string;
   v: 1;
-}
-
-export interface DhikrIncrementEvent {
-  count: number;
 }
