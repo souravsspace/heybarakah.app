@@ -1,4 +1,7 @@
-import { type NativeModule, requireNativeModule } from "expo-modules-core";
+import {
+  type NativeModule,
+  requireOptionalNativeModule,
+} from "expo-modules-core";
 import { Platform } from "react-native";
 import type { WidgetSnapshot } from "./types";
 
@@ -18,7 +21,7 @@ interface WidgetBridgeNative extends NativeModule {
 
 const native: WidgetBridgeNative | null =
   Platform.OS === "ios"
-    ? requireNativeModule<WidgetBridgeNative>("WidgetBridge")
+    ? requireOptionalNativeModule<WidgetBridgeNative>("WidgetBridge")
     : null;
 
 export async function setSnapshot(snapshot: WidgetSnapshot): Promise<void> {

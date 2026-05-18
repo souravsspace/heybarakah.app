@@ -5,7 +5,9 @@
   "scripts": {
     "start": "expo start",
     "lint": "expo lint",
-    "prebuild": "expo prebuild --clean",
+    "prebuild": "expo prebuild",
+    "prebuild:clean": "expo prebuild --clean",
+    "pod": "cd ios && pod install",
     "typecheck": "tsc --noEmit",
     "android": "expo run:android",
     "ios": "expo run:ios"
@@ -49,7 +51,7 @@
     "expo-system-ui": "~6.0.9",
     "expo-task-manager": "~14.0.9",
     "expo-web-browser": "~15.0.10",
-    "expo-widget-bridge": "./modules/expo-widget-bridge",
+    "expo-widget-bridge": "workspace:*",
     "nativewind": "^4.2.3",
     "react": "catalog:",
     "react-dom": "catalog:",

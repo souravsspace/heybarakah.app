@@ -16,7 +16,8 @@
   },
   "workspaces": {
     "packages": [
-      "packages/*"
+      "packages/*",
+      "modules/*"
     ],
     "catalog": {
       "typescript": "~5.9.2",
