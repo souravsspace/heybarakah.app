@@ -112,10 +112,21 @@ private struct SalahArcView: View {
   private var nextPrayer: WidgetSnapshot.Prayer? {
     guard let prayers = snapshot?.prayers else { return nil }
     let now = entry.date
-    return prayers.first { p in
-      guard let s = SharedStore.date(from: p.startISO) else { return false }
+    if let upcoming = prayers.first(where: { p in
+      guard let s = SharedStore.date(from: p.adhanISO) else { return false }
       return s > now
-    } ?? prayers.last
+    }) {
+      return upcoming
+    }
+    if let tomorrow = snapshot?.tomorrowFajrISO {
+      return WidgetSnapshot.Prayer(
+        name: "fajr",
+        adhanISO: tomorrow,
+        startISO: tomorrow,
+        endISO: tomorrow
+      )
+    }
+    return prayers.last
   }
 
   private var nextEyebrow: String {
@@ -157,15 +168,15 @@ private struct SalahArcView: View {
 
   private var metaLine: String {
     guard let prayer = displayPrayer,
-          let start = SharedStore.date(from: prayer.startISO) else {
+          let adhan = SharedStore.date(from: prayer.adhanISO) else {
       return "—"
     }
-    let timeText = DateFormatters.timeOfDay.string(from: start)
+    let timeText = DateFormatters.timeOfDay.string(from: adhan)
     let now = entry.date
     if isLocked, let end = SharedStore.date(from: prayer.endISO) {
       return "\(timeText) · ends in \(RelativeFormatter.short(now: now, target: end))"
     }
-    return "\(timeText) · in \(RelativeFormatter.short(now: now, target: start))"
+    return "\(timeText) · in \(RelativeFormatter.short(now: now, target: adhan))"
   }
 
   private var progressEyebrow: String {
