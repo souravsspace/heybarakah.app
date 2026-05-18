@@ -35,6 +35,28 @@ npm run reset-project
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
+## Widgets (iOS 18+)
+
+The `targets/BarakahWidgets/` extension and the local `modules/expo-widget-bridge` Expo module power the home-screen, lock-screen, Live Activity, and Control Center widgets.
+
+To run them:
+
+```bash
+bun --cwd ../../ install
+bun --cwd packages/app expo prebuild --platform ios --clean
+bun --cwd packages/app expo run:ios
+```
+
+Widgets do not work in Expo Go — you need a development build. After the app launches once with an authed user, the JS layer writes a snapshot to the shared App Group; the widgets read from that snapshot.
+
+To verify the snapshot manually:
+
+```bash
+defaults read group.com.souravsspace.Barakah.shield widget.snapshot.v1
+```
+
+Live Activities only render the Dynamic Island on physical Pro devices.
+
 ## Learn more
 
 To learn more about developing your project with Expo, look at the following resources:
