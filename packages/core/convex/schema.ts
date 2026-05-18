@@ -141,4 +141,26 @@ export default defineSchema({
     target: v.number(),
     updatedAt: v.number(),
   }).index("by_user_date", ["authUserId", "date"]),
+  chatConversations: defineTable({
+    authUserId: v.string(),
+    title: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user_updated", ["authUserId", "updatedAt"]),
+  chatMessages: defineTable({
+    conversationId: v.id("chatConversations"),
+    authUserId: v.string(),
+    role: v.union(v.literal("user"), v.literal("assistant")),
+    content: v.string(),
+    streamId: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_conversation_created", ["conversationId", "createdAt"])
+    .index("by_streamId", ["streamId"]),
+  chatRateLimits: defineTable({
+    authUserId: v.string(),
+    date: v.string(),
+    count: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user_date", ["authUserId", "date"]),
 });
