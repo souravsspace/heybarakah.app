@@ -3,10 +3,10 @@ import { StyleSheet, useColorScheme } from "react-native";
 import Animated, {
   Easing,
   runOnJS,
-  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
+  withSequence,
   withTiming,
 } from "react-native-reanimated";
 import {
@@ -20,8 +20,6 @@ import {
 
 import { SplashMesh } from "@/components/meshes";
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-
 const PATH_OUTER =
   "M20.1605 485.23C19.8705 483.25 19.3505 476.95 18.9905 471.31C16.6505 432.2 28.5805 402.32 58.2505 373.53C79.4905 352.95 100.66 339.84 154.12 314.35C174.92 304.46 190.45 296.33 202.09 289.3C207.95 285.71 209.12 285.27 209.49 286.3C210.66 289.3 211.83 307.91 211.83 322.63C211.9 366.14 201.65 403.86 180.56 438.35C173.53 449.78 166.13 459.22 155.58 470.06C145.62 480.39 134.71 489.91 135.8 487.42C144.66 466.55 151.84 436.74 154.48 410.22C155.73 397.33 155.14 366.57 153.53 365.03C153.02 364.44 118.15 379.82 104.31 386.71C76.7005 400.48 59.4105 412.93 46.5205 428.46C32.9705 444.72 25.2805 461.13 22.1305 480.46C20.7405 488.81 20.7405 488.88 20.1505 485.22L20.1605 485.23Z";
 
@@ -31,127 +29,101 @@ const PATH_MID =
 const PATH_TOP =
   "M132.141 209.99C131.551 208.38 129.581 196.73 128.481 188.24C126.871 176.37 126.211 148.98 127.311 137.26C128.411 125.39 130.461 113.75 133.241 102.91C139.831 77.2 155.361 48.05 174.551 25.27C182.311 16.11 198.651 0 200.261 0H201.801L200.481 6.45C196.451 26.45 197.111 48.2 202.381 71.42C204.941 82.55 206.991 89.36 213.441 108.04C219.151 124.52 225.671 145.83 225.161 146.35C224.061 147.45 206.411 132.65 201.141 126.21C196.531 120.57 190.301 110.83 187.081 104.16C185.621 101.23 184.441 99.62 183.641 99.62C182.471 99.62 182.321 100.72 182.321 111.92C182.321 130.52 184.441 149.86 188.841 171.61C191.181 183.18 191.481 182.16 184.591 186.4C173.971 192.77 132.591 211.38 132.151 209.98L132.141 209.99Z";
 
-const DASH = 2400;
+const MESH_IN = 400;
+const HALO_IN = 650;
+const MARK_DELAY = 120;
+const MARK_IN = 720;
+const HOLD = 280;
+const EXIT = 480;
 
-const MESH_FADE_IN = 450;
-const HALO_DELAY = 100;
-const HALO_FADE_IN = 500;
-const SCALE_IN_DURATION = 800;
-const PATH_DURATION = 700;
-const PATH_DELAY_TOP = 200;
-const PATH_DELAY_MID = 380;
-const PATH_DELAY_OUTER = 560;
-const FILL_DELAY = 1100;
-const FILL_DURATION = 400;
-const HOLD = 320;
-const EXIT_DELAY = FILL_DELAY + FILL_DURATION + HOLD;
-const EXIT_DURATION = 480;
+const ENTRANCE_END = MARK_DELAY + MARK_IN;
+const EXIT_AT = ENTRANCE_END + HOLD;
 
 const MOSQUE_GREEN = "#29603E";
 
 const ICON_WIDTH = 168;
 const ICON_HEIGHT = 272;
-const HALO_SIZE = 320;
+const HALO_SIZE = 360;
 
 export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
   const meshOpacity = useSharedValue(0);
+  const haloScale = useSharedValue(1.6);
   const haloOpacity = useSharedValue(0);
-  const markScale = useSharedValue(0.94);
-  const offTop = useSharedValue(DASH);
-  const offMid = useSharedValue(DASH);
-  const offOuter = useSharedValue(DASH);
-  const fill = useSharedValue(0);
-  const containerOpacity = useSharedValue(1);
-  const containerScale = useSharedValue(1);
+  const markOpacity = useSharedValue(0);
+  const markScale = useSharedValue(0.92);
+  const markTranslateY = useSharedValue(10);
 
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
 
   useEffect(() => {
     const easeOutCubic = Easing.out(Easing.cubic);
-    const easeInOutQuad = Easing.inOut(Easing.quad);
+    const easeOutQuad = Easing.out(Easing.quad);
     const easeInCubic = Easing.in(Easing.cubic);
 
-    meshOpacity.value = withTiming(1, {
-      duration: MESH_FADE_IN,
-      easing: easeOutCubic,
-    });
+    const haloHold = EXIT_AT - HALO_IN;
+    const meshHold = EXIT_AT - MESH_IN;
 
-    haloOpacity.value = withDelay(
-      HALO_DELAY,
-      withTiming(1, { duration: HALO_FADE_IN, easing: easeOutCubic })
+    meshOpacity.value = withSequence(
+      withTiming(1, { duration: MESH_IN, easing: easeOutCubic }),
+      withDelay(
+        meshHold,
+        withTiming(0, { duration: EXIT, easing: easeInCubic })
+      )
     );
 
-    markScale.value = withTiming(1, {
-      duration: SCALE_IN_DURATION,
-      easing: easeOutCubic,
-    });
-
-    offTop.value = withDelay(
-      PATH_DELAY_TOP,
-      withTiming(0, { duration: PATH_DURATION, easing: easeOutCubic })
+    haloScale.value = withSequence(
+      withTiming(1, { duration: HALO_IN, easing: easeOutCubic }),
+      withDelay(
+        haloHold,
+        withTiming(1.55, { duration: EXIT, easing: easeInCubic })
+      )
     );
-    offMid.value = withDelay(
-      PATH_DELAY_MID,
-      withTiming(0, { duration: PATH_DURATION, easing: easeOutCubic })
-    );
-    offOuter.value = withDelay(
-      PATH_DELAY_OUTER,
-      withTiming(0, { duration: PATH_DURATION, easing: easeOutCubic })
+    haloOpacity.value = withSequence(
+      withTiming(0.9, { duration: HALO_IN, easing: easeOutQuad }),
+      withDelay(
+        haloHold,
+        withTiming(0, { duration: EXIT, easing: easeInCubic })
+      )
     );
 
-    fill.value = withDelay(
-      FILL_DELAY,
-      withTiming(1, { duration: FILL_DURATION, easing: easeInOutQuad })
+    markTranslateY.value = withDelay(
+      MARK_DELAY,
+      withTiming(0, { duration: MARK_IN, easing: easeOutCubic })
     );
-
-    containerScale.value = withDelay(
-      EXIT_DELAY,
-      withTiming(1.04, { duration: EXIT_DURATION, easing: easeInCubic })
+    markScale.value = withDelay(
+      MARK_DELAY,
+      withSequence(
+        withTiming(1, { duration: MARK_IN, easing: easeOutCubic }),
+        withDelay(
+          HOLD,
+          withTiming(1.04, { duration: EXIT, easing: easeInCubic })
+        )
+      )
     );
-
-    containerOpacity.value = withDelay(
-      EXIT_DELAY,
-      withTiming(
-        0,
-        { duration: EXIT_DURATION, easing: easeInCubic },
-        (done) => {
-          if (done) {
-            runOnJS(onFinish)();
-          }
-        }
+    markOpacity.value = withDelay(
+      MARK_DELAY,
+      withSequence(
+        withTiming(1, { duration: MARK_IN, easing: easeOutQuad }),
+        withDelay(
+          HOLD,
+          withTiming(0, { duration: EXIT, easing: easeInCubic }, (done) => {
+            if (done) {
+              runOnJS(onFinish)();
+            }
+          })
+        )
       )
     );
   }, [
-    containerOpacity,
-    containerScale,
-    fill,
     haloOpacity,
+    haloScale,
+    markOpacity,
     markScale,
+    markTranslateY,
     meshOpacity,
-    offMid,
-    offOuter,
-    offTop,
     onFinish,
   ]);
-
-  const topProps = useAnimatedProps(() => ({
-    strokeDashoffset: offTop.value,
-    fillOpacity: fill.value,
-  }));
-  const midProps = useAnimatedProps(() => ({
-    strokeDashoffset: offMid.value,
-    fillOpacity: fill.value,
-  }));
-  const outerProps = useAnimatedProps(() => ({
-    strokeDashoffset: offOuter.value,
-    fillOpacity: fill.value,
-  }));
-
-  const containerStyle = useAnimatedStyle(() => ({
-    opacity: containerOpacity.value,
-    transform: [{ scale: containerScale.value }],
-  }));
 
   const meshStyle = useAnimatedStyle(() => ({
     opacity: meshOpacity.value,
@@ -159,16 +131,21 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
 
   const haloStyle = useAnimatedStyle(() => ({
     opacity: haloOpacity.value,
+    transform: [{ scale: haloScale.value }],
   }));
 
   const markStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: markScale.value }],
+    opacity: markOpacity.value,
+    transform: [
+      { translateY: markTranslateY.value },
+      { scale: markScale.value },
+    ],
   }));
 
   return (
     <Animated.View
       pointerEvents="none"
-      style={[StyleSheet.absoluteFill, styles.container, containerStyle]}
+      style={[StyleSheet.absoluteFill, styles.container]}
     >
       <Animated.View style={[StyleSheet.absoluteFill, meshStyle]}>
         <SplashMesh dark={isDark} />
@@ -181,12 +158,12 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
               <Stop
                 offset="0"
                 stopColor={MOSQUE_GREEN}
-                stopOpacity={isDark ? 0.32 : 0.18}
+                stopOpacity={isDark ? 0.38 : 0.22}
               />
               <Stop
                 offset="0.55"
                 stopColor={MOSQUE_GREEN}
-                stopOpacity={isDark ? 0.12 : 0.06}
+                stopOpacity={isDark ? 0.14 : 0.08}
               />
               <Stop offset="1" stopColor={MOSQUE_GREEN} stopOpacity={0} />
             </RadialGradient>
@@ -202,36 +179,9 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
           viewBox="0 0 301 488"
           width={ICON_WIDTH}
         >
-          <AnimatedPath
-            animatedProps={topProps}
-            d={PATH_TOP}
-            fill={MOSQUE_GREEN}
-            stroke={MOSQUE_GREEN}
-            strokeDasharray={DASH}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2.5}
-          />
-          <AnimatedPath
-            animatedProps={midProps}
-            d={PATH_MID}
-            fill={MOSQUE_GREEN}
-            stroke={MOSQUE_GREEN}
-            strokeDasharray={DASH}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2.5}
-          />
-          <AnimatedPath
-            animatedProps={outerProps}
-            d={PATH_OUTER}
-            fill={MOSQUE_GREEN}
-            stroke={MOSQUE_GREEN}
-            strokeDasharray={DASH}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2.5}
-          />
+          <Path d={PATH_TOP} fill={MOSQUE_GREEN} />
+          <Path d={PATH_MID} fill={MOSQUE_GREEN} />
+          <Path d={PATH_OUTER} fill={MOSQUE_GREEN} />
         </Svg>
       </Animated.View>
     </Animated.View>
@@ -245,8 +195,8 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   halo: {
-    position: "absolute",
     alignItems: "center",
     justifyContent: "center",
+    position: "absolute",
   },
 });
