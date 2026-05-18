@@ -13,9 +13,12 @@ When designing or implementing any UI, components, layouts, or visual features, 
 1. **`design/README.md`** — Handoff overview from Claude Design. Read it first.
 2. **`design/chats/`** — Conversation transcripts that capture intent and the user's final decisions.
 3. **`design/project/README.md`** — Brand context, content fundamentals, visual foundations, iconography.
-4. **`design/project/colors_and_type.css`** — Canonical CSS custom properties and semantic type classes.
-5. **`design/project/preview/`** — Per-component HTML cards (tokens, buttons, inputs, option rows, plan cards, etc.).
-6. **`design/project/assets/`** and **`design/project/fonts/`** — Brand marks, icons, font files.
+4. **`design/project/SKILL.md`** — Agent Skill manifest with cross-tool guidance.
+5. **`design/project/colors_and_type.css`** — Canonical CSS custom properties and semantic type classes.
+6. **`design/project/preview/`** — Per-component HTML cards (tokens, buttons, inputs, option rows, plan cards, etc.).
+7. **`design/project/ui_kits/app/`** — Click-thru HTML recreation of the mobile app (welcome → onboarding → paywall → home).
+8. **`design/project/packages/`** — Reference HTML mirroring the Expo app screens (`app/(app)`, `app/(onboarding)`).
+9. **`design/project/assets/`** and **`design/project/fonts/`** — Brand marks, icons, font files.
 
 **Key rules to internalize:**
 - Mosque green `#29603E` is the **only** accent. Everything else is black, white, and cool grays.
