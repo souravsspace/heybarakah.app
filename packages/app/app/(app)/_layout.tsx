@@ -6,6 +6,7 @@ import { AuthLoading } from "@/components/auth-loading";
 import { useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
 import { useDailyAyahNotification } from "@/hooks/useDailyAyahNotification";
+import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { useSubscription } from "@/lib/subscription";
 
 Notifications.setNotificationHandler({
@@ -77,6 +78,7 @@ function TabsWithTheme() {
 
 function AuthedShell() {
   useDailyAyahNotification();
+  useWidgetSync();
   return <TabsWithTheme />;
 }
 

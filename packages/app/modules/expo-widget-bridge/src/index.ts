@@ -59,4 +59,9 @@ export function addDhikrIncrementListener(
   return native.addListener("onWidgetDhikrIncrement", handler);
 }
 
-export type { DhikrIncrementEvent, WidgetSnapshot } from "./types";
+export type {
+  DhikrIncrementEvent,
+  PrayerName,
+  WidgetPrayerEntry,
+  WidgetSnapshot,
+} from "./types";
