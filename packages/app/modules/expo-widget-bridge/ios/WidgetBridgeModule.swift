@@ -5,8 +5,6 @@ public class WidgetBridgeModule: Module {
   public func definition() -> ModuleDefinition {
     Name("WidgetBridge")
 
-    Events("onWidgetDhikrIncrement")
-
     AsyncFunction("setSnapshot") { (json: String) -> Void in
       SharedSuite.defaults()?.set(json, forKey: SharedSuite.snapshotKey)
       WidgetCenter.shared.reloadAllTimelines()
@@ -16,11 +14,15 @@ public class WidgetBridgeModule: Module {
       WidgetCenter.shared.reloadAllTimelines()
     }
 
-    AsyncFunction("consumePendingDhikr") { () -> Int in
-      let suite = SharedSuite.defaults()
-      let n = suite?.integer(forKey: SharedSuite.pendingDhikrKey) ?? 0
-      suite?.set(0, forKey: SharedSuite.pendingDhikrKey)
-      return n
+    AsyncFunction("peekPendingDhikr") { () -> Int in
+      return SharedSuite.defaults()?.integer(forKey: SharedSuite.pendingDhikrKey) ?? 0
+    }
+
+    AsyncFunction("ackPendingDhikr") { (count: Int) -> Void in
+      guard let suite = SharedSuite.defaults(), count > 0 else { return }
+      let current = suite.integer(forKey: SharedSuite.pendingDhikrKey)
+      let next = max(0, current - count)
+      suite.set(next, forKey: SharedSuite.pendingDhikrKey)
     }
 
     AsyncFunction("startLockActivity") {
@@ -50,43 +52,5 @@ public class WidgetBridgeModule: Module {
       }
       throw Exception(name: "ActivityKitUnavailable", description: "ActivityKit requires iOS 16.2+")
     }
-
-    OnStartObserving("onWidgetDhikrIncrement") {
-      DhikrEventObserver.shared.start(emit: { [weak self] count in
-        self?.sendEvent("onWidgetDhikrIncrement", ["count": count])
-      })
-    }
-
-    OnStopObserving("onWidgetDhikrIncrement") {
-      DhikrEventObserver.shared.stop()
-    }
-  }
-}
-
-final class DhikrEventObserver {
-  static let shared = DhikrEventObserver()
-
-  private var observer: NSObjectProtocol?
-
-  func start(emit: @escaping (Int) -> Void) {
-    stop()
-    guard let suite = SharedSuite.defaults() else { return }
-    observer = NotificationCenter.default.addObserver(
-      forName: UserDefaults.didChangeNotification,
-      object: suite,
-      queue: .main
-    ) { _ in
-      let n = suite.integer(forKey: SharedSuite.pendingDhikrKey)
-      if n > 0 {
-        emit(n)
-      }
-    }
-  }
-
-  func stop() {
-    if let observer {
-      NotificationCenter.default.removeObserver(observer)
-    }
-    observer = nil
   }
 }
