@@ -74,22 +74,33 @@ private struct LockComplicationsView: View {
   private var next: WidgetSnapshot.Prayer? {
     guard let prayers = snapshot?.prayers else { return nil }
     let now = entry.date
-    return prayers.first { p in
-      guard let s = SharedStore.date(from: p.startISO) else { return false }
+    if let upcoming = prayers.first(where: { p in
+      guard let s = SharedStore.date(from: p.adhanISO) else { return false }
       return s > now
-    } ?? prayers.last
+    }) {
+      return upcoming
+    }
+    if let tomorrow = snapshot?.tomorrowFajrISO {
+      return WidgetSnapshot.Prayer(
+        name: "fajr",
+        adhanISO: tomorrow,
+        startISO: tomorrow,
+        endISO: tomorrow
+      )
+    }
+    return prayers.last
   }
 
   private var title: String { PrayerLabel.title(next?.name ?? "fajr") }
   private var letter: String { PrayerLabel.eyebrow(next?.name ?? "fajr") }
 
   private var timeText: String {
-    guard let s = SharedStore.date(from: next?.startISO ?? "") else { return "—" }
+    guard let s = SharedStore.date(from: next?.adhanISO ?? "") else { return "—" }
     return DateFormatters.timeOfDay.string(from: s)
   }
 
   private var shortCountdown: String {
-    guard let s = SharedStore.date(from: next?.startISO ?? "") else { return "—" }
+    guard let s = SharedStore.date(from: next?.adhanISO ?? "") else { return "—" }
     return RelativeFormatter.short(now: entry.date, target: s)
   }
 }
