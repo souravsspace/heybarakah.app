@@ -8,6 +8,31 @@ export const appConfig = {
     bismillah: "Bismillah ir-Rahman ir-Raheem.",
   },
 
+  seo: {
+    siteUrl: "https://heybarakah.app",
+    locale: "en_US",
+    language: "en",
+    themeColor: "#29603E",
+    ogImage: "/og.png",
+    ogImageAlt:
+      "Barakah — a quiet prayer-lock app for Muslims. Mosque-green wordmark on a white field.",
+    keywords: [
+      "prayer app",
+      "salah",
+      "Muslim app",
+      "prayer lock",
+      "phone lock during prayer",
+      "halal screen time",
+      "Islamic focus app",
+      "distraction lock for Muslims",
+      "five daily prayers",
+      "Fajr Dhuhr Asr Maghrib Isha",
+      "mindful Muslim app",
+      "salah focus",
+    ],
+    twitterHandle: null as string | null,
+  },
+
   contact: {
     email: "hello@heybarakah.app",
   },

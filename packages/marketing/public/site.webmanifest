@@ -1,0 +1,24 @@
+{
+  "name": "Barakah App",
+  "short_name": "Barakah",
+  "description": "A quiet companion for salah. Show up; not scroll.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#29603E",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/barakah-app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/barakah-app-icon-dark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
