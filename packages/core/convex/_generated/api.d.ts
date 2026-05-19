@@ -9,10 +9,8 @@
  */
 
 import type * as http from "../http.js";
+import type * as lib_achievements from "../lib/achievements.js";
 import type * as lib_auth from "../lib/auth.js";
-import type * as lib_chat from "../lib/chat.js";
-import type * as lib_chatHelpers from "../lib/chatHelpers.js";
-import type * as lib_chatRateLimit from "../lib/chatRateLimit.js";
 import type * as lib_dhikr from "../lib/dhikr.js";
 import type * as lib_env from "../lib/env.js";
 import type * as lib_healthCheck from "../lib/healthCheck.js";
@@ -33,10 +31,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   http: typeof http;
+  "lib/achievements": typeof lib_achievements;
   "lib/auth": typeof lib_auth;
-  "lib/chat": typeof lib_chat;
-  "lib/chatHelpers": typeof lib_chatHelpers;
-  "lib/chatRateLimit": typeof lib_chatRateLimit;
   "lib/dhikr": typeof lib_dhikr;
   "lib/env": typeof lib_env;
   "lib/healthCheck": typeof lib_healthCheck;
@@ -79,5 +75,4 @@ export declare const internal: FilterApi<
 export declare const components: {
   betterAuth: import("@convex-dev/better-auth/_generated/component.js").ComponentApi<"betterAuth">;
   resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;
-  persistentTextStreaming: import("@convex-dev/persistent-text-streaming/_generated/component.js").ComponentApi<"persistentTextStreaming">;
 };
