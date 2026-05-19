@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
-import type { ThemeColors } from "@/contexts/theme-context";
+import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 
 export function ChatComposer({
   colors,
@@ -14,9 +14,12 @@ export function ChatComposer({
   placeholder?: string;
   onSend: (text: string) => void;
 }) {
+  const { scheme } = useTheme();
   const [value, setValue] = useState("");
   const trimmed = value.trim();
   const canSend = trimmed.length > 0 && !disabled;
+  const inputBg =
+    scheme === "dark" ? "rgba(26,26,26,0.32)" : "rgba(255,255,255,0.42)";
 
   const handleSend = () => {
     if (!canSend) {
@@ -40,7 +43,9 @@ export function ChatComposer({
         style={{
           flex: 1,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor:
+            scheme === "dark" ? colors.border : "rgba(41,96,62,0.18)",
+          backgroundColor: inputBg,
           borderRadius: 22,
           paddingHorizontal: 16,
           paddingVertical: 10,
