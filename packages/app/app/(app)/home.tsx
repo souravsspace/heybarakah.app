@@ -406,16 +406,10 @@ export default function Home() {
                 borderRadius: 18,
                 alignItems: "center",
                 justifyContent: "center",
-                borderWidth: 1,
-                borderColor: colors.primary,
-                backgroundColor: pressed ? colors.primarySoft : "transparent",
+                backgroundColor: pressed ? colors.primaryDark : colors.primary,
               })}
             >
-              <Ionicons
-                color={colors.primary}
-                name="trophy-outline"
-                size={18}
-              />
+              <Ionicons color="#FFFFFF" name="trophy-outline" size={18} />
             </Pressable>
           </View>
           <Text
