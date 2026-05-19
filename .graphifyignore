@@ -17,6 +17,7 @@ coverage
 DerivedData
 .gradle
 generated
+_generated
 *.tsbuildinfo
 
 # Graphify output and temporary extraction files
@@ -53,6 +54,7 @@ Gemfile.lock
 *.webp
 *.avif
 *.ico
+*.svg
 *.pdf
 *.mp4
 *.mov
