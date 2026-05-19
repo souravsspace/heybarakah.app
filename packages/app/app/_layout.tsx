@@ -13,6 +13,7 @@ import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
+import { AchievementPopupProvider } from "@/components/achievement-popup-provider";
 import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { ThemeProvider as BarakahThemeProvider } from "@/contexts/theme-context";
 import { UserProvider } from "@/contexts/user-context";
@@ -74,39 +75,41 @@ export default function RootLayout() {
             <SubscriptionProvider>
               <OnboardingProvider>
                 <BarakahThemeProvider>
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                    }}
-                  >
-                    <Stack.Screen name="index" />
-                    <Stack.Screen name="(onboarding)" />
-                    <Stack.Screen name="(account)" />
-                    <Stack.Screen name="(app)" />
-                    <Stack.Screen name="(settings)" />
-                    <Stack.Screen
-                      name="modal"
-                      options={{ presentation: "modal", title: "Modal" }}
-                    />
-                    <Stack.Screen
-                      name="log-prayer"
-                      options={{
-                        presentation: "formSheet",
-                        sheetAllowedDetents: [0.62, 0.95],
-                        sheetInitialDetentIndex: 0,
-                        sheetGrabberVisible: true,
-                        sheetCornerRadius: 24,
-                        sheetLargestUndimmedDetentIndex: "none",
-                        gestureEnabled: true,
+                  <AchievementPopupProvider>
+                    <Stack
+                      screenOptions={{
                         headerShown: false,
-                        contentStyle: { backgroundColor: "#0E1311" },
                       }}
-                    />
-                  </Stack>
-                  <StatusBar style="dark" />
-                  {splashDone ? null : (
-                    <AnimatedSplash onFinish={handleSplashFinish} />
-                  )}
+                    >
+                      <Stack.Screen name="index" />
+                      <Stack.Screen name="(onboarding)" />
+                      <Stack.Screen name="(account)" />
+                      <Stack.Screen name="(app)" />
+                      <Stack.Screen name="(settings)" />
+                      <Stack.Screen
+                        name="modal"
+                        options={{ presentation: "modal", title: "Modal" }}
+                      />
+                      <Stack.Screen
+                        name="log-prayer"
+                        options={{
+                          presentation: "formSheet",
+                          sheetAllowedDetents: [0.62, 0.95],
+                          sheetInitialDetentIndex: 0,
+                          sheetGrabberVisible: true,
+                          sheetCornerRadius: 24,
+                          sheetLargestUndimmedDetentIndex: "none",
+                          gestureEnabled: true,
+                          headerShown: false,
+                          contentStyle: { backgroundColor: "#0E1311" },
+                        }}
+                      />
+                    </Stack>
+                    <StatusBar style="dark" />
+                    {splashDone ? null : (
+                      <AnimatedSplash onFinish={handleSplashFinish} />
+                    )}
+                  </AchievementPopupProvider>
                 </BarakahThemeProvider>
               </OnboardingProvider>
             </SubscriptionProvider>
