@@ -27,6 +27,19 @@ const HISTORY_LIMIT = 20;
 const MAX_OUTPUT_TOKENS = 320;
 const TEMPERATURE = 0.4;
 const MODEL_ID = "gemini-3.1-flash-lite";
+const MAX_INPUT_CHARS = 2000;
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  Vary: "Origin",
+};
+
+function errorResponse(message: string, status: number): Response {
+  return new Response(message, {
+    status,
+    headers: { ...CORS_HEADERS, "Content-Type": "text/plain;charset=UTF-8" },
+  });
+}
 
 const SYSTEM_PROMPT = `You are an Islamic study assistant. You answer ONLY from the Qur'an and the recognized authentic Hadith collections (Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah, Muwatta Malik, Musnad Ahmad).
 
@@ -120,6 +133,9 @@ export const sendUserMessage = mutation({
     const trimmed = content.trim();
     if (!trimmed) {
       throw new Error("Empty message");
+    }
+    if (trimmed.length > MAX_INPUT_CHARS) {
+      throw new Error("Message too long");
     }
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
@@ -252,22 +268,34 @@ export const finalizeAssistantMessage = internalMutation({
 });
 
 export const streamChat = httpAction(async (ctx, request) => {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    return new Response("Unauthorized", { status: 401 });
+  const user = await authComponent.safeGetAuthUser(ctx);
+  if (!user) {
+    return errorResponse("Unauthorized", 401);
   }
 
-  const { streamId } = (await request.json()) as { streamId: string };
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse("Invalid body", 400);
+  }
+  const streamId =
+    body && typeof body === "object" && "streamId" in body
+      ? (body as { streamId: unknown }).streamId
+      : undefined;
+  if (typeof streamId !== "string" || streamId.length === 0) {
+    return errorResponse("Invalid streamId", 400);
+  }
 
   const assistantMsg = await ctx.runQuery(
     internal.lib.chat.getMessageByStream,
     { streamId }
   );
   if (!assistantMsg) {
-    return new Response("Stream not found", { status: 404 });
+    return errorResponse("Stream not found", 404);
   }
-  if (assistantMsg.authUserId !== identity.subject) {
-    return new Response("Forbidden", { status: 403 });
+  if (assistantMsg.authUserId !== user._id) {
+    return errorResponse("Forbidden", 403);
   }
 
   const history = await ctx.runQuery(internal.lib.chat.getConversationHistory, {
@@ -307,7 +335,8 @@ export const streamChat = httpAction(async (ctx, request) => {
     }
   );
 
-  response.headers.set("Access-Control-Allow-Origin", "*");
-  response.headers.set("Vary", "Origin");
+  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    response.headers.set(key, value);
+  }
   return response;
 });
