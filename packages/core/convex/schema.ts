@@ -141,4 +141,13 @@ export default defineSchema({
     target: v.number(),
     updatedAt: v.number(),
   }).index("by_user_date", ["authUserId", "date"]),
+  userAchievements: defineTable({
+    authUserId: v.string(),
+    code: v.string(),
+    unlockedAt: v.number(),
+    seenAt: v.optional(v.number()),
+  })
+    .index("by_user", ["authUserId"])
+    .index("by_user_code", ["authUserId", "code"])
+    .index("by_user_seen", ["authUserId", "seenAt"]),
 });
