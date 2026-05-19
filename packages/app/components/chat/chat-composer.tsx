@@ -104,8 +104,8 @@ export function ChatComposer({
           <Ionicons
             color={canSend ? colors.primary : colors.inkSubtle}
             name="send"
-            size={18}
-            style={{ marginLeft: -2 }}
+            size={22}
+            style={{ marginLeft: 16, marginTop: 12 }}
           />
         </Pressable>
       </GlassSurface>
