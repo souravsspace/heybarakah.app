@@ -459,7 +459,7 @@ export function ProgressMesh({ dark }: MeshProps) {
   );
 }
 
-export function HidayahMesh({ dark }: MeshProps) {
+export function AchievementsMesh({ dark }: MeshProps) {
   if (dark) {
     return (
       <MeshShell>
