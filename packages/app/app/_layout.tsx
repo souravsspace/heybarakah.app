@@ -86,6 +86,7 @@ export default function RootLayout() {
                       <Stack.Screen name="(account)" />
                       <Stack.Screen name="(app)" />
                       <Stack.Screen name="(settings)" />
+                      <Stack.Screen name="achievements" />
                       <Stack.Screen
                         name="modal"
                         options={{ presentation: "modal", title: "Modal" }}

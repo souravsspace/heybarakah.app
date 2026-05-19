@@ -73,7 +73,6 @@ function TabsWithTheme() {
       <NativeTabs.Trigger hidden name="name" />
       <NativeTabs.Trigger hidden name="success" />
       <NativeTabs.Trigger hidden name="logging-out" />
-      <NativeTabs.Trigger hidden name="achievements" />
     </NativeTabs>
   );
 }
