@@ -5,11 +5,12 @@ import {
   evaluateAllProgress,
 } from "@barakah/core/achievements";
 import { v } from "convex/values";
+import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { internalMutation, mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const LOG_LOOKBACK_DAYS = 365;
+const DEFAULT_TIMEZONE = "UTC";
 
 function pad2(n: number): string {
   return n.toString().padStart(2, "0");
@@ -20,33 +21,74 @@ function utcToday(): string {
   return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
 }
 
-function addDays(dateKey: string, days: number): string {
-  const [y, m, d] = dateKey.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() + days);
-  return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`;
+function localToday(timezone: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      day: "2-digit",
+      month: "2-digit",
+      timeZone: timezone,
+      year: "numeric",
+    }).formatToParts(new Date());
+    const year = parts.find((p) => p.type === "year")?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const day = parts.find((p) => p.type === "day")?.value;
+    if (year && month && day) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch {
+    return utcToday();
+  }
+  return utcToday();
+}
+
+async function latestPrayerTimezone(
+  ctx: QueryCtx | MutationCtx,
+  authUserId: string
+): Promise<string> {
+  const rows = await ctx.db
+    .query("prayerTimeCaches")
+    .withIndex("by_userId", (q) => q.eq("userId", authUserId))
+    .collect();
+  let latest: (typeof rows)[number] | null = null;
+  for (const row of rows) {
+    if (!latest || row.updatedAt > latest.updatedAt) {
+      latest = row;
+    }
+  }
+  return latest?.timezone ?? DEFAULT_TIMEZONE;
+}
+
+async function dhikrTotalForUser(
+  ctx: QueryCtx | MutationCtx,
+  authUserId: string
+): Promise<number> {
+  const aggregate = await ctx.db
+    .query("dhikrAggregate")
+    .withIndex("by_user", (q) => q.eq("authUserId", authUserId))
+    .unique();
+  if (aggregate) {
+    return aggregate.total;
+  }
+  const rows = await ctx.db
+    .query("dhikrDaily")
+    .withIndex("by_user_date", (q) => q.eq("authUserId", authUserId))
+    .collect();
+  return rows.reduce((sum, row) => sum + row.count, 0);
 }
 
 export const runEvaluate = internalMutation({
   args: { authUserId: v.string(), today: v.optional(v.string()) },
   handler: async (ctx, { authUserId, today }) => {
-    const dateKey = today && DATE_KEY_PATTERN.test(today) ? today : utcToday();
-    const startDate = addDays(dateKey, -LOG_LOOKBACK_DAYS);
+    const timezone = await latestPrayerTimezone(ctx, authUserId);
+    const dateKey =
+      today && DATE_KEY_PATTERN.test(today) ? today : localToday(timezone);
 
-    const [prayerLogs, dhikrRows, profile, existing] = await Promise.all([
+    const [prayerLogs, dhikrTotal, profile, existing] = await Promise.all([
       ctx.db
         .query("prayerLogs")
-        .withIndex("by_user_date_prayer", (q) =>
-          q
-            .eq("authUserId", authUserId)
-            .gte("date", startDate)
-            .lte("date", dateKey)
-        )
+        .withIndex("by_user_updated", (q) => q.eq("authUserId", authUserId))
         .collect(),
-      ctx.db
-        .query("dhikrDaily")
-        .withIndex("by_user_date", (q) => q.eq("authUserId", authUserId))
-        .collect(),
+      dhikrTotalForUser(ctx, authUserId),
       ctx.db
         .query("users")
         .withIndex("by_authUserId", (q) => q.eq("authUserId", authUserId))
@@ -57,7 +99,6 @@ export const runEvaluate = internalMutation({
         .collect(),
     ]);
 
-    const dhikrTotal = dhikrRows.reduce((sum, r) => sum + r.count, 0);
     const alreadyUnlocked = new Set<AchievementCode>(
       existing.map((row) => row.code as AchievementCode)
     );
@@ -74,6 +115,7 @@ export const runEvaluate = internalMutation({
         })),
         dhikrTotal,
         today: dateKey,
+        timezone,
       },
       alreadyUnlocked
     );
@@ -123,33 +165,24 @@ export const listForMe = query({
         totalCount: ACHIEVEMENTS.length,
       };
     }
-    const dateKey = utcToday();
-    const startDate = addDays(dateKey, -LOG_LOOKBACK_DAYS);
-    const [rows, prayerLogs, dhikrRows, profile] = await Promise.all([
+    const timezone = await latestPrayerTimezone(ctx, user._id);
+    const dateKey = localToday(timezone);
+    const [rows, prayerLogs, dhikrTotal, profile] = await Promise.all([
       ctx.db
         .query("userAchievements")
         .withIndex("by_user", (q) => q.eq("authUserId", user._id))
         .collect(),
       ctx.db
         .query("prayerLogs")
-        .withIndex("by_user_date_prayer", (q) =>
-          q
-            .eq("authUserId", user._id)
-            .gte("date", startDate)
-            .lte("date", dateKey)
-        )
+        .withIndex("by_user_updated", (q) => q.eq("authUserId", user._id))
         .collect(),
-      ctx.db
-        .query("dhikrDaily")
-        .withIndex("by_user_date", (q) => q.eq("authUserId", user._id))
-        .collect(),
+      dhikrTotalForUser(ctx, user._id),
       ctx.db
         .query("users")
         .withIndex("by_authUserId", (q) => q.eq("authUserId", user._id))
         .unique(),
     ]);
     const byCode = new Map(rows.map((r) => [r.code, r]));
-    const dhikrTotal = dhikrRows.reduce((sum, r) => sum + r.count, 0);
     const alreadyUnlocked = new Set<AchievementCode>(
       rows.map((r) => r.code as AchievementCode)
     );
@@ -165,6 +198,7 @@ export const listForMe = query({
         })),
         dhikrTotal,
         today: dateKey,
+        timezone,
       },
       alreadyUnlocked
     );
