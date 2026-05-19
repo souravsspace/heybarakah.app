@@ -43,12 +43,13 @@ export default function HidayahThread() {
   } = useChat(conversationId);
 
   const scrollRef = useRef<ScrollView>(null);
+  const lastContentLength = messages.at(-1)?.content.length ?? 0;
 
   useEffect(() => {
     requestAnimationFrame(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
     });
-  }, [messages.length, streaming]);
+  }, [messages.length, streaming, lastContentLength]);
 
   const limitReached = remaining !== null && remaining <= 0;
 
