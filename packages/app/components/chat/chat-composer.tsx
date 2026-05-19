@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Pressable, TextInput, View } from "react-native";
+import { Platform, Pressable, TextInput, View } from "react-native";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 
 export function ChatComposer({
@@ -46,10 +46,9 @@ export function ChatComposer({
           borderColor:
             scheme === "dark" ? colors.border : "rgba(41,96,62,0.18)",
           backgroundColor: inputBg,
-          borderRadius: 22,
-          paddingHorizontal: 16,
-          paddingVertical: 10,
-          minHeight: 44,
+          borderRadius: 26,
+          paddingHorizontal: 18,
+          minHeight: 52,
           justifyContent: "center",
         }}
       >
@@ -64,8 +63,9 @@ export function ChatComposer({
             fontSize: 15,
             lineHeight: 21,
             maxHeight: 140,
-            paddingTop: 2,
-            paddingBottom: 2,
+            paddingTop: Platform.OS === "ios" ? 14 : 10,
+            paddingBottom: Platform.OS === "ios" ? 14 : 10,
+            textAlignVertical: "center",
           }}
           value={value}
         />
@@ -76,21 +76,24 @@ export function ChatComposer({
         disabled={!canSend}
         onPress={handleSend}
         style={({ pressed }) => ({
-          width: 44,
-          height: 44,
-          borderRadius: 22,
+          width: 52,
+          height: 52,
+          borderRadius: 26,
           alignItems: "center",
           justifyContent: "center",
           borderWidth: 1,
           borderColor: canSend ? colors.primary : colors.border,
-          backgroundColor:
-            pressed && canSend ? colors.primarySoft : "transparent",
+          backgroundColor: canSend
+            ? pressed
+              ? colors.primarySoft
+              : colors.primary
+            : "transparent",
         })}
       >
         <Ionicons
-          color={canSend ? colors.primary : colors.inkSubtle}
+          color={canSend ? "#FFFFFF" : colors.inkSubtle}
           name="arrow-up"
-          size={20}
+          size={22}
         />
       </Pressable>
     </View>
