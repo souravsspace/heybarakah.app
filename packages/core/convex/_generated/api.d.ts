@@ -11,6 +11,7 @@
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_chat from "../lib/chat.js";
+import type * as lib_chatHelpers from "../lib/chatHelpers.js";
 import type * as lib_chatRateLimit from "../lib/chatRateLimit.js";
 import type * as lib_dhikr from "../lib/dhikr.js";
 import type * as lib_env from "../lib/env.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/chat": typeof lib_chat;
+  "lib/chatHelpers": typeof lib_chatHelpers;
   "lib/chatRateLimit": typeof lib_chatRateLimit;
   "lib/dhikr": typeof lib_dhikr;
   "lib/env": typeof lib_env;
