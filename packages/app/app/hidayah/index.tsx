@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { HidayahMesh } from "@/components/meshes";
 import { useTheme } from "@/contexts/theme-context";
 import {
   getCachedConversations,
@@ -60,53 +61,101 @@ export default function HidayahIndex() {
 
   const conversations = local;
   const now = Date.now();
+  const dark = scheme === "dark";
 
   return (
     <View
       style={{
         flex: 1,
-        backgroundColor: scheme === "dark" ? "#0E1311" : "#F8F1E1",
+        backgroundColor: dark ? "#0E1311" : "#F8F1E1",
       }}
     >
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <StatusBar style={dark ? "light" : "dark"} />
+      <HidayahMesh dark={dark} />
+
       <View
         style={{
-          paddingTop: insets.top + 6,
+          paddingTop: insets.top + 8,
           paddingHorizontal: 20,
-          paddingBottom: 12,
+          paddingBottom: 14,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottomWidth: 1,
-          borderBottomColor: colors.divider,
         }}
       >
         <Pressable
           accessibilityLabel="Back"
           accessibilityRole="button"
-          hitSlop={8}
+          hitSlop={10}
           onPress={() => router.back()}
+          style={({ pressed }) => ({
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: pressed
+              ? dark
+                ? "rgba(255,255,255,0.06)"
+                : "rgba(0,0,0,0.04)"
+              : "transparent",
+          })}
         >
-          <Ionicons color={colors.ink} name="chevron-back" size={26} />
+          <Ionicons color={colors.ink} name="chevron-back" size={22} />
         </Pressable>
-        <Text
-          style={{
-            fontFamily: "LibreBaskerville-Bold",
-            fontSize: 18,
-            color: colors.ink,
-          }}
-        >
-          Hidāyah
-        </Text>
+
+        <View style={{ alignItems: "center" }}>
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "700",
+              letterSpacing: 1.4,
+              textTransform: "uppercase",
+              color: colors.inkSubtle,
+            }}
+          >
+            Guidance
+          </Text>
+          <Text
+            style={{
+              fontFamily: "LibreBaskerville-Bold",
+              fontSize: 18,
+              lineHeight: 22,
+              color: colors.ink,
+            }}
+          >
+            Hidāyah
+          </Text>
+        </View>
+
         <Pressable
           accessibilityLabel="New conversation"
           accessibilityRole="button"
-          hitSlop={8}
+          hitSlop={10}
           onPress={() => router.push("/hidayah/new")}
+          style={({ pressed }) => ({
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: colors.primary,
+            backgroundColor: pressed ? colors.primarySoft : "transparent",
+          })}
         >
-          <Ionicons color={colors.primary} name="add" size={26} />
+          <Ionicons color={colors.primary} name="add" size={20} />
         </Pressable>
       </View>
+
+      <View
+        style={{
+          marginHorizontal: 20,
+          height: 1,
+          backgroundColor: colors.divider,
+          opacity: 0.6,
+        }}
+      />
 
       {conversations.length === 0 ? (
         <View
@@ -114,58 +163,97 @@ export default function HidayahIndex() {
             flex: 1,
             alignItems: "center",
             justifyContent: "center",
-            paddingHorizontal: 32,
+            paddingHorizontal: 28,
             gap: 14,
           }}
         >
           <Text
             style={{
+              fontSize: 11,
+              fontWeight: "700",
+              letterSpacing: 1.2,
+              textTransform: "uppercase",
+              color: colors.primary,
+              textAlign: "center",
+            }}
+          >
+            Begin
+          </Text>
+          <Text
+            style={{
               fontFamily: "LibreBaskerville-Bold",
-              fontSize: 22,
+              fontSize: 26,
+              lineHeight: 32,
               color: colors.ink,
               textAlign: "center",
             }}
           >
-            No conversations yet
+            No conversations yet.
           </Text>
           <Text
             style={{
-              fontSize: 14,
+              fontSize: 13,
               lineHeight: 20,
               color: colors.inkMuted,
               textAlign: "center",
+              maxWidth: 280,
             }}
           >
-            Ask only what the Qur'an or authentic Hadith can answer.
+            Ask only what the Qur'an or authentic Hadith can answer. Replies
+            cite their source.
           </Text>
           <Pressable
+            accessibilityLabel="Start a new conversation"
             accessibilityRole="button"
             onPress={() => router.push("/hidayah/new")}
             style={({ pressed }) => ({
-              marginTop: 8,
-              paddingHorizontal: 18,
-              paddingVertical: 10,
+              marginTop: 12,
+              paddingHorizontal: 22,
+              paddingVertical: 11,
               borderRadius: 999,
               borderWidth: 1,
               borderColor: colors.primary,
               backgroundColor: pressed ? colors.primarySoft : "transparent",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
             })}
           >
+            <Ionicons
+              color={colors.primary}
+              name="sparkles-outline"
+              size={14}
+            />
             <Text
               style={{
                 color: colors.primary,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: "700",
+                letterSpacing: 0.6,
+                textTransform: "uppercase",
               }}
             >
-              Begin
+              Ask Hidāyah
             </Text>
           </Pressable>
         </View>
       ) : (
         <FlatList
-          contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+          contentContainerStyle={{
+            paddingTop: 8,
+            paddingBottom: insets.bottom + 32,
+            paddingHorizontal: 20,
+          }}
           data={conversations}
+          ItemSeparatorComponent={() => (
+            <View
+              style={{
+                height: 1,
+                backgroundColor: colors.divider,
+                opacity: 0.5,
+              }}
+            />
+          )}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <Pressable
@@ -173,14 +261,12 @@ export default function HidayahIndex() {
               accessibilityRole="button"
               onPress={() => router.push(`/hidayah/${item.id}`)}
               style={({ pressed }) => ({
-                paddingHorizontal: 20,
                 paddingVertical: 16,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.divider,
+                paddingHorizontal: 4,
                 backgroundColor: pressed
-                  ? scheme === "dark"
-                    ? "#1A1A1A"
-                    : "#F0E9D9"
+                  ? dark
+                    ? "rgba(255,255,255,0.04)"
+                    : "rgba(41,96,62,0.05)"
                   : "transparent",
               })}
             >
@@ -197,6 +283,7 @@ export default function HidayahIndex() {
                   style={{
                     flex: 1,
                     fontSize: 15,
+                    lineHeight: 20,
                     color: colors.ink,
                   }}
                 >
@@ -205,6 +292,7 @@ export default function HidayahIndex() {
                 <Text
                   style={{
                     fontSize: 11,
+                    fontWeight: "600",
                     fontVariant: ["tabular-nums"],
                     color: colors.inkSubtle,
                   }}
