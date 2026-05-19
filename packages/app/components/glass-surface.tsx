@@ -63,7 +63,7 @@ export function GlassSurface({
           tint={resolvedBlurTint}
         />
       )}
-      <View style={StyleSheet.absoluteFillObject}>{children}</View>
+      <View style={{ flex: 1 }}>{children}</View>
     </View>
   );
 }

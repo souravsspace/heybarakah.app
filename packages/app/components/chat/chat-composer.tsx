@@ -86,7 +86,7 @@ export function ChatComposer({
         colorScheme={dark ? "dark" : "light"}
         height={SURFACE_HEIGHT}
         radius={SURFACE_RADIUS}
-        style={{ width: SURFACE_HEIGHT }}
+        style={{ width: SURFACE_HEIGHT, flexShrink: 0, flexGrow: 0 }}
       >
         <Pressable
           accessibilityLabel="Send message"
