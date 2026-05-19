@@ -1,4 +1,7 @@
-import type { Achievement } from "@barakah/core/achievements";
+import type {
+  Achievement,
+  AchievementCategory,
+} from "@barakah/core/achievements";
 import { api } from "@barakah/core/convex/_generated/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
@@ -9,10 +12,36 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AchievementCard } from "@/components/achievement-card";
 import { AchievementDialog } from "@/components/achievement-dialog";
-import { AchievementsMesh } from "@/components/meshes";
 import { useTheme } from "@/contexts/theme-context";
 
-type Row = Achievement & { unlockedAt: number | null };
+type Row = Achievement & {
+  progress: { current: number; target: number; unit: string } | null;
+  unlockedAt: number | null;
+};
+
+const CATEGORY_ORDER: readonly AchievementCategory[] = [
+  "beginnings",
+  "salah",
+  "continuity",
+  "fajr",
+  "night",
+  "remembrance",
+  "mercy",
+  "seasons",
+  "reflection",
+];
+
+const CATEGORY_LABEL: Record<AchievementCategory, string> = {
+  beginnings: "Beginnings",
+  salah: "Salah",
+  continuity: "Continuity",
+  fajr: "Fajr",
+  night: "Night",
+  remembrance: "Remembrance",
+  mercy: "Mercy",
+  seasons: "Seasons",
+  reflection: "Reflection",
+};
 
 export default function AchievementsScreen() {
   const { colors, scheme } = useTheme();
@@ -23,15 +52,31 @@ export default function AchievementsScreen() {
   const rows = useMemo<Row[]>(() => data?.items ?? [], [data?.items]);
   const unlockedCount = data?.unlockedCount ?? 0;
   const totalCount = data?.totalCount ?? 0;
-  const progress = totalCount > 0 ? unlockedCount / totalCount : 0;
 
-  const pairs = useMemo(() => {
-    const out: [Row, Row | null][] = [];
-    for (let i = 0; i < rows.length; i += 2) {
-      out.push([rows[i], rows[i + 1] ?? null]);
+  const grouped = useMemo(() => {
+    const map = new Map<AchievementCategory, Row[]>();
+    for (const row of rows) {
+      const list = map.get(row.category) ?? [];
+      list.push(row);
+      map.set(row.category, list);
     }
-    return out;
+    return CATEGORY_ORDER.filter((c) => map.has(c)).map((c) => {
+      const list = map.get(c) ?? [];
+      const unlocked = list.filter((r) => r.unlockedAt !== null).length;
+      return { category: c, items: list, unlocked, total: list.length };
+    });
   }, [rows]);
+
+  const selectedCategoryStats = useMemo(() => {
+    if (!selected) {
+      return;
+    }
+    const section = grouped.find((g) => g.category === selected.category);
+    if (!section) {
+      return;
+    }
+    return { unlocked: section.unlocked, total: section.total };
+  }, [selected, grouped]);
 
   return (
     <View
@@ -41,7 +86,6 @@ export default function AchievementsScreen() {
       }}
     >
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <AchievementsMesh dark={scheme === "dark"} />
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + 8,
@@ -78,134 +122,135 @@ export default function AchievementsScreen() {
           >
             <Ionicons color={colors.ink} name="chevron-back" size={22} />
           </Pressable>
-          <View style={{ alignItems: "center" }}>
-            <Text
-              style={{
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.4,
-                textTransform: "uppercase",
-                color: colors.inkSubtle,
-              }}
-            >
-              Practice
-            </Text>
-            <Text
-              style={{
-                fontFamily: "LibreBaskerville-Bold",
-                fontSize: 18,
-                lineHeight: 22,
-                color: colors.ink,
-              }}
-            >
-              Achievements
-            </Text>
-          </View>
+          <Text
+            style={{
+              fontFamily: "LibreBaskerville-Bold",
+              fontSize: 18,
+              lineHeight: 22,
+              color: colors.ink,
+            }}
+          >
+            Achievements
+          </Text>
           <View style={{ width: 36 }} />
         </View>
 
-        <View style={{ paddingHorizontal: 20, marginTop: 4, gap: 10 }}>
-          <View
+        <View
+          style={{
+            paddingHorizontal: 24,
+            paddingTop: 12,
+            paddingBottom: 22,
+            flexDirection: "row",
+            alignItems: "flex-end",
+            gap: 14,
+          }}
+        >
+          <Text
             style={{
-              flexDirection: "row",
-              alignItems: "baseline",
-              justifyContent: "space-between",
+              fontFamily: "LibreBaskerville-Bold",
+              fontSize: 48,
+              lineHeight: 52,
+              color: colors.ink,
+              fontVariant: ["tabular-nums"],
             }}
           >
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "700",
-                letterSpacing: 0.4,
-                color: colors.inkMuted,
-              }}
-            >
-              Your path
-            </Text>
+            {unlockedCount}
+          </Text>
+          <View style={{ flex: 1, paddingBottom: 6 }}>
             <Text
               style={{
                 fontSize: 12,
                 fontWeight: "600",
-                color: colors.inkSubtle,
+                color: colors.inkMuted,
                 fontVariant: ["tabular-nums"],
               }}
             >
-              {`${unlockedCount} of ${totalCount}`}
+              {`of ${totalCount} unlocked`}
             </Text>
-          </View>
-          <View
-            style={{
-              height: 1,
-              backgroundColor: colors.divider,
-              overflow: "hidden",
-            }}
-          >
-            <View
+            <Text
               style={{
-                height: 1,
-                width: `${Math.round(progress * 100)}%`,
-                backgroundColor: colors.primary,
+                fontSize: 11,
+                color: colors.inkSubtle,
+                marginTop: 2,
               }}
-            />
+            >
+              Practice, not performance.
+            </Text>
           </View>
         </View>
 
         <View
           style={{
-            paddingHorizontal: 20,
-            paddingTop: 22,
-            gap: 12,
+            height: 1,
+            backgroundColor: colors.divider,
+            marginHorizontal: 20,
           }}
-        >
-          {pairs.map(([left, right]) => (
-            <View key={left.code} style={{ flexDirection: "row", gap: 12 }}>
-              <AchievementCard
-                icon={left.icon}
-                onPress={() => setSelected(left)}
-                tier={left.tier}
-                title={left.title}
-                unlocked={left.unlockedAt !== null}
-                unlockedAt={left.unlockedAt}
-              />
-              {right ? (
-                <AchievementCard
-                  icon={right.icon}
-                  onPress={() => setSelected(right)}
-                  tier={right.tier}
-                  title={right.title}
-                  unlocked={right.unlockedAt !== null}
-                  unlockedAt={right.unlockedAt}
-                />
-              ) : (
-                <View style={{ flex: 1 }} />
-              )}
+        />
+
+        <View style={{ gap: 26, paddingTop: 22 }}>
+          {grouped.map((section) => (
+            <View key={section.category} style={{ gap: 10 }}>
+              <View
+                style={{
+                  paddingHorizontal: 20,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: "700",
+                    letterSpacing: 1.4,
+                    textTransform: "uppercase",
+                    color: colors.inkSubtle,
+                  }}
+                >
+                  {CATEGORY_LABEL[section.category]}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: "700",
+                    letterSpacing: 0.6,
+                    color: colors.inkSubtle,
+                    fontVariant: ["tabular-nums"],
+                  }}
+                >
+                  {`${section.unlocked} / ${section.total}`}
+                </Text>
+              </View>
+              <View style={{ paddingHorizontal: 20, gap: 8 }}>
+                {section.items.map((row) => (
+                  <AchievementCard
+                    icon={row.icon}
+                    key={row.code}
+                    onPress={() => setSelected(row)}
+                    progress={row.progress}
+                    tier={row.tier}
+                    title={row.title}
+                    unlocked={row.unlockedAt !== null}
+                    unlockedAt={row.unlockedAt}
+                  />
+                ))}
+              </View>
             </View>
           ))}
-        </View>
-
-        <View style={{ paddingHorizontal: 24, marginTop: 28 }}>
-          <Text
-            style={{
-              fontSize: 12,
-              lineHeight: 18,
-              color: colors.inkSubtle,
-              textAlign: "center",
-            }}
-          >
-            Practice, not performance.
-          </Text>
         </View>
       </ScrollView>
 
       <AchievementDialog
-        ctaLabel="Close"
+        category={selected?.category ?? "beginnings"}
+        categoryStats={selectedCategoryStats}
         description={selected?.description ?? ""}
-        eyebrow={selected?.unlockedAt ? "Unlocked" : "Locked"}
         icon={selected?.icon ?? "trophy-outline"}
+        mode={selected?.unlockedAt ? "unlocked" : "locked"}
         onClose={() => setSelected(null)}
+        progress={selected?.progress ?? undefined}
         quote={selected?.quote}
+        tier={selected?.tier ?? "bronze"}
         title={selected?.title ?? ""}
-        unlocked={Boolean(selected?.unlockedAt)}
         unlockedAt={selected?.unlockedAt ?? null}
         visible={selected !== null}
       />
