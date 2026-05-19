@@ -70,6 +70,7 @@ function TabsWithTheme() {
         />
         <Label>Profile</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger hidden name="achievements" />
       <NativeTabs.Trigger hidden name="name" />
       <NativeTabs.Trigger hidden name="success" />
       <NativeTabs.Trigger hidden name="logging-out" />
