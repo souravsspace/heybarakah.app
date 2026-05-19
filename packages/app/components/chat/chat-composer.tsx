@@ -44,13 +44,13 @@ export function ChatComposer({
       <View
         style={{
           flex: 1,
-          minHeight: 52,
+          minHeight: 56,
           borderWidth: 1,
           borderColor: inputBorder,
           backgroundColor: inputBg,
-          borderRadius: 26,
-          paddingHorizontal: 18,
-          paddingVertical: Platform.OS === "ios" ? 15 : 8,
+          borderRadius: 28,
+          paddingHorizontal: 20,
+          paddingVertical: Platform.OS === "ios" ? 17 : 10,
           justifyContent: "center",
         }}
       >
@@ -78,24 +78,24 @@ export function ChatComposer({
         disabled={!canSend}
         onPress={handleSend}
         style={({ pressed }) => ({
-          width: 52,
-          height: 52,
-          borderRadius: 26,
+          width: 56,
+          height: 56,
+          borderRadius: 28,
           alignItems: "center",
           justifyContent: "center",
           borderWidth: 1,
-          borderColor: canSend ? colors.primary : colors.border,
-          backgroundColor: canSend
-            ? pressed
+          borderColor: canSend ? colors.primary : inputBorder,
+          backgroundColor: pressed
+            ? canSend
               ? colors.primarySoft
-              : colors.primary
-            : "transparent",
+              : inputBg
+            : inputBg,
         })}
       >
         <Ionicons
-          color={canSend ? "#FFFFFF" : colors.inkSubtle}
+          color={canSend ? colors.primary : colors.inkSubtle}
           name="arrow-up"
-          size={22}
+          size={24}
         />
       </Pressable>
     </View>
