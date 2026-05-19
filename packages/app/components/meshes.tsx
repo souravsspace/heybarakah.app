@@ -459,6 +459,85 @@ export function ProgressMesh({ dark }: MeshProps) {
   );
 }
 
+export function HidayahMesh({ dark }: MeshProps) {
+  if (dark) {
+    return (
+      <MeshShell>
+        <Defs>
+          <RadialGradient cx="92%" cy="-6%" id="hidayahDarkCrown" r="72%">
+            <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.22} />
+            <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.07} />
+            <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient cx="6%" cy="106%" id="hidayahDarkPaper" r="76%">
+            <Stop offset="0" stopColor="#F5EBDB" stopOpacity={0.05} />
+            <Stop offset="0.6" stopColor="#F5EBDB" stopOpacity={0.02} />
+            <Stop offset="1" stopColor="#F5EBDB" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect fill="#0E1311" height="220" width="320" x="0" y="0" />
+        <Rect
+          fill="url(#hidayahDarkCrown)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+        <Rect
+          fill="url(#hidayahDarkPaper)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+      </MeshShell>
+    );
+  }
+  return (
+    <MeshShell>
+      <Defs>
+        <RadialGradient cx="94%" cy="-4%" id="hidayahLightCrown" r="68%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.14} />
+          <Stop offset="0.5" stopColor={BARAKAH_GREEN} stopOpacity={0.05} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="6%" cy="106%" id="hidayahLightWhisper" r="62%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.08} />
+          <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.03} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="50%" cy="0%" id="hidayahLightDawn" r="78%">
+          <Stop offset="0" stopColor="#FAF7F0" stopOpacity={0.7} />
+          <Stop offset="0.55" stopColor="#FAF7F0" stopOpacity={0.22} />
+          <Stop offset="1" stopColor="#FAF7F0" stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect fill="#F8F1E1" height="220" width="320" x="0" y="0" />
+      <Rect
+        fill="url(#hidayahLightDawn)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+      <Rect
+        fill="url(#hidayahLightCrown)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+      <Rect
+        fill="url(#hidayahLightWhisper)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+    </MeshShell>
+  );
+}
+
 export function SplashMesh({ dark }: MeshProps) {
   if (dark) {
     return (
