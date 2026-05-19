@@ -16,12 +16,12 @@ import {
   query,
 } from "../_generated/server";
 import { authComponent } from "./auth";
+import { deriveTitle } from "./chatHelpers";
 import {
   consumeOne,
   DAILY_CHAT_LIMIT,
   getRemainingForToday,
 } from "./chatRateLimit";
-import { deriveTitle } from "./chatHelpers";
 
 const HISTORY_LIMIT = 20;
 const MAX_OUTPUT_TOKENS = 320;
@@ -38,7 +38,6 @@ Use Islamic honorifics: ﷺ for the Prophet, (AS) for prophets, (RA) for compani
 const persistentTextStreaming = new PersistentTextStreaming(
   components.persistentTextStreaming
 );
-
 
 export const listConversations = query({
   args: {},
