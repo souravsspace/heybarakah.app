@@ -1,7 +1,7 @@
 import type { Achievement } from "@barakah/core/achievements";
 import { api } from "@barakah/core/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { AchievementDetailSheet } from "./achievement-detail-sheet";
 
 type UnseenUnlock = Achievement & { unlockedAt: number };
@@ -15,15 +15,28 @@ export function AchievementPopupProvider({
   const markSeen = useMutation(api.lib.achievements.markSeen);
   const [queue, setQueue] = useState<UnseenUnlock[]>([]);
   const [active, setActive] = useState<UnseenUnlock | null>(null);
+  const dismissedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!unseen || unseen.length === 0) {
+    if (!unseen) {
+      return;
+    }
+    const liveCodes = new Set<string>(unseen.map((u) => u.code));
+    for (const code of Array.from(dismissedRef.current)) {
+      if (!liveCodes.has(code)) {
+        dismissedRef.current.delete(code);
+      }
+    }
+    if (unseen.length === 0) {
       return;
     }
     setQueue((prev) => {
-      const knownCodes = new Set(prev.map((p) => p.code));
+      const knownCodes = new Set<string>(prev.map((p) => p.code));
       if (active) {
         knownCodes.add(active.code);
+      }
+      for (const code of dismissedRef.current) {
+        knownCodes.add(code);
       }
       const next = unseen.filter(
         (u): u is UnseenUnlock => !knownCodes.has(u.code)
@@ -45,6 +58,7 @@ export function AchievementPopupProvider({
       return;
     }
     const code = active.code;
+    dismissedRef.current.add(code);
     setActive(null);
     markSeen({ codes: [code] }).catch(() => undefined);
   };

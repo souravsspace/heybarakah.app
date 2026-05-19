@@ -1,6 +1,8 @@
+import type { AchievementIcon } from "@barakah/core/achievements";
 import { Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, Text, View } from "react-native";
 import Animated, {
+  Easing,
   FadeIn,
   FadeOut,
   SlideInDown,
@@ -13,7 +15,7 @@ interface DetailSheetProps {
   ctaLabel: string;
   description: string;
   headerLabel?: string;
-  icon: string;
+  icon: AchievementIcon;
   onClose: () => void;
   quote?: { text: string; source: string };
   title: string;
@@ -71,8 +73,8 @@ export function AchievementDetailSheet({
         />
       </Pressable>
       <Animated.View
-        entering={SlideInDown.springify().damping(22).mass(0.8)}
-        exiting={SlideOutDown.duration(220)}
+        entering={SlideInDown.duration(260).easing(Easing.out(Easing.cubic))}
+        exiting={SlideOutDown.duration(200).easing(Easing.in(Easing.cubic))}
         style={{
           position: "absolute",
           left: 0,
@@ -123,12 +125,7 @@ export function AchievementDetailSheet({
               justifyContent: "center",
             }}
           >
-            <Ionicons
-              color={iconColor}
-              // biome-ignore lint/suspicious/noExplicitAny: dynamic Ionicons name
-              name={icon as any}
-              size={32}
-            />
+            <Ionicons color={iconColor} name={icon} size={32} />
           </View>
           <Text
             style={{

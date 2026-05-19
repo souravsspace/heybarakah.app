@@ -26,6 +26,23 @@ export type AchievementCategory =
   | "dhikr"
   | "recovery";
 
+export type AchievementIcon =
+  | "checkmark-circle-outline"
+  | "ellipse"
+  | "ellipse-outline"
+  | "flame"
+  | "flame-outline"
+  | "footsteps-outline"
+  | "leaf-outline"
+  | "moon"
+  | "moon-outline"
+  | "refresh-outline"
+  | "sunny"
+  | "sunny-outline"
+  | "time-outline"
+  | "trophy"
+  | "trophy-outline";
+
 export interface AchievementQuote {
   source: string;
   text: string;
@@ -35,7 +52,7 @@ export interface Achievement {
   category: AchievementCategory;
   code: AchievementCode;
   description: string;
-  icon: string;
+  icon: AchievementIcon;
   quote?: AchievementQuote;
   tier: AchievementTier;
   title: string;

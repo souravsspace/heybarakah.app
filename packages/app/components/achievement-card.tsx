@@ -1,9 +1,10 @@
+import type { AchievementIcon } from "@barakah/core/achievements";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 
 interface AchievementCardProps {
-  icon: string;
+  icon: AchievementIcon;
   onPress: () => void;
   tier: "bronze" | "silver" | "gold";
   title: string;
@@ -76,12 +77,7 @@ export function AchievementCard({
           justifyContent: "center",
         }}
       >
-        <Ionicons
-          color={iconColor}
-          // biome-ignore lint/suspicious/noExplicitAny: dynamic Ionicons name
-          name={icon as any}
-          size={22}
-        />
+        <Ionicons color={iconColor} name={icon} size={22} />
       </View>
       <View style={{ gap: 4 }}>
         <Text

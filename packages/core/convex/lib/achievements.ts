@@ -81,14 +81,25 @@ export const runEvaluate = internalMutation({
       return [];
     }
     const now = Date.now();
+    const inserted: AchievementCode[] = [];
     for (const code of newly) {
+      const dup = await ctx.db
+        .query("userAchievements")
+        .withIndex("by_user_code", (q) =>
+          q.eq("authUserId", authUserId).eq("code", code)
+        )
+        .unique();
+      if (dup) {
+        continue;
+      }
       await ctx.db.insert("userAchievements", {
         authUserId,
         code,
         unlockedAt: now,
       });
+      inserted.push(code);
     }
-    return newly;
+    return inserted;
   },
 });
 
