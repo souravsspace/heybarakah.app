@@ -396,10 +396,10 @@ export default function Home() {
               {dateLine}
             </Text>
             <Pressable
-              accessibilityLabel="Open Hidāyah chat"
+              accessibilityLabel="Open achievements"
               accessibilityRole="button"
               hitSlop={10}
-              onPress={() => router.push("/hidayah")}
+              onPress={() => router.push("/achievements")}
               style={({ pressed }) => ({
                 width: 36,
                 height: 36,
@@ -413,7 +413,7 @@ export default function Home() {
             >
               <Ionicons
                 color={colors.primary}
-                name="sparkles-outline"
+                name="trophy-outline"
                 size={18}
               />
             </Pressable>
