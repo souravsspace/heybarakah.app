@@ -141,10 +141,10 @@ export default function HidayahIndex() {
             justifyContent: "center",
             borderWidth: 1,
             borderColor: colors.primary,
-            backgroundColor: pressed ? colors.primarySoft : "transparent",
+            backgroundColor: pressed ? colors.primarySoft : "#FFFFFF",
           })}
         >
-          <Ionicons color={colors.primary} name="add" size={20} />
+          <Ionicons color={colors.primary} name="add" size={22} />
         </Pressable>
       </View>
 
