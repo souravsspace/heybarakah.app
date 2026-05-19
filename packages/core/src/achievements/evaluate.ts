@@ -1,8 +1,4 @@
-import {
-  enumerateDates,
-  isInSacredMonth,
-  ramadanRangeContaining,
-} from "./calendar";
+import { enumerateDates, isInSacredMonth, RAMADAN_RANGES } from "./calendar";
 import { ACHIEVEMENT_CODES, ACHIEVEMENTS } from "./definitions";
 import type {
   AchievementCode,
@@ -35,6 +31,19 @@ function buildDateMap(ctx: EvaluationContext) {
   const byDate = new Map<string, Set<string>>();
   for (const log of ctx.prayerLogs) {
     if (!COUNTABLE.has(log.status)) {
+      continue;
+    }
+    const set = byDate.get(log.date) ?? new Set<string>();
+    set.add(log.prayer);
+    byDate.set(log.date, set);
+  }
+  return byDate;
+}
+
+function buildOnTimeDateMap(ctx: EvaluationContext) {
+  const byDate = new Map<string, Set<string>>();
+  for (const log of ctx.prayerLogs) {
+    if (log.status !== "on_time") {
       continue;
     }
     const set = byDate.get(log.date) ?? new Set<string>();
@@ -130,13 +139,29 @@ function lifetimeLateIsha(ctx: EvaluationContext): number {
       COUNTABLE.has(log.status) &&
       log.prayedAt !== undefined
     ) {
-      const hour = new Date(log.prayedAt).getUTCHours();
+      const hour = localHour(log.prayedAt, ctx.timezone);
       if (hour >= 22 || hour < 3) {
         n++;
       }
     }
   }
   return n;
+}
+
+function localHour(timestamp: number, timezone?: string): number {
+  if (!timezone) {
+    return new Date(timestamp).getUTCHours();
+  }
+  try {
+    const formatted = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      hour12: false,
+      timeZone: timezone,
+    }).format(new Date(timestamp));
+    return Number.parseInt(formatted, 10) % 24;
+  } catch {
+    return new Date(timestamp).getUTCHours();
+  }
 }
 
 function fajrOnTimeInLastDays(ctx: EvaluationContext, days: number): number {
@@ -182,7 +207,7 @@ function countComebacks(ctx: EvaluationContext): number {
     const prev = new Date(`${dates[i - 1]}T00:00:00Z`).getTime();
     const cur = new Date(`${dates[i]}T00:00:00Z`).getTime();
     const gapDays = Math.round((cur - prev) / 86_400_000);
-    if (gapDays >= 7) {
+    if (gapDays >= 8) {
       n++;
     }
   }
@@ -220,19 +245,22 @@ function ramadanCompleteStrict(
   byDate: Map<string, Set<string>>,
   ctx: EvaluationContext
 ): boolean {
-  const range = ramadanRangeContaining(ctx.today);
-  if (!range) {
-    return false;
-  }
-  if (ctx.today < range.end) {
-    return false;
-  }
-  for (const date of enumerateDates(range)) {
-    if ((byDate.get(date)?.size ?? 0) < ALL_FIVE) {
-      return false;
+  for (const range of RAMADAN_RANGES) {
+    if (range.end > ctx.today) {
+      continue;
+    }
+    let complete = true;
+    for (const date of enumerateDates(range)) {
+      if ((byDate.get(date)?.size ?? 0) < ALL_FIVE) {
+        complete = false;
+        break;
+      }
+    }
+    if (complete) {
+      return true;
     }
   }
-  return true;
+  return false;
 }
 
 type BasePredicate = (ctx: EvaluationContext) => AchievementEvaluation;
@@ -266,11 +294,11 @@ const BASE_PREDICATES: Record<
     bool(ctx.prayerLogs.some((l) => l.status === "on_time")),
   first_dhikr: (ctx) => bool(ctx.dhikrTotal >= 1),
   perfect_day_1: (ctx) =>
-    progress(lifetimePerfectDays(buildDateMap(ctx)), 1, "days"),
+    progress(lifetimePerfectDays(buildOnTimeDateMap(ctx)), 1, "days"),
   perfect_day_7: (ctx) =>
-    progress(lifetimePerfectDays(buildDateMap(ctx)), 7, "days"),
+    progress(lifetimePerfectDays(buildOnTimeDateMap(ctx)), 7, "days"),
   perfect_day_30: (ctx) =>
-    progress(lifetimePerfectDays(buildDateMap(ctx)), 30, "days"),
+    progress(lifetimePerfectDays(buildOnTimeDateMap(ctx)), 30, "days"),
   streak_3: (ctx) =>
     progress(currentFullStreak(buildDateMap(ctx), ctx.today), 3, "day streak"),
   streak_7: (ctx) =>
