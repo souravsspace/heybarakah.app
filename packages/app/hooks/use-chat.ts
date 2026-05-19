@@ -4,7 +4,7 @@ import { env } from "@barakah/env/app";
 import type { StreamId } from "@convex-dev/persistent-text-streaming";
 import { useStream } from "@convex-dev/persistent-text-streaming/react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getCachedMessages,
   type LocalChatMessage,
@@ -43,6 +43,7 @@ export function useChat(conversationId: Id<"chatConversations"> | null) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hydratedRef = useRef<string | null>(null);
+  const sendingRef = useRef(false);
 
   useEffect(() => {
     if (!conversationId) {
@@ -98,9 +99,13 @@ export function useChat(conversationId: Id<"chatConversations"> | null) {
     ).catch(() => undefined);
   }, [messagesQuery, conversationId]);
 
+  const streamUrl = useMemo(
+    () => new URL(`${env.EXPO_PUBLIC_CONVEX_SITE_URL}/api/chat/stream`),
+    []
+  );
   const streamHook = useStream(
     api.lib.chat.getStreamBody,
-    new URL(`${env.EXPO_PUBLIC_CONVEX_SITE_URL}/api/chat/stream`),
+    streamUrl,
     Boolean(activeStream),
     (activeStream?.streamId ?? "") as StreamId
   );
@@ -113,6 +118,7 @@ export function useChat(conversationId: Id<"chatConversations"> | null) {
       setActiveStream(null);
       setPendingUser(null);
       setSending(false);
+      sendingRef.current = false;
     }
   }, [streamHook.status, activeStream]);
 
@@ -122,9 +128,10 @@ export function useChat(conversationId: Id<"chatConversations"> | null) {
       currentConvId: Id<"chatConversations"> | null
     ): Promise<{ conversationId: Id<"chatConversations"> } | null> => {
       const trimmed = text.trim();
-      if (!trimmed || sending) {
+      if (!trimmed || sendingRef.current) {
         return null;
       }
+      sendingRef.current = true;
       setSending(true);
       setError(null);
       const optimistic: ChatMessageView = {
@@ -154,10 +161,11 @@ export function useChat(conversationId: Id<"chatConversations"> | null) {
         );
         setPendingUser(null);
         setSending(false);
+        sendingRef.current = false;
         return null;
       }
     },
-    [sendMutation, sending]
+    [sendMutation]
   );
 
   const messages: ChatMessageView[] = (() => {
