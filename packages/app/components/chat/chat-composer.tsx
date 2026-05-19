@@ -1,4 +1,4 @@
-import { AntDesign } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Platform, Pressable, TextInput, View } from "react-native";
 import { GlassSurface } from "@/components/glass-surface";
@@ -101,10 +101,11 @@ export function ChatComposer({
               pressed && canSend ? colors.primarySoft : "transparent",
           })}
         >
-          <AntDesign
+          <Ionicons
             color={canSend ? colors.primary : colors.inkSubtle}
             name="send"
-            size={20}
+            size={18}
+            style={{ marginLeft: -2 }}
           />
         </Pressable>
       </GlassSurface>
