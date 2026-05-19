@@ -5,7 +5,6 @@ import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { ConvexReactClient } from "convex/react";
 import { useFonts } from "expo-font";
-import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import { hideAsync, preventAutoHideAsync } from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -48,9 +47,15 @@ export default function RootLayout() {
     if (Platform.OS !== "android") {
       return;
     }
-    NavigationBar.setPositionAsync("absolute").catch(() => undefined);
-    NavigationBar.setBackgroundColorAsync("#00000000").catch(() => undefined);
-    NavigationBar.setButtonStyleAsync("dark").catch(() => undefined);
+    import("expo-navigation-bar")
+      .then((NavigationBar) => {
+        NavigationBar.setPositionAsync("absolute").catch(() => undefined);
+        NavigationBar.setBackgroundColorAsync("#00000000").catch(
+          () => undefined
+        );
+        NavigationBar.setButtonStyleAsync("dark").catch(() => undefined);
+      })
+      .catch(() => undefined);
   }, []);
 
   const handleSplashFinish = useCallback(() => {
