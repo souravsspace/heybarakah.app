@@ -31,7 +31,7 @@ export function LimitBanner({
         }}
       >
         {reached
-          ? "Daily limit reached. Resets at midnight."
+          ? "Daily limit reached. Resets at 00:00 UTC."
           : `${remaining} of ${limit} questions left today`}
       </Text>
     </View>

@@ -464,10 +464,10 @@ export function SplashMesh({ dark }: MeshProps) {
     return (
       <MeshShell>
         <Defs>
-          <RadialGradient cx="88%" cy="14%" id="splashDarkAmber" r="68%">
-            <Stop offset="0" stopColor="#D9B27A" stopOpacity={0.14} />
-            <Stop offset="0.55" stopColor="#D9B27A" stopOpacity={0.05} />
-            <Stop offset="1" stopColor="#D9B27A" stopOpacity={0} />
+          <RadialGradient cx="88%" cy="14%" id="splashDarkAccent" r="68%">
+            <Stop offset="0" stopColor="#29603E" stopOpacity={0.14} />
+            <Stop offset="0.55" stopColor="#29603E" stopOpacity={0.05} />
+            <Stop offset="1" stopColor="#29603E" stopOpacity={0} />
           </RadialGradient>
           <RadialGradient cx="8%" cy="92%" id="splashDarkCream" r="70%">
             <Stop offset="0" stopColor="#F5EBDB" stopOpacity={0.06} />
@@ -477,7 +477,7 @@ export function SplashMesh({ dark }: MeshProps) {
         </Defs>
         <Rect fill="#0E1311" height="220" width="320" x="0" y="0" />
         <Rect
-          fill="url(#splashDarkAmber)"
+          fill="url(#splashDarkAccent)"
           height="220"
           width="320"
           x="0"
@@ -496,10 +496,10 @@ export function SplashMesh({ dark }: MeshProps) {
   return (
     <MeshShell>
       <Defs>
-        <RadialGradient cx="88%" cy="12%" id="splashLightAmber" r="68%">
-          <Stop offset="0" stopColor="#D9B27A" stopOpacity={0.1} />
-          <Stop offset="0.55" stopColor="#D9B27A" stopOpacity={0.04} />
-          <Stop offset="1" stopColor="#D9B27A" stopOpacity={0} />
+        <RadialGradient cx="88%" cy="12%" id="splashLightAccent" r="68%">
+          <Stop offset="0" stopColor="#29603E" stopOpacity={0.1} />
+          <Stop offset="0.55" stopColor="#29603E" stopOpacity={0.04} />
+          <Stop offset="1" stopColor="#29603E" stopOpacity={0} />
         </RadialGradient>
         <RadialGradient cx="8%" cy="92%" id="splashLightGreen" r="70%">
           <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.06} />
@@ -509,7 +509,7 @@ export function SplashMesh({ dark }: MeshProps) {
       </Defs>
       <Rect fill="#F8F1E1" height="220" width="320" x="0" y="0" />
       <Rect
-        fill="url(#splashLightAmber)"
+        fill="url(#splashLightAccent)"
         height="220"
         width="320"
         x="0"
