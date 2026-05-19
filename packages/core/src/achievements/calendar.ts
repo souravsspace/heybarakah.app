@@ -26,7 +26,7 @@ export const SACRED_MONTH_RANGES: readonly DateRange[] = [
   { start: "2027-11-29", end: "2027-12-28" },
   { start: "2028-03-27", end: "2028-06-23" },
   { start: "2028-11-18", end: "2028-12-16" },
-  { start: "2029-03-16", end: "2029-05-13" },
+  { start: "2029-03-16", end: "2029-06-12" },
 ];
 
 function inRange(dateKey: string, range: DateRange): boolean {
