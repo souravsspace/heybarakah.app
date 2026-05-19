@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import type { ThemeColors } from "@/contexts/theme-context";
+import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 
 export function MessageBubble({
   colors,
@@ -10,6 +10,7 @@ export function MessageBubble({
   role: "user" | "assistant";
   content: string;
 }) {
+  const { scheme } = useTheme();
   if (role === "user") {
     return (
       <View
@@ -20,7 +21,12 @@ export function MessageBubble({
           paddingVertical: 10,
           borderRadius: 18,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor:
+            scheme === "dark" ? colors.border : "rgba(41,96,62,0.22)",
+          backgroundColor:
+            scheme === "dark"
+              ? "rgba(26,26,26,0.32)"
+              : "rgba(255,255,255,0.38)",
           marginVertical: 6,
         }}
       >
@@ -40,7 +46,7 @@ export function MessageBubble({
     <View
       style={{
         alignSelf: "flex-start",
-        maxWidth: "92%",
+        maxWidth: "94%",
         paddingHorizontal: 4,
         paddingVertical: 6,
         marginVertical: 6,
@@ -50,7 +56,7 @@ export function MessageBubble({
         style={{
           color: colors.ink,
           fontSize: 15,
-          lineHeight: 23,
+          lineHeight: 24,
         }}
       >
         {content}
