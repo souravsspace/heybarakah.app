@@ -1,30 +1,52 @@
 export type AchievementCode =
-  | "first_steps"
-  | "first_log"
-  | "first_on_time"
-  | "streak_3"
-  | "streak_7"
-  | "streak_30"
-  | "streak_100"
-  | "perfect_day_1"
-  | "perfect_day_7"
-  | "perfect_day_30"
-  | "fajr_streak_7"
-  | "fajr_streak_30"
+  | "all_bronze"
+  | "all_gold"
+  | "all_silver"
+  | "comeback"
+  | "complete"
   | "dhikr_100"
+  | "dhikr_100k"
   | "dhikr_1000"
   | "dhikr_10000"
+  | "fajr_100"
+  | "fajr_streak_30"
+  | "fajr_streak_7"
+  | "first_dhikr"
+  | "first_log"
+  | "first_on_time"
+  | "first_steps"
+  | "gentle_return"
+  | "isha_streak_7"
+  | "jumuah_12"
+  | "jumuah_4"
+  | "late_devotion"
+  | "night_complete_30"
+  | "perfect_day_1"
+  | "perfect_day_30"
+  | "perfect_day_7"
+  | "pre_dawn_watcher"
   | "qada_first"
-  | "comeback";
+  | "qada_seven"
+  | "ramadan_complete"
+  | "sacred_month_day"
+  | "streak_100"
+  | "streak_3"
+  | "streak_30"
+  | "streak_365"
+  | "streak_7";
 
-export type AchievementTier = "bronze" | "silver" | "gold";
+export type AchievementTier = "bronze" | "gold" | "silver";
 
 export type AchievementCategory =
-  | "onboarding"
-  | "prayer"
-  | "streak"
-  | "dhikr"
-  | "recovery";
+  | "beginnings"
+  | "continuity"
+  | "fajr"
+  | "mercy"
+  | "night"
+  | "reflection"
+  | "remembrance"
+  | "salah"
+  | "seasons";
 
 export type AchievementIcon =
   | "checkmark-circle-outline"
@@ -37,6 +59,8 @@ export type AchievementIcon =
   | "moon"
   | "moon-outline"
   | "refresh-outline"
+  | "star"
+  | "star-outline"
   | "sunny"
   | "sunny-outline"
   | "time-outline"
@@ -61,8 +85,8 @@ export interface Achievement {
 export interface PrayerLogEntry {
   date: string;
   prayedAt?: number;
-  prayer: "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
-  status: "on_time" | "late" | "qada" | "missed";
+  prayer: "asr" | "dhuhr" | "fajr" | "isha" | "maghrib";
+  status: "late" | "missed" | "on_time" | "qada";
   updatedAt: number;
 }
 
@@ -71,6 +95,17 @@ export interface EvaluationContext {
   onboardingComplete: boolean;
   prayerLogs: PrayerLogEntry[];
   today: string;
+}
+
+export interface AchievementProgress {
+  current: number;
+  target: number;
+  unit: string;
+}
+
+export interface AchievementEvaluation {
+  progress?: AchievementProgress;
+  unlocked: boolean;
 }
 
 export interface UnlockedAchievement {
