@@ -21,12 +21,12 @@ import {
   DAILY_CHAT_LIMIT,
   getRemainingForToday,
 } from "./chatRateLimit";
+import { deriveTitle } from "./chatHelpers";
 
 const HISTORY_LIMIT = 20;
 const MAX_OUTPUT_TOKENS = 320;
 const TEMPERATURE = 0.4;
 const MODEL_ID = "gemini-3.1-flash-lite";
-const TITLE_MAX_LENGTH = 48;
 
 const SYSTEM_PROMPT = `You answer only from the Qur'an and authentic Hadith.
 Cite the Qur'an as (Surah:Ayah). Cite Hadith as (Collection, number).
@@ -39,13 +39,6 @@ const persistentTextStreaming = new PersistentTextStreaming(
   components.persistentTextStreaming
 );
 
-function deriveTitle(text: string): string {
-  const trimmed = text.trim().replace(/\s+/g, " ");
-  if (trimmed.length <= TITLE_MAX_LENGTH) {
-    return trimmed || "New conversation";
-  }
-  return `${trimmed.slice(0, TITLE_MAX_LENGTH - 1)}…`;
-}
 
 export const listConversations = query({
   args: {},
