@@ -94,6 +94,7 @@ export interface EvaluationContext {
   dhikrTotal: number;
   onboardingComplete: boolean;
   prayerLogs: PrayerLogEntry[];
+  timezone?: string;
   today: string;
 }
 
