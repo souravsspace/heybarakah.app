@@ -5,6 +5,7 @@ import type { StreamId } from "@convex-dev/persistent-text-streaming";
 import { useStream } from "@convex-dev/persistent-text-streaming/react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 import {
   getCachedMessages,
   type LocalChatMessage,
@@ -103,11 +104,43 @@ export function useChat(conversationId: Id<"chatConversations"> | null) {
     () => new URL(`${env.EXPO_PUBLIC_CONVEX_SITE_URL}/api/chat/stream`),
     []
   );
+
+  const [authToken, setAuthToken] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setAuthToken(undefined);
+      return;
+    }
+    let cancelled = false;
+    authClient.convex
+      .token({ fetchOptions: { throw: false } })
+      .then((res: { data?: { token?: string | null } | null }) => {
+        if (cancelled) {
+          return;
+        }
+        const token = res?.data?.token ?? null;
+        setAuthToken(token ?? undefined);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuthToken(undefined);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  const streamOpts = useMemo(
+    () => (authToken ? { authToken } : undefined),
+    [authToken]
+  );
   const streamHook = useStream(
     api.lib.chat.getStreamBody,
     streamUrl,
-    Boolean(activeStream),
-    (activeStream?.streamId ?? "") as StreamId
+    Boolean(activeStream) && Boolean(authToken),
+    (activeStream?.streamId ?? "") as StreamId,
+    streamOpts
   );
 
   useEffect(() => {
@@ -129,6 +162,10 @@ export function useChat(conversationId: Id<"chatConversations"> | null) {
     ): Promise<{ conversationId: Id<"chatConversations"> } | null> => {
       const trimmed = text.trim();
       if (!trimmed || sendingRef.current) {
+        return null;
+      }
+      if (!authToken) {
+        setError("Signing in… please try again.");
         return null;
       }
       sendingRef.current = true;
@@ -165,7 +202,7 @@ export function useChat(conversationId: Id<"chatConversations"> | null) {
         return null;
       }
     },
-    [sendMutation]
+    [sendMutation, authToken]
   );
 
   const messages: ChatMessageView[] = (() => {
