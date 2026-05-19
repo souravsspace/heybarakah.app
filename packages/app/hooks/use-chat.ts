@@ -1,8 +1,6 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import type { Id } from "@barakah/core/convex/_generated/dataModel";
 import { env } from "@barakah/env/app";
-import type { StreamId } from "@convex-dev/persistent-text-streaming";
-import { useStream } from "@convex-dev/persistent-text-streaming/react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
@@ -11,6 +9,7 @@ import {
   type LocalChatMessage,
   setCachedMessages,
 } from "@/lib/chat-local";
+import { useChatStream } from "./use-chat-stream";
 
 export type ChatMessageView = {
   id: string;
@@ -135,11 +134,11 @@ export function useChat(conversationId: Id<"chatConversations"> | null) {
     () => (authToken ? { authToken } : undefined),
     [authToken]
   );
-  const streamHook = useStream(
+  const streamHook = useChatStream(
     api.lib.chat.getStreamBody,
     streamUrl,
     Boolean(activeStream) && Boolean(authToken),
-    (activeStream?.streamId ?? "") as StreamId,
+    activeStream?.streamId ?? "",
     streamOpts
   );
 
