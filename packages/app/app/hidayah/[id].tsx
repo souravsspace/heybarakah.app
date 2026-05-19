@@ -17,6 +17,7 @@ import { ChatEmptyState } from "@/components/chat/empty-state";
 import { LimitBanner } from "@/components/chat/limit-banner";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { StreamingMessage } from "@/components/chat/streaming-message";
+import { HidayahMesh } from "@/components/meshes";
 import { useTheme } from "@/contexts/theme-context";
 import { useChat } from "@/hooks/use-chat";
 
@@ -52,6 +53,7 @@ export default function HidayahThread() {
   }, [messages.length, streaming, lastContentLength]);
 
   const limitReached = remaining !== null && remaining <= 0;
+  const dark = scheme === "dark";
 
   const onSend = (text: string) => {
     send(text, conversationId)
@@ -67,49 +69,86 @@ export default function HidayahThread() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      keyboardVerticalOffset={0}
       style={{
         flex: 1,
-        backgroundColor: scheme === "dark" ? "#0E1311" : "#F8F1E1",
+        backgroundColor: dark ? "#0E1311" : "#F8F1E1",
       }}
     >
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <StatusBar style={dark ? "light" : "dark"} />
+      <HidayahMesh dark={dark} />
+
       <View
         style={{
-          paddingTop: insets.top + 6,
+          paddingTop: insets.top + 8,
           paddingHorizontal: 20,
-          paddingBottom: 12,
+          paddingBottom: 14,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottomWidth: 1,
-          borderBottomColor: colors.divider,
         }}
       >
         <Pressable
           accessibilityLabel="Back"
           accessibilityRole="button"
-          hitSlop={8}
+          hitSlop={10}
           onPress={() => router.back()}
+          style={({ pressed }) => ({
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: pressed
+              ? dark
+                ? "rgba(255,255,255,0.06)"
+                : "rgba(0,0,0,0.04)"
+              : "transparent",
+          })}
         >
-          <Ionicons color={colors.ink} name="chevron-back" size={26} />
+          <Ionicons color={colors.ink} name="chevron-back" size={22} />
         </Pressable>
-        <Text
-          style={{
-            fontFamily: "LibreBaskerville-Bold",
-            fontSize: 18,
-            color: colors.ink,
-          }}
-        >
-          Hidāyah
-        </Text>
-        <View style={{ width: 26 }} />
+
+        <View style={{ alignItems: "center" }}>
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "700",
+              letterSpacing: 1.4,
+              textTransform: "uppercase",
+              color: colors.inkSubtle,
+            }}
+          >
+            Guidance
+          </Text>
+          <Text
+            style={{
+              fontFamily: "LibreBaskerville-Bold",
+              fontSize: 18,
+              lineHeight: 22,
+              color: colors.ink,
+            }}
+          >
+            Hidāyah
+          </Text>
+        </View>
+
+        <View style={{ width: 36 }} />
       </View>
+
+      <View
+        style={{
+          marginHorizontal: 20,
+          height: 1,
+          backgroundColor: colors.divider,
+          opacity: 0.6,
+        }}
+      />
 
       <ScrollView
         contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 8,
+          paddingHorizontal: 18,
+          paddingTop: 14,
           paddingBottom: 16,
           flexGrow: 1,
         }}
@@ -144,16 +183,28 @@ export default function HidayahThread() {
           })
         )}
         {error ? (
-          <Text
+          <View
             style={{
-              marginTop: 12,
-              textAlign: "center",
-              color: colors.inkMuted,
-              fontSize: 12,
+              marginTop: 14,
+              alignSelf: "center",
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+              borderRadius: 999,
+              borderWidth: 1,
+              borderColor: colors.primary,
+              backgroundColor: colors.primarySoft,
             }}
           >
-            {error}
-          </Text>
+            <Text
+              style={{
+                color: colors.primary,
+                fontSize: 12,
+                fontWeight: "600",
+              }}
+            >
+              {error}
+            </Text>
+          </View>
         ) : null}
       </ScrollView>
 
