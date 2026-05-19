@@ -26,7 +26,7 @@ import {
 const HISTORY_LIMIT = 20;
 const MAX_OUTPUT_TOKENS = 320;
 const TEMPERATURE = 0.4;
-const MODEL_ID = "gemini-3.1-flash-lite";
+const MODEL_ID = "gemini-2.5-flash-lite";
 const MAX_INPUT_CHARS = 2000;
 
 const CORS_HEADERS = {
@@ -309,23 +309,31 @@ export const streamChat = httpAction(async (ctx, request) => {
     request,
     streamId as StreamId,
     async (_ctx, _req, _sid, append) => {
-      const result = streamText({
-        model: google(MODEL_ID),
-        system: SYSTEM_PROMPT,
-        messages: history.map(
-          (m: { role: "user" | "assistant"; content: string }) => ({
-            role: m.role,
-            content: m.content,
-          })
-        ),
-        maxOutputTokens: MAX_OUTPUT_TOKENS,
-        temperature: TEMPERATURE,
-      });
-
       let full = "";
-      for await (const part of result.textStream) {
-        full += part;
-        await append(part);
+      try {
+        const result = streamText({
+          model: google(MODEL_ID),
+          system: SYSTEM_PROMPT,
+          messages: history.map(
+            (m: { role: "user" | "assistant"; content: string }) => ({
+              role: m.role,
+              content: m.content,
+            })
+          ),
+          maxOutputTokens: MAX_OUTPUT_TOKENS,
+          temperature: TEMPERATURE,
+        });
+
+        for await (const part of result.textStream) {
+          full += part;
+          await append(part);
+        }
+      } catch (err) {
+        console.error("streamText error", err);
+        const msg =
+          "I could not reach the source. Please try again in a moment.";
+        full = msg;
+        await append(msg);
       }
 
       await ctx.runMutation(internal.lib.chat.finalizeAssistantMessage, {
