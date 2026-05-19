@@ -1,28 +1,19 @@
-import type { AchievementIcon } from "@barakah/core/achievements";
+import type {
+  AchievementIcon,
+  AchievementTier,
+} from "@barakah/core/achievements";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 
-interface AchievementCardProps {
+interface AchievementRowProps {
   icon: AchievementIcon;
   onPress: () => void;
-  tier: "bronze" | "silver" | "gold";
+  progress: { current: number; target: number; unit: string } | null;
+  tier: AchievementTier;
   title: string;
   unlocked: boolean;
   unlockedAt: number | null;
-}
-
-function tierAccent(
-  tier: AchievementCardProps["tier"],
-  colors: ThemeColors
-): string {
-  if (tier === "gold") {
-    return colors.primary;
-  }
-  if (tier === "silver") {
-    return colors.primary;
-  }
-  return colors.primary;
 }
 
 function formatUnlockedDate(ts: number): string {
@@ -32,23 +23,55 @@ function formatUnlockedDate(ts: number): string {
   });
 }
 
+function tierAccent(tier: AchievementTier, colors: ThemeColors): string {
+  if (tier === "gold") {
+    return colors.primary;
+  }
+  if (tier === "silver") {
+    return colors.inkMuted;
+  }
+  return colors.inkSubtle;
+}
+
 export function AchievementCard({
   title,
   icon,
   unlocked,
   tier,
   unlockedAt,
+  progress,
   onPress,
-}: AchievementCardProps) {
+}: AchievementRowProps) {
   const { colors, scheme } = useTheme();
-  const surface =
-    scheme === "dark" ? "rgba(26,26,26,0.22)" : "rgba(255,255,255,0.12)";
-  const pressedSurface =
-    scheme === "dark" ? "rgba(26,26,26,0.36)" : "rgba(244,244,242,0.22)";
-  const borderColor = scheme === "dark" ? colors.border : "rgba(41,96,62,0.16)";
-  const iconColor = unlocked ? tierAccent(tier, colors) : colors.inkSubtle;
+  const isDark = scheme === "dark";
+  const surface = isDark ? "rgba(20,20,20,0.6)" : "rgba(255,255,255,0.7)";
+  const pressedSurface = isDark
+    ? "rgba(26,26,26,0.85)"
+    : "rgba(244,244,242,0.85)";
+  const borderColor = colors.border;
+  const accent = tierAccent(tier, colors);
+  const discFill = unlocked && tier === "gold" ? colors.primary : "transparent";
+  const discBorder = unlocked ? accent : colors.border;
+  const glyphColor = (() => {
+    if (!unlocked) {
+      return colors.inkSubtle;
+    }
+    if (tier === "gold") {
+      return "#FFFFFF";
+    }
+    return colors.primary;
+  })();
   const titleColor = unlocked ? colors.ink : colors.inkMuted;
-  const subColor = colors.inkSubtle;
+
+  const metaText = (() => {
+    if (unlocked && unlockedAt) {
+      return `Unlocked ${formatUnlockedDate(unlockedAt)}`;
+    }
+    if (!unlocked && progress) {
+      return `${progress.current} of ${progress.target} ${progress.unit}`;
+    }
+    return "Locked";
+  })();
 
   return (
     <Pressable
@@ -56,32 +79,44 @@ export function AchievementCard({
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => ({
-        flex: 1,
-        borderRadius: 18,
+        flexDirection: "row",
+        alignItems: "center",
+        borderRadius: 14,
         borderWidth: 1,
         borderColor,
         backgroundColor: pressed ? pressedSurface : surface,
-        padding: 16,
-        gap: 12,
-        opacity: unlocked ? 1 : 0.78,
+        paddingVertical: 14,
+        paddingRight: 14,
+        paddingLeft: 0,
+        overflow: "hidden",
       })}
     >
       <View
         style={{
-          width: 44,
-          height: 44,
-          borderRadius: 22,
+          width: 2,
+          alignSelf: "stretch",
+          backgroundColor: unlocked ? accent : colors.divider,
+          marginRight: 14,
+        }}
+      />
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
           borderWidth: 1,
-          borderColor: unlocked ? colors.primary : colors.border,
+          borderColor: discBorder,
+          backgroundColor: discFill,
           alignItems: "center",
           justifyContent: "center",
+          marginRight: 14,
         }}
       >
-        <Ionicons color={iconColor} name={icon} size={22} />
+        <Ionicons color={glyphColor} name={icon} size={20} />
       </View>
-      <View style={{ gap: 4 }}>
+      <View style={{ flex: 1, gap: 3 }}>
         <Text
-          numberOfLines={2}
+          numberOfLines={1}
           style={{
             fontFamily: "LibreBaskerville-Bold",
             fontSize: 15,
@@ -92,16 +127,18 @@ export function AchievementCard({
           {title}
         </Text>
         <Text
+          numberOfLines={1}
           style={{
             fontSize: 11,
             fontWeight: "600",
-            color: subColor,
+            color: colors.inkSubtle,
             fontVariant: ["tabular-nums"],
           }}
         >
-          {unlocked && unlockedAt ? formatUnlockedDate(unlockedAt) : "Locked"}
+          {metaText}
         </Text>
       </View>
+      <Ionicons color={colors.chevron} name="chevron-forward" size={16} />
     </Pressable>
   );
 }
