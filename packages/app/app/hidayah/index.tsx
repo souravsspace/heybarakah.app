@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { FlatList, Pressable, Text, View } from "react-native";
+import { Pressable, SectionList, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HidayahMesh } from "@/components/meshes";
 import { useTheme } from "@/contexts/theme-context";
@@ -32,6 +32,44 @@ function formatRelative(now: number, ts: number): string {
     month: "short",
     day: "numeric",
   });
+}
+
+function bucketFor(now: number, ts: number): 0 | 1 | 2 | 3 {
+  const startOfDay = (t: number) => {
+    const d = new Date(t);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  };
+  const today = startOfDay(now);
+  const day = 86_400_000;
+  if (ts >= today) {
+    return 0;
+  }
+  if (ts >= today - day) {
+    return 1;
+  }
+  if (ts >= today - 7 * day) {
+    return 2;
+  }
+  return 3;
+}
+
+const BUCKET_LABELS = ["Today", "Yesterday", "This week", "Earlier"] as const;
+
+function groupConversations(
+  conversations: LocalConversationSummary[],
+  now: number
+): { title: string; data: LocalConversationSummary[] }[] {
+  const buckets: LocalConversationSummary[][] = [[], [], [], []];
+  for (const c of conversations) {
+    buckets[bucketFor(now, c.updatedAt)].push(c);
+  }
+  for (const b of buckets) {
+    b.sort((a, z) => z.updatedAt - a.updatedAt);
+  }
+  return buckets
+    .map((data, i) => ({ title: BUCKET_LABELS[i], data }))
+    .filter((s) => s.data.length > 0);
 }
 
 export default function HidayahIndex() {
@@ -236,31 +274,19 @@ export default function HidayahIndex() {
           </Pressable>
         </View>
       ) : (
-        <FlatList
+        <SectionList
           contentContainerStyle={{
-            paddingTop: 8,
+            paddingTop: 14,
             paddingBottom: insets.bottom + 32,
             paddingHorizontal: 20,
           }}
-          data={conversations}
-          ItemSeparatorComponent={() => (
-            <View
-              style={{
-                height: 1,
-                backgroundColor: colors.divider,
-                opacity: 0.5,
-              }}
-            />
-          )}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <Pressable
               accessibilityLabel={`Open ${item.title}`}
               accessibilityRole="button"
               onPress={() => router.push(`/hidayah/${item.id}`)}
               style={({ pressed }) => ({
-                paddingVertical: 16,
-                paddingHorizontal: 4,
                 backgroundColor: pressed
                   ? dark
                     ? "rgba(255,255,255,0.04)"
@@ -273,15 +299,18 @@ export default function HidayahIndex() {
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  gap: 12,
+                  gap: 16,
+                  paddingVertical: 18,
+                  borderTopWidth: index === 0 ? 0 : 1,
+                  borderTopColor: colors.divider,
                 }}
               >
                 <Text
                   numberOfLines={1}
                   style={{
                     flex: 1,
-                    fontSize: 15,
-                    lineHeight: 20,
+                    fontSize: 16,
+                    lineHeight: 22,
                     color: colors.ink,
                   }}
                 >
@@ -291,8 +320,10 @@ export default function HidayahIndex() {
                   style={{
                     fontSize: 11,
                     fontWeight: "600",
-                    fontVariant: ["tabular-nums"],
+                    letterSpacing: 0.6,
+                    textTransform: "uppercase",
                     color: colors.inkSubtle,
+                    fontVariant: ["tabular-nums"],
                   }}
                 >
                   {formatRelative(now, item.updatedAt)}
@@ -300,6 +331,23 @@ export default function HidayahIndex() {
               </View>
             </Pressable>
           )}
+          renderSectionHeader={({ section: { title } }) => (
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 1.6,
+                textTransform: "uppercase",
+                color: colors.inkSubtle,
+                marginTop: 28,
+                marginBottom: 4,
+              }}
+            >
+              {title}
+            </Text>
+          )}
+          sections={groupConversations(conversations, now)}
+          stickySectionHeadersEnabled={false}
         />
       )}
     </View>
