@@ -14,24 +14,38 @@ export function ChatEmptyState({ colors }: { colors: ThemeColors }) {
     >
       <Text
         style={{
+          fontSize: 11,
+          fontWeight: "700",
+          letterSpacing: 1.2,
+          textTransform: "uppercase",
+          color: colors.primary,
+          textAlign: "center",
+        }}
+      >
+        Hidāyah · Guidance
+      </Text>
+      <Text
+        style={{
           fontFamily: "LibreBaskerville-Bold",
-          fontSize: 24,
-          lineHeight: 30,
+          fontSize: 26,
+          lineHeight: 32,
           color: colors.ink,
           textAlign: "center",
         }}
       >
-        Hidāyah
+        Ask the Qur'an{"\n"}and authentic Hadith.
       </Text>
       <Text
         style={{
-          fontSize: 14,
+          fontSize: 13,
           lineHeight: 20,
           color: colors.inkMuted,
           textAlign: "center",
+          maxWidth: 280,
         }}
       >
-        Ask only what the Qur'an or authentic Hadith can answer.
+        Replies cite Surah:Ayah or Collection, number. Outside that scope, no
+        answer is given.
       </Text>
     </View>
   );
