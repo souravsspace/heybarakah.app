@@ -5,6 +5,7 @@ import {
   type PrayerDay,
   type PrayerStatus,
 } from "@barakah/core/prayer";
+import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -378,15 +379,45 @@ export default function Home() {
       >
         {/* Greeting: single combined date line */}
         <View style={{ paddingHorizontal: 20, paddingTop: 10, gap: 8 }}>
-          <Text
+          <View
             style={{
-              fontSize: 11,
-              fontWeight: "600",
-              color: colors.inkMuted,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            {dateLine}
-          </Text>
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "600",
+                color: colors.inkMuted,
+              }}
+            >
+              {dateLine}
+            </Text>
+            <Pressable
+              accessibilityLabel="Open Hidāyah chat"
+              accessibilityRole="button"
+              hitSlop={10}
+              onPress={() => router.push("/hidayah")}
+              style={({ pressed }) => ({
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                borderColor: colors.primary,
+                backgroundColor: pressed ? colors.primarySoft : "transparent",
+              })}
+            >
+              <Ionicons
+                color={colors.primary}
+                name="sparkles-outline"
+                size={18}
+              />
+            </Pressable>
+          </View>
           <Text
             style={{
               fontFamily: "LibreBaskerville-Bold",
