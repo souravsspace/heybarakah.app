@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
+import type { MutationCtx } from "../_generated/server";
 import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
@@ -7,6 +8,38 @@ const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_TARGET = 33;
 const MAX_TARGET = 10_000;
 const MAX_INCREMENT = 1000;
+
+async function sumDhikrDaily(ctx: MutationCtx, authUserId: string) {
+  const rows = await ctx.db
+    .query("dhikrDaily")
+    .withIndex("by_user_date", (q) => q.eq("authUserId", authUserId))
+    .collect();
+  return rows.reduce((sum, row) => sum + row.count, 0);
+}
+
+async function updateDhikrAggregate(
+  ctx: MutationCtx,
+  authUserId: string,
+  delta: number,
+  updatedAt: number
+) {
+  const aggregate = await ctx.db
+    .query("dhikrAggregate")
+    .withIndex("by_user", (q) => q.eq("authUserId", authUserId))
+    .unique();
+  if (aggregate) {
+    await ctx.db.patch(aggregate._id, {
+      total: Math.max(0, aggregate.total + delta),
+      updatedAt,
+    });
+    return;
+  }
+  await ctx.db.insert("dhikrAggregate", {
+    authUserId,
+    total: await sumDhikrDaily(ctx, authUserId),
+    updatedAt,
+  });
+}
 
 export const getToday = query({
   args: { date: v.string() },
@@ -66,6 +99,7 @@ export const increment = mutation({
       });
       nextCount = delta;
     }
+    await updateDhikrAggregate(ctx, user._id, delta, now);
     await ctx.scheduler.runAfter(0, internal.lib.achievements.runEvaluate, {
       authUserId: user._id,
       today: date,
@@ -126,7 +160,9 @@ export const reset = mutation({
       )
       .unique();
     if (existing) {
-      await ctx.db.patch(existing._id, { count: 0, updatedAt: Date.now() });
+      const now = Date.now();
+      await ctx.db.patch(existing._id, { count: 0, updatedAt: now });
+      await updateDhikrAggregate(ctx, user._id, -existing.count, now);
     }
     return null;
   },
