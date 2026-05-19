@@ -1,6 +1,7 @@
 import type { Achievement } from "@barakah/core/achievements";
 import { api } from "@barakah/core/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
+import { router } from "expo-router";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { AchievementDialog } from "./achievement-dialog";
 
@@ -63,18 +64,23 @@ export function AchievementPopupProvider({
     markSeen({ codes: [code] }).catch(() => undefined);
   };
 
+  const onViewAll = () => {
+    router.push("/achievements");
+  };
+
   return (
     <>
       {children}
       <AchievementDialog
-        ctaLabel="Continue"
+        category={active?.category ?? "beginnings"}
         description={active?.description ?? ""}
-        eyebrow="Achievement unlocked"
         icon={active?.icon ?? "trophy-outline"}
+        mode="reveal"
         onClose={onClose}
+        onViewAll={onViewAll}
         quote={active?.quote}
+        tier={active?.tier ?? "bronze"}
         title={active?.title ?? ""}
-        unlocked={true}
         unlockedAt={active?.unlockedAt ?? null}
         visible={active !== null}
       />
