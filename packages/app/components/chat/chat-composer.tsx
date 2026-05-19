@@ -1,7 +1,7 @@
 import { AntDesign } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import { useState } from "react";
 import { Platform, Pressable, TextInput, View } from "react-native";
+import { GlassSurface } from "@/components/glass-surface";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 
 const SURFACE_HEIGHT = 52;
@@ -23,12 +23,8 @@ export function ChatComposer({
   const trimmed = value.trim();
   const canSend = trimmed.length > 0 && !disabled;
   const dark = scheme === "dark";
-  const glassTint = dark ? "systemUltraThinMaterialDark" : "systemThinMaterial";
-  const glassIntensity = Platform.OS === "ios" ? 60 : 40;
   const surfaceBorder = dark ? "rgba(255,255,255,0.18)" : "rgba(41,96,62,0.22)";
-  const fallbackTint = dark
-    ? "rgba(255,255,255,0.06)"
-    : "rgba(255,255,255,0.55)";
+  const blurTint = dark ? "systemUltraThinMaterialDark" : "systemThinMaterial";
 
   const handleSend = () => {
     if (!canSend) {
@@ -48,26 +44,20 @@ export function ChatComposer({
         paddingVertical: 8,
       }}
     >
-      <View
-        style={{
-          flex: 1,
-          height: SURFACE_HEIGHT,
-          borderRadius: SURFACE_RADIUS,
-          borderWidth: 1,
-          borderColor: surfaceBorder,
-          overflow: "hidden",
-          backgroundColor: fallbackTint,
-        }}
+      <GlassSurface
+        blurTint={blurTint}
+        borderColor={surfaceBorder}
+        colorScheme={dark ? "dark" : "light"}
+        height={SURFACE_HEIGHT}
+        radius={SURFACE_RADIUS}
+        style={{ flex: 1 }}
       >
-        <BlurView
-          experimentalBlurMethod="dimezisBlurView"
-          intensity={glassIntensity}
+        <View
           style={{
             flex: 1,
             paddingHorizontal: 20,
             justifyContent: "center",
           }}
-          tint={glassTint}
         >
           <TextInput
             editable={!disabled}
@@ -87,45 +77,37 @@ export function ChatComposer({
             }}
             value={value}
           />
-        </BlurView>
-      </View>
+        </View>
+      </GlassSurface>
 
-      <Pressable
-        accessibilityLabel="Send message"
-        accessibilityRole="button"
-        disabled={!canSend}
-        onPress={handleSend}
-        style={{
-          width: SURFACE_HEIGHT,
-          height: SURFACE_HEIGHT,
-          borderRadius: SURFACE_RADIUS,
-          borderWidth: 1,
-          borderColor: canSend ? colors.primary : surfaceBorder,
-          overflow: "hidden",
-          backgroundColor: fallbackTint,
-        }}
+      <GlassSurface
+        blurTint={blurTint}
+        borderColor={canSend ? colors.primary : surfaceBorder}
+        colorScheme={dark ? "dark" : "light"}
+        height={SURFACE_HEIGHT}
+        radius={SURFACE_RADIUS}
+        style={{ width: SURFACE_HEIGHT }}
       >
-        {({ pressed }) => (
-          <BlurView
-            experimentalBlurMethod="dimezisBlurView"
-            intensity={glassIntensity}
-            style={{
-              flex: 1,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor:
-                pressed && canSend ? colors.primarySoft : "transparent",
-            }}
-            tint={glassTint}
-          >
-            <AntDesign
-              color={canSend ? colors.primary : colors.inkSubtle}
-              name="send"
-              size={20}
-            />
-          </BlurView>
-        )}
-      </Pressable>
+        <Pressable
+          accessibilityLabel="Send message"
+          accessibilityRole="button"
+          disabled={!canSend}
+          onPress={handleSend}
+          style={({ pressed }) => ({
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor:
+              pressed && canSend ? colors.primarySoft : "transparent",
+          })}
+        >
+          <AntDesign
+            color={canSend ? colors.primary : colors.inkSubtle}
+            name="send"
+            size={20}
+          />
+        </Pressable>
+      </GlassSurface>
     </View>
   );
 }
