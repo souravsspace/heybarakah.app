@@ -3,6 +3,8 @@ import {
   profileFields,
   validateProfileInput,
 } from "../../src/users/validators";
+import { internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
 import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
@@ -39,11 +41,20 @@ export const upsertProfile = mutation({
       .query("users")
       .withIndex("by_authUserId", (q) => q.eq("authUserId", user._id))
       .unique();
+    let resultId: Id<"users">;
     if (existing) {
       await ctx.db.patch(existing._id, args);
-      return existing._id;
+      resultId = existing._id;
+    } else {
+      resultId = await ctx.db.insert("users", {
+        authUserId: user._id,
+        ...args,
+      });
     }
-    return await ctx.db.insert("users", { authUserId: user._id, ...args });
+    await ctx.scheduler.runAfter(0, internal.lib.achievements.runEvaluate, {
+      authUserId: user._id,
+    });
+    return resultId;
   },
 });
 

@@ -1,4 +1,6 @@
 import { v } from "convex/values";
+import { internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
 import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
@@ -75,22 +77,29 @@ export const logPrayer = mutation({
           .eq("prayer", args.prayer)
       )
       .unique();
+    let resultId: Id<"prayerLogs">;
     if (existing) {
       await ctx.db.patch(existing._id, {
         status: args.status,
         prayedAt: args.prayedAt,
         updatedAt: now,
       });
-      return existing._id;
+      resultId = existing._id;
+    } else {
+      resultId = await ctx.db.insert("prayerLogs", {
+        authUserId: user._id,
+        date: args.date,
+        prayer: args.prayer,
+        status: args.status,
+        prayedAt: args.prayedAt,
+        updatedAt: now,
+      });
     }
-    return await ctx.db.insert("prayerLogs", {
+    await ctx.scheduler.runAfter(0, internal.lib.achievements.runEvaluate, {
       authUserId: user._id,
-      date: args.date,
-      prayer: args.prayer,
-      status: args.status,
-      prayedAt: args.prayedAt,
-      updatedAt: now,
+      today: args.date,
     });
+    return resultId;
   },
 });
 

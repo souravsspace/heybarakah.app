@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { internal } from "../_generated/api";
 import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
@@ -51,19 +52,25 @@ export const increment = mutation({
         q.eq("authUserId", user._id).eq("date", date)
       )
       .unique();
+    let nextCount: number;
     if (existing) {
-      const next = existing.count + delta;
-      await ctx.db.patch(existing._id, { count: next, updatedAt: now });
-      return next;
+      nextCount = existing.count + delta;
+      await ctx.db.patch(existing._id, { count: nextCount, updatedAt: now });
+    } else {
+      await ctx.db.insert("dhikrDaily", {
+        authUserId: user._id,
+        date,
+        count: delta,
+        target: DEFAULT_TARGET,
+        updatedAt: now,
+      });
+      nextCount = delta;
     }
-    await ctx.db.insert("dhikrDaily", {
+    await ctx.scheduler.runAfter(0, internal.lib.achievements.runEvaluate, {
       authUserId: user._id,
-      date,
-      count: delta,
-      target: DEFAULT_TARGET,
-      updatedAt: now,
+      today: date,
     });
-    return delta;
+    return nextCount;
   },
 });
 
