@@ -22,15 +22,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.75",
     "@barakah/mails": "workspace:*",
     "@better-auth/expo": "catalog:",
     "@convex-dev/better-auth": "catalog:",
-    "@convex-dev/persistent-text-streaming": "^0.3.2",
     "@convex-dev/resend": "^0.2.3",
     "@polar-sh/sdk": "^0.47.1",
     "adhan": "^4.4.3",
-    "ai": "^6.0.184",
     "better-auth": "catalog:",
     "convex": "catalog:",
     "disposable-email-domains": "^1.0.62",
