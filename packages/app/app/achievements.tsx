@@ -8,7 +8,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AchievementCard } from "@/components/achievement-card";
-import { AchievementDetailSheet } from "@/components/achievement-detail-sheet";
+import { AchievementDialog } from "@/components/achievement-dialog";
 import { AchievementsMesh } from "@/components/meshes";
 import { useTheme } from "@/contexts/theme-context";
 
@@ -197,9 +197,10 @@ export default function AchievementsScreen() {
         </View>
       </ScrollView>
 
-      <AchievementDetailSheet
+      <AchievementDialog
         ctaLabel="Close"
         description={selected?.description ?? ""}
+        eyebrow={selected?.unlockedAt ? "Unlocked" : "Locked"}
         icon={selected?.icon ?? "trophy-outline"}
         onClose={() => setSelected(null)}
         quote={selected?.quote}

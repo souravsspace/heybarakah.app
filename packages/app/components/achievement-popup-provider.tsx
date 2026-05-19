@@ -2,7 +2,7 @@ import type { Achievement } from "@barakah/core/achievements";
 import { api } from "@barakah/core/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { AchievementDetailSheet } from "./achievement-detail-sheet";
+import { AchievementDialog } from "./achievement-dialog";
 
 type UnseenUnlock = Achievement & { unlockedAt: number };
 
@@ -66,10 +66,10 @@ export function AchievementPopupProvider({
   return (
     <>
       {children}
-      <AchievementDetailSheet
+      <AchievementDialog
         ctaLabel="Continue"
         description={active?.description ?? ""}
-        headerLabel="Achievement unlocked"
+        eyebrow="Achievement unlocked"
         icon={active?.icon ?? "trophy-outline"}
         onClose={onClose}
         quote={active?.quote}
