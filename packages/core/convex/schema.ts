@@ -141,6 +141,11 @@ export default defineSchema({
     target: v.number(),
     updatedAt: v.number(),
   }).index("by_user_date", ["authUserId", "date"]),
+  dhikrAggregate: defineTable({
+    authUserId: v.string(),
+    total: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["authUserId"]),
   userAchievements: defineTable({
     authUserId: v.string(),
     code: v.string(),
