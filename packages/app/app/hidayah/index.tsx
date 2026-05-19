@@ -139,12 +139,10 @@ export default function HidayahIndex() {
             borderRadius: 18,
             alignItems: "center",
             justifyContent: "center",
-            borderWidth: 1,
-            borderColor: colors.primary,
-            backgroundColor: pressed ? colors.primarySoft : "#FFFFFF",
+            backgroundColor: pressed ? "#1F4A30" : colors.primary,
           })}
         >
-          <Ionicons color={colors.primary} name="add" size={22} />
+          <Ionicons color="#FFFFFF" name="add" size={22} />
         </Pressable>
       </View>
 

@@ -19,7 +19,9 @@ export function ChatComposer({
   const trimmed = value.trim();
   const canSend = trimmed.length > 0 && !disabled;
   const inputBg =
-    scheme === "dark" ? "rgba(26,26,26,0.32)" : "rgba(255,255,255,0.42)";
+    scheme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.65)";
+  const inputBorder =
+    scheme === "dark" ? "rgba(255,255,255,0.18)" : "rgba(41,96,62,0.22)";
 
   const handleSend = () => {
     if (!canSend) {
@@ -33,7 +35,7 @@ export function ChatComposer({
     <View
       style={{
         flexDirection: "row",
-        alignItems: "flex-end",
+        alignItems: "center",
         gap: 10,
         paddingHorizontal: 16,
         paddingVertical: 10,
@@ -42,13 +44,13 @@ export function ChatComposer({
       <View
         style={{
           flex: 1,
+          minHeight: 52,
           borderWidth: 1,
-          borderColor:
-            scheme === "dark" ? colors.border : "rgba(41,96,62,0.18)",
+          borderColor: inputBorder,
           backgroundColor: inputBg,
           borderRadius: 26,
           paddingHorizontal: 18,
-          minHeight: 52,
+          paddingVertical: Platform.OS === "ios" ? 15 : 8,
           justifyContent: "center",
         }}
       >
@@ -63,8 +65,8 @@ export function ChatComposer({
             fontSize: 15,
             lineHeight: 21,
             maxHeight: 140,
-            paddingTop: Platform.OS === "ios" ? 14 : 10,
-            paddingBottom: Platform.OS === "ios" ? 14 : 10,
+            padding: 0,
+            margin: 0,
             textAlignVertical: "center",
           }}
           value={value}
