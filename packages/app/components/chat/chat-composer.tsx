@@ -1,7 +1,11 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { useState } from "react";
 import { Platform, Pressable, TextInput, View } from "react-native";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
+
+const SURFACE_HEIGHT = 52;
+const SURFACE_RADIUS = 26;
 
 export function ChatComposer({
   colors,
@@ -18,10 +22,13 @@ export function ChatComposer({
   const [value, setValue] = useState("");
   const trimmed = value.trim();
   const canSend = trimmed.length > 0 && !disabled;
-  const inputBg =
-    scheme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.65)";
-  const inputBorder =
-    scheme === "dark" ? "rgba(255,255,255,0.18)" : "rgba(41,96,62,0.22)";
+  const dark = scheme === "dark";
+  const glassTint = dark ? "systemUltraThinMaterialDark" : "systemThinMaterial";
+  const glassIntensity = Platform.OS === "ios" ? 60 : 40;
+  const surfaceBorder = dark ? "rgba(255,255,255,0.18)" : "rgba(41,96,62,0.22)";
+  const fallbackTint = dark
+    ? "rgba(255,255,255,0.06)"
+    : "rgba(255,255,255,0.55)";
 
   const handleSend = () => {
     if (!canSend) {
@@ -38,65 +45,86 @@ export function ChatComposer({
         alignItems: "center",
         gap: 10,
         paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingVertical: 8,
       }}
     >
       <View
         style={{
           flex: 1,
-          minHeight: 56,
+          height: SURFACE_HEIGHT,
+          borderRadius: SURFACE_RADIUS,
           borderWidth: 1,
-          borderColor: inputBorder,
-          backgroundColor: inputBg,
-          borderRadius: 28,
-          paddingHorizontal: 20,
-          paddingVertical: Platform.OS === "ios" ? 17 : 10,
-          justifyContent: "center",
+          borderColor: surfaceBorder,
+          overflow: "hidden",
+          backgroundColor: fallbackTint,
         }}
       >
-        <TextInput
-          editable={!disabled}
-          multiline
-          onChangeText={setValue}
-          placeholder={placeholder ?? "Ask the Qur'an and Hadith…"}
-          placeholderTextColor={colors.inkSubtle}
+        <BlurView
+          experimentalBlurMethod="dimezisBlurView"
+          intensity={glassIntensity}
           style={{
-            color: colors.ink,
-            fontSize: 15,
-            lineHeight: 21,
-            maxHeight: 140,
-            padding: 0,
-            margin: 0,
-            textAlignVertical: "center",
+            flex: 1,
+            paddingHorizontal: 20,
+            justifyContent: "center",
           }}
-          value={value}
-        />
+          tint={glassTint}
+        >
+          <TextInput
+            editable={!disabled}
+            multiline={false}
+            onChangeText={setValue}
+            onSubmitEditing={handleSend}
+            placeholder={placeholder ?? "Ask the Qur'an and Hadith…"}
+            placeholderTextColor={colors.inkSubtle}
+            returnKeyType="send"
+            style={{
+              color: colors.ink,
+              fontSize: 15,
+              lineHeight: 20,
+              padding: 0,
+              margin: 0,
+              ...(Platform.OS === "android" ? { height: 22 } : null),
+            }}
+            value={value}
+          />
+        </BlurView>
       </View>
+
       <Pressable
         accessibilityLabel="Send message"
         accessibilityRole="button"
         disabled={!canSend}
         onPress={handleSend}
-        style={({ pressed }) => ({
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          alignItems: "center",
-          justifyContent: "center",
+        style={{
+          width: SURFACE_HEIGHT,
+          height: SURFACE_HEIGHT,
+          borderRadius: SURFACE_RADIUS,
           borderWidth: 1,
-          borderColor: canSend ? colors.primary : inputBorder,
-          backgroundColor: pressed
-            ? canSend
-              ? colors.primarySoft
-              : inputBg
-            : inputBg,
-        })}
+          borderColor: canSend ? colors.primary : surfaceBorder,
+          overflow: "hidden",
+          backgroundColor: fallbackTint,
+        }}
       >
-        <Ionicons
-          color={canSend ? colors.primary : colors.inkSubtle}
-          name="arrow-up"
-          size={24}
-        />
+        {({ pressed }) => (
+          <BlurView
+            experimentalBlurMethod="dimezisBlurView"
+            intensity={glassIntensity}
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor:
+                pressed && canSend ? colors.primarySoft : "transparent",
+            }}
+            tint={glassTint}
+          >
+            <AntDesign
+              color={canSend ? colors.primary : colors.inkSubtle}
+              name="send"
+              size={20}
+            />
+          </BlurView>
+        )}
       </Pressable>
     </View>
   );
