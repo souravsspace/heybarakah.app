@@ -5,6 +5,7 @@
   "types": "./index.ts",
   "exports": {
     ".": "./index.ts",
+    "./achievements": "./src/achievements/index.ts",
     "./prayer": "./src/prayer/index.ts",
     "./marketing": "./src/marketing/index.ts",
     "./polar": "./src/polar/index.ts",
