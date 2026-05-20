@@ -903,7 +903,7 @@ struct BlockedAppsContentView: View {
                 .foregroundColor(trashIconColor)
                 .frame(width: 32, height: 32)
                 .background(
-                  RoundedRectangle(cornerRadius: 9, style: .continuous)
+                  RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .fill(trashBgColor)
                 )
             }
