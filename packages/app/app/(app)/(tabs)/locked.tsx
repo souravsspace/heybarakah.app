@@ -408,7 +408,7 @@ function EmptyShield({
   onAddApps: () => void;
 }) {
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 48 }}>
+    <View style={{ paddingHorizontal: 24, paddingTop: 40 }}>
       <Pressable
         accessibilityHint="Opens the iOS app picker"
         accessibilityLabel="Add apps to shield"
@@ -417,30 +417,32 @@ function EmptyShield({
         style={({ pressed }) => ({
           alignItems: "center",
           borderColor: colors.border,
-          borderRadius: 20,
-          borderStyle: "dashed",
+          borderRadius: 14,
           borderWidth: 1,
-          opacity: pressed ? 0.65 : 1,
-          paddingHorizontal: 24,
-          paddingVertical: 40,
+          flexDirection: "row",
+          gap: 14,
+          opacity: pressed ? 0.55 : 1,
+          paddingHorizontal: 18,
+          paddingVertical: 18,
         })}
       >
         <View
           style={{
             alignItems: "center",
-            backgroundColor: colors.primary,
-            borderRadius: 24,
-            height: 48,
+            borderColor: colors.primary,
+            borderRadius: 999,
+            borderWidth: 1,
+            height: 28,
             justifyContent: "center",
-            width: 48,
+            width: 28,
           }}
         >
           <Text
             style={{
-              color: "#FFFFFF",
-              fontSize: 24,
+              color: colors.primary,
+              fontSize: 18,
               fontWeight: "400",
-              lineHeight: 26,
+              lineHeight: 20,
             }}
           >
             +
@@ -449,26 +451,22 @@ function EmptyShield({
         <Text
           style={{
             color: colors.ink,
-            fontFamily: "LibreBaskerville-Bold",
-            fontSize: 19,
-            letterSpacing: -0.2,
-            marginTop: 18,
-            textAlign: "center",
+            flex: 1,
+            fontSize: 15,
+            fontWeight: "600",
           }}
         >
-          Add apps to quiet
+          Add apps to shield
         </Text>
         <Text
           style={{
             color: colors.inkMuted,
-            fontSize: 13,
-            lineHeight: 20,
-            marginTop: 6,
-            maxWidth: 260,
-            textAlign: "center",
+            fontSize: 18,
+            fontWeight: "400",
+            lineHeight: 18,
           }}
         >
-          Fifteen minutes of quiet at every salah.
+          ›
         </Text>
       </Pressable>
     </View>
