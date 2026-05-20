@@ -12,8 +12,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DhikrMesh } from "@/components/meshes";
+import { PRESETS, useDhikr } from "@/contexts/dhikr-context";
 import { useTheme } from "@/contexts/theme-context";
-import { PRESETS, useDhikr } from "./_layout";
 
 export default function DhikrScreen() {
   const router = useRouter();
@@ -53,7 +53,7 @@ export default function DhikrScreen() {
 
   const openRecord = useCallback(() => {
     Haptics.selectionAsync().catch(() => undefined);
-    router.push("/dhikr/record");
+    router.push("/dhikr-record");
   }, [router]);
 
   const onTap = useCallback(() => {

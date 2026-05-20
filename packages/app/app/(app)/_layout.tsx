@@ -1,5 +1,6 @@
 import { Redirect, Stack } from "expo-router";
 import { AuthLoading } from "@/components/auth-loading";
+import { DhikrProvider } from "@/contexts/dhikr-context";
 import { useUser } from "@/contexts/user-context";
 import { useDailyAyahNotification } from "@/hooks/useDailyAyahNotification";
 import { useLockActivityScheduler } from "@/hooks/useLockActivityScheduler";
@@ -11,10 +12,20 @@ function AuthedShell() {
   useWidgetSync();
   useLockActivityScheduler();
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="achievements" />
-    </Stack>
+    <DhikrProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="achievements" />
+        <Stack.Screen
+          name="dhikr-record"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            gestureEnabled: true,
+          }}
+        />
+      </Stack>
+    </DhikrProvider>
   );
 }
 

@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
-import { Stack } from "expo-router";
 import {
   createContext,
   type ReactNode,
@@ -81,11 +80,7 @@ interface DhikrContextValue {
 
 const DhikrContext = createContext<DhikrContextValue | null>(null);
 
-export const unstable_settings = {
-  anchor: "index",
-};
-
-function DhikrProvider({ children }: { children: ReactNode }) {
+export function DhikrProvider({ children }: { children: ReactNode }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [count, setCount] = useState(0);
   const [totals, setTotals] = useState<Lifetime>({});
@@ -209,22 +204,4 @@ export function useDhikr() {
     throw new Error("useDhikr must be used inside DhikrProvider");
   }
   return ctx;
-}
-
-export default function DhikrLayout() {
-  return (
-    <DhikrProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen
-          name="record"
-          options={{
-            presentation: "modal",
-            animation: "slide_from_bottom",
-            gestureEnabled: true,
-          }}
-        />
-      </Stack>
-    </DhikrProvider>
-  );
 }
