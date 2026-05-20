@@ -23,7 +23,6 @@ import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { SOCIAL_APPS, type SocialApp } from "@/constants/social-apps";
 import { useTheme } from "@/contexts/theme-context";
 import { usePrayerShield } from "@/hooks/usePrayerShield";
-import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import {
   type AndroidBlockableApp,
   BlockedAppsNativeList,
@@ -42,16 +41,6 @@ import {
 } from "@/lib/app-blocker";
 
 type ThemeColors = ReturnType<typeof useTheme>["colors"];
-
-function fmt12(time: string) {
-  const [h, m] = time.split(":").map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) {
-    return time;
-  }
-  const period = h >= 12 ? "PM" : "AM";
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour}:${m.toString().padStart(2, "0")} ${period}`;
-}
 
 function summarizeIosSelection(items: IOSBlockedItem[]): string {
   const apps = items.filter((i) => i.type === "app").length;
@@ -89,7 +78,6 @@ function quietVerb(items: IOSBlockedItem[]): string {
 }
 
 export default function Locked() {
-  const { nextPrayer } = usePrayerTimes();
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
@@ -210,6 +198,19 @@ export default function Locked() {
                 const res = await removeBlockedItem(tokenId, type);
                 if (res.removed) {
                   refreshIosItems();
+                  const nextSelectionData =
+                    res.remaining === 0 ? "" : iosSelectionLocal;
+                  if (res.remaining === 0) {
+                    setIosSelectionLocal("");
+                  }
+                  try {
+                    await upsertIos({
+                      iosItemCount: res.remaining,
+                      iosSelectionData: nextSelectionData,
+                    });
+                  } catch {
+                    // backend sync best-effort
+                  }
                   Haptics.notificationAsync(
                     Haptics.NotificationFeedbackType.Success
                   ).catch(() => undefined);
@@ -224,7 +225,7 @@ export default function Locked() {
         ]
       );
     },
-    [refreshIosItems]
+    [iosSelectionLocal, refreshIosItems, upsertIos]
   );
 
   const clearIos = useCallback(async () => {
@@ -290,9 +291,6 @@ export default function Locked() {
     return [...list].sort((a, b) => a.name.localeCompare(b.name));
   }, [installed, search]);
 
-  const upcoming = nextPrayer ? fmt12(nextPrayer.time) : null;
-  const upcomingName = nextPrayer ? nextPrayer.name.toUpperCase() : null;
-
   const iosSummary = summarizeIosSelection(iosItems);
   const iosVerb = quietVerb(iosItems);
   const heroSubject =
@@ -325,9 +323,9 @@ export default function Locked() {
         <Hero
           colors={colors}
           hasSelection={hasSelection}
+          onAddApps={openIosPicker}
+          showPlus={Platform.OS === "ios" && (perm?.allGranted ?? false)}
           subject={heroSubject}
-          upcoming={upcoming}
-          upcomingName={upcomingName}
           verb={heroVerb}
         />
         {Platform.OS === "android" || !perm?.allGranted ? (
@@ -353,25 +351,16 @@ export default function Locked() {
         />
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
-      {Platform.OS === "ios" && perm?.allGranted ? (
-        <PlusButton
-          colors={colors}
-          onPress={openIosPicker}
-          top={insets.top + 8}
-        />
-      ) : null}
     </View>
   );
 }
 
-function PlusButton({
+function HeroPlusButton({
   colors,
   onPress,
-  top,
 }: {
   colors: ThemeColors;
   onPress: () => void;
-  top: number;
 }) {
   return (
     <Pressable
@@ -381,26 +370,22 @@ function PlusButton({
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center",
-        backgroundColor: colors.bg,
+        backgroundColor: colors.surface,
         borderColor: colors.border,
-        borderRadius: 22,
+        borderRadius: 18,
         borderWidth: 1,
-        height: 44,
+        height: 36,
         justifyContent: "center",
         opacity: pressed ? 0.6 : 1,
-        position: "absolute",
-        right: 16,
-        top,
-        width: 44,
-        zIndex: 20,
+        width: 36,
       })}
     >
       <Text
         style={{
           color: colors.ink,
-          fontSize: 22,
+          fontSize: 20,
           fontWeight: "400",
-          lineHeight: 24,
+          lineHeight: 22,
         }}
       >
         +
@@ -427,20 +412,18 @@ function Eyebrow({ color, label }: { color: string; label: string }) {
 function Hero({
   colors,
   hasSelection,
+  onAddApps,
+  showPlus,
   subject,
-  upcoming,
-  upcomingName,
   verb,
 }: {
   colors: ThemeColors;
   hasSelection: boolean;
+  onAddApps: () => void;
+  showPlus: boolean;
   subject: string;
-  upcoming: string | null;
-  upcomingName: string | null;
   verb: string;
 }) {
-  const right =
-    upcoming && upcomingName ? `NEXT ${upcomingName} · ${upcoming}` : null;
   return (
     <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
       <View
@@ -448,10 +431,13 @@ function Hero({
           alignItems: "center",
           flexDirection: "row",
           justifyContent: "space-between",
+          minHeight: 36,
         }}
       >
         <Eyebrow color={colors.inkMuted} label="QUIET AT SALAH" />
-        {right ? <Eyebrow color={colors.inkSubtle} label={right} /> : null}
+        {showPlus ? (
+          <HeroPlusButton colors={colors} onPress={onAddApps} />
+        ) : null}
       </View>
 
       <Text
