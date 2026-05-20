@@ -32,12 +32,10 @@ public class ExpoAppBlockerModule: Module {
 
     // Native view that renders blocked app tokens with real names and icons
     View(BlockedAppsView.self) {
-      Prop("selectionData") { (view: BlockedAppsView, selectionBase64: String) in
-        guard !selectionBase64.isEmpty,
-              let data = Data(base64Encoded: selectionBase64),
-              let selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
-        else { return }
-        view.viewModel.selection = selection
+      Events("onRequestRemove")
+
+      Prop("selectionData") { (_: BlockedAppsView, _: String) in
+        // Deprecated. The `tokens` prop is the canonical source of items.
       }
 
       Prop("theme") { (view: BlockedAppsView, theme: String) in
@@ -45,26 +43,52 @@ public class ExpoAppBlockerModule: Module {
       }
 
       Prop("tokens") { (view: BlockedAppsView, tokens: [[String: String]]) in
-        var appTokens: Set<ApplicationToken> = []
-        var categoryTokens: Set<ActivityCategoryToken> = []
-
+        var rendered: [BlockedItemRendering] = []
         for tokenInfo in tokens {
           guard let tokenString = tokenInfo["token"], let type = tokenInfo["type"] else { continue }
-          if type == "app" {
+          let displayName = tokenInfo["displayName"] ?? ""
+          switch type {
+          case "app":
             if let token = Self.decodeApplicationTokenStatic(from: tokenString) {
-              appTokens.insert(token)
+              rendered.append(BlockedItemRendering(
+                id: "app:" + tokenString,
+                tokenId: tokenString,
+                type: "app",
+                displayName: displayName,
+                appToken: token,
+                categoryToken: nil,
+                webDomainToken: nil
+              ))
             }
-          } else if type == "category" {
+          case "category":
             if let token = Self.decodeCategoryTokenStatic(from: tokenString) {
-              categoryTokens.insert(token)
+              rendered.append(BlockedItemRendering(
+                id: "category:" + tokenString,
+                tokenId: tokenString,
+                type: "category",
+                displayName: displayName,
+                appToken: nil,
+                categoryToken: token,
+                webDomainToken: nil
+              ))
             }
+          case "webDomain":
+            if let token = Self.decodeWebDomainTokenStatic(from: tokenString) {
+              rendered.append(BlockedItemRendering(
+                id: "web:" + tokenString,
+                tokenId: tokenString,
+                type: "webDomain",
+                displayName: displayName,
+                appToken: nil,
+                categoryToken: nil,
+                webDomainToken: token
+              ))
+            }
+          default:
+            break
           }
         }
-
-        var selection = FamilyActivitySelection()
-        selection.applicationTokens = appTokens
-        selection.categoryTokens = categoryTokens
-        view.viewModel.selection = selection
+        view.viewModel.items = rendered
       }
     }
 
@@ -170,6 +194,46 @@ public class ExpoAppBlockerModule: Module {
         self.userDefaults.removeObject(forKey: self.blockConfigStorageKey)
         self.sharedDefaults?.removeObject(forKey: self.blockConfigStorageKey)
         self.sharedDefaults?.removeObject(forKey: self.temporaryUnlockKey)
+      }
+    }
+
+    AsyncFunction("removeBlockedItem") { (tokenId: String, type: String, promise: Promise) in
+      self.stateQueue.async {
+        self.ensureLoadedPersistedConfig()
+        guard let config = self.currentBlockConfig else {
+          DispatchQueue.main.async {
+            promise.resolve(["removed": false, "remaining": 0])
+          }
+          return
+        }
+
+        let normalizedType = type.lowercased()
+        let filtered = config.items.filter { item in
+          !(item.tokenId == tokenId && item.type.rawValue.lowercased() == normalizedType)
+        }
+
+        if filtered.count == config.items.count {
+          DispatchQueue.main.async {
+            promise.resolve(["removed": false, "remaining": filtered.count])
+          }
+          return
+        }
+
+        let newConfig = BlockConfig(items: filtered, isActive: config.isActive, schedule: config.schedule)
+        self.currentBlockConfig = newConfig
+
+        do {
+          try self.applyBlocks(newConfig)
+        } catch {
+          print("[AppBlocker] removeBlockedItem applyBlocks failed: \(error.localizedDescription)")
+        }
+
+        let serialized = self.serializeBlockConfig(newConfig)
+        self.persistBlockConfiguration(serialized)
+
+        DispatchQueue.main.async {
+          promise.resolve(["removed": true, "remaining": filtered.count])
+        }
       }
     }
 
@@ -729,22 +793,47 @@ public class ExpoAppBlockerModule: Module {
     guard let data = Data(base64Encoded: encoded) else { return nil }
     return try? JSONDecoder().decode(ActivityCategoryToken.self, from: data)
   }
+
+  static func decodeWebDomainTokenStatic(from encoded: String) -> WebDomainToken? {
+    guard let data = Data(base64Encoded: encoded) else { return nil }
+    return try? JSONDecoder().decode(WebDomainToken.self, from: data)
+  }
 }
 
 // MARK: - Native View for rendering blocked app tokens with real names/icons
 
+struct BlockedItemRendering: Identifiable, Equatable {
+  let id: String
+  let tokenId: String
+  let type: String
+  let displayName: String
+  let appToken: ApplicationToken?
+  let categoryToken: ActivityCategoryToken?
+  let webDomainToken: WebDomainToken?
+
+  static func == (lhs: BlockedItemRendering, rhs: BlockedItemRendering) -> Bool {
+    return lhs.id == rhs.id
+  }
+}
+
 class BlockedAppsViewModel: ObservableObject {
-  @Published var selection = FamilyActivitySelection()
+  @Published var items: [BlockedItemRendering] = []
   @Published var theme: String = "light"
+  var onRequestRemove: (([String: Any]) -> Void)?
 }
 
 class BlockedAppsView: ExpoView {
   let viewModel = BlockedAppsViewModel()
+  let onRequestRemove = EventDispatcher()
   private var hostingController: UIHostingController<BlockedAppsContentView>?
 
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
     clipsToBounds = true
+    viewModel.onRequestRemove = { [weak self] payload in
+      guard let self = self else { return }
+      self.onRequestRemove(payload)
+    }
     let contentView = BlockedAppsContentView(viewModel: viewModel)
     let hc = UIHostingController(rootView: contentView)
     hc.view.backgroundColor = .clear
@@ -756,8 +845,6 @@ class BlockedAppsView: ExpoView {
   override func layoutSubviews() {
     super.layoutSubviews()
     hostingController?.view.frame = bounds
-    // Negate any inherited safe-area inset so SwiftUI VStack content starts
-    // flush at the top of the RN-provided frame instead of being pushed down.
     if let hc = hostingController {
       hc.additionalSafeAreaInsets = UIEdgeInsets(
         top: -hc.view.safeAreaInsets.top,
@@ -774,91 +861,60 @@ struct BlockedAppsContentView: View {
 
   private var isDark: Bool { viewModel.theme == "dark" }
 
-  // Theme-aware colors (Barakah design system; mosque green #29603E)
   private var labelColor: Color {
     isDark ? Color.white
            : Color(red: 0.067, green: 0.067, blue: 0.067)
   }
   private var subtitleColor: Color {
     isDark ? Color.white.opacity(0.55)
-           : Color(red: 0.73, green: 0.73, blue: 0.73)
+           : Color(red: 0.45, green: 0.45, blue: 0.45)
   }
   private var dividerColor: Color {
     isDark ? Color.white.opacity(0.06)
            : Color(red: 0.93, green: 0.93, blue: 0.93)
   }
+  private var trashIconColor: Color {
+    isDark ? Color.white : Color(red: 0.28, green: 0.28, blue: 0.28)
+  }
+  private var trashBgColor: Color {
+    isDark ? Color.white.opacity(0.08)
+           : Color(red: 0.93, green: 0.93, blue: 0.93)
+  }
 
   var body: some View {
-    let apps = Array(viewModel.selection.applicationTokens)
-    let categories = Array(viewModel.selection.categoryTokens)
-    let webs = Array(viewModel.selection.webDomainTokens)
-    let total = apps.count + categories.count + webs.count
-
     VStack(alignment: .leading, spacing: 0) {
-      ForEach(Array(apps.enumerated()), id: \.element) { index, token in
+      ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, item in
         VStack(spacing: 0) {
           HStack(spacing: 14) {
-            Label(token)
-              .labelStyle(.titleAndIcon)
+            itemLabel(for: item)
               .font(.system(size: 15, weight: .medium))
               .tint(labelColor)
               .foregroundStyle(labelColor)
             Spacer()
-            Text("APP")
-              .font(.system(size: 10, weight: .bold))
-              .tracking(1.8)
-              .foregroundColor(subtitleColor)
+            Button(action: {
+              viewModel.onRequestRemove?([
+                "tokenId": item.tokenId,
+                "type": item.type,
+                "displayName": item.displayName
+              ])
+            }) {
+              Image(systemName: "trash")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(trashIconColor)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(trashBgColor))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Remove \(item.displayName)")
           }
-          .padding(.vertical, 14)
-          if !(index == apps.count - 1 && categories.isEmpty && webs.isEmpty) {
+          .padding(.vertical, 12)
+          if index < viewModel.items.count - 1 {
             Rectangle().fill(dividerColor).frame(height: 1)
           }
         }
       }
 
-      ForEach(Array(categories.enumerated()), id: \.element) { index, token in
-        VStack(spacing: 0) {
-          HStack(spacing: 14) {
-            Label(token)
-              .labelStyle(.titleAndIcon)
-              .font(.system(size: 15, weight: .medium))
-              .tint(labelColor)
-              .foregroundStyle(labelColor)
-            Spacer()
-            Text("CATEGORY")
-              .font(.system(size: 10, weight: .bold))
-              .tracking(1.8)
-              .foregroundColor(subtitleColor)
-          }
-          .padding(.vertical, 14)
-          if !(index == categories.count - 1 && webs.isEmpty) {
-            Rectangle().fill(dividerColor).frame(height: 1)
-          }
-        }
-      }
-
-      ForEach(Array(webs.enumerated()), id: \.element) { index, token in
-        VStack(spacing: 0) {
-          HStack(spacing: 14) {
-            Label(token)
-              .labelStyle(.titleAndIcon)
-              .font(.system(size: 15, weight: .medium))
-              .tint(labelColor)
-              .foregroundStyle(labelColor)
-            Spacer()
-            Text("WEB")
-              .font(.system(size: 10, weight: .bold))
-              .tracking(1.8)
-              .foregroundColor(subtitleColor)
-          }
-          .padding(.vertical, 14)
-          if index < webs.count - 1 {
-            Rectangle().fill(dividerColor).frame(height: 1)
-          }
-        }
-      }
-
-      if total == 0 {
+      if viewModel.items.isEmpty {
         Text("Nothing quieted")
           .foregroundColor(subtitleColor)
           .font(.system(size: 14))
@@ -868,6 +924,19 @@ struct BlockedAppsContentView: View {
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     .environment(\.colorScheme, isDark ? .dark : .light)
+  }
+
+  @ViewBuilder
+  private func itemLabel(for item: BlockedItemRendering) -> some View {
+    if let token = item.appToken {
+      Label(token).labelStyle(.titleAndIcon)
+    } else if let token = item.categoryToken {
+      Label(token).labelStyle(.titleAndIcon)
+    } else if let token = item.webDomainToken {
+      Label(token).labelStyle(.titleAndIcon)
+    } else {
+      Text(item.displayName.isEmpty ? "Blocked item" : item.displayName)
+    }
   }
 }
 
