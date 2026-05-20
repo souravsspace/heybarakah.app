@@ -1,3 +1,4 @@
+"use strict";
 // Resolve from the app's node_modules, not the package's
 const resolve = (mod) => {
   try {
@@ -326,12 +327,7 @@ function withAppBlockerIOS(config, pluginConfig) {
   const projectRoot = config._internal?.projectRoot;
   if (projectRoot) {
     const targetsDir = path.join(projectRoot, "targets");
-    const packageTargetsDir = path.resolve(
-      import.meta.dirname,
-      "..",
-      "..",
-      "targets"
-    );
+    const packageTargetsDir = path.resolve(__dirname, "..", "..", "targets");
 
     // 1. Copy template Swift files + expo-target.config.js from this package
     //    into the consumer's `targets/`. Preserves any user-managed assets.
