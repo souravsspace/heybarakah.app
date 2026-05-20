@@ -345,6 +345,7 @@ export default function Locked() {
           filteredInstalled={filteredInstalled}
           iosItems={iosItems}
           iosSelectionLocal={iosSelectionLocal}
+          onAddApps={openIosPicker}
           onClearIos={clearIos}
           onRequestRemove={handleRequestRemove}
           onSearchChange={setSearch}
@@ -396,6 +397,83 @@ function HeroPlusButton({
         +
       </Text>
     </Pressable>
+  );
+}
+
+function EmptyShield({
+  colors,
+  onAddApps,
+}: {
+  colors: ThemeColors;
+  onAddApps: () => void;
+}) {
+  return (
+    <View
+      style={{ alignItems: "center", paddingHorizontal: 24, paddingTop: 56 }}
+    >
+      <View
+        style={{
+          alignItems: "center",
+          alignSelf: "stretch",
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderRadius: 18,
+          borderWidth: 1,
+          paddingHorizontal: 24,
+          paddingVertical: 32,
+        }}
+      >
+        <Text
+          style={{
+            color: colors.ink,
+            fontFamily: "LibreBaskerville-Bold",
+            fontSize: 20,
+            letterSpacing: -0.2,
+            lineHeight: 26,
+            textAlign: "center",
+          }}
+        >
+          Nothing quieted yet.
+        </Text>
+        <Text
+          style={{
+            color: colors.inkMuted,
+            fontSize: 13,
+            lineHeight: 20,
+            marginTop: 8,
+            maxWidth: 280,
+            textAlign: "center",
+          }}
+        >
+          Add the apps that pull at you. Each goes quiet for 15 minutes at every
+          salah.
+        </Text>
+        <Pressable
+          accessibilityLabel="Add apps to shield"
+          accessibilityRole="button"
+          onPress={onAddApps}
+          style={({ pressed }) => ({
+            backgroundColor: colors.primary,
+            borderRadius: 14,
+            marginTop: 24,
+            opacity: pressed ? 0.85 : 1,
+            paddingHorizontal: 32,
+            paddingVertical: 14,
+          })}
+        >
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 13,
+              fontWeight: "700",
+              letterSpacing: 1.8,
+            }}
+          >
+            ADD APPS
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -604,6 +682,7 @@ function PickMore({
   filteredInstalled,
   iosItems,
   iosSelectionLocal,
+  onAddApps,
   onClearIos,
   onRequestRemove,
   onSearchChange,
@@ -617,6 +696,7 @@ function PickMore({
   filteredInstalled: AndroidBlockableApp[];
   iosItems: IOSBlockedItem[];
   iosSelectionLocal: string;
+  onAddApps: () => void;
   onClearIos: () => void;
   onRequestRemove: (e: { nativeEvent: BlockedItemRemoveEvent }) => void;
   onSearchChange: (s: string) => void;
@@ -644,7 +724,7 @@ function PickMore({
 
   if (Platform.OS === "ios") {
     if (iosItems.length === 0) {
-      return null;
+      return <EmptyShield colors={colors} onAddApps={onAddApps} />;
     }
     return (
       <View style={{ paddingHorizontal: 24, paddingTop: 40 }}>
