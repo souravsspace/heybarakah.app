@@ -24,6 +24,7 @@ import { usePrayerShield } from "@/hooks/usePrayerShield";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import {
   type AndroidBlockableApp,
+  BlockedAppsNativeList,
   clearAllBlocks,
   type FamilyActivityPickerSelectionEvent,
   FamilyActivityPickerView,
@@ -48,26 +49,6 @@ function fmt12(time: string) {
   const period = h >= 12 ? "PM" : "AM";
   const hour = h % 12 === 0 ? 12 : h % 12;
   return `${hour}:${m.toString().padStart(2, "0")} ${period}`;
-}
-
-function iosItemLabel(item: IOSBlockedItem): string {
-  if (item.type === "app") {
-    return item.displayName ?? item.bundleIdentifier ?? "App";
-  }
-  if (item.type === "category") {
-    return item.categoryName ?? "Category";
-  }
-  return item.domain ?? "Website";
-}
-
-function iosItemTypeLabel(item: IOSBlockedItem): string {
-  if (item.type === "app") {
-    return "APP";
-  }
-  if (item.type === "category") {
-    return "CATEGORY";
-  }
-  return "WEB";
 }
 
 export default function Locked() {
@@ -564,16 +545,16 @@ function PickMore({
               colors={colors}
               label={`CURRENTLY QUIETED · ${iosItems.length}`}
             />
-            <View style={{ marginTop: 16 }}>
-              {iosItems.map((item, idx) => (
-                <QuietedRow
-                  colors={colors}
-                  isLast={idx === iosItems.length - 1}
-                  item={item}
-                  key={item.token}
-                />
-              ))}
-            </View>
+            <BlockedAppsNativeList
+              items={iosItems}
+              selectionData={iosSelectionLocal}
+              style={{
+                backgroundColor: "transparent",
+                height: iosItems.length * 52 + 8,
+                marginTop: 16,
+              }}
+              theme={scheme}
+            />
           </View>
         ) : null}
       </View>
@@ -680,95 +661,6 @@ function PickMore({
         )}
       </View>
     </View>
-  );
-}
-
-function QuietedRow({
-  colors,
-  isLast,
-  item,
-}: {
-  colors: ThemeColors;
-  isLast: boolean;
-  item: IOSBlockedItem;
-}) {
-  const label = iosItemLabel(item);
-  const typeLabel = iosItemTypeLabel(item);
-  return (
-    <View
-      style={{
-        alignItems: "center",
-        borderBottomColor: isLast ? "transparent" : colors.divider,
-        borderBottomWidth: 1,
-        flexDirection: "row",
-        gap: 14,
-        paddingVertical: 14,
-      }}
-    >
-      <IconOrMonogram
-        borderColor={colors.border}
-        color={colors.ink}
-        iconBase64={item.iconBase64}
-        label={label.slice(0, 2)}
-        size={36}
-      />
-      <Text
-        numberOfLines={1}
-        style={{
-          color: colors.ink,
-          flex: 1,
-          fontSize: 15,
-          fontWeight: "500",
-        }}
-      >
-        {label}
-      </Text>
-      <Text
-        style={{
-          color: colors.inkSubtle,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.8,
-        }}
-      >
-        {typeLabel}
-      </Text>
-    </View>
-  );
-}
-
-function IconOrMonogram({
-  borderColor,
-  color,
-  iconBase64,
-  label,
-  size,
-}: {
-  borderColor: string;
-  color: string;
-  iconBase64?: string;
-  label: string;
-  size: number;
-}) {
-  if (iconBase64) {
-    return (
-      <Image
-        source={{ uri: `data:image/png;base64,${iconBase64}` }}
-        style={{
-          borderRadius: 8,
-          height: size,
-          width: size,
-        }}
-      />
-    );
-  }
-  return (
-    <Monogram
-      borderColor={borderColor}
-      color={color}
-      label={label}
-      size={size}
-    />
   );
 }
 
