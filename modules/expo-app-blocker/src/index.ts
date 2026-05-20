@@ -17,6 +17,7 @@ import type {
   IOSPermissions,
   PermissionStatus,
   RelockResult,
+  RemoveBlockedItemResult,
   TemporaryUnlockResult,
 } from "./ExpoAppBlocker.types";
 
@@ -25,6 +26,7 @@ export type {
   AndroidConfig,
   AndroidPermissions,
   BlockedAppsNativeListProps,
+  BlockedItemRemoveEvent,
   FamilyActivityPickerSelectionEvent,
   FamilyActivityPickerViewProps,
   IOSBlockConfiguration,
@@ -33,6 +35,7 @@ export type {
   PermissionStatus,
   PluginConfig,
   RelockResult,
+  RemoveBlockedItemResult,
   ShieldConfig,
   TemporaryUnlockResult,
 } from "./ExpoAppBlocker.types";
@@ -185,6 +188,16 @@ export function clearAllBlocks(): void {
   NativeModule.clearAllBlocks();
 }
 
+export async function removeBlockedItem(
+  tokenId: string,
+  type: "app" | "category" | "webDomain"
+): Promise<RemoveBlockedItemResult> {
+  if (Platform.OS !== "ios") {
+    return { removed: false, remaining: 0 };
+  }
+  return NativeModule.removeBlockedItem(tokenId, type);
+}
+
 export function isAppBlocked(bundleIdentifier: string): boolean {
   if (Platform.OS !== "ios") {
     return false;
@@ -259,6 +272,7 @@ export function BlockedAppsNativeList({
   selectionData,
   theme,
   style,
+  onRequestRemove,
 }: BlockedAppsNativeListProps) {
   if (!NativeBlockedAppsView || Platform.OS !== "ios") {
     return null;
@@ -266,12 +280,17 @@ export function BlockedAppsNativeList({
 
   const tokens = items
     .filter((item) => (item.type as string) !== "summary")
-    .map((item) => ({ token: item.token, type: item.type }));
+    .map((item) => ({
+      token: item.token,
+      type: item.type,
+      displayName: item.displayName ?? item.categoryName ?? item.domain ?? "",
+    }));
 
   return React.createElement(NativeBlockedAppsView, {
     selectionData: selectionData || "",
     tokens,
     theme: theme || "light",
+    onRequestRemove,
     style: [{ minHeight: 50 }, style],
   });
 }
