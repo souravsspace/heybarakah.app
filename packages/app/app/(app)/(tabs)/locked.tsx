@@ -176,20 +176,11 @@ export default function Locked() {
 
   const handleRequestRemove = useCallback(
     (event: { nativeEvent: BlockedItemRemoveEvent }) => {
-      const { tokenId, type, displayName } = event.nativeEvent;
+      const { tokenId, type } = event.nativeEvent;
       Haptics.selectionAsync().catch(() => undefined);
-      const trimmed = (displayName ?? "").trim();
-      const subject =
-        trimmed.length > 0
-          ? trimmed
-          : type === "category"
-            ? "this category"
-            : type === "webDomain"
-              ? "this site"
-              : "this app";
       Alert.alert(
-        "Remove from shield?",
-        `${subject} will no longer go quiet at salah.`,
+        "Are you sure?",
+        "Remove from shield? It will no longer go quiet at salah.",
         [
           { style: "cancel", text: "Cancel" },
           {
@@ -228,13 +219,27 @@ export default function Locked() {
     [iosSelectionLocal, refreshIosItems, upsertIos]
   );
 
-  const clearIos = useCallback(async () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
-      () => undefined
+  const clearIos = useCallback(() => {
+    Haptics.selectionAsync().catch(() => undefined);
+    Alert.alert(
+      "Clear everything?",
+      "Remove all apps from the shield? Nothing will go quiet at salah until you add them back.",
+      [
+        { style: "cancel", text: "Cancel" },
+        {
+          onPress: async () => {
+            Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Warning
+            ).catch(() => undefined);
+            setIosItems([]);
+            setIosSelectionLocal("");
+            await persistIos([], "");
+          },
+          style: "destructive",
+          text: "Clear all",
+        },
+      ]
     );
-    setIosItems([]);
-    setIosSelectionLocal("");
-    await persistIos([], "");
   }, [persistIos]);
 
   const toggleAndroid = useCallback(
@@ -650,10 +655,15 @@ function PickMore({
             justifyContent: "space-between",
           }}
         >
-          <Eyebrow
-            color={colors.inkMuted}
-            label={`CURRENTLY QUIETED · ${iosItems.length}`}
-          />
+          <Text
+            style={{
+              color: colors.inkMuted,
+              fontSize: 13,
+              fontWeight: "500",
+            }}
+          >
+            {`Currently quieted · ${iosItems.length}`}
+          </Text>
           <Pressable
             accessibilityRole="button"
             hitSlop={8}
@@ -663,7 +673,15 @@ function PickMore({
               paddingVertical: 4,
             })}
           >
-            <Eyebrow color={colors.inkSubtle} label="CLEAR ALL" />
+            <Text
+              style={{
+                color: colors.inkMuted,
+                fontSize: 13,
+                fontWeight: "500",
+              }}
+            >
+              Clear all
+            </Text>
           </Pressable>
         </View>
         <View
