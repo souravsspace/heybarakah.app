@@ -869,10 +869,6 @@ struct BlockedAppsContentView: View {
     isDark ? Color.white.opacity(0.55)
            : Color(red: 0.45, green: 0.45, blue: 0.45)
   }
-  private var dividerColor: Color {
-    isDark ? Color.white.opacity(0.06)
-           : Color(red: 0.93, green: 0.93, blue: 0.93)
-  }
   private var trashIconColor: Color {
     isDark ? Color.white : Color(red: 0.28, green: 0.28, blue: 0.28)
   }
@@ -911,9 +907,6 @@ struct BlockedAppsContentView: View {
             .accessibilityLabel("Remove \(item.displayName)")
           }
           .padding(.vertical, 12)
-          if index < viewModel.items.count - 1 {
-            Rectangle().fill(dividerColor).frame(height: 1)
-          }
         }
       }
 

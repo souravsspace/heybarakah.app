@@ -1,6 +1,8 @@
 import { api } from "@barakah/core/convex/_generated/api";
+import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -41,6 +43,7 @@ import {
 } from "@/lib/app-blocker";
 
 type ThemeColors = ReturnType<typeof useTheme>["colors"];
+const SHOW_UNLOCK_PREVIEW = process.env.NODE_ENV !== "production";
 
 function summarizeIosSelection(items: IOSBlockedItem[]): string {
   const apps = items.filter((i) => i.type === "app").length;
@@ -403,72 +406,150 @@ function HeroPlusButton({
 function EmptyShield({
   colors,
   onAddApps,
+  scheme,
 }: {
   colors: ThemeColors;
   onAddApps: () => void;
+  scheme: "light" | "dark";
 }) {
+  const cardSurface =
+    scheme === "dark" ? "rgba(26,26,26,0.58)" : "rgba(255,255,255,0.42)";
+  const cardBorder =
+    scheme === "dark" ? "rgba(255,255,255,0.18)" : "rgba(41,96,62,0.16)";
+  const hairline =
+    scheme === "dark" ? "rgba(255,255,255,0.1)" : "rgba(41,96,62,0.1)";
+  const iconSurface =
+    scheme === "dark" ? "rgba(255,255,255,0.055)" : "rgba(41,96,62,0.06)";
+
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 40 }}>
-      <Pressable
-        accessibilityHint="Opens the iOS app picker"
-        accessibilityLabel="Add apps to shield"
-        accessibilityRole="button"
-        onPress={onAddApps}
-        style={({ pressed }) => ({
-          alignItems: "center",
-          borderColor: colors.border,
-          borderRadius: 14,
-          borderWidth: 1,
-          flexDirection: "row",
-          gap: 14,
-          opacity: pressed ? 0.55 : 1,
-          paddingHorizontal: 18,
-          paddingVertical: 18,
-        })}
+    <View
+      style={{
+        paddingHorizontal: 24,
+        paddingTop: 40,
+      }}
+    >
+      <View
+        style={{
+          backgroundColor: cardSurface,
+          borderColor: cardBorder,
+          borderRadius: 20,
+          borderWidth: 1.5,
+          overflow: "hidden",
+        }}
       >
-        <View
-          style={{
-            alignItems: "center",
-            borderColor: colors.primary,
-            borderRadius: 999,
-            borderWidth: 1,
-            height: 28,
-            justifyContent: "center",
-            width: 28,
-          }}
+        <Pressable
+          accessibilityHint="Opens the iOS app picker"
+          accessibilityLabel="Add apps to shield"
+          accessibilityRole="button"
+          onPress={onAddApps}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.72 : 1,
+          })}
         >
-          <Text
+          <View style={{ paddingHorizontal: 22, paddingTop: 22 }}>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.inkMuted,
+                  fontSize: 11,
+                  fontWeight: "700",
+                  letterSpacing: 1.5,
+                }}
+              >
+                SHIELD SETUP
+              </Text>
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: iconSurface,
+                  borderColor: cardBorder,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  height: 32,
+                  justifyContent: "center",
+                  width: 32,
+                }}
+              >
+                <Ionicons color={colors.primary} name="add" size={19} />
+              </View>
+            </View>
+
+            <Text
+              style={{
+                color: colors.ink,
+                fontFamily: "LibreBaskerville-Bold",
+                fontSize: 22,
+                letterSpacing: -0.2,
+                lineHeight: 30,
+                marginTop: 18,
+                maxWidth: 285,
+              }}
+            >
+              Choose what should go quiet at salah.
+            </Text>
+
+            <Text
+              style={{
+                color: colors.inkMuted,
+                fontSize: 13,
+                lineHeight: 20,
+                marginTop: 10,
+                maxWidth: 294,
+              }}
+            >
+              Pick the apps that pull at you. Barakah will hold them for 15
+              minutes at every salah.
+            </Text>
+          </View>
+
+          <View
             style={{
-              color: colors.primary,
-              fontSize: 18,
-              fontWeight: "400",
-              lineHeight: 20,
+              backgroundColor: hairline,
+              height: 1,
+              marginTop: 24,
+            }}
+          />
+
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              paddingHorizontal: 22,
+              paddingVertical: 16,
             }}
           >
-            +
-          </Text>
-        </View>
-        <Text
-          style={{
-            color: colors.ink,
-            flex: 1,
-            fontSize: 15,
-            fontWeight: "600",
-          }}
-        >
-          Add apps to shield
-        </Text>
-        <Text
-          style={{
-            color: colors.inkMuted,
-            fontSize: 18,
-            fontWeight: "400",
-            lineHeight: 18,
-          }}
-        >
-          ›
-        </Text>
-      </Pressable>
+            <View>
+              <Text
+                style={{
+                  color: colors.ink,
+                  fontSize: 15,
+                  fontWeight: "700",
+                }}
+              >
+                Add apps
+              </Text>
+              <Text
+                style={{
+                  color: colors.inkMuted,
+                  fontSize: 12,
+                  lineHeight: 18,
+                  marginTop: 2,
+                }}
+              >
+                Choose apps, categories, or sites
+              </Text>
+            </View>
+            <Ionicons color={colors.inkMuted} name="arrow-forward" size={18} />
+          </View>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -504,7 +585,7 @@ function Hero({
   verb: string;
 }) {
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
+    <View style={{ paddingHorizontal: 24, paddingTop: 10 }}>
       <View
         style={{
           alignItems: "center",
@@ -720,7 +801,9 @@ function PickMore({
 
   if (Platform.OS === "ios") {
     if (iosItems.length === 0) {
-      return <EmptyShield colors={colors} onAddApps={onAddApps} />;
+      return (
+        <EmptyShield colors={colors} onAddApps={onAddApps} scheme={scheme} />
+      );
     }
     return (
       <View style={{ paddingHorizontal: 24, paddingTop: 40 }}>
@@ -778,6 +861,7 @@ function PickMore({
           }}
           theme={scheme}
         />
+        {SHOW_UNLOCK_PREVIEW ? <UnlockPreviewButton colors={colors} /> : null}
       </View>
     );
   }
@@ -882,6 +966,35 @@ function PickMore({
         )}
       </View>
     </View>
+  );
+}
+
+function UnlockPreviewButton({ colors }: { colors: ThemeColors }) {
+  return (
+    <Pressable
+      accessibilityLabel="Preview unlock screen"
+      accessibilityRole="button"
+      onPress={() => router.push("/(app)/unlock" as never)}
+      style={({ pressed }) => ({
+        alignItems: "center",
+        borderColor: colors.border,
+        borderRadius: 14,
+        borderWidth: 1,
+        marginTop: 18,
+        opacity: pressed ? 0.6 : 1,
+        paddingVertical: 12,
+      })}
+    >
+      <Text
+        style={{
+          color: colors.inkMuted,
+          fontSize: 13,
+          fontWeight: "600",
+        }}
+      >
+        Preview unlock screen
+      </Text>
+    </Pressable>
   );
 }
 
