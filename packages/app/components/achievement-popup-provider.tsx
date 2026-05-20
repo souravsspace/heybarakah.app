@@ -65,7 +65,7 @@ export function AchievementPopupProvider({
   };
 
   const onViewAll = () => {
-    router.push("/achievements");
+    router.push("/achievements" as never);
   };
 
   return (
