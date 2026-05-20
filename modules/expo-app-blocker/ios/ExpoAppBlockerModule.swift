@@ -748,6 +748,7 @@ class BlockedAppsView: ExpoView {
     let contentView = BlockedAppsContentView(viewModel: viewModel)
     let hc = UIHostingController(rootView: contentView)
     hc.view.backgroundColor = .clear
+    hc.view.insetsLayoutMarginsFromSafeArea = false
     addSubview(hc.view)
     hostingController = hc
   }
@@ -755,6 +756,16 @@ class BlockedAppsView: ExpoView {
   override func layoutSubviews() {
     super.layoutSubviews()
     hostingController?.view.frame = bounds
+    // Negate any inherited safe-area inset so SwiftUI VStack content starts
+    // flush at the top of the RN-provided frame instead of being pushed down.
+    if let hc = hostingController {
+      hc.additionalSafeAreaInsets = UIEdgeInsets(
+        top: -hc.view.safeAreaInsets.top,
+        left: -hc.view.safeAreaInsets.left,
+        bottom: -hc.view.safeAreaInsets.bottom,
+        right: -hc.view.safeAreaInsets.right
+      )
+    }
   }
 }
 
@@ -855,6 +866,7 @@ struct BlockedAppsContentView: View {
           .padding(.vertical, 16)
       }
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     .environment(\.colorScheme, isDark ? .dark : .light)
   }
 }
