@@ -255,7 +255,11 @@ export default function AchievementsScreen() {
           })}
         >
           <View style={{ alignSelf: "center" }}>
-            <Rosette color={colors.primary} trackColor={heroTrack} width={180} />
+            <Rosette
+              color={colors.primary}
+              trackColor={heroTrack}
+              width={180}
+            />
           </View>
 
           <Text
@@ -303,7 +307,9 @@ export default function AchievementsScreen() {
           )}
         </Pressable>
 
-        <View style={{ alignItems: "center", paddingTop: 22, paddingBottom: 8 }}>
+        <View
+          style={{ alignItems: "center", paddingTop: 22, paddingBottom: 8 }}
+        >
           <Text
             style={{
               fontSize: 11,
