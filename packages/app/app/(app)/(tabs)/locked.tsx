@@ -5,7 +5,10 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
+  Modal,
   Platform,
+  Pressable,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -26,8 +29,6 @@ import {
   type AndroidBlockableApp,
   BlockedAppsNativeList,
   clearAllBlocks,
-  type FamilyActivityPickerSelectionEvent,
-  FamilyActivityPickerView,
   getBlockConfiguration,
   getInstalledApps,
   getPermissionStatus,
@@ -71,6 +72,7 @@ export default function Locked() {
   const [search, setSearch] = useState("");
   const [pendingAndroid, setPendingAndroid] = useState<Set<string>>(new Set());
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [quietedModalOpen, setQuietedModalOpen] = useState(false);
 
   const selection = useQuery(api.lib.shieldSelection.getMine);
   const upsertIos = useMutation(api.lib.shieldSelection.upsertIos);
@@ -125,16 +127,7 @@ export default function Locked() {
     [upsertIos]
   );
 
-  const onPickerChange = useCallback(
-    async (event: FamilyActivityPickerSelectionEvent) => {
-      setIosItems(event.items);
-      setIosSelectionLocal(event.selectionData);
-      await persistIos(event.items, event.selectionData);
-    },
-    [persistIos]
-  );
-
-  const openIosPickerModal = useCallback(async () => {
+  const openIosPicker = useCallback(async () => {
     if (pickerOpen) {
       return;
     }
@@ -149,6 +142,15 @@ export default function Locked() {
       setPickerOpen(false);
     }
   }, [iosSelectionLocal, persistIos, pickerOpen]);
+
+  const clearIos = useCallback(async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+      () => undefined
+    );
+    setIosItems([]);
+    setIosSelectionLocal("");
+    await persistIos([], "");
+  }, [persistIos]);
 
   const toggleAndroid = useCallback(
     async (pkg: string) => {
@@ -177,14 +179,14 @@ export default function Locked() {
   const onSocialTap = useCallback(
     (app: SocialApp) => {
       if (Platform.OS === "ios") {
-        openIosPickerModal();
+        openIosPicker();
         return;
       }
       if (Platform.OS === "android") {
         toggleAndroid(app.androidPackageName);
       }
     },
-    [openIosPickerModal, toggleAndroid]
+    [openIosPicker, toggleAndroid]
   );
 
   const requestPerm = useCallback(async () => {
@@ -241,58 +243,45 @@ export default function Locked() {
         <PickMore
           colors={colors}
           filteredInstalled={filteredInstalled}
-          iosItems={iosItems}
-          iosSelectionLocal={iosSelectionLocal}
-          onPickerChange={onPickerChange}
+          iosCount={iosItems.length}
+          onAddApps={openIosPicker}
+          onOpenQuieted={() => setQuietedModalOpen(true)}
           onSearchChange={setSearch}
           onToggleAndroid={toggleAndroid}
           pendingAndroid={pendingAndroid}
           perm={perm}
-          scheme={scheme}
           search={search}
         />
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
+
+      {Platform.OS === "ios" ? (
+        <QuietedModal
+          colors={colors}
+          items={iosItems}
+          onClear={clearIos}
+          onClose={() => setQuietedModalOpen(false)}
+          scheme={scheme}
+          selectionData={iosSelectionLocal}
+          visible={quietedModalOpen}
+        />
+      ) : null}
     </View>
   );
 }
 
-function EyebrowHead({
-  colors,
-  label,
-  sublabel,
-}: {
-  colors: ThemeColors;
-  label: string;
-  sublabel?: string;
-}) {
+function Eyebrow({ color, label }: { color: string; label: string }) {
   return (
-    <View style={{ gap: 12 }}>
-      <View style={{ backgroundColor: colors.primary, height: 1, width: 28 }} />
-      <Text
-        style={{
-          color: colors.inkMuted,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 2.4,
-        }}
-      >
-        {label}
-      </Text>
-      {sublabel ? (
-        <Text
-          style={{
-            color: colors.inkSubtle,
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 2.4,
-            marginTop: -6,
-          }}
-        >
-          {sublabel}
-        </Text>
-      ) : null}
-    </View>
+    <Text
+      style={{
+        color,
+        fontSize: 10,
+        fontWeight: "700",
+        letterSpacing: 2.4,
+      }}
+    >
+      {label}
+    </Text>
   );
 }
 
@@ -308,10 +297,18 @@ function Hero({
   upcomingName: string | null;
 }) {
   const sublabel =
-    upcoming && upcomingName ? `NEXT ${upcomingName} · ${upcoming}` : undefined;
+    upcoming && upcomingName ? `NEXT ${upcomingName} · ${upcoming}` : null;
   return (
     <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
-      <EyebrowHead colors={colors} label="QUIET AT SALAH" sublabel={sublabel} />
+      <View style={{ gap: 12 }}>
+        <View
+          style={{ backgroundColor: colors.primary, height: 1, width: 28 }}
+        />
+        <Eyebrow color={colors.inkMuted} label="QUIET AT SALAH" />
+        {sublabel ? (
+          <Eyebrow color={colors.inkSubtle} label={sublabel} />
+        ) : null}
+      </View>
 
       <Text
         style={{
@@ -365,8 +362,8 @@ function SuggestedRow({
   selected: Set<string>;
 }) {
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 56 }}>
-      <EyebrowHead colors={colors} label="SUGGESTED" />
+    <View style={{ paddingHorizontal: 24, paddingTop: 48 }}>
+      <Eyebrow color={colors.inkMuted} label="SUGGESTED" />
       {Platform.OS === "android" ? (
         <Text
           style={{
@@ -470,31 +467,29 @@ function SuggestedRow({
 function PickMore({
   colors,
   filteredInstalled,
-  iosItems,
-  iosSelectionLocal,
-  onPickerChange,
+  iosCount,
+  onAddApps,
+  onOpenQuieted,
   onSearchChange,
   onToggleAndroid,
   pendingAndroid,
   perm,
-  scheme,
   search,
 }: {
   colors: ThemeColors;
   filteredInstalled: AndroidBlockableApp[];
-  iosItems: IOSBlockedItem[];
-  iosSelectionLocal: string;
-  onPickerChange: (e: FamilyActivityPickerSelectionEvent) => void;
+  iosCount: number;
+  onAddApps: () => void;
+  onOpenQuieted: () => void;
   onSearchChange: (s: string) => void;
   onToggleAndroid: (pkg: string) => void;
   pendingAndroid: Set<string>;
   perm: PermissionStatus | null;
-  scheme: "light" | "dark";
   search: string;
 }) {
   if (Platform.OS === "web") {
     return (
-      <View style={{ paddingHorizontal: 24, paddingTop: 64 }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: 48 }}>
         <Text style={{ color: colors.inkMuted, fontSize: 13 }}>
           Locking is unavailable on web.
         </Text>
@@ -510,60 +505,81 @@ function PickMore({
 
   if (Platform.OS === "ios") {
     return (
-      <View>
-        <View style={{ paddingHorizontal: 24, paddingTop: 64 }}>
-          <EyebrowHead colors={colors} label="ALL APPS" />
-        </View>
-        <View
-          style={{
-            backgroundColor: colors.divider,
-            height: 1,
-            marginHorizontal: 24,
-            marginTop: 16,
-          }}
-        />
-        <FamilyActivityPickerView
-          initialSelection={iosSelectionLocal}
-          onSelectionChange={onPickerChange}
-          style={{
-            backgroundColor: "transparent",
-            height: 560,
-            marginHorizontal: 24,
-          }}
-          theme={scheme}
-        />
-        <View
-          style={{
-            backgroundColor: colors.divider,
-            height: 1,
-            marginHorizontal: 24,
-          }}
-        />
-        {iosItems.length > 0 ? (
-          <View style={{ paddingHorizontal: 24, paddingTop: 56 }}>
-            <EyebrowHead
-              colors={colors}
-              label={`CURRENTLY QUIETED · ${iosItems.length}`}
+      <View style={{ paddingHorizontal: 24, paddingTop: 40 }}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onAddApps}
+          style={({ pressed }) => ({
+            alignItems: "center",
+            borderColor: colors.primary,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            flexDirection: "row",
+            gap: 10,
+            justifyContent: "center",
+            opacity: pressed ? 0.6 : 1,
+            paddingVertical: 16,
+          })}
+        >
+          <Text
+            style={{
+              color: colors.primary,
+              fontSize: 16,
+              fontWeight: "700",
+              lineHeight: 18,
+            }}
+          >
+            +
+          </Text>
+          <Text
+            style={{
+              color: colors.primary,
+              fontSize: 15,
+              fontWeight: "600",
+            }}
+          >
+            {iosCount > 0 ? "Edit quieted apps" : "Add apps"}
+          </Text>
+        </Pressable>
+
+        {iosCount > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={onOpenQuieted}
+            style={({ pressed }) => ({
+              alignItems: "center",
+              borderTopColor: colors.divider,
+              borderTopWidth: 1,
+              flexDirection: "row",
+              marginTop: 24,
+              opacity: pressed ? 0.6 : 1,
+              paddingVertical: 18,
+            })}
+          >
+            <Eyebrow
+              color={colors.inkMuted}
+              label={`CURRENTLY QUIETED · ${iosCount}`}
             />
-            <BlockedAppsNativeList
-              items={iosItems}
-              selectionData={iosSelectionLocal}
+            <View style={{ flex: 1 }} />
+            <Text
               style={{
-                backgroundColor: "transparent",
-                height: iosItems.length * 52 + 8,
-                marginTop: 16,
+                color: colors.inkMuted,
+                fontSize: 18,
+                fontWeight: "400",
+                lineHeight: 18,
               }}
-              theme={scheme}
-            />
-          </View>
+            >
+              →
+            </Text>
+          </Pressable>
         ) : null}
       </View>
     );
   }
 
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 64 }}>
-      <EyebrowHead colors={colors} label="ALL APPS" />
+    <View style={{ paddingHorizontal: 24, paddingTop: 48 }}>
+      <Eyebrow color={colors.inkMuted} label="ALL APPS" />
       <View style={{ marginTop: 16 }}>
         <View
           style={{
@@ -664,6 +680,166 @@ function PickMore({
   );
 }
 
+function QuietedModal({
+  colors,
+  items,
+  onClear,
+  onClose,
+  scheme,
+  selectionData,
+  visible,
+}: {
+  colors: ThemeColors;
+  items: IOSBlockedItem[];
+  onClear: () => void;
+  onClose: () => void;
+  scheme: "light" | "dark";
+  selectionData: string;
+  visible: boolean;
+}) {
+  const insets = useSafeAreaInsets();
+  return (
+    <Modal
+      animationType="slide"
+      onRequestClose={onClose}
+      presentationStyle="pageSheet"
+      visible={visible}
+    >
+      <View style={{ backgroundColor: colors.bg, flex: 1 }}>
+        <View
+          style={{
+            alignItems: "center",
+            paddingBottom: 8,
+            paddingTop: 10,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.border,
+              borderRadius: 999,
+              height: 4,
+              width: 36,
+            }}
+          />
+        </View>
+
+        <View
+          style={{
+            alignItems: "flex-start",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            paddingHorizontal: 24,
+            paddingTop: 12,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Eyebrow
+              color={colors.inkMuted}
+              label={`${items.length} ${items.length === 1 ? "ITEM" : "ITEMS"}`}
+            />
+            <Text
+              style={{
+                color: colors.ink,
+                fontFamily: "LibreBaskerville-Bold",
+                fontSize: 24,
+                lineHeight: 30,
+                marginTop: 10,
+              }}
+            >
+              Currently quieted
+            </Text>
+          </View>
+          <Pressable
+            accessibilityLabel="Close"
+            accessibilityRole="button"
+            hitSlop={12}
+            onPress={onClose}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.5 : 1,
+              paddingHorizontal: 4,
+              paddingTop: 4,
+            })}
+          >
+            <Text
+              style={{
+                color: colors.inkMuted,
+                fontSize: 22,
+                fontWeight: "400",
+                lineHeight: 22,
+              }}
+            >
+              ×
+            </Text>
+          </Pressable>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 80,
+            paddingHorizontal: 24,
+            paddingTop: 24,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {items.length > 0 ? (
+            <BlockedAppsNativeList
+              items={items}
+              selectionData={selectionData}
+              style={{
+                backgroundColor: "transparent",
+                height: items.length * 56 + 16,
+              }}
+              theme={scheme}
+            />
+          ) : (
+            <Text
+              style={{
+                color: colors.inkMuted,
+                fontSize: 14,
+                paddingVertical: 40,
+                textAlign: "center",
+              }}
+            >
+              Nothing quieted yet.
+            </Text>
+          )}
+        </ScrollView>
+
+        {items.length > 0 ? (
+          <View
+            style={{
+              borderTopColor: colors.divider,
+              borderTopWidth: 1,
+              paddingBottom: insets.bottom + 12,
+              paddingHorizontal: 24,
+              paddingTop: 16,
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              onPress={onClear}
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.5 : 1,
+                paddingVertical: 6,
+              })}
+            >
+              <Text
+                style={{
+                  color: colors.inkMuted,
+                  fontSize: 13,
+                  fontWeight: "500",
+                }}
+              >
+                Clear all
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
+    </Modal>
+  );
+}
+
 function PermissionNotice({
   colors,
   onRequestPerm,
@@ -676,14 +852,14 @@ function PermissionNotice({
   const cta = platform === "ios" ? "Enable Screen Time" : "Enable usage access";
   return (
     <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
-      <EyebrowHead colors={colors} label="ONE STEP LEFT" />
+      <Eyebrow color={colors.inkMuted} label="ONE STEP LEFT" />
       <Text
         style={{
           color: colors.ink,
           fontFamily: "LibreBaskerville-Bold",
           fontSize: 20,
           lineHeight: 26,
-          marginTop: 14,
+          marginTop: 12,
         }}
       >
         Grant permission to begin.
