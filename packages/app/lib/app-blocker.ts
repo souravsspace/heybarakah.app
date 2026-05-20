@@ -1,12 +1,14 @@
 import type {
   AndroidBlockableApp,
   BlockedAppsNativeListProps,
+  BlockedItemRemoveEvent,
   FamilyActivityPickerSelectionEvent,
   FamilyActivityPickerViewProps,
   IOSBlockConfiguration,
   IOSBlockedItem,
   PermissionStatus,
   RelockResult,
+  RemoveBlockedItemResult,
   TemporaryUnlockResult,
 } from "expo-app-blocker";
 import React from "react";
@@ -15,12 +17,14 @@ import { Platform } from "react-native";
 export type {
   AndroidBlockableApp,
   BlockedAppsNativeListProps,
+  BlockedItemRemoveEvent,
   FamilyActivityPickerSelectionEvent,
   FamilyActivityPickerViewProps,
   IOSBlockConfiguration,
   IOSBlockedItem,
   PermissionStatus,
   RelockResult,
+  RemoveBlockedItemResult,
   TemporaryUnlockResult,
 };
 
@@ -107,6 +111,16 @@ export function clearAllBlocks(): void {
     return;
   }
   mod.clearAllBlocks();
+}
+
+export function removeBlockedItem(
+  tokenId: string,
+  type: BlockedItemRemoveEvent["type"]
+): Promise<RemoveBlockedItemResult> {
+  if (!mod) {
+    return Promise.resolve({ removed: false, remaining: 0 });
+  }
+  return mod.removeBlockedItem(tokenId, type);
 }
 
 export function temporaryUnlock(
