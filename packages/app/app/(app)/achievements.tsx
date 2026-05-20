@@ -12,7 +12,8 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AchievementCard } from "@/components/achievement-card";
 import { AchievementDialog } from "@/components/achievement-dialog";
-import { useTheme } from "@/contexts/theme-context";
+import { AchievementsMesh } from "@/components/meshes";
+import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 
 type Row = Achievement & {
   progress: { current: number; target: number; unit: string } | null;
@@ -43,8 +44,90 @@ const CATEGORY_LABEL: Record<AchievementCategory, string> = {
   reflection: "Reflection",
 };
 
+const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function formatStamp(ts: number): string {
+  const d = new Date(ts);
+  return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()} · ${d.getFullYear()}`;
+}
+
+function Rosette({
+  color,
+  trackColor,
+  width = 160,
+}: {
+  color: string;
+  trackColor: string;
+  width?: number;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        width,
+      }}
+    >
+      <View style={{ flex: 1, height: 1, backgroundColor: trackColor }} />
+      <View
+        style={{
+          width: 5,
+          height: 5,
+          borderRadius: 2.5,
+          backgroundColor: color,
+        }}
+      />
+      <View style={{ flex: 1, height: 1, backgroundColor: trackColor }} />
+    </View>
+  );
+}
+
+function BeadRow({
+  unlocked,
+  total,
+  colors,
+}: {
+  colors: ThemeColors;
+  total: number;
+  unlocked: number;
+}) {
+  const beads = Array.from({ length: total }, (_, i) => i < unlocked);
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+      {beads.map((on, i) => (
+        <View
+          key={`${on}-${i}`}
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: on ? colors.primary : "transparent",
+            borderWidth: on ? 0 : 1,
+            borderColor: colors.border,
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
 export default function AchievementsScreen() {
   const { colors, scheme } = useTheme();
+  const isDark = scheme === "dark";
   const insets = useSafeAreaInsets();
   const data = useQuery(api.lib.achievements.listForMe, {});
   const [selected, setSelected] = useState<Row | null>(null);
@@ -52,6 +135,19 @@ export default function AchievementsScreen() {
   const rows = useMemo<Row[]>(() => data?.items ?? [], [data?.items]);
   const unlockedCount = data?.unlockedCount ?? 0;
   const totalCount = data?.totalCount ?? 0;
+
+  const mostRecent = useMemo<Row | null>(() => {
+    let best: Row | null = null;
+    for (const row of rows) {
+      if (row.unlockedAt === null) {
+        continue;
+      }
+      if (best === null || (row.unlockedAt ?? 0) > (best.unlockedAt ?? 0)) {
+        best = row;
+      }
+    }
+    return best;
+  }, [rows]);
 
   const grouped = useMemo(() => {
     const map = new Map<AchievementCategory, Row[]>();
@@ -78,25 +174,28 @@ export default function AchievementsScreen() {
     return { unlocked: section.unlocked, total: section.total };
   }, [selected, grouped]);
 
+  const heroTrack = isDark ? "rgba(255,255,255,0.14)" : "rgba(41,96,62,0.22)";
+
   return (
     <View
       style={{
         flex: 1,
-        backgroundColor: scheme === "dark" ? "#0E1311" : "#F8FAF8",
+        backgroundColor: isDark ? "#0E1311" : "#F8F1E1",
       }}
     >
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <AchievementsMesh dark={isDark} />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 8,
-          paddingBottom: insets.bottom + 32,
+          paddingTop: insets.top + 6,
+          paddingBottom: insets.bottom + 56,
         }}
         showsVerticalScrollIndicator={false}
       >
         <View
           style={{
-            paddingHorizontal: 20,
-            paddingBottom: 14,
+            paddingHorizontal: 16,
+            paddingBottom: 4,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
@@ -114,7 +213,7 @@ export default function AchievementsScreen() {
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: pressed
-                ? scheme === "dark"
+                ? isDark
                   ? "rgba(255,255,255,0.06)"
                   : "rgba(0,0,0,0.04)"
                 : "transparent",
@@ -124,104 +223,162 @@ export default function AchievementsScreen() {
           </Pressable>
           <Text
             style={{
-              fontFamily: "LibreBaskerville-Bold",
-              fontSize: 18,
-              lineHeight: 22,
-              color: colors.ink,
+              fontSize: 11,
+              fontStyle: "italic",
+              color: colors.inkSubtle,
             }}
           >
-            Achievements
+            Your ledger
           </Text>
           <View style={{ width: 36 }} />
         </View>
 
-        <View
-          style={{
-            paddingHorizontal: 24,
-            paddingTop: 12,
-            paddingBottom: 22,
-            flexDirection: "row",
-            alignItems: "flex-end",
-            gap: 14,
+        <Pressable
+          accessibilityLabel={
+            mostRecent
+              ? `Most recent unlock: ${mostRecent.title}`
+              : "Your ledger begins"
+          }
+          accessibilityRole="button"
+          disabled={!mostRecent}
+          onPress={() => {
+            if (mostRecent) {
+              setSelected(mostRecent);
+            }
           }}
+          style={({ pressed }) => ({
+            paddingHorizontal: 32,
+            paddingTop: 36,
+            paddingBottom: 8,
+            alignItems: "center",
+            opacity: pressed ? 0.85 : 1,
+          })}
         >
+          <View style={{ alignSelf: "center" }}>
+            <Rosette color={colors.primary} trackColor={heroTrack} width={180} />
+          </View>
+
           <Text
             style={{
+              marginTop: 22,
+              alignSelf: "center",
               fontFamily: "LibreBaskerville-Bold",
-              fontSize: 48,
-              lineHeight: 52,
+              fontSize: 34,
+              lineHeight: 40,
               color: colors.ink,
-              fontVariant: ["tabular-nums"],
+              textAlign: "center",
             }}
           >
-            {unlockedCount}
+            {mostRecent?.title ?? "Begin where you are"}
           </Text>
-          <View style={{ flex: 1, paddingBottom: 6 }}>
+
+          {mostRecent?.unlockedAt ? (
             <Text
               style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: colors.inkMuted,
+                marginTop: 12,
+                alignSelf: "center",
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 1.4,
+                color: colors.primary,
                 fontVariant: ["tabular-nums"],
               }}
             >
-              {`of ${totalCount} unlocked`}
+              {formatStamp(mostRecent.unlockedAt).toUpperCase()}
             </Text>
+          ) : (
             <Text
               style={{
-                fontSize: 11,
-                color: colors.inkSubtle,
-                marginTop: 2,
+                marginTop: 12,
+                alignSelf: "center",
+                fontSize: 12,
+                fontStyle: "italic",
+                color: colors.inkMuted,
+                textAlign: "center",
+                maxWidth: 260,
               }}
             >
-              Practice, not performance.
+              Every prayer marked adds a leaf.
             </Text>
-          </View>
+          )}
+        </Pressable>
+
+        <View style={{ alignItems: "center", paddingTop: 22, paddingBottom: 8 }}>
+          <Text
+            style={{
+              fontSize: 11,
+              color: colors.inkSubtle,
+              fontVariant: ["tabular-nums"],
+              letterSpacing: 0.4,
+            }}
+          >
+            {`${unlockedCount} of ${totalCount} unlocked`}
+          </Text>
         </View>
 
-        <View
-          style={{
-            height: 1,
-            backgroundColor: colors.divider,
-            marginHorizontal: 20,
-          }}
-        />
-
-        <View style={{ gap: 26, paddingTop: 22 }}>
-          {grouped.map((section) => (
-            <View key={section.category} style={{ gap: 10 }}>
+        <View style={{ gap: 34, paddingTop: 28 }}>
+          {grouped.map((section, sIdx) => (
+            <View key={section.category} style={{ gap: 14 }}>
+              <View style={{ paddingHorizontal: 24 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-end",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "LibreBaskerville-Bold",
+                      fontSize: 22,
+                      lineHeight: 26,
+                      fontStyle: "italic",
+                      color: colors.ink,
+                    }}
+                  >
+                    {CATEGORY_LABEL[section.category]}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "600",
+                      color: colors.inkSubtle,
+                      fontVariant: ["tabular-nums"],
+                      letterSpacing: 0.3,
+                      paddingBottom: 3,
+                    }}
+                  >
+                    {`${section.unlocked} / ${section.total}`}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    marginTop: 10,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <BeadRow
+                    colors={colors}
+                    total={section.total}
+                    unlocked={section.unlocked}
+                  />
+                  <View
+                    style={{
+                      flex: 1,
+                      height: 1,
+                      backgroundColor: colors.divider,
+                    }}
+                  />
+                </View>
+              </View>
               <View
                 style={{
                   paddingHorizontal: 20,
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "baseline",
+                  gap: sIdx === 0 ? 10 : 8,
                 }}
               >
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontWeight: "700",
-                    letterSpacing: 1.4,
-                    textTransform: "uppercase",
-                    color: colors.inkSubtle,
-                  }}
-                >
-                  {CATEGORY_LABEL[section.category]}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontWeight: "700",
-                    letterSpacing: 0.6,
-                    color: colors.inkSubtle,
-                    fontVariant: ["tabular-nums"],
-                  }}
-                >
-                  {`${section.unlocked} / ${section.total}`}
-                </Text>
-              </View>
-              <View style={{ paddingHorizontal: 20, gap: 8 }}>
                 {section.items.map((row) => (
                   <AchievementCard
                     icon={row.icon}
@@ -237,6 +394,14 @@ export default function AchievementsScreen() {
               </View>
             </View>
           ))}
+        </View>
+
+        <View style={{ alignItems: "center", paddingTop: 40 }}>
+          <Rosette
+            color={colors.inkSubtle}
+            trackColor={colors.divider}
+            width={100}
+          />
         </View>
       </ScrollView>
 
