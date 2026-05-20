@@ -764,87 +764,91 @@ struct BlockedAppsContentView: View {
   private var isDark: Bool { viewModel.theme == "dark" }
 
   // Theme-aware colors (Barakah design system; mosque green #29603E)
-  private var cardBg: Color {
-    isDark ? Color(red: 0.094, green: 0.118, blue: 0.106) // #181E1B
-           : Color(red: 1.0, green: 1.0, blue: 1.0)        // #ffffff
-  }
-  private var borderColor: Color {
-    isDark ? Color.white.opacity(0.08)
-           : Color(red: 0.91, green: 0.91, blue: 0.91)     // #e8e8e8
-  }
   private var labelColor: Color {
     isDark ? Color.white
-           : Color(red: 0.067, green: 0.067, blue: 0.067)  // #111111
+           : Color(red: 0.067, green: 0.067, blue: 0.067)
   }
   private var subtitleColor: Color {
     isDark ? Color.white.opacity(0.55)
-           : Color(red: 0.73, green: 0.73, blue: 0.73)     // #bbbbbb
+           : Color(red: 0.73, green: 0.73, blue: 0.73)
   }
-  private var greenBadgeBg: Color {
-    isDark ? Color(red: 0.16, green: 0.376, blue: 0.243).opacity(0.25)
-           : Color(red: 0.94, green: 0.96, blue: 0.91)     // #f0f6e8
-  }
-  private var greenText: Color {
-    isDark ? Color(red: 0.65, green: 0.85, blue: 0.72)
-           : Color(red: 0.24, green: 0.31, blue: 0.0)      // #3d5000
+  private var dividerColor: Color {
+    isDark ? Color.white.opacity(0.06)
+           : Color(red: 0.93, green: 0.93, blue: 0.93)
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      ForEach(Array(viewModel.selection.applicationTokens), id: \.self) { token in
-        HStack(spacing: 12) {
-          Label(token)
-            .labelStyle(.titleAndIcon)
-            .font(.system(size: 16, weight: .semibold))
-            .tint(labelColor)
-            .foregroundStyle(labelColor)
-          Spacer()
-          Text("App")
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundColor(greenText)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(greenBadgeBg)
-            .cornerRadius(100)
+    let apps = Array(viewModel.selection.applicationTokens)
+    let categories = Array(viewModel.selection.categoryTokens)
+    let webs = Array(viewModel.selection.webDomainTokens)
+    let total = apps.count + categories.count + webs.count
+
+    VStack(alignment: .leading, spacing: 0) {
+      ForEach(Array(apps.enumerated()), id: \.element) { index, token in
+        VStack(spacing: 0) {
+          HStack(spacing: 14) {
+            Label(token)
+              .labelStyle(.titleAndIcon)
+              .font(.system(size: 15, weight: .medium))
+              .tint(labelColor)
+              .foregroundStyle(labelColor)
+            Spacer()
+            Text("APP")
+              .font(.system(size: 10, weight: .bold))
+              .tracking(1.8)
+              .foregroundColor(subtitleColor)
+          }
+          .padding(.vertical, 14)
+          if !(index == apps.count - 1 && categories.isEmpty && webs.isEmpty) {
+            Rectangle().fill(dividerColor).frame(height: 1)
+          }
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 14)
-        .background(cardBg)
-        .cornerRadius(16)
-        .overlay(
-          RoundedRectangle(cornerRadius: 16)
-            .stroke(borderColor, lineWidth: 1)
-        )
       }
 
-      ForEach(Array(viewModel.selection.categoryTokens), id: \.self) { token in
-        HStack(spacing: 12) {
-          Label(token)
-            .labelStyle(.titleAndIcon)
-            .font(.system(size: 16, weight: .semibold))
-            .tint(labelColor)
-            .foregroundStyle(labelColor)
-          Spacer()
-          Text("Category")
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundColor(greenText)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(greenBadgeBg)
-            .cornerRadius(100)
+      ForEach(Array(categories.enumerated()), id: \.element) { index, token in
+        VStack(spacing: 0) {
+          HStack(spacing: 14) {
+            Label(token)
+              .labelStyle(.titleAndIcon)
+              .font(.system(size: 15, weight: .medium))
+              .tint(labelColor)
+              .foregroundStyle(labelColor)
+            Spacer()
+            Text("CATEGORY")
+              .font(.system(size: 10, weight: .bold))
+              .tracking(1.8)
+              .foregroundColor(subtitleColor)
+          }
+          .padding(.vertical, 14)
+          if !(index == categories.count - 1 && webs.isEmpty) {
+            Rectangle().fill(dividerColor).frame(height: 1)
+          }
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 14)
-        .background(cardBg)
-        .cornerRadius(16)
-        .overlay(
-          RoundedRectangle(cornerRadius: 16)
-            .stroke(borderColor, lineWidth: 1)
-        )
       }
 
-      if viewModel.selection.applicationTokens.isEmpty && viewModel.selection.categoryTokens.isEmpty {
-        Text("No apps blocked")
+      ForEach(Array(webs.enumerated()), id: \.element) { index, token in
+        VStack(spacing: 0) {
+          HStack(spacing: 14) {
+            Label(token)
+              .labelStyle(.titleAndIcon)
+              .font(.system(size: 15, weight: .medium))
+              .tint(labelColor)
+              .foregroundStyle(labelColor)
+            Spacer()
+            Text("WEB")
+              .font(.system(size: 10, weight: .bold))
+              .tracking(1.8)
+              .foregroundColor(subtitleColor)
+          }
+          .padding(.vertical, 14)
+          if index < webs.count - 1 {
+            Rectangle().fill(dividerColor).frame(height: 1)
+          }
+        }
+      }
+
+      if total == 0 {
+        Text("Nothing quieted")
           .foregroundColor(subtitleColor)
           .font(.system(size: 14))
           .frame(maxWidth: .infinity, alignment: .center)
