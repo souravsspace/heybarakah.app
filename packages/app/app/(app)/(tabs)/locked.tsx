@@ -408,71 +408,69 @@ function EmptyShield({
   onAddApps: () => void;
 }) {
   return (
-    <View
-      style={{ alignItems: "center", paddingHorizontal: 24, paddingTop: 56 }}
-    >
-      <View
-        style={{
+    <View style={{ paddingHorizontal: 24, paddingTop: 48 }}>
+      <Pressable
+        accessibilityHint="Opens the iOS app picker"
+        accessibilityLabel="Add apps to shield"
+        accessibilityRole="button"
+        onPress={onAddApps}
+        style={({ pressed }) => ({
           alignItems: "center",
-          alignSelf: "stretch",
-          backgroundColor: colors.surface,
           borderColor: colors.border,
-          borderRadius: 18,
+          borderRadius: 20,
+          borderStyle: "dashed",
           borderWidth: 1,
+          opacity: pressed ? 0.65 : 1,
           paddingHorizontal: 24,
-          paddingVertical: 32,
-        }}
+          paddingVertical: 40,
+        })}
       >
+        <View
+          style={{
+            alignItems: "center",
+            backgroundColor: colors.primary,
+            borderRadius: 24,
+            height: 48,
+            justifyContent: "center",
+            width: 48,
+          }}
+        >
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 24,
+              fontWeight: "400",
+              lineHeight: 26,
+            }}
+          >
+            +
+          </Text>
+        </View>
         <Text
           style={{
             color: colors.ink,
             fontFamily: "LibreBaskerville-Bold",
-            fontSize: 20,
+            fontSize: 19,
             letterSpacing: -0.2,
-            lineHeight: 26,
+            marginTop: 18,
             textAlign: "center",
           }}
         >
-          Nothing quieted yet.
+          Add apps to quiet
         </Text>
         <Text
           style={{
             color: colors.inkMuted,
             fontSize: 13,
             lineHeight: 20,
-            marginTop: 8,
-            maxWidth: 280,
+            marginTop: 6,
+            maxWidth: 260,
             textAlign: "center",
           }}
         >
-          Add the apps that pull at you. Each goes quiet for 15 minutes at every
-          salah.
+          Fifteen minutes of quiet at every salah.
         </Text>
-        <Pressable
-          accessibilityLabel="Add apps to shield"
-          accessibilityRole="button"
-          onPress={onAddApps}
-          style={({ pressed }) => ({
-            backgroundColor: colors.primary,
-            borderRadius: 14,
-            marginTop: 24,
-            opacity: pressed ? 0.85 : 1,
-            paddingHorizontal: 32,
-            paddingVertical: 14,
-          })}
-        >
-          <Text
-            style={{
-              color: "#FFFFFF",
-              fontSize: 13,
-              fontWeight: "700",
-              letterSpacing: 1.8,
-            }}
-          >
-            ADD APPS
-          </Text>
-        </Pressable>
-      </View>
+      </Pressable>
     </View>
   );
 }
