@@ -24,6 +24,14 @@ function AuthedShell() {
             gestureEnabled: true,
           }}
         />
+        <Stack.Screen
+          name="unlock"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            gestureEnabled: true,
+          }}
+        />
       </Stack>
     </DhikrProvider>
   );
