@@ -11,7 +11,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.souravsspace.Barakah",
-      "appleTeamId": "TODO_APPLE_TEAM_ID",
+      "appleTeamId": "CG5WX63737",
+      "infoPlist": {
+        "UIViewControllerBasedStatusBarAppearance": false
+      },
       "entitlements": {
         "com.apple.developer.family-controls": true,
         "com.apple.security.application-groups": [
