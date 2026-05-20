@@ -902,7 +902,10 @@ struct BlockedAppsContentView: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(trashIconColor)
                 .frame(width: 32, height: 32)
-                .background(Circle().fill(trashBgColor))
+                .background(
+                  RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(trashBgColor)
+                )
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remove \(item.displayName)")
