@@ -240,11 +240,13 @@ export default function Locked() {
           upcoming={upcoming}
           upcomingName={upcomingName}
         />
-        <SuggestedRow
-          colors={colors}
-          onTap={onSocialTap}
-          selected={pendingAndroid}
-        />
+        {Platform.OS === "android" || !perm?.allGranted ? (
+          <SuggestedRow
+            colors={colors}
+            onTap={onSocialTap}
+            selected={pendingAndroid}
+          />
+        ) : null}
         <PickMore
           colors={colors}
           filteredInstalled={filteredInstalled}
@@ -523,7 +525,12 @@ function PickMore({
         <View style={{ marginTop: 16 }}>
           <View
             style={{
-              borderColor: colors.border,
+              backgroundColor:
+                scheme === "dark"
+                  ? "rgba(20,26,23,0.55)"
+                  : "rgba(255,255,255,0.55)",
+              borderColor:
+                scheme === "dark" ? "rgba(255,255,255,0.08)" : colors.border,
               borderRadius: 16,
               borderWidth: 1,
               overflow: "hidden",
@@ -532,7 +539,7 @@ function PickMore({
             <FamilyActivityPickerView
               initialSelection={iosSelectionLocal}
               onSelectionChange={onPickerChange}
-              style={{ height: 480 }}
+              style={{ backgroundColor: "transparent", height: 480 }}
               theme={scheme}
             />
           </View>
@@ -546,11 +553,31 @@ function PickMore({
               >
                 Currently quieted
               </Text>
-              <View style={{ marginTop: 10 }}>
+              <View
+                style={{
+                  backgroundColor:
+                    scheme === "dark"
+                      ? "rgba(20,26,23,0.55)"
+                      : "rgba(255,255,255,0.55)",
+                  borderColor:
+                    scheme === "dark"
+                      ? "rgba(255,255,255,0.08)"
+                      : colors.border,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  marginTop: 10,
+                  overflow: "hidden",
+                  paddingVertical: 8,
+                }}
+              >
                 <BlockedAppsNativeList
                   items={iosItems}
                   selectionData={iosSelectionLocal}
-                  style={{ minHeight: 100 }}
+                  style={{
+                    backgroundColor: "transparent",
+                    height: Math.max(180, iosItems.length * 72 + 16),
+                  }}
+                  theme={scheme}
                 />
               </View>
             </View>
