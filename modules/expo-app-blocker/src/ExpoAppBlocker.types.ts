@@ -93,12 +93,25 @@ export interface FamilyActivityPickerViewProps {
 export interface BlockedAppsNativeListProps {
   /** Array of blocked items from picker */
   items: IOSBlockedItem[];
+  /** Fired when the user taps a row's trash button */
+  onRequestRemove?: (event: { nativeEvent: BlockedItemRemoveEvent }) => void;
   /** Base64-encoded FamilyActivitySelection for accurate rendering */
   selectionData?: string;
   /** Standard React Native style */
   style?: any;
   /** Forces the list's color scheme: "light" (default), "dark", or "system" */
   theme?: "light" | "dark" | "system";
+}
+
+export interface BlockedItemRemoveEvent {
+  displayName: string;
+  tokenId: string;
+  type: "app" | "category" | "webDomain";
+}
+
+export interface RemoveBlockedItemResult {
+  remaining: number;
+  removed: boolean;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
