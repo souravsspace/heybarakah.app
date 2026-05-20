@@ -459,6 +459,91 @@ export function ProgressMesh({ dark }: MeshProps) {
   );
 }
 
+export function UnlockMesh({ dark }: MeshProps) {
+  if (dark) {
+    return (
+      <MeshShell>
+        <Defs>
+          <RadialGradient cx="50%" cy="18%" id="unlockDarkThreshold" r="76%">
+            <Stop offset="0" stopColor="#DDE8E1" stopOpacity={0.1} />
+            <Stop offset="0.42" stopColor={BARAKAH_GREEN} stopOpacity={0.2} />
+            <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient cx="8%" cy="96%" id="unlockDarkLeft" r="70%">
+            <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.24} />
+            <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.08} />
+            <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient cx="100%" cy="0%" id="unlockDarkRight" r="58%">
+            <Stop offset="0" stopColor="#DDE8E1" stopOpacity={0.07} />
+            <Stop offset="0.6" stopColor="#DDE8E1" stopOpacity={0.02} />
+            <Stop offset="1" stopColor="#DDE8E1" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect fill="#0B0E0C" height="220" width="320" x="0" y="0" />
+        <Rect
+          fill="url(#unlockDarkThreshold)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+        <Rect
+          fill="url(#unlockDarkLeft)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+        <Rect
+          fill="url(#unlockDarkRight)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+      </MeshShell>
+    );
+  }
+  return (
+    <MeshShell>
+      <Defs>
+        <RadialGradient cx="50%" cy="18%" id="unlockLightThreshold" r="76%">
+          <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.92} />
+          <Stop offset="0.42" stopColor="#FAF7F0" stopOpacity={0.38} />
+          <Stop offset="1" stopColor="#FAF7F0" stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="8%" cy="96%" id="unlockLightLeft" r="70%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.14} />
+          <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.05} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="100%" cy="0%" id="unlockLightRight" r="58%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.1} />
+          <Stop offset="0.6" stopColor={BARAKAH_GREEN} stopOpacity={0.03} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect fill="#F8FAF8" height="220" width="320" x="0" y="0" />
+      <Rect
+        fill="url(#unlockLightThreshold)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+      <Rect fill="url(#unlockLightLeft)" height="220" width="320" x="0" y="0" />
+      <Rect
+        fill="url(#unlockLightRight)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+    </MeshShell>
+  );
+}
+
 export function AchievementsMesh({ dark }: MeshProps) {
   if (dark) {
     return (
