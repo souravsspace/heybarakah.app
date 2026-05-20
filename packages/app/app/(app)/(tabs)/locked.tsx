@@ -4,6 +4,7 @@ import * as Haptics from "expo-haptics";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Image,
   Platform,
   Pressable,
@@ -26,6 +27,7 @@ import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import {
   type AndroidBlockableApp,
   BlockedAppsNativeList,
+  type BlockedItemRemoveEvent,
   clearAllBlocks,
   getBlockConfiguration,
   getInstalledApps,
@@ -33,6 +35,7 @@ import {
   type IOSBlockedItem,
   type PermissionStatus,
   presentFamilyActivityPicker,
+  removeBlockedItem,
   requestPermissions,
   setBlockConfiguration,
   setBlockedApps,
@@ -163,12 +166,66 @@ export default function Locked() {
       const items = await presentFamilyActivityPicker();
       setIosItems(items);
       await persistIos(items, iosSelectionLocal);
+      const categoryCount = items.filter((i) => i.type === "category").length;
+      if (categoryCount > 0) {
+        Alert.alert(
+          "Category picked",
+          "iOS keeps the app list inside a category private, so each category appears as a single row. For per-app control, pick individual apps.",
+          [{ style: "default", text: "Got it" }]
+        );
+      }
     } catch {
       // user cancelled
     } finally {
       setPickerOpen(false);
     }
   }, [iosSelectionLocal, persistIos, pickerOpen]);
+
+  const refreshIosItems = useCallback(() => {
+    const cfg = getBlockConfiguration();
+    setIosItems(cfg?.blockedItems ?? []);
+  }, []);
+
+  const handleRequestRemove = useCallback(
+    (event: { nativeEvent: BlockedItemRemoveEvent }) => {
+      const { tokenId, type, displayName } = event.nativeEvent;
+      Haptics.selectionAsync().catch(() => undefined);
+      const trimmed = (displayName ?? "").trim();
+      const subject =
+        trimmed.length > 0
+          ? trimmed
+          : type === "category"
+            ? "this category"
+            : type === "webDomain"
+              ? "this site"
+              : "this app";
+      Alert.alert(
+        "Remove from shield?",
+        `${subject} will no longer go quiet at salah.`,
+        [
+          { style: "cancel", text: "Cancel" },
+          {
+            onPress: async () => {
+              try {
+                const res = await removeBlockedItem(tokenId, type);
+                if (res.removed) {
+                  refreshIosItems();
+                  Haptics.notificationAsync(
+                    Haptics.NotificationFeedbackType.Success
+                  ).catch(() => undefined);
+                }
+              } catch {
+                // best-effort; user can retry
+              }
+            },
+            style: "destructive",
+            text: "Remove",
+          },
+        ]
+      );
+    },
+    [refreshIosItems]
+  );
 
   const clearIos = useCallback(async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
@@ -285,8 +342,8 @@ export default function Locked() {
           filteredInstalled={filteredInstalled}
           iosItems={iosItems}
           iosSelectionLocal={iosSelectionLocal}
-          onAddApps={openIosPicker}
           onClearIos={clearIos}
+          onRequestRemove={handleRequestRemove}
           onSearchChange={setSearch}
           onToggleAndroid={toggleAndroid}
           pendingAndroid={pendingAndroid}
@@ -296,7 +353,59 @@ export default function Locked() {
         />
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
+      {Platform.OS === "ios" && perm?.allGranted ? (
+        <PlusButton
+          colors={colors}
+          onPress={openIosPicker}
+          top={insets.top + 8}
+        />
+      ) : null}
     </View>
+  );
+}
+
+function PlusButton({
+  colors,
+  onPress,
+  top,
+}: {
+  colors: ThemeColors;
+  onPress: () => void;
+  top: number;
+}) {
+  return (
+    <Pressable
+      accessibilityLabel="Add apps to shield"
+      accessibilityRole="button"
+      hitSlop={8}
+      onPress={onPress}
+      style={({ pressed }) => ({
+        alignItems: "center",
+        backgroundColor: colors.bg,
+        borderColor: colors.border,
+        borderRadius: 22,
+        borderWidth: 1,
+        height: 44,
+        justifyContent: "center",
+        opacity: pressed ? 0.6 : 1,
+        position: "absolute",
+        right: 16,
+        top,
+        width: 44,
+        zIndex: 20,
+      })}
+    >
+      <Text
+        style={{
+          color: colors.ink,
+          fontSize: 22,
+          fontWeight: "400",
+          lineHeight: 24,
+        }}
+      >
+        +
+      </Text>
+    </Pressable>
   );
 }
 
@@ -499,59 +608,13 @@ function SuggestedRow({
   );
 }
 
-function AddAppsButton({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => ({
-        alignItems: "center",
-        alignSelf: "stretch",
-        backgroundColor: "#FFFFFF",
-        borderRadius: 14,
-        flexDirection: "row",
-        gap: 8,
-        justifyContent: "center",
-        opacity: pressed ? 0.85 : 1,
-        paddingVertical: 16,
-      })}
-    >
-      <Text
-        style={{
-          color: "#0A0A0A",
-          fontSize: 18,
-          fontWeight: "500",
-          lineHeight: 20,
-        }}
-      >
-        +
-      </Text>
-      <Text
-        style={{
-          color: "#0A0A0A",
-          fontSize: 15,
-          fontWeight: "600",
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
 function PickMore({
   colors,
   filteredInstalled,
   iosItems,
   iosSelectionLocal,
-  onAddApps,
   onClearIos,
+  onRequestRemove,
   onSearchChange,
   onToggleAndroid,
   pendingAndroid,
@@ -563,8 +626,8 @@ function PickMore({
   filteredInstalled: AndroidBlockableApp[];
   iosItems: IOSBlockedItem[];
   iosSelectionLocal: string;
-  onAddApps: () => void;
   onClearIos: () => void;
+  onRequestRemove: (e: { nativeEvent: BlockedItemRemoveEvent }) => void;
   onSearchChange: (s: string) => void;
   onToggleAndroid: (pkg: string) => void;
   pendingAndroid: Set<string>;
@@ -589,57 +652,52 @@ function PickMore({
   }
 
   if (Platform.OS === "ios") {
+    if (iosItems.length === 0) {
+      return null;
+    }
     return (
       <View style={{ paddingHorizontal: 24, paddingTop: 40 }}>
-        <AddAppsButton
-          label={iosItems.length > 0 ? "Edit quieted apps" : "Add apps"}
-          onPress={onAddApps}
+        <View
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "space-between",
+          }}
+        >
+          <Eyebrow
+            color={colors.inkMuted}
+            label={`CURRENTLY QUIETED · ${iosItems.length}`}
+          />
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={onClearIos}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.5 : 1,
+              paddingVertical: 4,
+            })}
+          >
+            <Eyebrow color={colors.inkSubtle} label="CLEAR ALL" />
+          </Pressable>
+        </View>
+        <View
+          style={{
+            backgroundColor: colors.divider,
+            height: 1,
+            marginTop: 16,
+          }}
         />
-
-        {iosItems.length > 0 ? (
-          <View style={{ marginTop: 40 }}>
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <Eyebrow
-                color={colors.inkMuted}
-                label={`CURRENTLY QUIETED · ${iosItems.length}`}
-              />
-              <Pressable
-                accessibilityRole="button"
-                hitSlop={8}
-                onPress={onClearIos}
-                style={({ pressed }) => ({
-                  opacity: pressed ? 0.5 : 1,
-                  paddingVertical: 4,
-                })}
-              >
-                <Eyebrow color={colors.inkSubtle} label="CLEAR ALL" />
-              </Pressable>
-            </View>
-            <View
-              style={{
-                backgroundColor: colors.divider,
-                height: 1,
-                marginTop: 16,
-              }}
-            />
-            <BlockedAppsNativeList
-              items={iosItems}
-              selectionData={iosSelectionLocal}
-              style={{
-                backgroundColor: "transparent",
-                height: iosItems.length * 56 + 24,
-                marginTop: 4,
-              }}
-              theme={scheme}
-            />
-          </View>
-        ) : null}
+        <BlockedAppsNativeList
+          items={iosItems}
+          onRequestRemove={onRequestRemove}
+          selectionData={iosSelectionLocal}
+          style={{
+            backgroundColor: "transparent",
+            height: iosItems.length * 56 + 24,
+            marginTop: 4,
+          }}
+          theme={scheme}
+        />
       </View>
     );
   }
