@@ -24,7 +24,6 @@ import { usePrayerShield } from "@/hooks/usePrayerShield";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import {
   type AndroidBlockableApp,
-  BlockedAppsNativeList,
   clearAllBlocks,
   type FamilyActivityPickerSelectionEvent,
   FamilyActivityPickerView,
@@ -51,8 +50,24 @@ function fmt12(time: string) {
   return `${hour}:${m.toString().padStart(2, "0")} ${period}`;
 }
 
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+function iosItemLabel(item: IOSBlockedItem): string {
+  if (item.type === "app") {
+    return item.displayName ?? item.bundleIdentifier ?? "App";
+  }
+  if (item.type === "category") {
+    return item.categoryName ?? "Category";
+  }
+  return item.domain ?? "Website";
+}
+
+function iosItemTypeLabel(item: IOSBlockedItem): string {
+  if (item.type === "app") {
+    return "APP";
+  }
+  if (item.type === "category") {
+    return "CATEGORY";
+  }
+  return "WEB";
 }
 
 export default function Locked() {
@@ -209,7 +224,7 @@ export default function Locked() {
   }, [installed, search]);
 
   const upcoming = nextPrayer ? fmt12(nextPrayer.time) : null;
-  const upcomingName = nextPrayer ? capitalize(nextPrayer.name) : null;
+  const upcomingName = nextPrayer ? nextPrayer.name.toUpperCase() : null;
 
   return (
     <View style={{ backgroundColor: colors.bg, flex: 1 }}>
@@ -223,15 +238,10 @@ export default function Locked() {
         showsVerticalScrollIndicator={false}
       >
         {perm && !perm.allGranted ? (
-          <PermissionCard
+          <PermissionNotice
             colors={colors}
             onRequestPerm={requestPerm}
             platform={Platform.OS === "ios" ? "ios" : "android"}
-            surface={
-              scheme === "dark"
-                ? "rgba(20,26,23,0.55)"
-                : "rgba(255,255,255,0.55)"
-            }
           />
         ) : null}
         <Hero
@@ -266,6 +276,45 @@ export default function Locked() {
   );
 }
 
+function EyebrowHead({
+  colors,
+  label,
+  sublabel,
+}: {
+  colors: ThemeColors;
+  label: string;
+  sublabel?: string;
+}) {
+  return (
+    <View style={{ gap: 12 }}>
+      <View style={{ backgroundColor: colors.primary, height: 1, width: 28 }} />
+      <Text
+        style={{
+          color: colors.inkMuted,
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 2.4,
+        }}
+      >
+        {label}
+      </Text>
+      {sublabel ? (
+        <Text
+          style={{
+            color: colors.inkSubtle,
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 2.4,
+            marginTop: -6,
+          }}
+        >
+          {sublabel}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 function Hero({
   colors,
   count,
@@ -277,48 +326,11 @@ function Hero({
   upcoming: string | null;
   upcomingName: string | null;
 }) {
+  const sublabel =
+    upcoming && upcomingName ? `NEXT ${upcomingName} · ${upcoming}` : undefined;
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 8 }}>
-      <View
-        style={{
-          alignItems: "flex-start",
-          flexDirection: "row",
-          justifyContent: "space-between",
-        }}
-      >
-        <Text
-          style={{
-            color: colors.inkMuted,
-            fontSize: 13,
-          }}
-        >
-          Quiet at salah
-        </Text>
-        {upcoming ? (
-          <View style={{ alignItems: "flex-end" }}>
-            <Text
-              style={{
-                color: colors.ink,
-                fontSize: 14,
-                fontWeight: "600",
-              }}
-            >
-              {upcoming}
-            </Text>
-            {upcomingName ? (
-              <Text
-                style={{
-                  color: colors.inkMuted,
-                  fontSize: 12,
-                  marginTop: 2,
-                }}
-              >
-                Next · {upcomingName}
-              </Text>
-            ) : null}
-          </View>
-        ) : null}
-      </View>
+    <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
+      <EyebrowHead colors={colors} label="QUIET AT SALAH" sublabel={sublabel} />
 
       <Text
         style={{
@@ -327,7 +339,7 @@ function Hero({
           fontSize: 36,
           letterSpacing: -0.6,
           lineHeight: 42,
-          marginTop: 32,
+          marginTop: 28,
         }}
       >
         Five times.
@@ -371,28 +383,26 @@ function SuggestedRow({
   onTap: (app: SocialApp) => void;
   selected: Set<string>;
 }) {
-  const hint =
-    Platform.OS === "ios"
-      ? "Tap any to open the picker."
-      : "Tap to quiet at salah.";
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 44 }}>
-      <SectionLabel color={colors.ink} label="Suggested" />
-      <Text
-        style={{
-          color: colors.inkMuted,
-          fontSize: 13,
-          marginTop: 4,
-        }}
-      >
-        {hint}
-      </Text>
+    <View style={{ paddingHorizontal: 24, paddingTop: 56 }}>
+      <EyebrowHead colors={colors} label="SUGGESTED" />
+      {Platform.OS === "android" ? (
+        <Text
+          style={{
+            color: colors.inkMuted,
+            fontSize: 13,
+            marginTop: 10,
+          }}
+        >
+          Tap to quiet at salah.
+        </Text>
+      ) : null}
       <View
         style={{
           flexDirection: "row",
           flexWrap: "wrap",
           marginTop: 20,
-          rowGap: 20,
+          rowGap: 24,
         }}
       >
         {SOCIAL_APPS.map((app) => {
@@ -503,7 +513,7 @@ function PickMore({
 }) {
   if (Platform.OS === "web") {
     return (
-      <View style={{ paddingHorizontal: 24, paddingTop: 44 }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: 64 }}>
         <Text style={{ color: colors.inkMuted, fontSize: 13 }}>
           Locking is unavailable on web.
         </Text>
@@ -517,292 +527,326 @@ function PickMore({
     return null;
   }
 
-  return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 44 }}>
-      <SectionLabel color={colors.ink} label="All apps" />
-
-      {Platform.OS === "ios" ? (
-        <View style={{ marginTop: 16 }}>
-          <View
-            style={{
-              backgroundColor:
-                scheme === "dark"
-                  ? "rgba(20,26,23,0.55)"
-                  : "rgba(255,255,255,0.55)",
-              borderColor:
-                scheme === "dark" ? "rgba(255,255,255,0.08)" : colors.border,
-              borderRadius: 16,
-              borderWidth: 1,
-              overflow: "hidden",
-            }}
-          >
-            <FamilyActivityPickerView
-              initialSelection={iosSelectionLocal}
-              onSelectionChange={onPickerChange}
-              style={{ backgroundColor: "transparent", height: 480 }}
-              theme={scheme}
-            />
-          </View>
-          {iosItems.length > 0 ? (
-            <View style={{ marginTop: 20 }}>
-              <Text
-                style={{
-                  color: colors.inkMuted,
-                  fontSize: 13,
-                }}
-              >
-                Currently quieted
-              </Text>
-              <View
-                style={{
-                  backgroundColor:
-                    scheme === "dark"
-                      ? "rgba(20,26,23,0.55)"
-                      : "rgba(255,255,255,0.55)",
-                  borderColor:
-                    scheme === "dark"
-                      ? "rgba(255,255,255,0.08)"
-                      : colors.border,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  marginTop: 10,
-                  overflow: "hidden",
-                  paddingVertical: 8,
-                }}
-              >
-                <BlockedAppsNativeList
-                  items={iosItems}
-                  selectionData={iosSelectionLocal}
-                  style={{
-                    backgroundColor: "transparent",
-                    height: Math.max(180, iosItems.length * 72 + 16),
-                  }}
-                  theme={scheme}
-                />
-              </View>
-            </View>
-          ) : null}
+  if (Platform.OS === "ios") {
+    return (
+      <View>
+        <View style={{ paddingHorizontal: 24, paddingTop: 64 }}>
+          <EyebrowHead colors={colors} label="ALL APPS" />
         </View>
-      ) : (
-        <View style={{ marginTop: 16 }}>
-          <View
-            style={{
-              borderBottomColor: colors.border,
-              borderBottomWidth: 1,
-              paddingBottom: 12,
-            }}
-          >
-            <TextInput
-              autoCapitalize="none"
-              autoCorrect={false}
-              onChangeText={onSearchChange}
-              placeholder="Search apps"
-              placeholderTextColor={colors.inkSubtle}
-              style={{
-                color: colors.ink,
-                fontSize: 15,
-                paddingVertical: 8,
-              }}
-              value={search}
-            />
-          </View>
-          {filteredInstalled.length === 0 ? (
-            <Text
-              style={{
-                color: colors.inkMuted,
-                fontSize: 13,
-                paddingVertical: 32,
-                textAlign: "center",
-              }}
-            >
-              No matches.
-            </Text>
-          ) : (
-            filteredInstalled.map((app) => {
-              const on = pendingAndroid.has(app.packageName);
-              return (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  key={app.packageName}
-                  onPress={() => onToggleAndroid(app.packageName)}
-                  style={{
-                    alignItems: "center",
-                    borderBottomColor: colors.divider,
-                    borderBottomWidth: 1,
-                    flexDirection: "row",
-                    gap: 14,
-                    paddingVertical: 14,
-                  }}
-                >
-                  <Monogram
-                    borderColor={colors.border}
-                    color={colors.ink}
-                    label={app.name.slice(0, 2)}
-                    size={40}
-                  />
-                  <Text
-                    style={{
-                      color: colors.ink,
-                      flex: 1,
-                      fontSize: 15,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {app.name}
-                  </Text>
-                  <View
-                    style={{
-                      alignItems: "center",
-                      backgroundColor: on ? colors.primary : "transparent",
-                      borderColor: on ? colors.primary : colors.border,
-                      borderRadius: 999,
-                      borderWidth: 1,
-                      height: 22,
-                      justifyContent: "center",
-                      width: 22,
-                    }}
-                  >
-                    {on ? (
-                      <Text
-                        style={{
-                          color: "#FFFFFF",
-                          fontSize: 12,
-                          fontWeight: "700",
-                        }}
-                      >
-                        ✓
-                      </Text>
-                    ) : null}
-                  </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </View>
-      )}
-    </View>
-  );
-}
-
-function PermissionCard({
-  colors,
-  onRequestPerm,
-  platform,
-  surface,
-}: {
-  colors: ThemeColors;
-  onRequestPerm: () => void;
-  platform: "ios" | "android";
-  surface: string;
-}) {
-  const cta = platform === "ios" ? "Enable Screen Time" : "Enable usage access";
-  return (
-    <View style={{ paddingBottom: 4, paddingHorizontal: 24, paddingTop: 4 }}>
-      <View
-        style={{
-          backgroundColor: surface,
-          borderColor: colors.border,
-          borderRadius: 18,
-          borderWidth: 1,
-          paddingHorizontal: 18,
-          paddingVertical: 18,
-        }}
-      >
         <View
           style={{
-            alignItems: "center",
-            flexDirection: "row",
-            gap: 8,
+            backgroundColor: colors.divider,
+            height: 1,
+            marginHorizontal: 24,
+            marginTop: 16,
+          }}
+        />
+        <FamilyActivityPickerView
+          initialSelection={iosSelectionLocal}
+          onSelectionChange={onPickerChange}
+          style={{
+            backgroundColor: "transparent",
+            height: 560,
+            marginHorizontal: 24,
+          }}
+          theme={scheme}
+        />
+        <View
+          style={{
+            backgroundColor: colors.divider,
+            height: 1,
+            marginHorizontal: 24,
+          }}
+        />
+        {iosItems.length > 0 ? (
+          <View style={{ paddingHorizontal: 24, paddingTop: 56 }}>
+            <EyebrowHead
+              colors={colors}
+              label={`CURRENTLY QUIETED · ${iosItems.length}`}
+            />
+            <View style={{ marginTop: 16 }}>
+              {iosItems.map((item, idx) => (
+                <QuietedRow
+                  colors={colors}
+                  isLast={idx === iosItems.length - 1}
+                  item={item}
+                  key={item.token}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ paddingHorizontal: 24, paddingTop: 64 }}>
+      <EyebrowHead colors={colors} label="ALL APPS" />
+      <View style={{ marginTop: 16 }}>
+        <View
+          style={{
+            borderBottomColor: colors.divider,
+            borderBottomWidth: 1,
+            paddingBottom: 8,
           }}
         >
-          <View
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={onSearchChange}
+            placeholder="Search apps"
+            placeholderTextColor={colors.inkSubtle}
             style={{
-              backgroundColor: colors.primary,
-              borderRadius: 999,
-              height: 6,
-              width: 6,
+              color: colors.ink,
+              fontSize: 15,
+              paddingVertical: 10,
             }}
+            value={search}
           />
+        </View>
+        {filteredInstalled.length === 0 ? (
           <Text
             style={{
               color: colors.inkMuted,
-              fontSize: 12,
-              fontWeight: "500",
+              fontSize: 13,
+              paddingVertical: 32,
+              textAlign: "center",
             }}
           >
-            One step left
+            No matches.
           </Text>
-        </View>
-        <Text
-          style={{
-            color: colors.ink,
-            fontFamily: "LibreBaskerville-Bold",
-            fontSize: 20,
-            lineHeight: 26,
-            marginTop: 10,
-          }}
-        >
-          Grant permission to begin.
-        </Text>
-        <Text
-          style={{
-            color: colors.inkMuted,
-            fontSize: 13,
-            lineHeight: 20,
-            marginTop: 6,
-          }}
-        >
-          Barakah needs system permission to quiet apps during prayer. Revoke
-          any time.
-        </Text>
-        <TouchableOpacity
-          accessibilityRole="button"
-          activeOpacity={0.7}
-          onPress={onRequestPerm}
-          style={{
-            alignItems: "center",
-            alignSelf: "flex-start",
-            flexDirection: "row",
-            gap: 6,
-            marginTop: 14,
-            paddingVertical: 4,
-          }}
-        >
-          <Text
-            style={{
-              color: colors.primary,
-              fontSize: 14,
-              fontWeight: "600",
-            }}
-          >
-            {cta}
-          </Text>
-          <Text
-            style={{
-              color: colors.primary,
-              fontSize: 14,
-              fontWeight: "600",
-            }}
-          >
-            →
-          </Text>
-        </TouchableOpacity>
+        ) : (
+          filteredInstalled.map((app, idx) => {
+            const on = pendingAndroid.has(app.packageName);
+            const isLast = idx === filteredInstalled.length - 1;
+            return (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                key={app.packageName}
+                onPress={() => onToggleAndroid(app.packageName)}
+                style={{
+                  alignItems: "center",
+                  borderBottomColor: isLast ? "transparent" : colors.divider,
+                  borderBottomWidth: 1,
+                  flexDirection: "row",
+                  gap: 14,
+                  paddingVertical: 14,
+                }}
+              >
+                <Monogram
+                  borderColor={colors.border}
+                  color={colors.ink}
+                  label={app.name.slice(0, 2)}
+                  size={36}
+                />
+                <Text
+                  style={{
+                    color: colors.ink,
+                    flex: 1,
+                    fontSize: 15,
+                    fontWeight: "500",
+                  }}
+                >
+                  {app.name}
+                </Text>
+                <View
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: on ? colors.primary : "transparent",
+                    borderColor: on ? colors.primary : colors.border,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    height: 22,
+                    justifyContent: "center",
+                    width: 22,
+                  }}
+                >
+                  {on ? (
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: 12,
+                        fontWeight: "700",
+                      }}
+                    >
+                      ✓
+                    </Text>
+                  ) : null}
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </View>
     </View>
   );
 }
 
-function SectionLabel({ color, label }: { color: string; label: string }) {
+function QuietedRow({
+  colors,
+  isLast,
+  item,
+}: {
+  colors: ThemeColors;
+  isLast: boolean;
+  item: IOSBlockedItem;
+}) {
+  const label = iosItemLabel(item);
+  const typeLabel = iosItemTypeLabel(item);
   return (
-    <Text
+    <View
       style={{
-        color,
-        fontFamily: "LibreBaskerville-Bold",
-        fontSize: 18,
+        alignItems: "center",
+        borderBottomColor: isLast ? "transparent" : colors.divider,
+        borderBottomWidth: 1,
+        flexDirection: "row",
+        gap: 14,
+        paddingVertical: 14,
       }}
     >
-      {label}
-    </Text>
+      <IconOrMonogram
+        borderColor={colors.border}
+        color={colors.ink}
+        iconBase64={item.iconBase64}
+        label={label.slice(0, 2)}
+        size={36}
+      />
+      <Text
+        numberOfLines={1}
+        style={{
+          color: colors.ink,
+          flex: 1,
+          fontSize: 15,
+          fontWeight: "500",
+        }}
+      >
+        {label}
+      </Text>
+      <Text
+        style={{
+          color: colors.inkSubtle,
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 1.8,
+        }}
+      >
+        {typeLabel}
+      </Text>
+    </View>
+  );
+}
+
+function IconOrMonogram({
+  borderColor,
+  color,
+  iconBase64,
+  label,
+  size,
+}: {
+  borderColor: string;
+  color: string;
+  iconBase64?: string;
+  label: string;
+  size: number;
+}) {
+  if (iconBase64) {
+    return (
+      <Image
+        source={{ uri: `data:image/png;base64,${iconBase64}` }}
+        style={{
+          borderRadius: 8,
+          height: size,
+          width: size,
+        }}
+      />
+    );
+  }
+  return (
+    <Monogram
+      borderColor={borderColor}
+      color={color}
+      label={label}
+      size={size}
+    />
+  );
+}
+
+function PermissionNotice({
+  colors,
+  onRequestPerm,
+  platform,
+}: {
+  colors: ThemeColors;
+  onRequestPerm: () => void;
+  platform: "ios" | "android";
+}) {
+  const cta = platform === "ios" ? "Enable Screen Time" : "Enable usage access";
+  return (
+    <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
+      <EyebrowHead colors={colors} label="ONE STEP LEFT" />
+      <Text
+        style={{
+          color: colors.ink,
+          fontFamily: "LibreBaskerville-Bold",
+          fontSize: 20,
+          lineHeight: 26,
+          marginTop: 14,
+        }}
+      >
+        Grant permission to begin.
+      </Text>
+      <Text
+        style={{
+          color: colors.inkMuted,
+          fontSize: 13,
+          lineHeight: 20,
+          marginTop: 8,
+        }}
+      >
+        Barakah needs system permission to quiet apps during prayer. Revoke any
+        time.
+      </Text>
+      <TouchableOpacity
+        accessibilityRole="button"
+        activeOpacity={0.7}
+        onPress={onRequestPerm}
+        style={{
+          alignItems: "center",
+          alignSelf: "flex-start",
+          flexDirection: "row",
+          gap: 6,
+          marginTop: 16,
+          paddingVertical: 4,
+        }}
+      >
+        <Text
+          style={{
+            color: colors.primary,
+            fontSize: 14,
+            fontWeight: "600",
+          }}
+        >
+          {cta}
+        </Text>
+        <Text
+          style={{
+            color: colors.primary,
+            fontSize: 14,
+            fontWeight: "600",
+          }}
+        >
+          →
+        </Text>
+      </TouchableOpacity>
+      <View
+        style={{
+          backgroundColor: colors.divider,
+          height: 1,
+          marginTop: 24,
+        }}
+      />
+    </View>
   );
 }
 
@@ -822,7 +866,7 @@ function Monogram({
       style={{
         alignItems: "center",
         borderColor,
-        borderRadius: 12,
+        borderRadius: 10,
         borderWidth: 1,
         height: size,
         justifyContent: "center",
@@ -833,7 +877,7 @@ function Monogram({
         style={{
           color,
           fontFamily: "LibreBaskerville-Bold",
-          fontSize: size * 0.36,
+          fontSize: size * 0.34,
         }}
       >
         {label}
