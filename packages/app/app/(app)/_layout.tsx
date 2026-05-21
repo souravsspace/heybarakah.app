@@ -8,6 +8,10 @@ import { useDailyAyahNotification } from "@/hooks/useDailyAyahNotification";
 import { useLockActivityScheduler } from "@/hooks/useLockActivityScheduler";
 import { usePrayerShield } from "@/hooks/usePrayerShield";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
+import {
+  addPendingUnlockListener,
+  checkAndClearPendingUnlock,
+} from "@/lib/app-blocker";
 import { useSubscription } from "@/lib/subscription";
 
 function AuthedShell() {
@@ -65,6 +69,22 @@ function AuthedShell() {
     const sub =
       Notifications.addNotificationResponseReceivedListener(handleResponse);
     return () => sub.remove();
+  }, [router]);
+
+  useEffect(() => {
+    const goToUnlock = () => {
+      if (pathnameRef.current?.endsWith("/unlock")) {
+        return;
+      }
+      router.push("/(app)/unlock" as never);
+    };
+
+    if (checkAndClearPendingUnlock()) {
+      goToUnlock();
+    }
+
+    const sub = addPendingUnlockListener(goToUnlock);
+    return () => sub?.remove();
   }, [router]);
 
   return (
