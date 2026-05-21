@@ -106,11 +106,9 @@ export default function Unlock() {
   );
 
   const close = () => {
-    try {
+    if (router.canDismiss?.()) {
       router.dismiss();
       return;
-    } catch {
-      // not a modal in stack — fall back
     }
     if (router.canGoBack()) {
       router.back();
