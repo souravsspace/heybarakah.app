@@ -362,11 +362,32 @@ function withAppBlockerIOS(config, pluginConfig) {
     }
 
     const shield = pluginConfig?.ios?.shield || {};
-    const primaryColor = hexToRgb(shield.primaryButtonColor || "#fb6107");
-    const titleColor = hexToRgb(shield.titleColor || "#111111");
-    const subtitleColor = hexToRgb(shield.subtitleColor || "#737373");
+    const uiColorLiteral = (hex) => {
+      const c = hexToRgb(hex);
+      return `UIColor(red: ${c.r}, green: ${c.g}, blue: ${c.b}, alpha: 1.0)`;
+    };
+    const dynamicColorExpr = (lightHex, darkHex) => {
+      const light = uiColorLiteral(lightHex);
+      if (!darkHex) {
+        return light;
+      }
+      const dark = uiColorLiteral(darkHex);
+      return `UIColor { trait in trait.userInterfaceStyle == .dark ? ${dark} : ${light} }`;
+    };
+    const primaryColorExpr = dynamicColorExpr(
+      shield.primaryButtonColor || "#fb6107",
+      shield.darkPrimaryButtonColor || null
+    );
+    const titleColorExpr = dynamicColorExpr(
+      shield.titleColor || "#111111",
+      shield.darkTitleColor || null
+    );
+    const subtitleColorExpr = dynamicColorExpr(
+      shield.subtitleColor || "#737373",
+      shield.darkSubtitleColor || null
+    );
     const bgColorHex = shield.backgroundColor || null;
-    const bgColor = bgColorHex ? hexToRgb(bgColorHex) : null;
+    const darkBgColorHex = shield.darkBackgroundColor || null;
 
     const blurStyleMap = {
       systemUltraThinMaterial: ".systemUltraThinMaterial",
@@ -450,17 +471,11 @@ function withAppBlockerIOS(config, pluginConfig) {
       NOTIFICATION_TITLE_PLACEHOLDER: notificationTitle,
       NOTIFICATION_BODY_PLACEHOLDER: notificationBody,
       NOTIFICATION_ATTACH_ICON_PLACEHOLDER: notificationAttachIcon,
-      SHIELD_PRIMARY_R_PLACEHOLDER: primaryColor.r,
-      SHIELD_PRIMARY_G_PLACEHOLDER: primaryColor.g,
-      SHIELD_PRIMARY_B_PLACEHOLDER: primaryColor.b,
-      SHIELD_TITLE_R_PLACEHOLDER: titleColor.r,
-      SHIELD_TITLE_G_PLACEHOLDER: titleColor.g,
-      SHIELD_TITLE_B_PLACEHOLDER: titleColor.b,
-      SHIELD_SUBTITLE_R_PLACEHOLDER: subtitleColor.r,
-      SHIELD_SUBTITLE_G_PLACEHOLDER: subtitleColor.g,
-      SHIELD_SUBTITLE_B_PLACEHOLDER: subtitleColor.b,
-      SHIELD_BG_COLOR_PLACEHOLDER: bgColor
-        ? `UIColor(red: ${bgColor.r}, green: ${bgColor.g}, blue: ${bgColor.b}, alpha: 1.0)`
+      SHIELD_PRIMARY_COLOR_EXPR_PLACEHOLDER: primaryColorExpr,
+      SHIELD_TITLE_COLOR_EXPR_PLACEHOLDER: titleColorExpr,
+      SHIELD_SUBTITLE_COLOR_EXPR_PLACEHOLDER: subtitleColorExpr,
+      SHIELD_BG_COLOR_PLACEHOLDER: bgColorHex
+        ? dynamicColorExpr(bgColorHex, darkBgColorHex)
         : "nil",
       SHIELD_BLUR_STYLE_PLACEHOLDER: blurSwift || "nil",
     };
