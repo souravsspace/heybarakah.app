@@ -19,6 +19,9 @@ function AuthedShell() {
   const router = useRouter();
   const pathname = usePathname();
   const routedForWindowRef = useRef<string | null>(null);
+  const initialNotificationHandledRef = useRef(false);
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
 
   useEffect(() => {
     if (!activeWindow) {
@@ -39,18 +42,25 @@ function AuthedShell() {
   useEffect(() => {
     const handleResponse = (response: Notifications.NotificationResponse) => {
       const link = response.notification.request.content.data?.link;
-      if (typeof link === "string" && link.includes("unlock")) {
-        router.push("/(app)/unlock" as never);
+      if (typeof link !== "string" || !link.includes("unlock")) {
+        return;
       }
+      if (pathnameRef.current?.endsWith("/unlock")) {
+        return;
+      }
+      router.push("/(app)/unlock" as never);
     };
 
-    Notifications.getLastNotificationResponseAsync()
-      .then((response) => {
-        if (response) {
-          handleResponse(response);
-        }
-      })
-      .catch(() => null);
+    if (!initialNotificationHandledRef.current) {
+      initialNotificationHandledRef.current = true;
+      Notifications.getLastNotificationResponseAsync()
+        .then((response) => {
+          if (response) {
+            handleResponse(response);
+          }
+        })
+        .catch(() => null);
+    }
 
     const sub =
       Notifications.addNotificationResponseReceivedListener(handleResponse);
