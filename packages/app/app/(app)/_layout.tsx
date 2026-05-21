@@ -1,9 +1,12 @@
-import { Redirect, Stack } from "expo-router";
+import * as Notifications from "expo-notifications";
+import { Redirect, Stack, usePathname, useRouter } from "expo-router";
+import { useEffect, useRef } from "react";
 import { AuthLoading } from "@/components/auth-loading";
 import { DhikrProvider } from "@/contexts/dhikr-context";
 import { useUser } from "@/contexts/user-context";
 import { useDailyAyahNotification } from "@/hooks/useDailyAyahNotification";
 import { useLockActivityScheduler } from "@/hooks/useLockActivityScheduler";
+import { usePrayerShield } from "@/hooks/usePrayerShield";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { useSubscription } from "@/lib/subscription";
 
@@ -11,6 +14,49 @@ function AuthedShell() {
   useDailyAyahNotification();
   useWidgetSync();
   useLockActivityScheduler();
+
+  const { activeWindow } = usePrayerShield();
+  const router = useRouter();
+  const pathname = usePathname();
+  const routedForWindowRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!activeWindow) {
+      routedForWindowRef.current = null;
+      return;
+    }
+    if (routedForWindowRef.current === activeWindow) {
+      return;
+    }
+    if (pathname?.endsWith("/unlock")) {
+      routedForWindowRef.current = activeWindow;
+      return;
+    }
+    routedForWindowRef.current = activeWindow;
+    router.push("/(app)/unlock" as never);
+  }, [activeWindow, pathname, router]);
+
+  useEffect(() => {
+    const handleResponse = (response: Notifications.NotificationResponse) => {
+      const link = response.notification.request.content.data?.link;
+      if (typeof link === "string" && link.includes("unlock")) {
+        router.push("/(app)/unlock" as never);
+      }
+    };
+
+    Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (response) {
+          handleResponse(response);
+        }
+      })
+      .catch(() => null);
+
+    const sub =
+      Notifications.addNotificationResponseReceivedListener(handleResponse);
+    return () => sub.remove();
+  }, [router]);
+
   return (
     <DhikrProvider>
       <Stack screenOptions={{ headerShown: false }}>
@@ -29,7 +75,7 @@ function AuthedShell() {
           options={{
             presentation: "modal",
             animation: "slide_from_bottom",
-            gestureEnabled: true,
+            gestureEnabled: false,
           }}
         />
       </Stack>
