@@ -312,6 +312,7 @@ function withAppBlockerIOS(config, pluginConfig) {
     config.modResults.BGTaskSchedulerPermittedIdentifiers = [
       `${config.ios?.bundleIdentifier || "expo.app-blocker"}.relock`,
     ];
+    config.modResults["ExpoAppBlockerAppGroup"] = appGroup;
     return config;
   });
 
@@ -454,22 +455,28 @@ function withAppBlockerIOS(config, pluginConfig) {
     }
 
     const replacements = {
-      APP_GROUP_PLACEHOLDER: appGroup,
-      SHIELD_TITLE_PLACEHOLDER: shield.title || "Hold on!",
-      SHIELD_SUBTITLE_PLACEHOLDER: shield.subtitle || "{appName} is blocked.",
-      SHIELD_PRIMARY_BUTTON_PLACEHOLDER:
-        shield.primaryButtonLabel || "Earn Free Time",
-      SHIELD_SECONDARY_BUTTON_PLACEHOLDER:
+      APP_GROUP_PLACEHOLDER: escapeSwiftString(appGroup),
+      SHIELD_TITLE_PLACEHOLDER: escapeSwiftString(shield.title || "Hold on!"),
+      SHIELD_SUBTITLE_PLACEHOLDER: escapeSwiftString(
+        shield.subtitle || "{appName} is blocked."
+      ),
+      SHIELD_PRIMARY_BUTTON_PLACEHOLDER: escapeSwiftString(
+        shield.primaryButtonLabel || "Earn Free Time"
+      ),
+      SHIELD_SECONDARY_BUTTON_PLACEHOLDER: escapeSwiftString(
         shield.secondaryButtonLabel === null
           ? "none"
-          : shield.secondaryButtonLabel || "Not now",
-      SHIELD_TEMP_UNLOCK_TITLE_PLACEHOLDER: tempUnlockTitle,
-      SHIELD_TEMP_UNLOCK_SUBTITLE_PLACEHOLDER: tempUnlockSubtitle,
-      SHIELD_TEMP_UNLOCK_BUTTON_PLACEHOLDER: tempUnlockButtonLabel,
+          : shield.secondaryButtonLabel || "Not now"
+      ),
+      SHIELD_TEMP_UNLOCK_TITLE_PLACEHOLDER: escapeSwiftString(tempUnlockTitle),
+      SHIELD_TEMP_UNLOCK_SUBTITLE_PLACEHOLDER:
+        escapeSwiftString(tempUnlockSubtitle),
+      SHIELD_TEMP_UNLOCK_BUTTON_PLACEHOLDER:
+        escapeSwiftString(tempUnlockButtonLabel),
       SHIELD_COUNT_SUFFIX_SWIFT_PLACEHOLDER:
         renderCountSuffixSwift(countSuffixTemplate),
-      NOTIFICATION_TITLE_PLACEHOLDER: notificationTitle,
-      NOTIFICATION_BODY_PLACEHOLDER: notificationBody,
+      NOTIFICATION_TITLE_PLACEHOLDER: escapeSwiftString(notificationTitle),
+      NOTIFICATION_BODY_PLACEHOLDER: escapeSwiftString(notificationBody),
       NOTIFICATION_ATTACH_ICON_PLACEHOLDER: notificationAttachIcon,
       SHIELD_PRIMARY_COLOR_EXPR_PLACEHOLDER: primaryColorExpr,
       SHIELD_TITLE_COLOR_EXPR_PLACEHOLDER: titleColorExpr,
