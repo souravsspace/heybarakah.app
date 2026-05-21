@@ -88,6 +88,7 @@ export function usePrayerShield() {
       return;
     }
     if (!todayPrayerTimes) {
+      setActiveWindow(null);
       return;
     }
 
@@ -101,6 +102,7 @@ export function usePrayerShield() {
       todayPrayerTimes.timings as Timings
     );
     if (windows.length === 0) {
+      setActiveWindow(null);
       return;
     }
 
@@ -162,6 +164,15 @@ export function usePrayerShield() {
       appStateRef.current = state;
     });
     return () => sub.remove();
+  }, [sync]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (AppState.currentState === "active") {
+        sync();
+      }
+    }, 30_000);
+    return () => clearInterval(id);
   }, [sync]);
 
   return { activeWindow };
