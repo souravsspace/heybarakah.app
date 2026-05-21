@@ -101,6 +101,10 @@ public class ExpoAppBlockerModule: Module {
       }
     }
 
+    OnDestroy {
+      self.teardownUnlockNotificationObserver()
+    }
+
     AsyncFunction("requestAuthorization") { (promise: Promise) in
       Task {
         do {
@@ -395,6 +399,23 @@ public class ExpoAppBlockerModule: Module {
       pendingName,
       nil,
       .deliverImmediately
+    )
+  }
+
+  private func teardownUnlockNotificationObserver() {
+    let notificationCenter = CFNotificationCenterGetDarwinNotifyCenter()
+    let observer = Unmanaged.passUnretained(self).toOpaque()
+    CFNotificationCenterRemoveObserver(
+      notificationCenter,
+      observer,
+      CFNotificationName("expo.appblocker.temporaryUnlock" as CFString),
+      nil
+    )
+    CFNotificationCenterRemoveObserver(
+      notificationCenter,
+      observer,
+      CFNotificationName("expo.appblocker.pendingUnlock" as CFString),
+      nil
     )
   }
 
