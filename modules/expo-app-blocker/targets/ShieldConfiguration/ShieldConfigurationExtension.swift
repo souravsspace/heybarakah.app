@@ -16,11 +16,11 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
   private let shieldTempUnlockTitle = "SHIELD_TEMP_UNLOCK_TITLE_PLACEHOLDER"
   private let shieldTempUnlockSubtitle = "SHIELD_TEMP_UNLOCK_SUBTITLE_PLACEHOLDER"
   private let shieldTempUnlockButtonLabel = "SHIELD_TEMP_UNLOCK_BUTTON_PLACEHOLDER"
-  private let shieldPrimaryButtonColor = UIColor(red: SHIELD_PRIMARY_R_PLACEHOLDER, green: SHIELD_PRIMARY_G_PLACEHOLDER, blue: SHIELD_PRIMARY_B_PLACEHOLDER, alpha: 1.0)
+  private let shieldPrimaryButtonColor: UIColor = SHIELD_PRIMARY_COLOR_EXPR_PLACEHOLDER
   private let shieldBackgroundColor: UIColor? = SHIELD_BG_COLOR_PLACEHOLDER
   private let shieldBlurStyle: UIBlurEffect.Style? = SHIELD_BLUR_STYLE_PLACEHOLDER
-  private let shieldTitleColor = UIColor(red: SHIELD_TITLE_R_PLACEHOLDER, green: SHIELD_TITLE_G_PLACEHOLDER, blue: SHIELD_TITLE_B_PLACEHOLDER, alpha: 1.0)
-  private let shieldSubtitleColor = UIColor(red: SHIELD_SUBTITLE_R_PLACEHOLDER, green: SHIELD_SUBTITLE_G_PLACEHOLDER, blue: SHIELD_SUBTITLE_B_PLACEHOLDER, alpha: 1.0)
+  private let shieldTitleColor: UIColor = SHIELD_TITLE_COLOR_EXPR_PLACEHOLDER
+  private let shieldSubtitleColor: UIColor = SHIELD_SUBTITLE_COLOR_EXPR_PLACEHOLDER
 
   private var mascotIcon: UIImage? {
     let bundle = Bundle(for: type(of: self))
