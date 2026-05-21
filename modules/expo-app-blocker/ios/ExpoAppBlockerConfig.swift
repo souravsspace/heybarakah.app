@@ -6,14 +6,16 @@ import Foundation
 // If the generated file exists, its values override these defaults.
 
 public struct ExpoAppBlockerConfig {
-  // Override this in your app by creating a file with:
-  // let expoAppBlockerAppGroup = "group.com.yourapp.blocker"
   public static var appGroupIdentifier: String {
-    // Try to read from UserDefaults (set by config plugin)
+    // Plugin writes this into Info.plist at prebuild time.
+    if let appGroup = Bundle.main.object(forInfoDictionaryKey: "ExpoAppBlockerAppGroup") as? String,
+       !appGroup.isEmpty {
+      return appGroup
+    }
+    // Legacy fallback — kept so older builds don't crash.
     if let appGroup = UserDefaults.standard.string(forKey: "expo.appblocker.appGroup") {
       return appGroup
     }
-    // Fallback - should be overridden
     return "group.\(Bundle.main.bundleIdentifier ?? "expo.app-blocker")"
   }
 }
