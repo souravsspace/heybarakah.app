@@ -1,7 +1,7 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import type { PrayerWindow } from "@barakah/core/shieldSelection";
 import { useQuery } from "convex/react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import {
   clearAllBlocks,
@@ -67,12 +67,15 @@ export function usePrayerShield() {
   const selection = useQuery(api.lib.shieldSelection.getMine);
   const { todayPrayerTimes } = usePrayerTimes();
   const appStateRef = useRef(AppState.currentState);
+  const [activeWindow, setActiveWindow] = useState<PrayerWindow | null>(null);
 
   const sync = useCallback(() => {
     if (Platform.OS !== "ios" && Platform.OS !== "android") {
+      setActiveWindow(null);
       return;
     }
     if (!selection?.enabled || selection.windows.length === 0) {
+      setActiveWindow(null);
       try {
         clearAllBlocks();
         if (Platform.OS === "android") {
@@ -104,6 +107,7 @@ export function usePrayerShield() {
     const now = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes();
     const inside = windows.find((w) => nowMin >= w.start && nowMin < w.end);
+    setActiveWindow(inside ? inside.name : null);
 
     if (Platform.OS === "ios") {
       const cfg = getBlockConfiguration();
@@ -159,4 +163,6 @@ export function usePrayerShield() {
     });
     return () => sub.remove();
   }, [sync]);
+
+  return { activeWindow };
 }
