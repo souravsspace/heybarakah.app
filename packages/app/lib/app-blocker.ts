@@ -146,6 +146,22 @@ export function relockApps(): Promise<RelockResult> {
   return mod.relockApps();
 }
 
+export function checkAndClearPendingUnlock(): boolean {
+  if (!mod) {
+    return false;
+  }
+  return mod.checkAndClearPendingUnlock();
+}
+
+export function addPendingUnlockListener(
+  handler: () => void
+): { remove: () => void } | null {
+  if (!mod) {
+    return null;
+  }
+  return mod.addPendingUnlockListener(handler);
+}
+
 export function BlockedAppsNativeList(
   props: BlockedAppsNativeListProps
 ): React.ReactElement | null {
