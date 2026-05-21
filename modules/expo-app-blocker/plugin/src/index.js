@@ -471,8 +471,9 @@ function withAppBlockerIOS(config, pluginConfig) {
       SHIELD_TEMP_UNLOCK_TITLE_PLACEHOLDER: escapeSwiftString(tempUnlockTitle),
       SHIELD_TEMP_UNLOCK_SUBTITLE_PLACEHOLDER:
         escapeSwiftString(tempUnlockSubtitle),
-      SHIELD_TEMP_UNLOCK_BUTTON_PLACEHOLDER:
-        escapeSwiftString(tempUnlockButtonLabel),
+      SHIELD_TEMP_UNLOCK_BUTTON_PLACEHOLDER: escapeSwiftString(
+        tempUnlockButtonLabel
+      ),
       SHIELD_COUNT_SUFFIX_SWIFT_PLACEHOLDER:
         renderCountSuffixSwift(countSuffixTemplate),
       NOTIFICATION_TITLE_PLACEHOLDER: escapeSwiftString(notificationTitle),
