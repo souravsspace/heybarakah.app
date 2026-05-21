@@ -24,7 +24,6 @@ import { LockedMesh } from "@/components/meshes";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { SOCIAL_APPS, type SocialApp } from "@/constants/social-apps";
 import { useTheme } from "@/contexts/theme-context";
-import { usePrayerShield } from "@/hooks/usePrayerShield";
 import {
   type AndroidBlockableApp,
   BlockedAppsNativeList,
@@ -34,12 +33,15 @@ import {
   getInstalledApps,
   getPermissionStatus,
   type IOSBlockedItem,
+  isTemporarilyUnlocked,
   type PermissionStatus,
   presentFamilyActivityPicker,
+  relockApps,
   removeBlockedItem,
   requestPermissions,
   setBlockConfiguration,
   setBlockedApps,
+  startMonitoring,
 } from "@/lib/app-blocker";
 
 type ThemeColors = ReturnType<typeof useTheme>["colors"];
@@ -89,8 +91,6 @@ export default function Locked() {
       scrollY.value = e.contentOffset.y;
     },
   });
-
-  usePrayerShield();
 
   const [perm, setPerm] = useState<PermissionStatus | null>(null);
   const [iosItems, setIosItems] = useState<IOSBlockedItem[]>([]);
@@ -358,6 +358,13 @@ export default function Locked() {
           scheme={scheme}
           search={search}
         />
+        {SHOW_UNLOCK_PREVIEW ? (
+          <DevPanel
+            androidPackages={[...pendingAndroid]}
+            colors={colors}
+            iosItems={iosItems}
+          />
+        ) : null}
       </Animated.ScrollView>
       <ScrollBlurHeader scrollY={scrollY} />
     </View>
@@ -861,7 +868,6 @@ function PickMore({
           }}
           theme={scheme}
         />
-        {SHOW_UNLOCK_PREVIEW ? <UnlockPreviewButton colors={colors} /> : null}
       </View>
     );
   }
@@ -969,32 +975,121 @@ function PickMore({
   );
 }
 
-function UnlockPreviewButton({ colors }: { colors: ThemeColors }) {
+function DevPanel({
+  androidPackages,
+  colors,
+  iosItems,
+}: {
+  androidPackages: string[];
+  colors: ThemeColors;
+  iosItems: IOSBlockedItem[];
+}) {
+  const activate = useCallback(async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+      () => undefined
+    );
+    try {
+      if (Platform.OS === "ios") {
+        if (iosItems.length === 0) {
+          Alert.alert(
+            "Nothing to block",
+            "Add at least one app to the shield first."
+          );
+          return;
+        }
+        await setBlockConfiguration({
+          blockedItems: iosItems,
+          isActive: true,
+        });
+        if (isTemporarilyUnlocked()) {
+          await relockApps();
+        }
+      } else if (Platform.OS === "android") {
+        if (androidPackages.length === 0) {
+          Alert.alert(
+            "Nothing to block",
+            "Pick at least one app from the suggested list first."
+          );
+          return;
+        }
+        setBlockedApps(androidPackages);
+        startMonitoring();
+      } else {
+        Alert.alert("Unsupported", "App blocker only runs on iOS and Android.");
+        return;
+      }
+      router.push("/(app)/unlock" as never);
+    } catch (err) {
+      Alert.alert("Activation failed", String(err));
+    }
+  }, [androidPackages, iosItems]);
+
   return (
-    <Pressable
-      accessibilityLabel="Preview unlock screen"
-      accessibilityRole="button"
-      onPress={() => router.push("/(app)/unlock" as never)}
-      style={({ pressed }) => ({
-        alignItems: "center",
-        borderColor: colors.border,
-        borderRadius: 14,
-        borderWidth: 1,
-        marginTop: 18,
-        opacity: pressed ? 0.6 : 1,
-        paddingVertical: 12,
-      })}
+    <View
+      style={{
+        gap: 8,
+        paddingHorizontal: 24,
+        paddingTop: 24,
+      }}
     >
       <Text
         style={{
           color: colors.inkMuted,
-          fontSize: 13,
-          fontWeight: "600",
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 2.4,
         }}
       >
-        Preview unlock screen
+        DEV
       </Text>
-    </Pressable>
+      <Pressable
+        accessibilityLabel="Activate shield now (dev)"
+        accessibilityRole="button"
+        onPress={activate}
+        style={({ pressed }) => ({
+          alignItems: "center",
+          backgroundColor: colors.primary,
+          borderRadius: 14,
+          opacity: pressed ? 0.7 : 1,
+          paddingVertical: 14,
+        })}
+      >
+        <Text
+          style={{
+            color: "#FFFFFF",
+            fontSize: 13,
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            textTransform: "uppercase",
+          }}
+        >
+          Activate shield now
+        </Text>
+      </Pressable>
+      <Pressable
+        accessibilityLabel="Preview unlock screen"
+        accessibilityRole="button"
+        onPress={() => router.push("/(app)/unlock" as never)}
+        style={({ pressed }) => ({
+          alignItems: "center",
+          borderColor: colors.border,
+          borderRadius: 14,
+          borderWidth: 1,
+          opacity: pressed ? 0.6 : 1,
+          paddingVertical: 12,
+        })}
+      >
+        <Text
+          style={{
+            color: colors.inkMuted,
+            fontSize: 13,
+            fontWeight: "600",
+          }}
+        >
+          Preview unlock screen
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
