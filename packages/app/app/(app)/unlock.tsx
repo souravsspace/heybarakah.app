@@ -106,11 +106,17 @@ export default function Unlock() {
   );
 
   const close = () => {
+    try {
+      router.dismiss();
+      return;
+    } catch {
+      // not a modal in stack — fall back
+    }
     if (router.canGoBack()) {
       router.back();
-    } else {
-      router.replace("/(app)/(tabs)/locked");
+      return;
     }
+    router.replace("/(app)/(tabs)/locked");
   };
 
   const onUnlockFiveMin = async () => {
@@ -158,63 +164,20 @@ export default function Unlock() {
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
-          paddingBottom: insets.bottom + 20,
+          paddingBottom: insets.bottom + 16,
           paddingHorizontal: 20,
-          paddingTop: Math.max(insets.top - 6, 8),
+          paddingTop: Math.max(insets.top - 16, 4),
         }}
         showsVerticalScrollIndicator={false}
       >
-        <View
-          style={{
-            alignItems: "center",
-            flexDirection: "row",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ gap: 8 }}>
-            <View
-              style={{ backgroundColor: colors.primary, height: 1, width: 28 }}
-            />
-            <Text
-              style={{
-                color: colors.inkMuted,
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 2.4,
-                textTransform: "uppercase",
-              }}
-            >
-              Salah window
-            </Text>
-          </View>
-
-          <Pressable
-            accessibilityLabel="Continue with quiet"
-            accessibilityRole="button"
-            onPress={close}
-            style={({ pressed }) => ({
-              alignItems: "center",
-              borderColor: colors.border,
-              borderRadius: 999,
-              borderWidth: 1,
-              height: 40,
-              justifyContent: "center",
-              opacity: pressed ? 0.6 : 1,
-              width: 40,
-            })}
-          >
-            <Ionicons color={colors.inkMuted} name="close" size={20} />
-          </Pressable>
-        </View>
-
-        <View style={{ paddingTop: 10 }}>
+        <View style={{ paddingTop: 8 }}>
           <Text
             style={{
               color: colors.ink,
               fontFamily: "LibreBaskerville-Bold",
-              fontSize: 34,
+              fontSize: 28,
               letterSpacing: 0,
-              lineHeight: 41,
+              lineHeight: 34,
             }}
           >
             Keep the quiet.
@@ -223,9 +186,9 @@ export default function Unlock() {
             style={{
               color: colors.ink,
               fontFamily: "LibreBaskerville-Bold",
-              fontSize: 34,
+              fontSize: 28,
               letterSpacing: 0,
-              lineHeight: 41,
+              lineHeight: 34,
             }}
           >
             Return with intention.
@@ -233,14 +196,13 @@ export default function Unlock() {
           <Text
             style={{
               color: colors.inkMuted,
-              fontSize: 15,
-              lineHeight: 24,
-              marginTop: 16,
-              maxWidth: 360,
+              fontSize: 14,
+              lineHeight: 22,
+              marginTop: 10,
+              maxWidth: 340,
             }}
           >
-            Barakah is holding this prayer window so your phone can step aside.
-            Stay here, or take a short unlock and come back.
+            Your phone is at rest. Stay, or take a brief unlock.
           </Text>
         </View>
 
@@ -249,7 +211,7 @@ export default function Unlock() {
             borderColor: colors.border,
             borderRadius: 24,
             borderWidth: 1,
-            marginTop: 18,
+            marginTop: 16,
             overflow: "hidden",
           }}
         >
@@ -257,10 +219,11 @@ export default function Unlock() {
             style={{
               alignItems: "center",
               backgroundColor:
-                scheme === "dark" ? colors.surface : colors.primary,
-              minHeight: 190,
+                scheme === "dark"
+                  ? "rgba(20,20,20,0.38)"
+                  : "rgba(41,96,62,0.82)",
               paddingHorizontal: 24,
-              paddingVertical: 20,
+              paddingVertical: 18,
             }}
           >
             <QuietGate colors={colors} dark={scheme === "dark"} />
@@ -268,163 +231,142 @@ export default function Unlock() {
               style={{
                 color: scheme === "dark" ? colors.ink : "#FFFFFF",
                 fontFamily: "LibreBaskerville-Bold",
-                fontSize: 24,
-                lineHeight: 30,
-                marginTop: 14,
+                fontSize: 22,
+                lineHeight: 28,
+                marginTop: 12,
                 textAlign: "center",
               }}
             >
               A pause before Allah.
-            </Text>
-            <Text
-              style={{
-                color:
-                  scheme === "dark"
-                    ? colors.inkMuted
-                    : "rgba(255,255,255,0.72)",
-                fontSize: 13,
-                lineHeight: 21,
-                marginTop: 8,
-                maxWidth: 260,
-                textAlign: "center",
-              }}
-            >
-              The lock lifts only when you choose it. The intention stays
-              visible.
             </Text>
           </View>
 
           <View
             style={{
               backgroundColor:
-                scheme === "dark" ? "rgba(20,26,23,0.72)" : colors.card,
-              paddingHorizontal: 18,
-              paddingVertical: 16,
+                scheme === "dark"
+                  ? "rgba(20,26,23,0.38)"
+                  : "rgba(255,255,255,0.7)",
+              paddingHorizontal: 6,
+              paddingVertical: 6,
             }}
           >
-            <InfoRow
+            <TappableInfoRow
+              busy={busy}
               colors={colors}
               icon="timer-outline"
               label="Temporary unlock"
-              value="5 minutes"
+              onPress={onUnlockFiveMin}
+              value={busy ? "Unlocking…" : "5 minutes"}
             />
             <View
               style={{
                 backgroundColor: colors.divider,
                 height: 1,
-                marginVertical: 12,
+                marginHorizontal: 12,
               }}
             />
-            <InfoRow
-              colors={colors}
-              icon="lock-closed-outline"
-              label="Prayer-lock"
-              value="continues after"
-            />
+            <View style={{ paddingHorizontal: 12, paddingVertical: 14 }}>
+              <InfoRow
+                colors={colors}
+                icon="lock-closed-outline"
+                label="Prayer-lock"
+                value="continues after"
+              />
+            </View>
           </View>
         </View>
 
-        <Text
-          style={{
-            color: colors.inkMuted,
-            fontSize: 13,
-            lineHeight: 21,
-            marginTop: 12,
-            textAlign: "center",
-          }}
-        >
-          A short unlock can help when something is urgent. Use it gently, then
-          return to salah, in shāʾ Allāh.
-        </Text>
+        <View style={{ flex: 1, minHeight: 16 }} />
 
-        <View style={{ flex: 1, minHeight: 12 }} />
-
-        <Pressable
-          accessibilityLabel={
-            activePrayer
-              ? `Mark ${PRAYER_LABEL[activePrayer]} as prayed`
-              : "Mark current prayer as prayed"
-          }
-          accessibilityRole="button"
-          disabled={!canMarkPrayed || prayerBusy}
-          onPress={onMarkPrayed}
-          style={({ pressed }) => ({
-            alignItems: "center",
-            backgroundColor: canMarkPrayed
-              ? colors.primary
-              : colors.neutralSoft,
-            borderRadius: 16,
-            opacity: prayerBusy ? 0.48 : pressed && canMarkPrayed ? 0.92 : 1,
-            paddingVertical: 17,
-          })}
-        >
-          <Text
-            style={{
-              color: canMarkPrayed ? "#FFFFFF" : colors.inkSubtle,
-              fontSize: 15,
-              fontWeight: "700",
-              letterSpacing: 0.96,
-              textTransform: "uppercase",
-            }}
+        <View style={{ width: "100%" }}>
+          <Pressable
+            accessibilityLabel={
+              activePrayer
+                ? `Mark ${PRAYER_LABEL[activePrayer]} as prayed`
+                : "Mark current prayer as prayed"
+            }
+            accessibilityRole="button"
+            disabled={!canMarkPrayed || prayerBusy}
+            onPress={onMarkPrayed}
+            style={({ pressed }) => ({
+              opacity: prayerBusy ? 0.5 : pressed && canMarkPrayed ? 0.9 : 1,
+              width: "100%",
+            })}
           >
-            {prayerBusy
-              ? "Updating..."
-              : activePrayerLogged
-                ? "Prayer logged"
-                : activePrayer
-                  ? "I prayed"
-                  : "No active prayer"}
-          </Text>
-        </Pressable>
+            <View
+              style={{
+                alignItems: "center",
+                backgroundColor: canMarkPrayed
+                  ? scheme === "dark"
+                    ? "#29603E"
+                    : colors.primary
+                  : "transparent",
+                borderColor: canMarkPrayed
+                  ? scheme === "dark"
+                    ? "#29603E"
+                    : colors.primary
+                  : scheme === "dark"
+                    ? "rgba(255,255,255,0.16)"
+                    : colors.border,
+                borderRadius: 18,
+                borderWidth: 1.5,
+                height: 60,
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              <Text
+                style={{
+                  color: canMarkPrayed ? "#FFFFFF" : colors.inkMuted,
+                  fontSize: 16,
+                  fontWeight: "700",
+                  letterSpacing: 1.6,
+                  textTransform: "uppercase",
+                }}
+              >
+                {prayerBusy
+                  ? "Updating…"
+                  : activePrayerLogged
+                    ? "Prayer logged"
+                    : activePrayer
+                      ? "I prayed"
+                      : "No active prayer"}
+              </Text>
+            </View>
+          </Pressable>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={close}
-          style={({ pressed }) => ({
-            alignItems: "center",
-            backgroundColor:
-              scheme === "dark" ? "rgba(20,26,23,0.72)" : colors.card,
-            borderColor: colors.border,
-            borderRadius: 16,
-            borderWidth: 1,
-            marginTop: 12,
-            opacity: pressed ? 0.72 : 1,
-            paddingVertical: 15,
-          })}
-        >
-          <Text
-            style={{
-              color: colors.ink,
-              fontSize: 14,
-              fontWeight: "700",
-            }}
-          >
-            Continue with quiet
-          </Text>
-        </Pressable>
+          <View style={{ height: 10 }} />
 
-        <Pressable
-          accessibilityRole="button"
-          disabled={busy}
-          onPress={onUnlockFiveMin}
-          style={({ pressed }) => ({
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: 10,
-            opacity: busy ? 0.4 : pressed ? 0.6 : 1,
-            paddingVertical: 12,
-          })}
-        >
-          <Text
-            style={{
-              color: colors.inkMuted,
-              fontSize: 13,
-              fontWeight: "600",
-            }}
+          <Pressable
+            accessibilityRole="button"
+            onPress={close}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.65 : 1,
+              width: "100%",
+            })}
           >
-            {busy ? "Unlocking..." : "Unlock for 5 minutes"}
-          </Text>
-        </Pressable>
+            <View
+              style={{
+                alignItems: "center",
+                height: 52,
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.inkMuted,
+                  fontSize: 15,
+                  fontWeight: "600",
+                  letterSpacing: 0.2,
+                }}
+              >
+                Continue with quiet
+              </Text>
+            </View>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
@@ -495,6 +437,83 @@ function QuietGate({
         />
       </View>
     </View>
+  );
+}
+
+function TappableInfoRow({
+  busy,
+  colors,
+  icon,
+  label,
+  onPress,
+  value,
+}: {
+  busy: boolean;
+  colors: ReturnType<typeof useTheme>["colors"];
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+  value: string;
+}) {
+  return (
+    <Pressable
+      accessibilityHint="Pauses the shield for 5 minutes"
+      accessibilityLabel={`${label}, ${value}`}
+      accessibilityRole="button"
+      disabled={busy}
+      onPress={onPress}
+      style={({ pressed }) => ({
+        opacity: busy ? 0.5 : pressed ? 0.7 : 1,
+        width: "100%",
+      })}
+    >
+      <View
+        style={{
+          alignItems: "center",
+          borderRadius: 14,
+          flexDirection: "row",
+          paddingHorizontal: 12,
+          paddingVertical: 14,
+          width: "100%",
+        }}
+      >
+        <View
+          style={{
+            alignItems: "center",
+            backgroundColor: colors.primarySoft,
+            borderRadius: 999,
+            height: 34,
+            justifyContent: "center",
+            marginRight: 10,
+            width: 34,
+          }}
+        >
+          <Ionicons color={colors.primary} name={icon} size={17} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              color: colors.ink,
+              fontSize: 14,
+              fontWeight: "600",
+            }}
+          >
+            {label}
+          </Text>
+          <Text
+            style={{
+              color: colors.inkMuted,
+              fontSize: 12,
+              fontWeight: "500",
+              marginTop: 2,
+            }}
+          >
+            {value}
+          </Text>
+        </View>
+        <Ionicons color={colors.inkMuted} name="chevron-forward" size={18} />
+      </View>
+    </Pressable>
   );
 }
 
