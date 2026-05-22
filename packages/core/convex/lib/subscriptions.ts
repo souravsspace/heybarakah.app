@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import {
   buildRevenueCatSubscriptionDoc,
-  type ProductId,
   shouldSkipRcSync,
 } from "../../src/subscriptions";
 import {
@@ -116,7 +115,7 @@ export const syncRevenueCatEntitlement = mutation({
         expiresAt: args.expiresAt,
       },
       now,
-      rcRow?.productId as ProductId | undefined
+      rcRow?.productId
     );
 
     if (rcRow) {
