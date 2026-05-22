@@ -4,6 +4,9 @@
   "files": {
     "includes": ["!packages/marketing", "!design", "!**/convex/_generated"]
   },
+  "javascript": {
+    "globals": ["__DEV__"]
+  },
   "linter": {
     "rules": {
       "complexity": {
