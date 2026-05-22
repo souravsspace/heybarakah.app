@@ -45,39 +45,46 @@ Report any deviation from the four log lines above, plus what actually happened 
 
 ---
 
-## B. RevenueCat sandbox
+## B. RevenueCat sandbox (iOS only — Android deferred)
 
-### B.1 — App Store Connect setup (one-time)
+> Order matters. App Store Connect must be configured **before** RevenueCat. RC reads product metadata from App Store Connect; missing/misnamed products surface as empty offerings in the app.
 
-1. App Store Connect → **Users and Access → Sandbox Testers** → create a tester email.
-2. On the iPhone:
-   - **Settings → App Store → Sandbox Account** → sign in with the sandbox tester (do not sign out of your real Apple ID anywhere else).
-3. App Store Connect → **Apps → Barakah → In-App Purchases**, create:
+### B.1 — Apple Developer + App Store Connect prereqs (one-time, do FIRST)
+
+1. **Paid Apple Developer Program** membership active for the team that owns the bundle ID.
+2. **Bundle ID registered** in Apple Developer → Identifiers (must match `packages/app/app.json` → `ios.bundleIdentifier`).
+3. **App record exists** in App Store Connect → My Apps → Barakah (same bundle ID).
+4. **Agreements, Tax, and Banking → Paid Apps agreement** must be in **Active** status. RC will not return offerings if the Paid Apps contract is not signed.
+5. **Sandbox tester:** Users and Access → **Sandbox** → **Testers** → create a tester email + password. Region matches the storefront you want to test.
+6. On the iPhone: **Settings → App Store → Sandbox Account** → sign in with the sandbox tester. Do **not** sign out of your real Apple ID anywhere else on the device.
+7. **In-App Purchases:** App Store Connect → Apps → Barakah → **Monetization → Subscriptions** → create a subscription group (e.g. `barakah_premium`) and inside it create:
    | Type | Product ID | Notes |
    |---|---|---|
    | Auto-renewable subscription | `barakah_yearly` | 1-year, 7-day introductory free trial |
    | Auto-renewable subscription | `barakah_monthly` | 1-month |
    | Auto-renewable subscription | `barakah_family` | 1-year, Family Sharing enabled |
-4. Submit them to **Ready to Submit** status (sandbox does not require review approval but the products must be configured).
+8. Each product: set price, localization (display name + description), and review screenshot. Status must reach **Ready to Submit**. Sandbox does not require Apple review, but the product cannot be in "Missing Metadata".
+9. **App-Specific Shared Secret:** App Store Connect → Apps → Barakah → **App Information → App-Specific Shared Secret** → generate. Copy — you will paste into RC in B.2.
 
 ### B.2 — RevenueCat dashboard setup (one-time)
 
-1. Create the iOS app in RevenueCat → attach the App Store Connect shared secret.
+1. RevenueCat → **Project → + New app → Apple App Store**. Set bundle ID to match step B.1.2. Paste the **App-Specific Shared Secret** from B.1.9.
 2. **Entitlements** → create entitlement `premium`.
-3. **Products** → add the three product identifiers above.
-4. **Offerings** → create offering named `default` and add three packages mapped to the products above. Attach the `premium` entitlement to each package.
-5. Copy the iOS **sandbox public API key** (`appl_...`).
+3. **Products** → add the three product identifiers from B.1.7 (`barakah_yearly`, `barakah_monthly`, `barakah_family`). Each must attach to entitlement `premium`.
+4. **Offerings** → create offering named `default`. Add three packages mapped to the products above. Mark `default` as the **current** offering.
+5. Copy the iOS **sandbox public API key** (starts with `appl_`). Project Settings → API keys → **Apple App Store**.
 
 ### B.3 — Environment
 
-Edit `packages/app/.env` and add:
+Edit `packages/app/.env`:
 
 ```
 EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=appl_xxxxxxxxxxxxxxxxxxxxxxxxx
-EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=
+# Android setup deferred — do not set yet.
+# EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=
 ```
 
-Android key may stay blank for iOS-first sandbox testing. If the iOS key is missing, the app falls back to a dev-only mock subscription path so onboarding still completes.
+If the iOS key is missing, the app falls back to a dev-only mock subscription path so onboarding still completes (see B.10).
 
 ### B.4 — Build and run
 
