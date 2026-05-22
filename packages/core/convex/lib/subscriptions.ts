@@ -19,12 +19,19 @@ export const getMySubscription = query({
       return null;
     }
 
-    return await ctx.db
+    const row = await ctx.db
       .query("subscriptions")
       .withIndex("by_authUserId_status", (q) =>
         q.eq("authUserId", user._id).eq("status", "active")
       )
       .unique();
+    if (!row) {
+      return null;
+    }
+    if (row.expiresAt && Date.parse(row.expiresAt) <= Date.now()) {
+      return null;
+    }
+    return row;
   },
 });
 
