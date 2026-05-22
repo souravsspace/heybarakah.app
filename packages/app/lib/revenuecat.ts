@@ -33,16 +33,18 @@ export function isRevenueCatSupported(): boolean {
   return Platform.OS === "ios" || Platform.OS === "android";
 }
 
-export async function configureRevenueCat(authUserId: string): Promise<void> {
+export async function configureRevenueCat(
+  authUserId: string
+): Promise<boolean> {
   if (!isRevenueCatSupported()) {
-    return;
+    return false;
   }
   if (configuredFor === authUserId) {
-    return;
+    return true;
   }
   const apiKey = getApiKey();
   if (!apiKey) {
-    return;
+    return false;
   }
   if (__DEV__) {
     await Purchases.setLogLevel(LOG_LEVEL.DEBUG);
@@ -55,6 +57,11 @@ export async function configureRevenueCat(authUserId: string): Promise<void> {
     await Purchases.logIn(authUserId);
   }
   configuredFor = authUserId;
+  return true;
+}
+
+export function hasRevenueCatApiKey(): boolean {
+  return getApiKey() !== null;
 }
 
 export async function logOutRevenueCat(): Promise<void> {
