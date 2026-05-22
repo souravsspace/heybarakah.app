@@ -7,7 +7,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
@@ -18,6 +17,7 @@ import {
   findPackageForPlan,
   getCustomerInfo,
   getOfferings,
+  hasRevenueCatApiKey,
   isRevenueCatSupported,
   logOutRevenueCat,
   mapCustomerInfoToSync,
@@ -39,6 +39,7 @@ type ActiveSubscription = FunctionReturnType<
 
 interface Ctx {
   activeSubscription: ActiveSubscription | undefined;
+  claimMockSubscription(planId: ProductId): Promise<void>;
   isPurchasing: boolean;
   isSubscriptionLoading: boolean;
   offerings: PurchasesOffering | null;
@@ -46,6 +47,7 @@ interface Ctx {
   purchase(planId: ProductId): Promise<PurchaseOutcome>;
   refresh(): Promise<void>;
   restore(): Promise<boolean>;
+  revenueCatReady: boolean;
 }
 
 const SubscriptionContext = createContext<Ctx | null>(null);
@@ -60,21 +62,31 @@ export function SubscriptionProvider({
   const syncMutation = useMutation(
     api.lib.subscriptions.syncRevenueCatEntitlement
   );
+  const claimMockMutation = useMutation(
+    api.lib.subscriptions.claimMockSubscription
+  );
 
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
   const [offeringsLoading, setOfferingsLoading] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
-  const isConfigured = useRef(false);
+  const [revenueCatReady, setRevenueCatReady] = useState(false);
 
   const syncCustomerInfo = useCallback(
     async (info: CustomerInfo) => {
-      try {
-        await syncMutation(mapCustomerInfoToSync(info));
-      } catch {
-        // Sync errors are non-fatal; next listener call will retry.
-      }
+      await syncMutation(mapCustomerInfoToSync(info));
     },
     [syncMutation]
+  );
+
+  const syncCustomerInfoQuiet = useCallback(
+    async (info: CustomerInfo) => {
+      try {
+        await syncCustomerInfo(info);
+      } catch {
+        // Passive listener path; user-initiated paths surface errors.
+      }
+    },
+    [syncCustomerInfo]
   );
 
   const refresh = useCallback(async () => {
@@ -87,28 +99,29 @@ export function SubscriptionProvider({
       setOfferings(current);
       const info = await getCustomerInfo();
       if (info) {
-        await syncCustomerInfo(info);
+        await syncCustomerInfoQuiet(info);
       }
     } finally {
       setOfferingsLoading(false);
     }
-  }, [syncCustomerInfo]);
+  }, [syncCustomerInfoQuiet]);
 
   useEffect(() => {
     if (!(user && isRevenueCatSupported())) {
+      setRevenueCatReady(false);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        await configureRevenueCat(user._id);
-        if (cancelled) {
+        const ok = await configureRevenueCat(user._id);
+        if (cancelled || !ok) {
           return;
         }
-        isConfigured.current = true;
+        setRevenueCatReady(true);
         await refresh();
       } catch {
-        // Configuration failure is non-fatal; UI falls back to query-only mode.
+        // Configuration failure leaves provider in query-only mode.
       }
     })();
     return () => {
@@ -117,28 +130,30 @@ export function SubscriptionProvider({
   }, [user, refresh]);
 
   useEffect(() => {
-    if (!(isConfigured.current && isRevenueCatSupported())) {
+    if (!(revenueCatReady && isRevenueCatSupported())) {
       return;
     }
     const listener = (info: CustomerInfo) => {
-      syncCustomerInfo(info).catch(() => undefined);
+      syncCustomerInfoQuiet(info).catch(() => undefined);
     };
     Purchases.addCustomerInfoUpdateListener(listener);
     return () => {
       Purchases.removeCustomerInfoUpdateListener(listener);
     };
-  }, [syncCustomerInfo]);
+  }, [revenueCatReady, syncCustomerInfoQuiet]);
 
   useEffect(() => {
-    if (user) {
+    if (user || !revenueCatReady) {
       return;
     }
-    if (isConfigured.current) {
-      logOutRevenueCat().finally(() => {
-        isConfigured.current = false;
-      });
-    }
-  }, [user]);
+    (async () => {
+      try {
+        await logOutRevenueCat();
+      } finally {
+        setRevenueCatReady(false);
+      }
+    })().catch(() => setRevenueCatReady(false));
+  }, [user, revenueCatReady]);
 
   const purchase = useCallback(
     async (planId: ProductId): Promise<PurchaseOutcome> => {
@@ -159,12 +174,10 @@ export function SubscriptionProvider({
           return { ok: false, cancelled: true };
         }
         await syncCustomerInfo(result.customerInfo);
+        const entitlement = result.customerInfo.entitlements.active.premium;
         const alreadyOwned = Boolean(
-          result.customerInfo.entitlements.active.premium &&
-            result.customerInfo.entitlements.active.premium
-              .latestPurchaseDate !==
-              result.customerInfo.entitlements.active.premium
-                .originalPurchaseDate
+          entitlement &&
+            entitlement.latestPurchaseDate !== entitlement.originalPurchaseDate
         );
         return { ok: true, alreadyOwned };
       } catch (err) {
@@ -189,6 +202,19 @@ export function SubscriptionProvider({
     return Boolean(activeSubscription);
   }, [activeSubscription, syncCustomerInfo]);
 
+  const claimMockSubscription = useCallback(
+    async (planId: ProductId) => {
+      if (!__DEV__) {
+        throw new Error("Mock subscription is dev-only");
+      }
+      if (hasRevenueCatApiKey() && revenueCatReady) {
+        throw new Error("Mock subscription disabled when RevenueCat is active");
+      }
+      await claimMockMutation({ productId: planId });
+    },
+    [claimMockMutation, revenueCatReady]
+  );
+
   const isSubscriptionLoading = activeSubscription === undefined;
 
   const value = useMemo<Ctx>(
@@ -198,6 +224,8 @@ export function SubscriptionProvider({
       isPurchasing,
       offerings,
       offeringsLoading,
+      revenueCatReady,
+      claimMockSubscription,
       purchase,
       restore,
       refresh,
@@ -208,6 +236,8 @@ export function SubscriptionProvider({
       isPurchasing,
       offerings,
       offeringsLoading,
+      revenueCatReady,
+      claimMockSubscription,
       purchase,
       restore,
       refresh,
