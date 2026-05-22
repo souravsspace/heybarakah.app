@@ -11,7 +11,6 @@ import { LINKS } from "@/constants/links";
 import { PLANS } from "@/constants/onboarding-config";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
-import { useSubscription } from "@/lib/subscription";
 
 type Plan = (typeof PLANS)[number];
 type PlanId = Plan["id"];
@@ -56,9 +55,8 @@ const PLAN_COPY: Record<
 export default function Plans() {
   const { state, dispatch } = useOnboardingState();
   const { goTo } = useOnboardingNav();
-  const { purchasePending } = useSubscription();
   const [showAll, setShowAll] = useState(false);
-  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const selected: PlanId = state.plan ?? "yearly";
 
   const visible = PLANS.filter((p) => showAll || p.id !== "family");
@@ -67,11 +65,11 @@ export default function Plans() {
     dispatch({ type: "SET_FIELD", payload: { plan: id } });
   }
 
-  async function start() {
-    if (isPurchasing) {
+  function start() {
+    if (isSubmitting) {
       return;
     }
-    setIsPurchasing(true);
+    setIsSubmitting(true);
     dispatch({
       type: "SET_FIELD",
       payload: {
@@ -80,9 +78,6 @@ export default function Plans() {
           selected === "yearly" ? new Date().toISOString() : undefined,
       },
     });
-    // Mock RevenueCat purchase. Replace with real SDK call later.
-    await purchasePending(selected);
-    setIsPurchasing(false);
     goTo("/(account)/auth?mode=signup");
   }
 
