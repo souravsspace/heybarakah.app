@@ -10,6 +10,8 @@ export const env = createEnv({
   client: {
     EXPO_PUBLIC_CONVEX_URL: z.url(),
     EXPO_PUBLIC_CONVEX_SITE_URL: z.url(),
+    EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: z.string().optional(),
+    EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: z.string().optional(),
   },
 
   /**
