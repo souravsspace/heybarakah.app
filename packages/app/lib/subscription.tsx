@@ -1,5 +1,4 @@
 import { api } from "@barakah/core/convex/_generated/api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import {
@@ -8,14 +7,31 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
+import Purchases from "react-native-purchases";
+import { useUser } from "@/contexts/user-context";
+import {
+  configureRevenueCat,
+  findPackageForPlan,
+  getCustomerInfo,
+  getOfferings,
+  isRevenueCatSupported,
+  logOutRevenueCat,
+  mapCustomerInfoToSync,
+  purchasePackage,
+  type RcPlanId,
+  restorePurchases,
+} from "./revenuecat";
 
-const STORAGE_KEY = "subscription-pending:v1";
+export type ProductId = RcPlanId;
 
-export type ProductId = "yearly" | "monthly" | "family";
-
-export type ClaimResult = "claimed" | "no-pending";
+export type PurchaseOutcome =
+  | { ok: true; alreadyOwned: boolean }
+  | { ok: false; cancelled: true }
+  | { ok: false; cancelled: false; reason: string };
 
 type ActiveSubscription = FunctionReturnType<
   typeof api.lib.subscriptions.getMySubscription
@@ -23,12 +39,12 @@ type ActiveSubscription = FunctionReturnType<
 
 interface Ctx {
   activeSubscription: ActiveSubscription | undefined;
-  claimPending(): Promise<ClaimResult>;
-  clearPending(): Promise<void>;
-  hydrated: boolean;
+  isPurchasing: boolean;
   isSubscriptionLoading: boolean;
-  pending: ProductId | null;
-  purchasePending(productId: ProductId): Promise<void>;
+  offerings: PurchasesOffering | null;
+  offeringsLoading: boolean;
+  purchase(planId: ProductId): Promise<PurchaseOutcome>;
+  refresh(): Promise<void>;
   restore(): Promise<boolean>;
 }
 
@@ -39,86 +55,162 @@ export function SubscriptionProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [pending, setPending] = useState<ProductId | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-
+  const { user } = useUser();
   const activeSubscription = useQuery(api.lib.subscriptions.getMySubscription);
-  const claimMutation = useMutation(
-    api.lib.subscriptions.claimMockSubscription
+  const syncMutation = useMutation(
+    api.lib.subscriptions.syncRevenueCatEntitlement
   );
+
+  const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
+  const [offeringsLoading, setOfferingsLoading] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const isConfigured = useRef(false);
+
+  const syncCustomerInfo = useCallback(
+    async (info: CustomerInfo) => {
+      try {
+        await syncMutation(mapCustomerInfoToSync(info));
+      } catch {
+        // Sync errors are non-fatal; next listener call will retry.
+      }
+    },
+    [syncMutation]
+  );
+
+  const refresh = useCallback(async () => {
+    if (!isRevenueCatSupported()) {
+      return;
+    }
+    setOfferingsLoading(true);
+    try {
+      const current = await getOfferings();
+      setOfferings(current);
+      const info = await getCustomerInfo();
+      if (info) {
+        await syncCustomerInfo(info);
+      }
+    } finally {
+      setOfferingsLoading(false);
+    }
+  }, [syncCustomerInfo]);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => {
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw) as { pending: unknown };
-            const productId = parsed.pending;
-            if (
-              productId === "yearly" ||
-              productId === "monthly" ||
-              productId === "family"
-            ) {
-              setPending(productId);
-            }
-          } catch {
-            // corrupt — keep null
-          }
-        }
-      })
-      .finally(() => setHydrated(true));
-  }, []);
-
-  const purchasePending = useCallback(async (productId: ProductId) => {
-    setPending(productId);
-    await AsyncStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ pending: productId })
-    );
-  }, []);
-
-  const claimPending = useCallback(async (): Promise<ClaimResult> => {
-    if (!pending) {
-      return "no-pending";
+    if (!(user && isRevenueCatSupported())) {
+      return;
     }
-    await claimMutation({ productId: pending });
-    setPending(null);
-    await AsyncStorage.removeItem(STORAGE_KEY);
-    return "claimed";
-  }, [pending, claimMutation]);
+    let cancelled = false;
+    (async () => {
+      try {
+        await configureRevenueCat(user._id);
+        if (cancelled) {
+          return;
+        }
+        isConfigured.current = true;
+        await refresh();
+      } catch {
+        // Configuration failure is non-fatal; UI falls back to query-only mode.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, refresh]);
 
-  const restore = useCallback(
-    async () => Boolean(activeSubscription),
-    [activeSubscription]
+  useEffect(() => {
+    if (!(isConfigured.current && isRevenueCatSupported())) {
+      return;
+    }
+    const listener = (info: CustomerInfo) => {
+      void syncCustomerInfo(info);
+    };
+    Purchases.addCustomerInfoUpdateListener(listener);
+    return () => {
+      Purchases.removeCustomerInfoUpdateListener(listener);
+    };
+  }, [syncCustomerInfo]);
+
+  useEffect(() => {
+    if (user) {
+      return;
+    }
+    if (isConfigured.current) {
+      void logOutRevenueCat().finally(() => {
+        isConfigured.current = false;
+      });
+    }
+  }, [user]);
+
+  const purchase = useCallback(
+    async (planId: ProductId): Promise<PurchaseOutcome> => {
+      if (isPurchasing) {
+        return { ok: false, cancelled: false, reason: "in-flight" };
+      }
+      if (!isRevenueCatSupported()) {
+        return { ok: false, cancelled: false, reason: "unsupported-platform" };
+      }
+      const pkg = findPackageForPlan(offerings, planId);
+      if (!pkg) {
+        return { ok: false, cancelled: false, reason: "package-unavailable" };
+      }
+      setIsPurchasing(true);
+      try {
+        const result = await purchasePackage(pkg);
+        if (!result.ok) {
+          return { ok: false, cancelled: true };
+        }
+        await syncCustomerInfo(result.customerInfo);
+        const alreadyOwned = Boolean(
+          result.customerInfo.entitlements.active.premium &&
+            result.customerInfo.entitlements.active.premium
+              .latestPurchaseDate !==
+              result.customerInfo.entitlements.active.premium
+                .originalPurchaseDate
+        );
+        return { ok: true, alreadyOwned };
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : "purchase-failed";
+        return { ok: false, cancelled: false, reason };
+      } finally {
+        setIsPurchasing(false);
+      }
+    },
+    [isPurchasing, offerings, syncCustomerInfo]
   );
 
-  const clearPending = useCallback(async () => {
-    setPending(null);
-    await AsyncStorage.removeItem(STORAGE_KEY);
-  }, []);
+  const restore = useCallback(async (): Promise<boolean> => {
+    if (!isRevenueCatSupported()) {
+      return Boolean(activeSubscription);
+    }
+    const info = await restorePurchases();
+    if (info) {
+      await syncCustomerInfo(info);
+      return Boolean(info.entitlements.active.premium);
+    }
+    return Boolean(activeSubscription);
+  }, [activeSubscription, syncCustomerInfo]);
 
   const isSubscriptionLoading = activeSubscription === undefined;
 
   const value = useMemo<Ctx>(
     () => ({
       activeSubscription,
-      claimPending,
-      clearPending,
-      hydrated,
       isSubscriptionLoading,
-      pending,
-      purchasePending,
+      isPurchasing,
+      offerings,
+      offeringsLoading,
+      purchase,
       restore,
+      refresh,
     }),
     [
       activeSubscription,
-      claimPending,
-      clearPending,
-      hydrated,
       isSubscriptionLoading,
-      pending,
-      purchasePending,
+      isPurchasing,
+      offerings,
+      offeringsLoading,
+      purchase,
       restore,
+      refresh,
     ]
   );
 
