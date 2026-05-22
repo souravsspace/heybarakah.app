@@ -121,7 +121,7 @@ export function SubscriptionProvider({
       return;
     }
     const listener = (info: CustomerInfo) => {
-      void syncCustomerInfo(info);
+      syncCustomerInfo(info).catch(() => undefined);
     };
     Purchases.addCustomerInfoUpdateListener(listener);
     return () => {
@@ -134,7 +134,7 @@ export function SubscriptionProvider({
       return;
     }
     if (isConfigured.current) {
-      void logOutRevenueCat().finally(() => {
+      logOutRevenueCat().finally(() => {
         isConfigured.current = false;
       });
     }
