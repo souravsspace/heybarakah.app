@@ -19,6 +19,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LINKS } from "@/constants/links";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
+import { useSubscription } from "@/lib/subscription";
 
 const SPLIT_RE = /\s+/;
 const NON_ALPHANUM_RE = /[^a-z0-9]/g;
@@ -32,11 +33,23 @@ const METHOD_LABEL: Record<string, string> = {
   custom: "Custom",
 };
 
+const PLAN_VALUE_LABEL: Record<string, string> = {
+  yearly: "Premium",
+  monthly: "Premium",
+  family: "Family",
+  lifetime: "Lifetime",
+};
+
 export default function Profile() {
   const router = useRouter();
   const { user } = useUser();
   const profile = useQuery(api.lib.users.getMyProfile);
+  const { activeSubscription } = useSubscription();
   const { colors, scheme } = useTheme();
+  const isPremium = !!activeSubscription;
+  const subscriptionLabel = activeSubscription
+    ? (PLAN_VALUE_LABEL[activeSubscription.productId] ?? "Premium")
+    : "Free";
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler({
@@ -158,6 +171,7 @@ export default function Profile() {
             handle={handle}
             imageUrl={profile?.imageUrl ?? null}
             initials={initials}
+            isPremium={isPremium}
             name={name}
             onPress={() => go("/personal-details")}
             surface={cardSurface}
@@ -171,7 +185,7 @@ export default function Profile() {
               onPress={() => go("/subscription")}
               sf="crown.fill"
               title="Subscription"
-              value="Premium"
+              value={subscriptionLabel}
             />
             <Divider colors={colors} />
             <Row
@@ -278,6 +292,7 @@ function HeaderCard({
   handle,
   imageUrl,
   initials,
+  isPremium,
   name,
   onPress,
   surface,
@@ -287,6 +302,7 @@ function HeaderCard({
   handle: string;
   imageUrl: string | null;
   initials: string;
+  isPremium: boolean;
   name: string;
   onPress: () => void;
   surface: string;
@@ -330,8 +346,8 @@ function HeaderCard({
               style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
             >
               <IconSymbol
-                color={colors.premium}
-                name={"crown.fill" as never}
+                color={isPremium ? colors.premium : colors.inkMuted}
+                name={(isPremium ? "crown.fill" : "person.fill") as never}
                 size={12}
               />
               <Text
@@ -339,11 +355,11 @@ function HeaderCard({
                   fontSize: 11,
                   fontWeight: "700",
                   letterSpacing: 0.6,
-                  color: colors.premium,
+                  color: isPremium ? colors.premium : colors.inkMuted,
                   textTransform: "uppercase",
                 }}
               >
-                Premium
+                {isPremium ? "Premium" : "Free"}
               </Text>
             </View>
             <Text
