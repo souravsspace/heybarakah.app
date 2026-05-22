@@ -29,6 +29,7 @@
     "expo": "~54.0.33",
     "expo-app-blocker": "workspace:*",
     "expo-apple-authentication": "~8.0.7",
+    "expo-application": "~7.0.8",
     "expo-background-task": "~1.0.10",
     "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.13",
