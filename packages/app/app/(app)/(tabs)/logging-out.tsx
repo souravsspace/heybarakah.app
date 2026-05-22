@@ -4,12 +4,10 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { authClient } from "@/lib/auth-client";
-import { useSubscription } from "@/lib/subscription";
 
 export default function LoggingOut() {
   const router = useRouter();
   const { dispatch } = useOnboardingState();
-  const { clearPending } = useSubscription();
 
   useEffect(() => {
     (async () => {
@@ -18,11 +16,10 @@ export default function LoggingOut() {
       } catch {
         // ignore
       }
-      await clearPending().catch(() => undefined);
       dispatch({ type: "RESET" });
       router.replace("/(onboarding)/welcome" as never);
     })();
-  }, [clearPending, dispatch, router]);
+  }, [dispatch, router]);
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
