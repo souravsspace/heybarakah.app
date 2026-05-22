@@ -68,12 +68,29 @@ export default function Subscription() {
 
   const manage = () => {
     Haptics.selectionAsync().catch(() => undefined);
-    const url =
-      Platform.OS === "android"
-        ? `https://play.google.com/store/account/subscriptions?package=${applicationId ?? ""}`
-        : "https://apps.apple.com/account/subscriptions";
-    Linking.openURL(url).catch(() =>
-      Alert.alert("Cannot open", "Open the store app to manage subscriptions.")
+    if (Platform.OS === "android") {
+      if (!applicationId) {
+        Alert.alert(
+          "Cannot open",
+          "Open the Play Store app to manage subscriptions."
+        );
+        return;
+      }
+      Linking.openURL(
+        `https://play.google.com/store/account/subscriptions?package=${applicationId}`
+      ).catch(() =>
+        Alert.alert(
+          "Cannot open",
+          "Open the Play Store app to manage subscriptions."
+        )
+      );
+      return;
+    }
+    Linking.openURL("https://apps.apple.com/account/subscriptions").catch(() =>
+      Alert.alert(
+        "Cannot open",
+        "Open the App Store app to manage subscriptions."
+      )
     );
   };
 
