@@ -13,12 +13,24 @@
       "bundleIdentifier": "com.souravsspace.Barakah",
       "appleTeamId": "CG5WX63737",
       "infoPlist": {
-        "UIViewControllerBasedStatusBarAppearance": false
+        "UIViewControllerBasedStatusBarAppearance": false,
+        "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
         "com.apple.developer.family-controls": true,
         "com.apple.security.application-groups": [
+          "group.com.souravsspace.Barakah.shield",
           "group.com.souravsspace.Barakah.shield"
+        ]
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
         ]
       }
     },
@@ -31,7 +43,10 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.souravsspace.Barakah"
+      "package": "com.souravsspace.Barakah",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -101,8 +116,8 @@
             "ios": {
               "appExtensions": [
                 {
-                  "targetName": "DeviceActivityMonitor",
                   "bundleIdentifier": "com.souravsspace.Barakah.DeviceActivityMonitor",
+                  "targetName": "DeviceActivityMonitor",
                   "entitlements": {
                     "com.apple.developer.family-controls": true,
                     "com.apple.security.application-groups": [
@@ -111,8 +126,8 @@
                   }
                 },
                 {
-                  "targetName": "ShieldAction",
                   "bundleIdentifier": "com.souravsspace.Barakah.ShieldAction",
+                  "targetName": "ShieldAction",
                   "entitlements": {
                     "com.apple.developer.family-controls": true,
                     "com.apple.security.application-groups": [
@@ -121,10 +136,58 @@
                   }
                 },
                 {
-                  "targetName": "ShieldConfiguration",
                   "bundleIdentifier": "com.souravsspace.Barakah.ShieldConfiguration",
+                  "targetName": "ShieldConfiguration",
                   "entitlements": {
                     "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.souravsspace.Barakah.BarakahWidgets",
+                  "targetName": "BarakahWidgets",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.souravsspace.Barakah.DeviceActivityMonitor",
+                  "targetName": "DeviceActivityMonitor",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.souravsspace.Barakah.ShieldAction",
+                  "targetName": "ShieldAction",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.souravsspace.Barakah.ShieldConfiguration",
+                  "targetName": "ShieldConfiguration",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.souravsspace.Barakah.BarakahWidgets",
+                  "targetName": "BarakahWidgets",
+                  "entitlements": {
                     "com.apple.security.application-groups": [
                       "group.com.souravsspace.Barakah.shield"
                     ]
@@ -133,8 +196,11 @@
               ]
             }
           }
-        }
-      }
-    }
+        },
+        "projectId": "0cc15480-24aa-452a-a6e6-b4e125043f31"
+      },
+      "router": {}
+    },
+    "owner": "souravsspace"
   }
 }

@@ -29,13 +29,5 @@
       }
     }
   },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "REPLACE_WITH_APPLE_ID_EMAIL",
-        "ascAppId": "REPLACE_WITH_ASC_APP_ID",
-        "appleTeamId": "CG5WX63737"
-      }
-    }
-  }
+  "submit": {}
 }
