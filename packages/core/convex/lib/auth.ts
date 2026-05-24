@@ -13,6 +13,7 @@ import { sendOTPVerification } from "./resend";
 
 const siteUrl = requireEnv("SITE_URL");
 const nativeAppUrl = requireEnv("NATIVE_APP_URL");
+const convexSiteUrl = requireEnv("CONVEX_SITE_URL");
 // TODO: disabled for now add it letter
 // const appleBundleId = process.env.APPLE_APP_BUNDLE_IDENTIFIER || "";
 const googleClientId = requireEnv("GOOGLE_CLIENT_ID");
@@ -22,6 +23,7 @@ export const authComponent = createClient<DataModel>(components.betterAuth);
 
 function createAuth(ctx: GenericCtx<DataModel>) {
   return betterAuth({
+    baseURL: convexSiteUrl,
     trustedOrigins: [
       siteUrl,
       nativeAppUrl,
