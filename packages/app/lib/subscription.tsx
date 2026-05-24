@@ -173,7 +173,11 @@ export function SubscriptionProvider({
         if (!result.ok) {
           return { ok: false, cancelled: true };
         }
-        await syncCustomerInfo(result.customerInfo);
+        try {
+          await syncCustomerInfo(result.customerInfo);
+        } catch {
+          // Purchase succeeded; sync will retry via listener/refresh.
+        }
         const entitlement =
           result.customerInfo.entitlements.active[ENTITLEMENT_ID];
         const alreadyOwned = Boolean(
