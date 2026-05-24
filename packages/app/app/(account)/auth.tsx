@@ -89,8 +89,18 @@ export default function Auth() {
     }
   }
 
-  const syncWaitStartedAtRef = useRef<number | null>(null);
   const SYNC_WAIT_MS = 15_000;
+  const [syncWaitState, setSyncWaitState] = useState<
+    "idle" | "waiting" | "expired"
+  >("idle");
+
+  useEffect(() => {
+    if (syncWaitState !== "waiting") {
+      return;
+    }
+    const timer = setTimeout(() => setSyncWaitState("expired"), SYNC_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [syncWaitState]);
 
   useEffect(() => {
     if (!user || isSubscriptionLoading || handlingRef.current) {
@@ -109,19 +119,14 @@ export default function Auth() {
     }
 
     if (alreadyPurchased && !activeSubscription) {
-      if (syncWaitStartedAtRef.current === null) {
-        syncWaitStartedAtRef.current = Date.now();
+      if (syncWaitState === "expired") {
+        handlingRef.current = true;
+        router.replace("/no-active-sub" as never);
+        return;
       }
-      const elapsed = Date.now() - syncWaitStartedAtRef.current;
-      if (elapsed < SYNC_WAIT_MS) {
-        const remaining = SYNC_WAIT_MS - elapsed;
-        const timer = setTimeout(() => {
-          syncWaitStartedAtRef.current = 0;
-        }, remaining);
-        return () => clearTimeout(timer);
+      if (syncWaitState === "idle") {
+        setSyncWaitState("waiting");
       }
-      handlingRef.current = true;
-      router.replace("/no-active-sub" as never);
       return;
     }
 
@@ -178,6 +183,7 @@ export default function Auth() {
     state.plan,
     state.completedAt,
     purchaseCompletedAt,
+    syncWaitState,
     purchase,
     claimMockSubscription,
     dispatch,
