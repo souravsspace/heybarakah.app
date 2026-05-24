@@ -138,13 +138,12 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
     if (complete) {
       return;
     }
-    const nextCount = count + 1;
-    const willComplete = nextCount >= active.target;
+    const willComplete = count + 1 >= active.target;
     if (willComplete) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(
         () => undefined
       );
-    } else if (nextCount % 10 === 0) {
+    } else if ((count + 1) % 10 === 0) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
         () => undefined
       );
@@ -153,7 +152,7 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
         () => undefined
       );
     }
-    setCount(nextCount);
+    setCount((prev) => (prev >= active.target ? prev : prev + 1));
     addLifetime(active.id, 1);
   }, [active.id, active.target, addLifetime, complete, count]);
 
