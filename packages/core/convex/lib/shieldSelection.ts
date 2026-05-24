@@ -7,6 +7,9 @@ import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
 const DEFAULT_WINDOWS = [...ALL_WINDOWS];
+const MAX_IOS_SELECTION_BYTES = 100_000;
+const MAX_ANDROID_PACKAGES = 200;
+const MAX_PACKAGE_NAME_LENGTH = 256;
 
 export const getMine = query({
   args: {},
@@ -31,6 +34,9 @@ export const upsertIos = mutation({
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("Not authenticated");
+    }
+    if (args.iosSelectionData.length > MAX_IOS_SELECTION_BYTES) {
+      throw new Error("iOS selection payload too large");
     }
     const existing = await ctx.db
       .query("shieldSelection")
@@ -63,6 +69,16 @@ export const upsertAndroid = mutation({
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("Not authenticated");
+    }
+    if (args.androidPackageNames.length > MAX_ANDROID_PACKAGES) {
+      throw new Error("Too many Android package names");
+    }
+    if (
+      args.androidPackageNames.some(
+        (name) => name.length > MAX_PACKAGE_NAME_LENGTH
+      )
+    ) {
+      throw new Error("Android package name too long");
     }
     const existing = await ctx.db
       .query("shieldSelection")
