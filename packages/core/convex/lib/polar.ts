@@ -81,13 +81,13 @@ export const recordPaidOrder = internalMutation({
           .withIndex("by_polarCustomerId", (q) =>
             q.eq("polarCustomerId", args.polarCustomerId)
           )
-          .unique()
+          .first()
       : await ctx.db
           .query("subscriptions")
           .withIndex("by_customerEmail", (q) =>
             q.eq("customerEmail", args.customerEmail)
           )
-          .unique();
+          .first();
 
     if (existingSub) {
       await ctx.db.patch(existingSub._id, {
