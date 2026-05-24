@@ -91,6 +91,13 @@ export default function Plans() {
     }
     const result = await purchase(selected);
     if (result.ok) {
+      dispatch({
+        type: "SET_FIELD",
+        payload: {
+          purchasedPlan: selected,
+          purchaseCompletedAt: new Date().toISOString(),
+        },
+      });
       if (user) {
         router.replace("/home");
       } else {
