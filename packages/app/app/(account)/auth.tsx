@@ -193,6 +193,8 @@ export default function Auth() {
   useFocusEffect(
     useCallback(() => {
       setPendingProvider(null);
+      handlingRef.current = false;
+      setSyncWaitState("idle");
     }, [])
   );
 
