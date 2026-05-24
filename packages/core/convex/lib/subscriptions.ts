@@ -38,8 +38,8 @@ export const getMySubscription = query({
 export const claimMockSubscription = mutation({
   args: { productId },
   handler: async (ctx, args) => {
-    if (process.env.CONVEX_ENV === "production") {
-      throw new Error("Mock subscriptions are not allowed in production");
+    if (process.env.ALLOW_MOCK_SUBSCRIPTIONS !== "true") {
+      throw new Error("Mock subscriptions are not allowed in this environment");
     }
 
     const user = await authComponent.safeGetAuthUser(ctx);
@@ -98,7 +98,7 @@ export const syncRevenueCatEntitlement = mutation({
     const existing = await ctx.db
       .query("subscriptions")
       .withIndex("by_authUserId", (q) => q.eq("authUserId", user._id))
-      .collect();
+      .take(20);
 
     const polarRow = existing.find((row) => shouldSkipRcSync(row.source));
     if (polarRow && polarRow.status === "active") {
