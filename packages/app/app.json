@@ -12,6 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.souravsspace.Barakah",
       "appleTeamId": "CG5WX63737",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "UIViewControllerBasedStatusBarAppearance": false,
         "ITSAppUsesNonExemptEncryption": false
