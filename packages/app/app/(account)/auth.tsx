@@ -211,11 +211,10 @@ export default function Auth() {
       return;
     }
     if (provider === "apple") {
-      Alert.alert(
-        "Apple sign-in unavailable",
-        "Apple sign-in is not configured yet."
-      );
-      setPendingProvider(null);
+      const didStart = await oAuthApple.signIn();
+      if (!didStart) {
+        setPendingProvider(null);
+      }
       return;
     }
     router.push({
