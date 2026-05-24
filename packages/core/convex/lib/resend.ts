@@ -22,13 +22,22 @@ export const sendEmail = async (
     text?: string;
   }
 ) => {
-  await resendHandler.sendEmail(ctx, {
-    from: requireEnv("RESEND_AUTH_EMAIL"),
-    to,
-    subject,
-    html,
-    text,
-  });
+  try {
+    await resendHandler.sendEmail(ctx, {
+      from: requireEnv("RESEND_AUTH_EMAIL"),
+      to,
+      subject,
+      html,
+      text,
+    });
+  } catch (err) {
+    console.error("[resend] sendEmail failed", {
+      to,
+      subject,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
 };
 
 export const sendOTPVerification = async (
