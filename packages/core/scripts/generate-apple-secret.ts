@@ -1,17 +1,15 @@
 #!/usr/bin/env bun
 import { importPKCS8, SignJWT } from "jose";
 
-const teamId = Bun.env.APPLE_TEAM_ID;
-const keyId = Bun.env.APPLE_KEY_ID;
-const clientId = Bun.env.APPLE_CLIENT_ID;
-const privateKey = Bun.env.APPLE_PRIVATE_KEY;
+const teamId = process.env.APPLE_TEAM_ID;
+const keyId = process.env.APPLE_KEY_ID;
+const clientId = process.env.APPLE_CLIENT_ID;
+const privateKey = process.env.APPLE_PRIVATE_KEY;
 
 if (!(teamId && keyId && clientId && privateKey)) {
-  // biome-ignore lint/suspicious/noConsole: CLI script
   console.error(
     "Missing one of APPLE_TEAM_ID / APPLE_KEY_ID / APPLE_CLIENT_ID / APPLE_PRIVATE_KEY in packages/core/.env.local"
   );
-  // biome-ignore lint/nursery/noProcessGlobal: CLI script
   process.exit(1);
 }
 
@@ -29,5 +27,4 @@ const jwt = await new SignJWT({})
   .setExpirationTime(now + sixMonths)
   .sign(key);
 
-// biome-ignore lint/suspicious/noConsole: CLI script
 console.log(jwt);
