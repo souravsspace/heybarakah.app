@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { selectionAsync } from "expo-haptics";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -56,6 +56,7 @@ export default function Auth() {
     purchase,
     claimMockSubscription,
   } = useSubscription();
+  const purchaseCompletedAt = state.purchaseCompletedAt;
   const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(
     null
   );
@@ -88,15 +89,39 @@ export default function Auth() {
     }
   }
 
+  const syncWaitStartedAtRef = useRef<number | null>(null);
+  const SYNC_WAIT_MS = 15_000;
+
   useEffect(() => {
     if (!user || isSubscriptionLoading || handlingRef.current) {
       return;
     }
 
     const selectedPlan = state.plan;
+    const alreadyPurchased = Boolean(purchaseCompletedAt);
     const needsRevenueCat =
-      mode === "signup" && !activeSubscription && Boolean(selectedPlan);
+      mode === "signup" &&
+      !activeSubscription &&
+      !alreadyPurchased &&
+      Boolean(selectedPlan);
     if (needsRevenueCat && (!revenueCatReady || offeringsLoading)) {
+      return;
+    }
+
+    if (alreadyPurchased && !activeSubscription) {
+      if (syncWaitStartedAtRef.current === null) {
+        syncWaitStartedAtRef.current = Date.now();
+      }
+      const elapsed = Date.now() - syncWaitStartedAtRef.current;
+      if (elapsed < SYNC_WAIT_MS) {
+        const remaining = SYNC_WAIT_MS - elapsed;
+        const timer = setTimeout(() => {
+          syncWaitStartedAtRef.current = 0;
+        }, remaining);
+        return () => clearTimeout(timer);
+      }
+      handlingRef.current = true;
+      router.replace("/no-active-sub" as never);
       return;
     }
 
@@ -152,11 +177,18 @@ export default function Auth() {
     offeringsLoading,
     state.plan,
     state.completedAt,
+    purchaseCompletedAt,
     purchase,
     claimMockSubscription,
     dispatch,
     router,
   ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setPendingProvider(null);
+    }, [])
+  );
 
   async function pick(provider: AuthProvider) {
     selectionAsync().catch(() => undefined);
