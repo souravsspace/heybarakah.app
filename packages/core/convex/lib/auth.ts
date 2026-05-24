@@ -53,9 +53,9 @@ function createAuth(ctx: GenericCtx<DataModel>) {
       crossDomain({ siteUrl }),
       emailOTP({
         async sendVerificationOTP({ email, otp, type }) {
-          console.log("[auth] sendVerificationOTP called", { email, type });
+          console.warn("[auth] sendVerificationOTP called", { email, type });
           if (type !== "sign-in" && type !== "email-verification") {
-            console.log("[auth] OTP type skipped", { type });
+            console.warn("[auth] OTP type skipped", { type });
             return;
           }
           try {
@@ -63,7 +63,7 @@ function createAuth(ctx: GenericCtx<DataModel>) {
               to: email,
               code: otp,
             });
-            console.log("[auth] OTP enqueue returned", { email, type });
+            console.warn("[auth] OTP enqueue returned", { email, type });
           } catch (err) {
             console.error("[auth] OTP send failed", {
               email,

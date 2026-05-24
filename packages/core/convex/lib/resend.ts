@@ -7,7 +7,7 @@ import { requireEnv } from "./env";
 export const handleEmailEvent = internalMutation({
   args: vOnEmailEventArgs,
   handler: (_ctx, { id, event }) => {
-    console.log("[resend] event", {
+    console.warn("[resend] event", {
       id,
       type: event.type,
       data: event.data,
@@ -43,7 +43,7 @@ export const sendEmail = async (
       html,
       text,
     });
-    console.log("[resend] enqueued", { to, subject, emailId });
+    console.warn("[resend] enqueued", { to, subject, emailId });
   } catch (err) {
     console.error("[resend] sendEmail failed", {
       to,
