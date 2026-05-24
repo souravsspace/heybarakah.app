@@ -51,11 +51,21 @@ function createAuth(ctx: GenericCtx<DataModel>) {
       crossDomain({ siteUrl }),
       emailOTP({
         async sendVerificationOTP({ email, otp, type }) {
-          if (type === "sign-in" || type === "email-verification") {
+          if (type !== "sign-in" && type !== "email-verification") {
+            return;
+          }
+          try {
             await sendOTPVerification(requireActionCtx(ctx), {
               to: email,
               code: otp,
             });
+          } catch (err) {
+            console.error("[auth] OTP send failed", {
+              email,
+              type,
+              error: err instanceof Error ? err.message : String(err),
+            });
+            throw err;
           }
         },
       }),
