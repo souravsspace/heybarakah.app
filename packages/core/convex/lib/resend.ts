@@ -1,11 +1,24 @@
 import { buildOTPVerificationEmail } from "@barakah/core/auth";
-import { Resend } from "@convex-dev/resend";
-import { components } from "../_generated/api";
-import type { ActionCtx } from "../_generated/server";
+import { Resend, vOnEmailEventArgs } from "@convex-dev/resend";
+import { components, internal } from "../_generated/api";
+import { type ActionCtx, internalMutation } from "../_generated/server";
 import { requireEnv } from "./env";
 
-export const resendHandler = new Resend(components.resend, {
+export const handleEmailEvent = internalMutation({
+  args: vOnEmailEventArgs,
+  handler: (_ctx, { id, event }) => {
+    console.log("[resend] event", {
+      id,
+      type: event.type,
+      data: event.data,
+    });
+    return Promise.resolve();
+  },
+});
+
+export const resendHandler: Resend = new Resend(components.resend, {
   testMode: false,
+  onEmailEvent: internal.lib.resend.handleEmailEvent,
 });
 
 export const sendEmail = async (
@@ -23,13 +36,14 @@ export const sendEmail = async (
   }
 ) => {
   try {
-    await resendHandler.sendEmail(ctx, {
+    const emailId = await resendHandler.sendEmail(ctx, {
       from: requireEnv("RESEND_AUTH_EMAIL"),
       to,
       subject,
       html,
       text,
     });
+    console.log("[resend] enqueued", { to, subject, emailId });
   } catch (err) {
     console.error("[resend] sendEmail failed", {
       to,
