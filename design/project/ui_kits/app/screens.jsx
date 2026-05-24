@@ -846,7 +846,7 @@ const PaywallScreen = ({ onNext, onBack }) => {
   const footers = {
     yearly: "7 days free, then $39.99 per year.",
     monthly: "$7.99 per month. Cancel anytime.",
-    family: "$59.88 per year. Up to 5 members.",
+    family: "$59.88 per year. Up to 6 members.",
   };
 
   return (

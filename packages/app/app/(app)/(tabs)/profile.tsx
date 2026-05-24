@@ -19,6 +19,9 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LINKS } from "@/constants/links";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
+import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import { authClient } from "@/lib/auth-client";
+import { logOutRevenueCat } from "@/lib/revenuecat";
 import { useSubscription } from "@/lib/subscription";
 
 const SPLIT_RE = /\s+/;
@@ -45,6 +48,7 @@ export default function Profile() {
   const { user } = useUser();
   const profile = useQuery(api.lib.users.getMyProfile);
   const { activeSubscription } = useSubscription();
+  const { dispatch: onboardingDispatch } = useOnboardingState();
   const { colors, scheme } = useTheme();
   const isPremium = !!activeSubscription;
   const subscriptionLabel = activeSubscription
@@ -84,6 +88,21 @@ export default function Profile() {
     router.push(path as never);
   };
 
+  const performLogout = async () => {
+    try {
+      await logOutRevenueCat();
+    } catch {
+      // ignore
+    }
+    try {
+      await authClient.signOut();
+    } catch {
+      // ignore
+    }
+    onboardingDispatch({ type: "RESET" });
+    router.replace("/(onboarding)/welcome" as never);
+  };
+
   const handleLogout = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
       () => undefined
@@ -93,7 +112,9 @@ export default function Profile() {
       {
         text: "Log out",
         style: "destructive",
-        onPress: () => router.replace("/logging-out" as never),
+        onPress: () => {
+          performLogout().catch(() => undefined);
+        },
       },
     ]);
   };

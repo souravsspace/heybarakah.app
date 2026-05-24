@@ -13,13 +13,12 @@ import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
 import Purchases from "react-native-purchases";
 import { useUser } from "@/contexts/user-context";
 import {
-  configureRevenueCat,
+  configureRevenueCatAnonymous,
   findPackageForPlan,
   getCustomerInfo,
   getOfferings,
-  hasRevenueCatApiKey,
   isRevenueCatSupported,
-  logOutRevenueCat,
+  linkRevenueCatToUser,
   mapCustomerInfoToSync,
   purchasePackage,
   type RcPlanId,
@@ -73,9 +72,12 @@ export function SubscriptionProvider({
 
   const syncCustomerInfo = useCallback(
     async (info: CustomerInfo) => {
+      if (!user) {
+        return;
+      }
       await syncMutation(mapCustomerInfoToSync(info));
     },
-    [syncMutation]
+    [syncMutation, user]
   );
 
   const syncCustomerInfoQuiet = useCallback(
@@ -107,14 +109,16 @@ export function SubscriptionProvider({
   }, [syncCustomerInfoQuiet]);
 
   useEffect(() => {
-    if (!(user && isRevenueCatSupported())) {
+    if (!isRevenueCatSupported()) {
       setRevenueCatReady(false);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const ok = await configureRevenueCat(user._id);
+        const ok = user
+          ? await linkRevenueCatToUser(user._id)
+          : await configureRevenueCatAnonymous();
         if (cancelled || !ok) {
           return;
         }
@@ -142,18 +146,7 @@ export function SubscriptionProvider({
     };
   }, [revenueCatReady, syncCustomerInfoQuiet]);
 
-  useEffect(() => {
-    if (user || !revenueCatReady) {
-      return;
-    }
-    (async () => {
-      try {
-        await logOutRevenueCat();
-      } finally {
-        setRevenueCatReady(false);
-      }
-    })().catch(() => setRevenueCatReady(false));
-  }, [user, revenueCatReady]);
+  // Note: anonymous mode stays configured after logout; no teardown needed.
 
   const purchase = useCallback(
     async (planId: ProductId): Promise<PurchaseOutcome> => {
@@ -207,12 +200,9 @@ export function SubscriptionProvider({
       if (!__DEV__) {
         throw new Error("Mock subscription is dev-only");
       }
-      if (hasRevenueCatApiKey() && revenueCatReady) {
-        throw new Error("Mock subscription disabled when RevenueCat is active");
-      }
       await claimMockMutation({ productId: planId });
     },
-    [claimMockMutation, revenueCatReady]
+    [claimMockMutation]
   );
 
   const isSubscriptionLoading = activeSubscription === undefined;

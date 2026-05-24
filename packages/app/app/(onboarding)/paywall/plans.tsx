@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { Linking, Pressable, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { Alert, Linking, Pressable, Text, View } from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
@@ -9,8 +10,10 @@ import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { LINKS } from "@/constants/links";
 import { PLANS } from "@/constants/onboarding-config";
+import { useUser } from "@/contexts/user-context";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import { useSubscription } from "@/lib/subscription";
 
 type Plan = (typeof PLANS)[number];
 type PlanId = Plan["id"];
@@ -28,7 +31,7 @@ const CTA_LABELS: Record<PlanId, string> = {
 const FOOTER_CAPTIONS: Record<PlanId, string> = {
   yearly: "7 days free, then $39.99 per year.",
   monthly: "$7.99 per month. Cancel anytime.",
-  family: "$59.88 per year. Up to 5 members.",
+  family: "$59.88 per year. Up to 6 members.",
 };
 
 const PLAN_COPY: Record<
@@ -55,21 +58,61 @@ const PLAN_COPY: Record<
 export default function Plans() {
   const { state, dispatch } = useOnboardingState();
   const { goTo } = useOnboardingNav();
+  const router = useRouter();
+  const { user } = useUser();
+  const {
+    purchase,
+    offerings,
+    offeringsLoading,
+    revenueCatReady,
+    claimMockSubscription,
+    isPurchasing,
+    refresh,
+  } = useSubscription();
   const [showAll, setShowAll] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const selected: PlanId = state.plan ?? "yearly";
 
   const visible = PLANS.filter((p) => showAll || p.id !== "family");
 
+  useEffect(() => {
+    if (revenueCatReady && !offerings && !offeringsLoading) {
+      refresh().catch(() => undefined);
+    }
+  }, [revenueCatReady, offerings, offeringsLoading, refresh]);
+
   function setPlan(id: PlanId) {
     dispatch({ type: "SET_FIELD", payload: { plan: id } });
   }
 
-  function start() {
-    if (isSubmitting) {
+  async function tryRealPurchase(): Promise<boolean> {
+    if (!(revenueCatReady && offerings?.availablePackages.length)) {
+      return false;
+    }
+    const result = await purchase(selected);
+    if (result.ok) {
+      if (user) {
+        router.replace("/home");
+      } else {
+        goTo("/(account)/auth?mode=signup");
+      }
+      return true;
+    }
+    if (result.cancelled) {
+      return true;
+    }
+    if (__DEV__ && result.reason === "package-unavailable") {
+      return false;
+    }
+    Alert.alert("Purchase failed", result.reason);
+    return true;
+  }
+
+  async function start() {
+    if (isSubmitting || isPurchasing) {
       return;
     }
-    setIsSubmitting(true);
+
     dispatch({
       type: "SET_FIELD",
       payload: {
@@ -78,13 +121,53 @@ export default function Plans() {
           selected === "yearly" ? new Date().toISOString() : undefined,
       },
     });
-    goTo("/(account)/auth?mode=signup");
+
+    setIsSubmitting(true);
+    try {
+      if (revenueCatReady && !offerings) {
+        await refresh();
+      }
+
+      const handled = await tryRealPurchase();
+      if (handled) {
+        return;
+      }
+
+      if (__DEV__ && user) {
+        await claimMockSubscription(selected);
+        router.replace("/home");
+        return;
+      }
+
+      if (!user) {
+        goTo("/(account)/auth?mode=signup");
+        return;
+      }
+
+      Alert.alert(
+        "Plans unavailable",
+        "Subscription products are still loading from the App Store. Please try again in a moment."
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      Alert.alert("Purchase failed", message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <ScreenShell
       footer={
         <View className="gap-sm">
+          {__DEV__ ? (
+            <Text
+              className="text-center font-sans text-caption text-tertiary"
+              style={{ marginBottom: 4 }}
+            >
+              {`RC ${revenueCatReady ? "ready" : "off"} · offerings ${offerings?.availablePackages.length ?? 0} · user ${user ? "yes" : "no"}${offeringsLoading ? " · loading" : ""}`}
+            </Text>
+          ) : null}
           <Button label={CTA_LABELS[selected]} onPress={start} />
           {showAll ? (
             <Text className="text-center font-sans text-body-sm text-tertiary">
@@ -232,7 +315,7 @@ function PlanBadge({ id }: { id: PlanId }) {
   }
 
   if (id === "family") {
-    return <Badge backgroundColor="#0F1311" label="UP TO 5 MEMBERS" />;
+    return <Badge backgroundColor="#0F1311" label="UP TO 6 MEMBERS" />;
   }
 
   return null;

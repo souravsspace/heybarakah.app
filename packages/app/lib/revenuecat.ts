@@ -7,7 +7,7 @@ import Purchases, {
   type PurchasesPackage,
 } from "react-native-purchases";
 
-export const ENTITLEMENT_ID = "premium";
+export const ENTITLEMENT_ID = "Barakah Premium";
 
 export const RC_PRODUCT_IDENTIFIERS = {
   yearly: "barakah_yearly",
@@ -17,6 +17,7 @@ export const RC_PRODUCT_IDENTIFIERS = {
 
 export type RcPlanId = keyof typeof RC_PRODUCT_IDENTIFIERS;
 
+const ANONYMOUS = "__anonymous__";
 let configuredFor: string | null = null;
 
 function getApiKey(): string | null {
@@ -33,29 +34,40 @@ export function isRevenueCatSupported(): boolean {
   return Platform.OS === "ios" || Platform.OS === "android";
 }
 
-export async function configureRevenueCat(
-  authUserId: string
-): Promise<boolean> {
-  if (!isRevenueCatSupported()) {
-    return false;
-  }
-  if (configuredFor === authUserId) {
-    return true;
+export async function configureRevenueCatAnonymous(): Promise<boolean> {
+  if (!isRevenueCatSupported() || configuredFor !== null) {
+    return configuredFor !== null;
   }
   const apiKey = getApiKey();
   if (!apiKey) {
     return false;
   }
-  if (__DEV__) {
-    await Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-  } else {
-    await Purchases.setLogLevel(LOG_LEVEL.WARN);
+  await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
+  Purchases.configure({ apiKey });
+  configuredFor = ANONYMOUS;
+  return true;
+}
+
+export async function linkRevenueCatToUser(
+  authUserId: string
+): Promise<boolean> {
+  if (!isRevenueCatSupported()) {
+    return false;
+  }
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    return false;
   }
   if (configuredFor === null) {
+    await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
     Purchases.configure({ apiKey, appUserID: authUserId });
-  } else {
-    await Purchases.logIn(authUserId);
+    configuredFor = authUserId;
+    return true;
   }
+  if (configuredFor === authUserId) {
+    return true;
+  }
+  await Purchases.logIn(authUserId);
   configuredFor = authUserId;
   return true;
 }
@@ -71,7 +83,7 @@ export async function logOutRevenueCat(): Promise<void> {
   try {
     await Purchases.logOut();
   } finally {
-    configuredFor = null;
+    configuredFor = ANONYMOUS;
   }
 }
 
@@ -80,7 +92,13 @@ export async function getOfferings(): Promise<PurchasesOffering | null> {
     return null;
   }
   const offerings = await Purchases.getOfferings();
-  return offerings.current ?? null;
+  if (offerings.current) {
+    return offerings.current;
+  }
+  const fallback = Object.values(offerings.all).find(
+    (offering) => offering.availablePackages.length > 0
+  );
+  return fallback ?? null;
 }
 
 export function findPackageForPlan(
