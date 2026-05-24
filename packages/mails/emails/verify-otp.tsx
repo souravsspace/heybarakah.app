@@ -82,7 +82,9 @@ export default function VerifyOtpEmail({
         }}
       >
         <Head />
-        <Preview>Your Barakah verification code is {code}</Preview>
+        <Preview>
+          A sign-in code was requested for your Barakah account.
+        </Preview>
 
         <Body className="m-0 bg-background px-6 py-10 font-sans text-ink max-[480px]:px-2 max-[480px]:py-4">
           <Container className="mx-auto w-full max-w-[560px]">
@@ -125,7 +127,7 @@ export default function VerifyOtpEmail({
                   </Text>
                 </Section>
 
-                <Section className="mt-6 rounded-[16px] border border-divider bg-surface bg-yellow-100 px-5 py-4">
+                <Section className="mt-6 rounded-[16px] border border-divider bg-surface px-5 py-4">
                   <Text className="m-0 text-[12px] text-muted leading-[20px]">
                     For your security, do not share this code with anyone.
                   </Text>
