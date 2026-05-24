@@ -123,6 +123,12 @@ export function SubscriptionProvider({
           return;
         }
         setRevenueCatReady(true);
+        if (user) {
+          const info = await getCustomerInfo();
+          if (info && !cancelled) {
+            await syncCustomerInfo(info);
+          }
+        }
         await refresh();
       } catch {
         // Configuration failure leaves provider in query-only mode.
@@ -131,7 +137,7 @@ export function SubscriptionProvider({
     return () => {
       cancelled = true;
     };
-  }, [user, refresh]);
+  }, [user, refresh, syncCustomerInfo]);
 
   useEffect(() => {
     if (!(revenueCatReady && isRevenueCatSupported())) {
