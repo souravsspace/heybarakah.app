@@ -17,7 +17,7 @@
     "./convex/*": "./convex/*"
   },
   "scripts": {
-    "dev": "convex dev",
+    "dev": "convex dev --tail-logs always",
     "dev:setup": "convex dev --configure --until-success",
     "reset:db": "bun scripts/reset-db.ts",
     "typecheck": "tsc --noEmit"
