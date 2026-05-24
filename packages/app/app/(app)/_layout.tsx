@@ -1,87 +1,116 @@
 import * as Notifications from "expo-notifications";
-import { Redirect } from "expo-router";
-import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
-import { Platform } from "react-native";
+import { Redirect, Stack, usePathname, useRouter } from "expo-router";
+import { useEffect, useRef } from "react";
 import { AuthLoading } from "@/components/auth-loading";
-import { useTheme } from "@/contexts/theme-context";
+import { DhikrProvider } from "@/contexts/dhikr-context";
 import { useUser } from "@/contexts/user-context";
 import { useDailyAyahNotification } from "@/hooks/useDailyAyahNotification";
 import { useLockActivityScheduler } from "@/hooks/useLockActivityScheduler";
+import { usePrayerShield } from "@/hooks/usePrayerShield";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
+import {
+  addPendingUnlockListener,
+  checkAndClearPendingUnlock,
+} from "@/lib/app-blocker";
 import { useSubscription } from "@/lib/subscription";
-
-Notifications.setNotificationHandler({
-  handleNotification: () =>
-    Promise.resolve({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
-});
-
-const PRIMARY_BRIGHT = "#00D26A";
-
-function TabsWithTheme() {
-  const { colors, scheme } = useTheme();
-  const selectedContent =
-    Platform.OS === "android" ? "#FFFFFF" : PRIMARY_BRIGHT;
-  const tabBg = scheme === "dark" ? "#0A0A0A" : "#FFFFFF";
-
-  return (
-    <NativeTabs
-      backgroundColor={tabBg}
-      disableTransparentOnScrollEdge
-      iconColor={{ default: colors.inkMuted, selected: selectedContent }}
-      indicatorColor={colors.primary}
-      labelStyle={{
-        default: { color: colors.inkMuted },
-        selected: { color: selectedContent },
-      }}
-      tintColor={colors.primary}
-    >
-      <NativeTabs.Trigger name="home">
-        <Icon sf={{ default: "house", selected: "house.fill" }} />
-        <Label>Home</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="dhikr">
-        <Icon
-          sf={{
-            default: "circle.hexagongrid",
-            selected: "circle.hexagongrid.fill",
-          }}
-        />
-        <Label>Dhikr</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="locked">
-        <Icon sf={{ default: "lock", selected: "lock.fill" }} />
-        <Label>Locked</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="progress">
-        <Icon sf="chart.xyaxis.line" />
-        <Label>Progress</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="profile" role="search">
-        <Icon
-          sf={{
-            default: "person.crop.circle",
-            selected: "person.crop.circle.fill",
-          }}
-        />
-        <Label>Profile</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger hidden name="name" />
-      <NativeTabs.Trigger hidden name="success" />
-      <NativeTabs.Trigger hidden name="logging-out" />
-    </NativeTabs>
-  );
-}
 
 function AuthedShell() {
   useDailyAyahNotification();
   useWidgetSync();
   useLockActivityScheduler();
-  return <TabsWithTheme />;
+
+  const { activeWindow } = usePrayerShield();
+  const router = useRouter();
+  const pathname = usePathname();
+  const routedForWindowRef = useRef<string | null>(null);
+  const initialNotificationHandledRef = useRef(false);
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
+
+  useEffect(() => {
+    if (!activeWindow) {
+      routedForWindowRef.current = null;
+      return;
+    }
+    if (routedForWindowRef.current === activeWindow) {
+      return;
+    }
+    if (pathname?.endsWith("/unlock")) {
+      routedForWindowRef.current = activeWindow;
+      return;
+    }
+    routedForWindowRef.current = activeWindow;
+    router.push("/(app)/unlock" as never);
+  }, [activeWindow, pathname, router]);
+
+  useEffect(() => {
+    const handleResponse = (response: Notifications.NotificationResponse) => {
+      const link = response.notification.request.content.data?.link;
+      if (typeof link !== "string" || !link.includes("unlock")) {
+        return;
+      }
+      if (pathnameRef.current?.endsWith("/unlock")) {
+        return;
+      }
+      router.push("/(app)/unlock" as never);
+    };
+
+    if (!initialNotificationHandledRef.current) {
+      initialNotificationHandledRef.current = true;
+      Notifications.getLastNotificationResponseAsync()
+        .then((response) => {
+          if (response) {
+            handleResponse(response);
+          }
+        })
+        .catch(() => null);
+    }
+
+    const sub =
+      Notifications.addNotificationResponseReceivedListener(handleResponse);
+    return () => sub.remove();
+  }, [router]);
+
+  useEffect(() => {
+    const goToUnlock = () => {
+      if (pathnameRef.current?.endsWith("/unlock")) {
+        return;
+      }
+      router.push("/(app)/unlock" as never);
+    };
+
+    if (checkAndClearPendingUnlock()) {
+      goToUnlock();
+    }
+
+    const sub = addPendingUnlockListener(goToUnlock);
+    return () => sub?.remove();
+  }, [router]);
+
+  return (
+    <DhikrProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="achievements" />
+        <Stack.Screen
+          name="dhikr-record"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            gestureEnabled: true,
+          }}
+        />
+        <Stack.Screen
+          name="unlock"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            gestureEnabled: false,
+          }}
+        />
+      </Stack>
+    </DhikrProvider>
+  );
 }
 
 export default function AppLayout() {

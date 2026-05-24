@@ -30,7 +30,7 @@ export const appConfig = {
       "mindful Muslim app",
       "salah focus",
     ],
-    twitterHandle: null as string | null,
+    twitterHandle: "@heybarakah_app" as string | null,
   },
 
   contact: {
@@ -38,7 +38,7 @@ export const appConfig = {
   },
 
   social: {
-    twitter: "#",
+    twitter: "https://x.com/heybarakah_app",
     instagram: "#",
     tiktok: "#",
   },
@@ -62,8 +62,8 @@ export const appConfig = {
     faq: "#faq",
     features: "#features",
     how: "#how",
-    privacy: "#",
-    terms: "#",
+    privacy: "/privacy",
+    terms: "/terms",
     consent: "#",
     about: "#",
   },
@@ -119,9 +119,9 @@ export const appConfig = {
           { label: "iOS (Coming soon)", href: "#" },
           { label: "Android (Coming soon)", href: "#" },
           { label: "Email Us", href: "mailto:hello@heybarakah.app" },
-          { label: "Twitter / X", href: "#" },
-          { label: "Instagram", href: "#" },
-          { label: "TikTok", href: "#" },
+          { label: "Twitter / X", href: "https://x.com/heybarakah_app" },
+          { label: "Terms", href: "/terms" },
+          { label: "Privacy", href: "/privacy" },
         ],
       },
     ],

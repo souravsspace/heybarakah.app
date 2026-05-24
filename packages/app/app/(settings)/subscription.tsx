@@ -1,12 +1,21 @@
-import { api } from "@barakah/core/convex/_generated/api";
-import { useQuery } from "convex/react";
+import { applicationId } from "expo-application";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Alert, Linking, Pressable, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Platform,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
+import { useSubscription } from "@/lib/subscription";
 
 type ProductId = "yearly" | "monthly" | "family" | "lifetime";
 
@@ -43,10 +52,12 @@ const BENEFITS: { sf: string; title: string; subtitle: string }[] = [
 export default function Subscription() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
-  const subscription = useQuery(api.lib.subscriptions.getMySubscription);
-  const loading = subscription === undefined;
-  const isPremium = !!subscription;
-  const productId = (subscription?.productId ?? "monthly") as ProductId;
+  const { activeSubscription, isSubscriptionLoading, restore } =
+    useSubscription();
+  const loading = isSubscriptionLoading;
+  const isPremium = !!activeSubscription;
+  const productId = (activeSubscription?.productId ?? "monthly") as ProductId;
+  const [isRestoring, setIsRestoring] = useState(false);
 
   const openSupport = () => {
     Haptics.selectionAsync().catch(() => undefined);
@@ -57,22 +68,51 @@ export default function Subscription() {
 
   const manage = () => {
     Haptics.selectionAsync().catch(() => undefined);
-    Alert.alert("Manage subscription", "Opening App Store subscriptions…", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Open",
-        onPress: () =>
-          Linking.openURL("https://apps.apple.com/account/subscriptions"),
-      },
-    ]);
+    if (Platform.OS === "android") {
+      if (!applicationId) {
+        Alert.alert(
+          "Cannot open",
+          "Open the Play Store app to manage subscriptions."
+        );
+        return;
+      }
+      Linking.openURL(
+        `https://play.google.com/store/account/subscriptions?package=${applicationId}`
+      ).catch(() =>
+        Alert.alert(
+          "Cannot open",
+          "Open the Play Store app to manage subscriptions."
+        )
+      );
+      return;
+    }
+    Linking.openURL("https://apps.apple.com/account/subscriptions").catch(() =>
+      Alert.alert(
+        "Cannot open",
+        "Open the App Store app to manage subscriptions."
+      )
+    );
   };
 
-  const restore = () => {
+  const onRestore = async () => {
+    if (isRestoring) {
+      return;
+    }
     Haptics.selectionAsync().catch(() => undefined);
-    Alert.alert(
-      "Restore purchases",
-      "No prior purchases found on this account."
-    );
+    setIsRestoring(true);
+    try {
+      const ok = await restore();
+      Alert.alert(
+        ok ? "Restored" : "Nothing to restore",
+        ok
+          ? "Your subscription is active."
+          : "No prior purchases found on this account."
+      );
+    } catch {
+      Alert.alert("Could not restore", "Check your connection and try again.");
+    } finally {
+      setIsRestoring(false);
+    }
   };
 
   const upgrade = () => {
@@ -129,7 +169,8 @@ export default function Subscription() {
               <Divider colors={colors} />
               <ActionRow
                 colors={colors}
-                onPress={restore}
+                loading={isRestoring}
+                onPress={onRestore}
                 sf="arrow.clockwise"
                 title="Restore purchases"
               />
@@ -356,17 +397,19 @@ function BenefitRow({
 
 function ActionRow({
   colors,
+  loading,
   onPress,
   sf,
   title,
 }: {
   colors: ThemeColors;
+  loading?: boolean;
   onPress: () => void;
   sf: string;
   title: string;
 }) {
   return (
-    <Pressable onPress={onPress}>
+    <Pressable disabled={loading} onPress={onPress}>
       {({ pressed }) => (
         <View
           style={{
@@ -375,7 +418,7 @@ function ActionRow({
             paddingHorizontal: 14,
             paddingVertical: 14,
             gap: 12,
-            opacity: pressed ? 0.7 : 1,
+            opacity: pressed || loading ? 0.7 : 1,
           }}
         >
           <View
@@ -400,11 +443,15 @@ function ActionRow({
           >
             {title}
           </Text>
-          <IconSymbol
-            color={colors.chevron}
-            name={"chevron.right" as never}
-            size={14}
-          />
+          {loading ? (
+            <ActivityIndicator color={colors.chevron} size="small" />
+          ) : (
+            <IconSymbol
+              color={colors.chevron}
+              name={"chevron.right" as never}
+              size={14}
+            />
+          )}
         </View>
       )}
     </Pressable>

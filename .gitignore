@@ -28,6 +28,12 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 *.tsbuildinfo
 .turbo/
 
+# graphify local state
+.graphify_*
+graphify-out/manifest.json
+graphify-out/cost.json
+graphify-out/cache/
+
 # git worktrees
 .worktrees
 

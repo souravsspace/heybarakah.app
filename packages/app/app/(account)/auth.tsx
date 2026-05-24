@@ -48,8 +48,14 @@ export default function Auth() {
   const oAuthGoogle = useGoogleAuth();
   const oAuthApple = useAppleAuth();
   const { user, isLoading: isUserLoading } = useUser();
-  const { activeSubscription, hydrated, claimPending, isSubscriptionLoading } =
-    useSubscription();
+  const {
+    activeSubscription,
+    isSubscriptionLoading,
+    offeringsLoading,
+    revenueCatReady,
+    purchase,
+    claimMockSubscription,
+  } = useSubscription();
   const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(
     null
   );
@@ -83,16 +89,22 @@ export default function Auth() {
   }
 
   useEffect(() => {
-    if (!(user && hydrated) || isSubscriptionLoading || handlingRef.current) {
+    if (!user || isSubscriptionLoading || handlingRef.current) {
       return;
     }
+
+    const selectedPlan = state.plan;
+    const needsRevenueCat =
+      mode === "signup" && !activeSubscription && Boolean(selectedPlan);
+    if (needsRevenueCat && (!revenueCatReady || offeringsLoading)) {
+      return;
+    }
+
     handlingRef.current = true;
 
     (async () => {
       try {
-        const result = await claimPending();
-
-        if (result === "claimed") {
+        if (activeSubscription) {
           if (mode === "signup") {
             router.replace("/success" as never);
             return;
@@ -104,11 +116,23 @@ export default function Auth() {
           return;
         }
 
-        if (activeSubscription) {
-          if (!state.completedAt) {
-            dispatch({ type: "COMPLETE" });
+        if (mode === "signup" && selectedPlan) {
+          const result = await purchase(selectedPlan);
+          if (result.ok) {
+            router.replace("/success" as never);
+            return;
           }
-          router.replace("/home");
+          if (result.cancelled) {
+            router.replace("/no-active-sub" as never);
+            return;
+          }
+          if (__DEV__ && result.reason === "package-unavailable") {
+            await claimMockSubscription(selectedPlan);
+            router.replace("/success" as never);
+            return;
+          }
+          Alert.alert("Purchase failed", result.reason);
+          router.replace("/no-active-sub" as never);
           return;
         }
 
@@ -121,12 +145,15 @@ export default function Auth() {
     })();
   }, [
     user,
-    hydrated,
     isSubscriptionLoading,
     mode,
-    claimPending,
     activeSubscription,
+    revenueCatReady,
+    offeringsLoading,
+    state.plan,
     state.completedAt,
+    purchase,
+    claimMockSubscription,
     dispatch,
     router,
   ]);

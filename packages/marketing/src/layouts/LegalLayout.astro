@@ -1,0 +1,319 @@
+---
+import Layout from "./Layout.astro";
+
+interface TocItem {
+  id: string;
+  label: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  heading: string;
+  eyebrow?: string;
+  effective: string;
+  updated: string;
+  canonical?: string;
+  toc?: TocItem[];
+}
+
+const {
+  title,
+  description,
+  heading,
+  eyebrow = "Legal",
+  effective,
+  updated,
+  canonical,
+  toc = [],
+} = Astro.props;
+
+const pathname = Astro.url.pathname.replace(/\/$/, "");
+const tabs = [
+  { href: "/terms", label: "Terms of service" },
+  { href: "/privacy", label: "Privacy policy" },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} type="article">
+  <section class="bg-[color:var(--color-surface-soft)]">
+    <div class="mx-auto max-w-6xl px-6 pt-24 pb-12 md:pt-28">
+      <a
+        href="/"
+        class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-primary)]"
+      >
+        <span aria-hidden="true">←</span> Back to home
+      </a>
+
+      <p class="t-eyebrow mt-8 text-[color:var(--color-fg-muted)]">{eyebrow}</p>
+
+      <h1 class="serif mt-4 text-[2.5rem] leading-[1.05] font-bold tracking-tight text-[color:var(--color-fg)] md:text-[3.5rem]">
+        {heading}
+      </h1>
+
+      <p class="mt-6 max-w-2xl text-base leading-7 text-[color:var(--color-fg-muted)] md:text-lg md:leading-8">
+        {description}
+      </p>
+
+      <dl class="mt-10 flex flex-wrap items-center gap-x-10 gap-y-3 text-xs">
+        <div class="flex items-baseline gap-2">
+          <dt class="uppercase tracking-[0.14em] text-[color:var(--color-fg-subtle)]">Effective</dt>
+          <dd class="font-medium text-[color:var(--color-fg)]">{effective}</dd>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <dt class="uppercase tracking-[0.14em] text-[color:var(--color-fg-subtle)]">Last updated</dt>
+          <dd class="font-medium text-[color:var(--color-fg)]">{updated}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <nav class="border-t border-[color:var(--color-border)]" aria-label="Legal sections">
+      <div class="mx-auto flex max-w-6xl gap-1 px-6">
+        {
+          tabs.map((tab) => {
+            const active = pathname === tab.href;
+            return (
+              <a
+                href={tab.href}
+                aria-current={active ? "page" : undefined}
+                class:list={[
+                  "relative px-4 py-4 text-sm font-medium transition-colors",
+                  active
+                    ? "text-[color:var(--color-fg)]"
+                    : "text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)]",
+                ]}
+              >
+                {tab.label}
+                {active && (
+                  <span class="absolute inset-x-4 -bottom-px h-0.5 bg-[color:var(--color-primary)]" />
+                )}
+              </a>
+            );
+          })
+        }
+      </div>
+    </nav>
+  </section>
+
+  <section class="bg-white">
+    <div class="mx-auto grid max-w-6xl gap-12 px-6 py-16 md:grid-cols-[220px_minmax(0,1fr)] md:gap-16 md:py-20">
+      {
+        toc.length > 0 && (
+          <aside class="hidden md:block">
+            <div class="sticky top-24">
+              <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[color:var(--color-fg)]">
+                On this page
+              </p>
+              <ol class="mt-5 space-y-3">
+                {toc.map((item, i) => (
+                  <li>
+                    <a
+                      href={`#${item.id}`}
+                      class="group flex items-baseline gap-3 text-xs leading-5 text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-primary)]"
+                    >
+                      <span class="font-mono text-[10px] text-[color:var(--color-fg-subtle)] group-hover:text-[color:var(--color-primary)]">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span>{item.label}</span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+              <div class="mt-8 h-px w-12 bg-[color:var(--color-border-strong)]" />
+              <p class="mt-6 text-xs leading-5 text-[color:var(--color-fg-muted)]">
+                Questions? Email
+                <a
+                  href="mailto:hello@heybarakah.app"
+                  class="text-[color:var(--color-primary)] underline underline-offset-4 hover:text-[color:var(--color-primary-hover)]"
+                >
+                  hello@heybarakah.app
+                </a>
+              </p>
+            </div>
+          </aside>
+        )
+      }
+
+      <article class="prose-legal min-w-0">
+        <slot />
+      </article>
+    </div>
+  </section>
+</Layout>
+
+<style is:global>
+  .prose-legal {
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.8;
+  }
+
+  .prose-legal > * + * {
+    margin-top: 1.25rem;
+  }
+
+  .prose-legal section {
+    scroll-margin-top: 96px;
+  }
+
+  .prose-legal section + section {
+    margin-top: 3.5rem;
+  }
+
+  .prose-legal section > * + * {
+    margin-top: 1.25rem;
+  }
+
+  .prose-legal h2 {
+    font-family: var(--font-serif);
+    font-size: 1.625rem;
+    line-height: 1.2;
+    font-weight: 700;
+    color: var(--color-fg);
+    letter-spacing: -0.015em;
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .prose-legal h2::before {
+    content: attr(data-index);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-fg-subtle);
+    flex-shrink: 0;
+    padding-top: 0.4rem;
+  }
+
+  .prose-legal h2:not([data-index])::before {
+    content: none;
+  }
+
+  .prose-legal h3 {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-fg);
+    margin-top: 2rem;
+  }
+
+  .prose-legal p {
+    color: var(--color-fg);
+  }
+
+  .prose-legal p.lead {
+    font-size: 1.125rem;
+    line-height: 1.75;
+    color: var(--color-fg-muted);
+  }
+
+  .prose-legal a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    transition: color 0.2s var(--ease-out);
+  }
+
+  .prose-legal a:hover {
+    color: var(--color-primary-hover);
+  }
+
+  .prose-legal strong {
+    color: var(--color-fg);
+    font-weight: 600;
+  }
+
+  .prose-legal ul,
+  .prose-legal ol {
+    padding-left: 1.5rem;
+    color: var(--color-fg);
+  }
+
+  .prose-legal ul {
+    list-style: disc;
+  }
+
+  .prose-legal ol {
+    list-style: decimal;
+  }
+
+  .prose-legal li + li {
+    margin-top: 0.5rem;
+  }
+
+  .prose-legal li::marker {
+    color: var(--color-fg-subtle);
+  }
+
+  .prose-legal hr {
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    margin: 3.5rem 0;
+  }
+
+  .prose-legal blockquote {
+    border-left: 2px solid var(--color-primary);
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    color: var(--color-fg-muted);
+    font-style: normal;
+    background: var(--color-primary-soft);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 1rem 1.25rem;
+  }
+
+  .prose-legal .callout {
+    border: 1px solid var(--color-border);
+    border-left: 2px solid var(--color-primary);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 1.25rem 1.5rem;
+    background: var(--color-surface-soft);
+  }
+
+  .prose-legal .callout p {
+    color: var(--color-fg-muted);
+    font-size: 0.9375rem;
+  }
+
+  .prose-legal code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.875em;
+    background: var(--color-surface-muted);
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .prose-legal address {
+    font-style: normal;
+    color: var(--color-fg-muted);
+  }
+
+  .prose-legal table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+
+  .prose-legal th,
+  .prose-legal td {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+
+  .prose-legal th {
+    font-weight: 600;
+    color: var(--color-fg);
+    background: var(--color-surface-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+  }
+</style>

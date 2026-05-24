@@ -1,5 +1,4 @@
 import { api } from "@barakah/core/convex/_generated/api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import {
@@ -10,12 +9,28 @@ import {
   useMemo,
   useState,
 } from "react";
+import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
+import Purchases from "react-native-purchases";
+import { useUser } from "@/contexts/user-context";
+import {
+  configureRevenueCatAnonymous,
+  findPackageForPlan,
+  getCustomerInfo,
+  getOfferings,
+  isRevenueCatSupported,
+  linkRevenueCatToUser,
+  mapCustomerInfoToSync,
+  purchasePackage,
+  type RcPlanId,
+  restorePurchases,
+} from "./revenuecat";
 
-const STORAGE_KEY = "subscription-pending:v1";
+export type ProductId = RcPlanId;
 
-export type ProductId = "yearly" | "monthly" | "family";
-
-export type ClaimResult = "claimed" | "no-pending";
+export type PurchaseOutcome =
+  | { ok: true; alreadyOwned: boolean }
+  | { ok: false; cancelled: true }
+  | { ok: false; cancelled: false; reason: string };
 
 type ActiveSubscription = FunctionReturnType<
   typeof api.lib.subscriptions.getMySubscription
@@ -23,13 +38,15 @@ type ActiveSubscription = FunctionReturnType<
 
 interface Ctx {
   activeSubscription: ActiveSubscription | undefined;
-  claimPending(): Promise<ClaimResult>;
-  clearPending(): Promise<void>;
-  hydrated: boolean;
+  claimMockSubscription(planId: ProductId): Promise<void>;
+  isPurchasing: boolean;
   isSubscriptionLoading: boolean;
-  pending: ProductId | null;
-  purchasePending(productId: ProductId): Promise<void>;
+  offerings: PurchasesOffering | null;
+  offeringsLoading: boolean;
+  purchase(planId: ProductId): Promise<PurchaseOutcome>;
+  refresh(): Promise<void>;
   restore(): Promise<boolean>;
+  revenueCatReady: boolean;
 }
 
 const SubscriptionContext = createContext<Ctx | null>(null);
@@ -39,86 +56,181 @@ export function SubscriptionProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [pending, setPending] = useState<ProductId | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-
+  const { user } = useUser();
   const activeSubscription = useQuery(api.lib.subscriptions.getMySubscription);
-  const claimMutation = useMutation(
+  const syncMutation = useMutation(
+    api.lib.subscriptions.syncRevenueCatEntitlement
+  );
+  const claimMockMutation = useMutation(
     api.lib.subscriptions.claimMockSubscription
   );
 
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => {
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw) as { pending: unknown };
-            const productId = parsed.pending;
-            if (
-              productId === "yearly" ||
-              productId === "monthly" ||
-              productId === "family"
-            ) {
-              setPending(productId);
-            }
-          } catch {
-            // corrupt — keep null
-          }
-        }
-      })
-      .finally(() => setHydrated(true));
-  }, []);
+  const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
+  const [offeringsLoading, setOfferingsLoading] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [revenueCatReady, setRevenueCatReady] = useState(false);
 
-  const purchasePending = useCallback(async (productId: ProductId) => {
-    setPending(productId);
-    await AsyncStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ pending: productId })
-    );
-  }, []);
-
-  const claimPending = useCallback(async (): Promise<ClaimResult> => {
-    if (!pending) {
-      return "no-pending";
-    }
-    await claimMutation({ productId: pending });
-    setPending(null);
-    await AsyncStorage.removeItem(STORAGE_KEY);
-    return "claimed";
-  }, [pending, claimMutation]);
-
-  const restore = useCallback(
-    async () => Boolean(activeSubscription),
-    [activeSubscription]
+  const syncCustomerInfo = useCallback(
+    async (info: CustomerInfo) => {
+      if (!user) {
+        return;
+      }
+      await syncMutation(mapCustomerInfoToSync(info));
+    },
+    [syncMutation, user]
   );
 
-  const clearPending = useCallback(async () => {
-    setPending(null);
-    await AsyncStorage.removeItem(STORAGE_KEY);
-  }, []);
+  const syncCustomerInfoQuiet = useCallback(
+    async (info: CustomerInfo) => {
+      try {
+        await syncCustomerInfo(info);
+      } catch {
+        // Passive listener path; user-initiated paths surface errors.
+      }
+    },
+    [syncCustomerInfo]
+  );
+
+  const refresh = useCallback(async () => {
+    if (!isRevenueCatSupported()) {
+      return;
+    }
+    setOfferingsLoading(true);
+    try {
+      const current = await getOfferings();
+      setOfferings(current);
+      const info = await getCustomerInfo();
+      if (info) {
+        await syncCustomerInfoQuiet(info);
+      }
+    } finally {
+      setOfferingsLoading(false);
+    }
+  }, [syncCustomerInfoQuiet]);
+
+  useEffect(() => {
+    if (!isRevenueCatSupported()) {
+      setRevenueCatReady(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const ok = user
+          ? await linkRevenueCatToUser(user._id)
+          : await configureRevenueCatAnonymous();
+        if (cancelled || !ok) {
+          return;
+        }
+        setRevenueCatReady(true);
+        await refresh();
+      } catch {
+        // Configuration failure leaves provider in query-only mode.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, refresh]);
+
+  useEffect(() => {
+    if (!(revenueCatReady && isRevenueCatSupported())) {
+      return;
+    }
+    const listener = (info: CustomerInfo) => {
+      syncCustomerInfoQuiet(info).catch(() => undefined);
+    };
+    Purchases.addCustomerInfoUpdateListener(listener);
+    return () => {
+      Purchases.removeCustomerInfoUpdateListener(listener);
+    };
+  }, [revenueCatReady, syncCustomerInfoQuiet]);
+
+  // Note: anonymous mode stays configured after logout; no teardown needed.
+
+  const purchase = useCallback(
+    async (planId: ProductId): Promise<PurchaseOutcome> => {
+      if (isPurchasing) {
+        return { ok: false, cancelled: false, reason: "in-flight" };
+      }
+      if (!isRevenueCatSupported()) {
+        return { ok: false, cancelled: false, reason: "unsupported-platform" };
+      }
+      const pkg = findPackageForPlan(offerings, planId);
+      if (!pkg) {
+        return { ok: false, cancelled: false, reason: "package-unavailable" };
+      }
+      setIsPurchasing(true);
+      try {
+        const result = await purchasePackage(pkg);
+        if (!result.ok) {
+          return { ok: false, cancelled: true };
+        }
+        await syncCustomerInfo(result.customerInfo);
+        const entitlement = result.customerInfo.entitlements.active.premium;
+        const alreadyOwned = Boolean(
+          entitlement &&
+            entitlement.latestPurchaseDate !== entitlement.originalPurchaseDate
+        );
+        return { ok: true, alreadyOwned };
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : "purchase-failed";
+        return { ok: false, cancelled: false, reason };
+      } finally {
+        setIsPurchasing(false);
+      }
+    },
+    [isPurchasing, offerings, syncCustomerInfo]
+  );
+
+  const restore = useCallback(async (): Promise<boolean> => {
+    if (!isRevenueCatSupported()) {
+      return Boolean(activeSubscription);
+    }
+    const info = await restorePurchases();
+    if (info) {
+      await syncCustomerInfo(info);
+      return Boolean(info.entitlements.active.premium);
+    }
+    return Boolean(activeSubscription);
+  }, [activeSubscription, syncCustomerInfo]);
+
+  const claimMockSubscription = useCallback(
+    async (planId: ProductId) => {
+      if (!__DEV__) {
+        throw new Error("Mock subscription is dev-only");
+      }
+      await claimMockMutation({ productId: planId });
+    },
+    [claimMockMutation]
+  );
 
   const isSubscriptionLoading = activeSubscription === undefined;
 
   const value = useMemo<Ctx>(
     () => ({
       activeSubscription,
-      claimPending,
-      clearPending,
-      hydrated,
       isSubscriptionLoading,
-      pending,
-      purchasePending,
+      isPurchasing,
+      offerings,
+      offeringsLoading,
+      revenueCatReady,
+      claimMockSubscription,
+      purchase,
       restore,
+      refresh,
     }),
     [
       activeSubscription,
-      claimPending,
-      clearPending,
-      hydrated,
       isSubscriptionLoading,
-      pending,
-      purchasePending,
+      isPurchasing,
+      offerings,
+      offeringsLoading,
+      revenueCatReady,
+      claimMockSubscription,
+      purchase,
       restore,
+      refresh,
     ]
   );
 

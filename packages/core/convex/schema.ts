@@ -1,7 +1,11 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { shieldSelectionFields } from "../src/shieldSelection/validators";
-import { productId } from "../src/subscriptions/validators";
+import {
+  productId,
+  revenueCatPeriodType,
+  revenueCatStore,
+} from "../src/subscriptions/validators";
 import { profileFields } from "../src/users/validators";
 
 const userFields = { authUserId: v.string(), ...profileFields };
@@ -18,7 +22,11 @@ export default defineSchema({
       v.literal("canceled"),
       v.literal("past_due")
     ),
-    source: v.union(v.literal("mock"), v.literal("polar")),
+    source: v.union(
+      v.literal("mock"),
+      v.literal("polar"),
+      v.literal("revenuecat")
+    ),
     claimedAt: v.optional(v.string()),
     activatedAt: v.optional(v.string()),
     updatedAt: v.optional(v.string()),
@@ -26,12 +34,21 @@ export default defineSchema({
     polarCustomerId: v.optional(v.string()),
     polarProductId: v.optional(v.string()),
     polarOrderId: v.optional(v.string()),
+    rcAppUserId: v.optional(v.string()),
+    rcOriginalAppUserId: v.optional(v.string()),
+    rcProductIdentifier: v.optional(v.string()),
+    rcEntitlementId: v.optional(v.string()),
+    rcStore: v.optional(revenueCatStore),
+    rcPeriodType: v.optional(revenueCatPeriodType),
+    rcWillRenew: v.optional(v.boolean()),
+    rcLatestPurchaseAt: v.optional(v.string()),
   })
     .index("by_authUserId", ["authUserId"])
     .index("by_authUserId_status", ["authUserId", "status"])
     .index("by_customerEmail", ["customerEmail"])
     .index("by_polarOrderId", ["polarOrderId"])
-    .index("by_polarCustomerId", ["polarCustomerId"]),
+    .index("by_polarCustomerId", ["polarCustomerId"])
+    .index("by_rcAppUserId", ["rcAppUserId"]),
   polarOrders: defineTable({
     polarOrderId: v.string(),
     polarCustomerId: v.optional(v.string()),
@@ -141,4 +158,18 @@ export default defineSchema({
     target: v.number(),
     updatedAt: v.number(),
   }).index("by_user_date", ["authUserId", "date"]),
+  dhikrAggregate: defineTable({
+    authUserId: v.string(),
+    total: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["authUserId"]),
+  userAchievements: defineTable({
+    authUserId: v.string(),
+    code: v.string(),
+    unlockedAt: v.number(),
+    seenAt: v.optional(v.number()),
+  })
+    .index("by_user", ["authUserId"])
+    .index("by_user_code", ["authUserId", "code"])
+    .index("by_user_seen", ["authUserId", "seenAt"]),
 });

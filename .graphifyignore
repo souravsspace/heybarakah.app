@@ -1,0 +1,73 @@
+# Dependency directories
+node_modules
+Pods
+.yarn
+.pnpm-store
+
+# Build output and generated caches
+dist
+out
+build
+coverage
+.turbo
+.expo
+.astro
+.wrangler
+.cache
+DerivedData
+.gradle
+generated
+_generated
+*.tsbuildinfo
+
+# Graphify output and temporary extraction files
+graphify-out
+.graphify_*
+
+# Local environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.mobileprovision
+
+# Logs and reports
+logs
+*.log
+*.lcov
+report.*.json
+
+# Package manager and native dependency lockfiles
+bun.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+Podfile.lock
+Gemfile.lock
+
+# Binary assets and media
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.avif
+*.ico
+*.svg
+*.pdf
+*.mp4
+*.mov
+*.mp3
+*.wav
+*.ttf
+*.otf
+*.woff
+*.woff2
+
+# Archives and platform cruft
+*.zip
+*.tar
+*.tgz
+*.gz
+.DS_Store

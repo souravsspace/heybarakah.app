@@ -29,9 +29,11 @@ class ShieldActionExtension: ShieldActionDelegate {
   private func handleAction(_ action: ShieldAction, completionHandler: @escaping (ShieldActionResponse) -> Void) {
     switch action {
     case .primaryButtonPressed:
+      NSLog("[ShieldAction] primaryButtonPressed")
       setPendingUnlockFlag()
       schedulePendingUnlockNotification { didSchedule in
-        let response: ShieldActionResponse = didSchedule ? .none : .defer
+        NSLog("[ShieldAction] schedulePendingUnlockNotification didSchedule=\(didSchedule)")
+        let response: ShieldActionResponse = didSchedule ? .close : .defer
         self.complete(on: response, completionHandler: completionHandler)
       }
 
@@ -72,10 +74,15 @@ class ShieldActionExtension: ShieldActionDelegate {
   private func schedulePendingUnlockNotification(completion: @escaping (Bool) -> Void) {
     let center = UNUserNotificationCenter.current()
 
+    center.getNotificationSettings { settings in
+      NSLog("[ShieldAction] notif authStatus=\(settings.authorizationStatus.rawValue) alert=\(settings.alertSetting.rawValue) timeSensitive=\(settings.timeSensitiveSetting.rawValue)")
+    }
+
     let content = UNMutableNotificationContent()
     content.title = notificationTitle
     content.body = notificationBody
     content.sound = .default
+    content.interruptionLevel = .timeSensitive
     content.userInfo = ["link": "/unlock"]
 
     // Attach the app icon to the notification only when the app opted in.
@@ -87,14 +94,20 @@ class ShieldActionExtension: ShieldActionDelegate {
       }
     }
 
+    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
     let request = UNNotificationRequest(
       identifier: pendingUnlockNotificationIdentifier,
       content: content,
-      trigger: nil
+      trigger: trigger
     )
 
     center.removePendingNotificationRequests(withIdentifiers: [pendingUnlockNotificationIdentifier])
     center.add(request) { error in
+      if let error = error {
+        NSLog("[ShieldAction] notif add failed: \(error.localizedDescription)")
+      } else {
+        NSLog("[ShieldAction] notif add ok id=\(self.pendingUnlockNotificationIdentifier)")
+      }
       completion(error == nil)
     }
   }

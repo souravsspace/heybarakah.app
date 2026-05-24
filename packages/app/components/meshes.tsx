@@ -458,3 +458,234 @@ export function ProgressMesh({ dark }: MeshProps) {
     </MeshShell>
   );
 }
+
+export function UnlockMesh({ dark }: MeshProps) {
+  if (dark) {
+    return (
+      <MeshShell>
+        <Defs>
+          <RadialGradient cx="50%" cy="18%" id="unlockDarkThreshold" r="76%">
+            <Stop offset="0" stopColor="#DDE8E1" stopOpacity={0.1} />
+            <Stop offset="0.42" stopColor={BARAKAH_GREEN} stopOpacity={0.2} />
+            <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient cx="8%" cy="96%" id="unlockDarkLeft" r="70%">
+            <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.24} />
+            <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.08} />
+            <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient cx="100%" cy="0%" id="unlockDarkRight" r="58%">
+            <Stop offset="0" stopColor="#DDE8E1" stopOpacity={0.07} />
+            <Stop offset="0.6" stopColor="#DDE8E1" stopOpacity={0.02} />
+            <Stop offset="1" stopColor="#DDE8E1" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect fill="#0B0E0C" height="220" width="320" x="0" y="0" />
+        <Rect
+          fill="url(#unlockDarkThreshold)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+        <Rect
+          fill="url(#unlockDarkLeft)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+        <Rect
+          fill="url(#unlockDarkRight)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+      </MeshShell>
+    );
+  }
+  return (
+    <MeshShell>
+      <Defs>
+        <RadialGradient cx="50%" cy="18%" id="unlockLightThreshold" r="76%">
+          <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.92} />
+          <Stop offset="0.42" stopColor="#FAF7F0" stopOpacity={0.38} />
+          <Stop offset="1" stopColor="#FAF7F0" stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="8%" cy="96%" id="unlockLightLeft" r="70%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.14} />
+          <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.05} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="100%" cy="0%" id="unlockLightRight" r="58%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.1} />
+          <Stop offset="0.6" stopColor={BARAKAH_GREEN} stopOpacity={0.03} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect fill="#F8FAF8" height="220" width="320" x="0" y="0" />
+      <Rect
+        fill="url(#unlockLightThreshold)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+      <Rect fill="url(#unlockLightLeft)" height="220" width="320" x="0" y="0" />
+      <Rect
+        fill="url(#unlockLightRight)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+    </MeshShell>
+  );
+}
+
+export function AchievementsMesh({ dark }: MeshProps) {
+  if (dark) {
+    return (
+      <MeshShell>
+        <Defs>
+          <RadialGradient cx="92%" cy="-6%" id="hidayahDarkCrown" r="72%">
+            <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.22} />
+            <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.07} />
+            <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient cx="6%" cy="106%" id="hidayahDarkPaper" r="76%">
+            <Stop offset="0" stopColor="#F5EBDB" stopOpacity={0.05} />
+            <Stop offset="0.6" stopColor="#F5EBDB" stopOpacity={0.02} />
+            <Stop offset="1" stopColor="#F5EBDB" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect fill="#0E1311" height="220" width="320" x="0" y="0" />
+        <Rect
+          fill="url(#hidayahDarkCrown)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+        <Rect
+          fill="url(#hidayahDarkPaper)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+      </MeshShell>
+    );
+  }
+  return (
+    <MeshShell>
+      <Defs>
+        <RadialGradient cx="94%" cy="-4%" id="hidayahLightCrown" r="68%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.14} />
+          <Stop offset="0.5" stopColor={BARAKAH_GREEN} stopOpacity={0.05} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="6%" cy="106%" id="hidayahLightWhisper" r="62%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.08} />
+          <Stop offset="0.55" stopColor={BARAKAH_GREEN} stopOpacity={0.03} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="50%" cy="0%" id="hidayahLightDawn" r="78%">
+          <Stop offset="0" stopColor="#FAF7F0" stopOpacity={0.7} />
+          <Stop offset="0.55" stopColor="#FAF7F0" stopOpacity={0.22} />
+          <Stop offset="1" stopColor="#FAF7F0" stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect fill="#F8F1E1" height="220" width="320" x="0" y="0" />
+      <Rect
+        fill="url(#hidayahLightDawn)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+      <Rect
+        fill="url(#hidayahLightCrown)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+      <Rect
+        fill="url(#hidayahLightWhisper)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+    </MeshShell>
+  );
+}
+
+export function SplashMesh({ dark }: MeshProps) {
+  if (dark) {
+    return (
+      <MeshShell>
+        <Defs>
+          <RadialGradient cx="88%" cy="14%" id="splashDarkAccent" r="68%">
+            <Stop offset="0" stopColor="#29603E" stopOpacity={0.14} />
+            <Stop offset="0.55" stopColor="#29603E" stopOpacity={0.05} />
+            <Stop offset="1" stopColor="#29603E" stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient cx="8%" cy="92%" id="splashDarkCream" r="70%">
+            <Stop offset="0" stopColor="#F5EBDB" stopOpacity={0.06} />
+            <Stop offset="0.6" stopColor="#F5EBDB" stopOpacity={0.02} />
+            <Stop offset="1" stopColor="#F5EBDB" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect fill="#0E1311" height="220" width="320" x="0" y="0" />
+        <Rect
+          fill="url(#splashDarkAccent)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+        <Rect
+          fill="url(#splashDarkCream)"
+          height="220"
+          width="320"
+          x="0"
+          y="0"
+        />
+      </MeshShell>
+    );
+  }
+  return (
+    <MeshShell>
+      <Defs>
+        <RadialGradient cx="88%" cy="12%" id="splashLightAccent" r="68%">
+          <Stop offset="0" stopColor="#29603E" stopOpacity={0.1} />
+          <Stop offset="0.55" stopColor="#29603E" stopOpacity={0.04} />
+          <Stop offset="1" stopColor="#29603E" stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient cx="8%" cy="92%" id="splashLightGreen" r="70%">
+          <Stop offset="0" stopColor={BARAKAH_GREEN} stopOpacity={0.06} />
+          <Stop offset="0.6" stopColor={BARAKAH_GREEN} stopOpacity={0.02} />
+          <Stop offset="1" stopColor={BARAKAH_GREEN} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect fill="#F8F1E1" height="220" width="320" x="0" y="0" />
+      <Rect
+        fill="url(#splashLightAccent)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+      <Rect
+        fill="url(#splashLightGreen)"
+        height="220"
+        width="320"
+        x="0"
+        y="0"
+      />
+    </MeshShell>
+  );
+}

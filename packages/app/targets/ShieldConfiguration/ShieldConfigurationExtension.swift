@@ -9,18 +9,18 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
   // All values below are replaced by the config plugin at prebuild time
   private let shieldTitle = "Quiet at salah."
   private let shieldSubtitle = "{appName} rests for prayer."
-  private let shieldPrimaryButtonLabel = "Hold for du'a"
+  private let shieldPrimaryButtonLabel = "Open Barakah"
   private let shieldSecondaryButtonLabel = "none"
   // Temporary-unlock state copy — shown briefly while ManagedSettings clears
   // after a successful unlock. Configurable via plugin options.
   private let shieldTempUnlockTitle = "Almost there."
   private let shieldTempUnlockSubtitle = "Quiet lifts in a moment."
   private let shieldTempUnlockButtonLabel = "OK"
-  private let shieldPrimaryButtonColor = UIColor(red: 0.161, green: 0.376, blue: 0.243, alpha: 1.0)
-  private let shieldBackgroundColor: UIColor? = UIColor(red: 1.000, green: 1.000, blue: 1.000, alpha: 1.0)
+  private let shieldPrimaryButtonColor: UIColor = UIColor(red: 0.161, green: 0.376, blue: 0.243, alpha: 1.0)
+  private let shieldBackgroundColor: UIColor? = UIColor { trait in trait.userInterfaceStyle == .dark ? UIColor(red: 0.055, green: 0.059, blue: 0.055, alpha: 1.0) : UIColor(red: 1.000, green: 1.000, blue: 1.000, alpha: 1.0) }
   private let shieldBlurStyle: UIBlurEffect.Style? = .systemThickMaterial
-  private let shieldTitleColor = UIColor(red: 0.039, green: 0.039, blue: 0.039, alpha: 1.0)
-  private let shieldSubtitleColor = UIColor(red: 0.420, green: 0.447, blue: 0.502, alpha: 1.0)
+  private let shieldTitleColor: UIColor = UIColor { trait in trait.userInterfaceStyle == .dark ? UIColor(red: 0.949, green: 0.957, blue: 0.945, alpha: 1.0) : UIColor(red: 0.039, green: 0.039, blue: 0.039, alpha: 1.0) }
+  private let shieldSubtitleColor: UIColor = UIColor { trait in trait.userInterfaceStyle == .dark ? UIColor(red: 0.612, green: 0.639, blue: 0.608, alpha: 1.0) : UIColor(red: 0.420, green: 0.447, blue: 0.502, alpha: 1.0) }
 
   private var mascotIcon: UIImage? {
     let bundle = Bundle(for: type(of: self))

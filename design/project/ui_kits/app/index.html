@@ -27,113 +27,28 @@
       font-family: "Inter", sans-serif;
       background: #f4f2ee;
     }
-    .doc {
-      max-width: 1640px;
-      padding: 40px 28px 140px;
-      margin: 0 auto;
-    }
-    .doc-head {
-      margin-bottom: 24px;
-      text-align: center;
-    }
-    .doc-head h1 {
-      margin: 0;
-      font:
-        700 28px / 1.15 "Libre Baskerville",
-        Georgia,
-        serif;
-      color: #0f1311;
-      letter-spacing: -0.01em;
-    }
-    .doc-head p {
-      margin: 8px 0 0;
-      font-size: 13px;
-      color: #6b7280;
-    }
-    .group {
-      margin-top: 36px;
-    }
-    .group-head {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      max-width: 1500px;
-      margin-right: auto;
-      margin-bottom: 18px;
-      margin-left: auto;
-    }
-    .group-head h2 {
-      margin: 0;
-      font: 700 11px / 1 "Inter";
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: 0.24em;
-    }
-    .group-head .rule {
-      flex: 1;
-      height: 1px;
-      background: #e5e7eb;
-    }
-    .group-head .count {
-      font: 600 11px / 1 "Inter";
-      color: #6b7280;
-      letter-spacing: 0.02em;
-    }
     .stage {
       display: flex;
       flex-wrap: wrap;
       gap: 28px;
       align-items: flex-start;
       justify-content: center;
+      padding: 36px;
     }
-    .frame-label {
-      margin-top: 14px;
-      font: 700 11px / 1 "Inter";
-      color: #6b7280;
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-    }
-    .frame-col {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .nav-strip {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      z-index: 9999;
-      display: flex;
-      gap: 2px;
-      align-items: center;
-      padding: 5px;
-      color: #fff;
-      background: #0f1311;
-      border-radius: 9999px;
-      box-shadow: 0 12px 32px rgba(11, 23, 16, 0.22);
-      transform: translateX(-50%);
-    }
-    .nav-strip button {
-      padding: 7px 12px;
-      font: 600 11.5px / 1 "Inter";
-      color: rgba(255, 255, 255, 0.65);
-      letter-spacing: 0.02em;
-      cursor: pointer;
-      background: transparent;
-      border: 0;
-      border-radius: 9999px;
-    }
-    .nav-strip button.active {
-      color: #fff;
-      background: #29603e;
-    }
-    .nav-strip .divider {
-      width: 1px;
-      height: 18px;
-      margin: 0 4px;
-      background: rgba(255, 255, 255, 0.18);
-    }
+    .frame-label { ...font-family: Inter; text-align: center; margin-top: 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #6B7280; }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    .frame-col { display: flex; flex-direction: column; align-items: center; }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    .nav-strip {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      position: fixed; bottom: 20px; left: 50%; 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      z-index: 9999;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      display: flex; gap: 4px; padding: 6px; color: #fff; 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      background: #0F1311; border-radius: 9999px;box-shadow: 0 12px 32px rgba(11,23,16,0.18);transform: translateX(-50%);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    .nav-strip button {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      padding: 8px 18px; 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      font: 600 12px/1 "Inter"; color: rgba(255,255,255,0.65);letter-spacing: 0.02em;cursor: pointer;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      background: transparent; border: 0; border-radius: 9999px;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    .nav-strip button.active { color: #fff; background: #29603E; }
     </style>
   </head>
   <body>
@@ -158,20 +73,14 @@
     <script type="text/babel" src="ios-frame.jsx"></script>
     <script type="text/babel" src="components.jsx"></script>
     <script type="text/babel" src="screens.jsx"></script>
-    <script type="text/babel" src="app-screens.jsx"></script>
 
     <script type="text/babel">
   const screens = [
-    { id: 'welcome',  label: '01 Welcome',      group: 'Onboarding', Comp: WelcomeScreen },
-    { id: 'promise',  label: '02 Promise',      group: 'Onboarding', Comp: PromiseScreen },
-    { id: 'lock',     label: '03 Lock preview', group: 'Onboarding', Comp: LockPreviewScreen },
-    { id: 'madhab',   label: '04 Madhab',       group: 'Onboarding', Comp: MadhabScreen },
-    { id: 'paywall',  label: '05 Paywall',      group: 'Onboarding', Comp: PaywallScreen },
-    { id: 'home',     label: '06 Home',         group: 'App',        Comp: HomeScreen },
-    { id: 'progress', label: '07 Progress',     group: 'App',        Comp: ProgressScreen },
-    { id: 'dhikr',    label: '08 Dhikr',        group: 'App',        Comp: DhikrScreen },
-    { id: 'locked',   label: '09 Locked',       group: 'App',        Comp: LockedScreen },
-    { id: 'profile',  label: '10 Profile',      group: 'App',        Comp: ProfileScreen },
+    { id: 'welcome',  label: '01 Welcome',     Comp: WelcomeScreen },
+    { id: 'promise',  label: '02 Promise',     Comp: PromiseScreen },
+    { id: 'lock',     label: '03 Lock preview',Comp: LockPreviewScreen },
+    { id: 'madhab',   label: '04 Madhab',      Comp: MadhabScreen },
+    { id: 'paywall',  label: '05 Paywall',     Comp: PaywallScreen },
   ];
 
   function App() {
@@ -185,62 +94,29 @@
       setActive(screens[Math.max(i - 1, 0)].id);
     };
 
-    const groups = [
-      { id: 'Onboarding', subtitle: 'First-run flow' },
-      { id: 'App',        subtitle: 'Signed-in tabs' },
-    ];
-
     return (
       <React.Fragment>
-        <div className="doc">
-          <div className="doc-head">
-            <h1>Barakah — App UI Kit</h1>
-            <p>Pixel recreation of the heybarakah.app mobile flow · onboarding + main app</p>
-          </div>
-
-          {groups.map(g => {
-            const list = screens.filter(s => s.group === g.id);
+        <div className="stage">
+          {screens.map(s => {
+            const isActive = s.id === active;
+            const Comp = s.Comp;
+            const props = { onNext: next(s.id), onBack: back(s.id) };
             return (
-              <div className="group" key={g.id}>
-                <div className="group-head">
-                  <h2>{g.id}</h2>
-                  <span className="count">· {g.subtitle}</span>
-                  <div className="rule"/>
-                  <span className="count">{list.length} screens</span>
-                </div>
-                <div className="stage">
-                  {list.map(s => {
-                    const isActive = s.id === active;
-                    const Comp = s.Comp;
-                    const props = { onNext: next(s.id), onBack: back(s.id) };
-                    return (
-                      <div className="frame-col" key={s.id} data-screen-label={s.label}>
-                        <IOSDevice>
-                          <Comp {...props}/>
-                        </IOSDevice>
-                        <div className="frame-label" style={{ opacity: isActive ? 1 : 0.55, color: isActive ? '#29603E' : '#6B7280' }}>{s.label}</div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="frame-col" key={s.id} data-screen-label={s.label}>
+                <IOSDevice>
+                  <Comp {...props}/>
+                </IOSDevice>
+                <div className="frame-label" style={{ opacity: isActive ? 1 : 0.55, color: isActive ? '#29603E' : '#6B7280' }}>{s.label}</div>
               </div>
             );
           })}
         </div>
-
         <div className="nav-strip">
-          {screens.map((s, i) => {
-            const prevGroup = i > 0 ? screens[i - 1].group : null;
-            const showDivider = prevGroup && prevGroup !== s.group;
-            return (
-              <React.Fragment key={s.id}>
-                {showDivider && <div className="divider"/>}
-                <button className={s.id === active ? 'active' : ''} onClick={() => setActive(s.id)}>
-                  {s.label}
-                </button>
-              </React.Fragment>
-            );
-          })}
+          {screens.map(s => (
+            <button key={s.id} className={s.id === active ? 'active' : ''} onClick={() => setActive(s.id)}>
+              {s.label}
+            </button>
+          ))}
         </div>
       </React.Fragment>
     );

@@ -11,24 +11,38 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.souravsspace.Barakah",
-      "appleTeamId": "TODO_APPLE_TEAM_ID",
+      "appleTeamId": "CG5WX63737",
+      "infoPlist": {
+        "UIViewControllerBasedStatusBarAppearance": false,
+        "ITSAppUsesNonExemptEncryption": false
+      },
       "entitlements": {
         "com.apple.developer.family-controls": true,
         "com.apple.security.application-groups": [
+          "group.com.souravsspace.Barakah.shield",
           "group.com.souravsspace.Barakah.shield"
+        ]
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
         ]
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FAF4E8",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.souravsspace.Barakah"
+      "package": "com.souravsspace.Barakah",
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "output": "static",
@@ -40,11 +54,11 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 160,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#FAF4E8",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#0F1311"
           }
         }
       ],
@@ -62,12 +76,15 @@
             "shield": {
               "title": "Quiet at salah.",
               "subtitle": "{appName} rests for prayer.",
-              "primaryButtonLabel": "Hold for du'a",
+              "primaryButtonLabel": "Open Barakah",
               "secondaryButtonLabel": null,
               "primaryButtonColor": "#29603E",
               "titleColor": "#0A0A0A",
+              "darkTitleColor": "#F2F4F1",
               "subtitleColor": "#6B7280",
+              "darkSubtitleColor": "#9CA39B",
               "backgroundColor": "#FFFFFF",
+              "darkBackgroundColor": "#0E0F0E",
               "backgroundBlurStyle": "systemThickMaterial",
               "countSuffix": " {count} apps are quiet.",
               "tempUnlockTitle": "Almost there.",
@@ -95,8 +112,8 @@
             "ios": {
               "appExtensions": [
                 {
-                  "targetName": "DeviceActivityMonitor",
                   "bundleIdentifier": "com.souravsspace.Barakah.DeviceActivityMonitor",
+                  "targetName": "DeviceActivityMonitor",
                   "entitlements": {
                     "com.apple.developer.family-controls": true,
                     "com.apple.security.application-groups": [
@@ -105,8 +122,8 @@
                   }
                 },
                 {
-                  "targetName": "ShieldAction",
                   "bundleIdentifier": "com.souravsspace.Barakah.ShieldAction",
+                  "targetName": "ShieldAction",
                   "entitlements": {
                     "com.apple.developer.family-controls": true,
                     "com.apple.security.application-groups": [
@@ -115,10 +132,58 @@
                   }
                 },
                 {
-                  "targetName": "ShieldConfiguration",
                   "bundleIdentifier": "com.souravsspace.Barakah.ShieldConfiguration",
+                  "targetName": "ShieldConfiguration",
                   "entitlements": {
                     "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.souravsspace.Barakah.BarakahWidgets",
+                  "targetName": "BarakahWidgets",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.souravsspace.Barakah.DeviceActivityMonitor",
+                  "targetName": "DeviceActivityMonitor",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.souravsspace.Barakah.ShieldAction",
+                  "targetName": "ShieldAction",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.souravsspace.Barakah.ShieldConfiguration",
+                  "targetName": "ShieldConfiguration",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.souravsspace.Barakah.shield"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.souravsspace.Barakah.BarakahWidgets",
+                  "targetName": "BarakahWidgets",
+                  "entitlements": {
                     "com.apple.security.application-groups": [
                       "group.com.souravsspace.Barakah.shield"
                     ]
@@ -127,8 +192,11 @@
               ]
             }
           }
-        }
-      }
-    }
+        },
+        "projectId": "0cc15480-24aa-452a-a6e6-b4e125043f31"
+      },
+      "router": {}
+    },
+    "owner": "souravsspace"
   }
 }

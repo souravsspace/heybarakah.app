@@ -1,0 +1,200 @@
+import { useEffect } from "react";
+import { StyleSheet, useColorScheme, View } from "react-native";
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
+import { Path, Svg } from "react-native-svg";
+
+import { SplashMesh } from "@/components/meshes";
+
+const PATH_OUTER =
+  "M20.1605 485.23C19.8705 483.25 19.3505 476.95 18.9905 471.31C16.6505 432.2 28.5805 402.32 58.2505 373.53C79.4905 352.95 100.66 339.84 154.12 314.35C174.92 304.46 190.45 296.33 202.09 289.3C207.95 285.71 209.12 285.27 209.49 286.3C210.66 289.3 211.83 307.91 211.83 322.63C211.9 366.14 201.65 403.86 180.56 438.35C173.53 449.78 166.13 459.22 155.58 470.06C145.62 480.39 134.71 489.91 135.8 487.42C144.66 466.55 151.84 436.74 154.48 410.22C155.73 397.33 155.14 366.57 153.53 365.03C153.02 364.44 118.15 379.82 104.31 386.71C76.7005 400.48 59.4105 412.93 46.5205 428.46C32.9705 444.72 25.2805 461.13 22.1305 480.46C20.7405 488.81 20.7405 488.88 20.1505 485.22L20.1605 485.23Z";
+
+const PATH_MID =
+  "M0.310503 424.44C-2.5495 369.14 14.3005 325.49 52.8205 288.21C77.8705 263.97 102.041 249.17 161.071 221.93C185.171 210.8 194.831 205.96 207.291 198.79C240.251 179.97 261.711 161.66 276.581 139.76C285.741 126.28 292.551 110.54 294.451 98.16C295.481 91.35 295.621 90.84 296.501 90.84C298.331 90.84 300.531 113.25 299.941 125.63C298.041 165.33 283.24 196.75 252.55 226.78C231.46 247.43 201.65 265.23 148.62 288.96C105.85 308.08 80.9405 322.14 58.4605 339.86C48.8705 347.48 34.7305 361.69 28.3605 370.18C16.5705 385.93 7.3405 406.22 2.8705 426.28L0.890505 435.44L0.300509 424.45L0.310503 424.44Z";
+
+const PATH_TOP =
+  "M132.141 209.99C131.551 208.38 129.581 196.73 128.481 188.24C126.871 176.37 126.211 148.98 127.311 137.26C128.411 125.39 130.461 113.75 133.241 102.91C139.831 77.2 155.361 48.05 174.551 25.27C182.311 16.11 198.651 0 200.261 0H201.801L200.481 6.45C196.451 26.45 197.111 48.2 202.381 71.42C204.941 82.55 206.991 89.36 213.441 108.04C219.151 124.52 225.671 145.83 225.161 146.35C224.061 147.45 206.411 132.65 201.141 126.21C196.531 120.57 190.301 110.83 187.081 104.16C185.621 101.23 184.441 99.62 183.641 99.62C182.471 99.62 182.321 100.72 182.321 111.92C182.321 130.52 184.441 149.86 188.841 171.61C191.181 183.18 191.481 182.16 184.591 186.4C173.971 192.77 132.591 211.38 132.151 209.98L132.141 209.99Z";
+
+const MESH_IN = 420;
+const MARK_DELAY = 140;
+const MARK_IN = 760;
+const UNDERLINE_DELAY = MARK_DELAY + 360;
+const UNDERLINE_IN = 720;
+const HOLD = 360;
+const EXIT = 520;
+
+const ENTRANCE_END = UNDERLINE_DELAY + UNDERLINE_IN;
+const EXIT_AT = ENTRANCE_END + HOLD;
+
+const ICON_WIDTH = 168;
+const ICON_HEIGHT = 272;
+const UNDERLINE_MAX_WIDTH = 100;
+
+const STROKE_LIGHT = "#29603E";
+const STROKE_DARK = "#F5EBDB";
+const UNDERLINE_LIGHT = "#29603E";
+const UNDERLINE_DARK = "#F5EBDB";
+
+export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
+  const meshOpacity = useSharedValue(0);
+  const markOpacity = useSharedValue(0);
+  const markTranslateY = useSharedValue(8);
+  const underlineWidth = useSharedValue(0);
+  const underlineOpacity = useSharedValue(0);
+
+  const scheme = useColorScheme();
+  const isDark = scheme === "dark";
+  const stroke = isDark ? STROKE_DARK : STROKE_LIGHT;
+  const underlineColor = isDark ? UNDERLINE_DARK : UNDERLINE_LIGHT;
+
+  useEffect(() => {
+    const easeOutCubic = Easing.out(Easing.cubic);
+    const easeOutQuad = Easing.out(Easing.quad);
+    const easeInCubic = Easing.in(Easing.cubic);
+
+    const meshHold = EXIT_AT - MESH_IN;
+    const markHold = EXIT_AT - (MARK_DELAY + MARK_IN);
+    const underlineHold = EXIT_AT - (UNDERLINE_DELAY + UNDERLINE_IN);
+
+    meshOpacity.value = withSequence(
+      withTiming(1, { duration: MESH_IN, easing: easeOutCubic }),
+      withDelay(
+        meshHold,
+        withTiming(0, { duration: EXIT, easing: easeInCubic })
+      )
+    );
+
+    markTranslateY.value = withDelay(
+      MARK_DELAY,
+      withTiming(0, { duration: MARK_IN, easing: easeOutCubic })
+    );
+    markOpacity.value = withDelay(
+      MARK_DELAY,
+      withSequence(
+        withTiming(1, { duration: MARK_IN, easing: easeOutQuad }),
+        withDelay(
+          markHold,
+          withTiming(0, { duration: EXIT, easing: easeInCubic })
+        )
+      )
+    );
+
+    underlineWidth.value = withDelay(
+      UNDERLINE_DELAY,
+      withTiming(UNDERLINE_MAX_WIDTH, {
+        duration: UNDERLINE_IN,
+        easing: easeOutCubic,
+      })
+    );
+    underlineOpacity.value = withDelay(
+      UNDERLINE_DELAY,
+      withSequence(
+        withTiming(1, { duration: UNDERLINE_IN, easing: easeOutQuad }),
+        withDelay(
+          underlineHold,
+          withTiming(0, { duration: EXIT, easing: easeInCubic }, (done) => {
+            if (done) {
+              runOnJS(onFinish)();
+            }
+          })
+        )
+      )
+    );
+  }, [
+    markOpacity,
+    markTranslateY,
+    meshOpacity,
+    onFinish,
+    underlineOpacity,
+    underlineWidth,
+  ]);
+
+  const meshStyle = useAnimatedStyle(() => ({
+    opacity: meshOpacity.value,
+  }));
+
+  const markStyle = useAnimatedStyle(() => ({
+    opacity: markOpacity.value,
+    transform: [{ translateY: markTranslateY.value }],
+  }));
+
+  const underlineStyle = useAnimatedStyle(() => ({
+    width: underlineWidth.value,
+    opacity: underlineOpacity.value,
+  }));
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, styles.container]}
+    >
+      <Animated.View style={[StyleSheet.absoluteFill, meshStyle]}>
+        <SplashMesh dark={isDark} />
+      </Animated.View>
+
+      <View style={styles.stack}>
+        <Animated.View style={markStyle}>
+          <Svg
+            fill="none"
+            height={ICON_HEIGHT}
+            viewBox="0 0 301 488"
+            width={ICON_WIDTH}
+          >
+            <Path
+              d={PATH_TOP}
+              stroke={stroke}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={4}
+            />
+            <Path
+              d={PATH_MID}
+              stroke={stroke}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={4}
+            />
+            <Path
+              d={PATH_OUTER}
+              stroke={stroke}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={4}
+            />
+          </Svg>
+        </Animated.View>
+        <Animated.View
+          style={[
+            styles.underline,
+            { backgroundColor: underlineColor },
+            underlineStyle,
+          ]}
+        />
+      </View>
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999,
+  },
+  stack: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  underline: {
+    height: 1,
+    marginTop: 22,
+    borderRadius: 1,
+  },
+});

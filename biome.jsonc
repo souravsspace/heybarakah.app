@@ -2,7 +2,10 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["ultracite/biome/core"],
   "files": {
-    "includes": ["!packages/marketing", "!**/convex/_generated"]
+    "includes": ["!packages/marketing", "!design", "!**/convex/_generated"]
+  },
+  "javascript": {
+    "globals": ["__DEV__"]
   },
   "linter": {
     "rules": {
