@@ -16,8 +16,10 @@ enum LockActivityController {
     }
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    let start = formatter.date(from: startISO) ?? ISO8601DateFormatter().date(from: startISO)
-    let end = formatter.date(from: endISO) ?? ISO8601DateFormatter().date(from: endISO)
+    let fallback = ISO8601DateFormatter()
+    fallback.formatOptions = [.withInternetDateTime]
+    let start = formatter.date(from: startISO) ?? fallback.date(from: startISO)
+    let end = formatter.date(from: endISO) ?? fallback.date(from: endISO)
     guard let start, let end else {
       throw LockActivityError.invalidDate
     }
