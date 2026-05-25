@@ -62,8 +62,12 @@ function parseHHmm(hhmm: string): number | null {
   return hour * 60 + minute;
 }
 
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : String(n);
+}
+
 function dateKey(d: Date): string {
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
 function forbiddenRanges(times: PrayerTimes): Range[] {
