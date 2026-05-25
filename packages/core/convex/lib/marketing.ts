@@ -27,7 +27,10 @@ export const joinWaitlist = action({
       unsubscribed: false,
     });
 
-    if (contact.error && contact.error.name !== "validation_error") {
+    if (contact.error) {
+      if (contact.error.name === "validation_error") {
+        return { ok: true };
+      }
       console.error("[waitlist] contacts.create error", contact.error);
       return { ok: false, error: "Could not save your email." };
     }
