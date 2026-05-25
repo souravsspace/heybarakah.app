@@ -13,8 +13,10 @@ import { sendOTPVerification } from "./resend";
 
 const siteUrl = requireEnv("SITE_URL");
 const nativeAppUrl = requireEnv("NATIVE_APP_URL");
-// TODO: disabled for now add it letter
-// const appleBundleId = process.env.APPLE_APP_BUNDLE_IDENTIFIER || "";
+const convexSiteUrl = requireEnv("CONVEX_SITE_URL");
+const appleClientId = requireEnv("APPLE_CLIENT_ID");
+const appleClientSecret = requireEnv("APPLE_CLIENT_SECRET");
+const appleBundleId = requireEnv("APPLE_APP_BUNDLE_IDENTIFIER");
 const googleClientId = requireEnv("GOOGLE_CLIENT_ID");
 const googleClientSecret = requireEnv("GOOGLE_CLIENT_SECRET");
 
@@ -22,9 +24,11 @@ export const authComponent = createClient<DataModel>(components.betterAuth);
 
 function createAuth(ctx: GenericCtx<DataModel>) {
   return betterAuth({
+    baseURL: convexSiteUrl,
     trustedOrigins: [
       siteUrl,
       nativeAppUrl,
+      "https://appleid.apple.com",
       // Expo Go dev URLs. Harmless in production — no real client uses exp://.
       "exp://**",
       "exp://*",
@@ -38,24 +42,35 @@ function createAuth(ctx: GenericCtx<DataModel>) {
         clientId: googleClientId,
         clientSecret: googleClientSecret,
       },
-      // Apple — config retained but disabled until prerequisites are set.
-      // Uncomment + set APPLE_APP_BUNDLE_IDENTIFIER to enable.
-      // apple: {
-      //   clientId: "",
-      //   clientSecret: "",
-      //   appBundleIdentifier: appleBundleId,
-      // },
+      apple: {
+        clientId: appleClientId,
+        clientSecret: appleClientSecret,
+        appBundleIdentifier: appleBundleId,
+      },
     },
     plugins: [
       expo(),
       crossDomain({ siteUrl }),
       emailOTP({
         async sendVerificationOTP({ email, otp, type }) {
-          if (type === "sign-in" || type === "email-verification") {
+          console.warn("[auth] sendVerificationOTP called", { email, type });
+          if (type !== "sign-in" && type !== "email-verification") {
+            console.warn("[auth] OTP type skipped", { type });
+            return;
+          }
+          try {
             await sendOTPVerification(requireActionCtx(ctx), {
               to: email,
               code: otp,
             });
+            console.warn("[auth] OTP enqueue returned", { email, type });
+          } catch (err) {
+            console.error("[auth] OTP send failed", {
+              email,
+              type,
+              error: err instanceof Error ? err.message : String(err),
+            });
+            throw err;
           }
         },
       }),

@@ -14,6 +14,7 @@ import Purchases from "react-native-purchases";
 import { useUser } from "@/contexts/user-context";
 import {
   configureRevenueCatAnonymous,
+  ENTITLEMENT_ID,
   findPackageForPlan,
   getCustomerInfo,
   getOfferings,
@@ -123,6 +124,12 @@ export function SubscriptionProvider({
           return;
         }
         setRevenueCatReady(true);
+        if (user) {
+          const info = await getCustomerInfo();
+          if (info && !cancelled) {
+            await syncCustomerInfo(info);
+          }
+        }
         await refresh();
       } catch {
         // Configuration failure leaves provider in query-only mode.
@@ -131,7 +138,7 @@ export function SubscriptionProvider({
     return () => {
       cancelled = true;
     };
-  }, [user, refresh]);
+  }, [user, refresh, syncCustomerInfo]);
 
   useEffect(() => {
     if (!(revenueCatReady && isRevenueCatSupported())) {
@@ -166,8 +173,13 @@ export function SubscriptionProvider({
         if (!result.ok) {
           return { ok: false, cancelled: true };
         }
-        await syncCustomerInfo(result.customerInfo);
-        const entitlement = result.customerInfo.entitlements.active.premium;
+        try {
+          await syncCustomerInfo(result.customerInfo);
+        } catch {
+          // Purchase succeeded; sync will retry via listener/refresh.
+        }
+        const entitlement =
+          result.customerInfo.entitlements.active[ENTITLEMENT_ID];
         const alreadyOwned = Boolean(
           entitlement &&
             entitlement.latestPurchaseDate !== entitlement.originalPurchaseDate
@@ -190,7 +202,7 @@ export function SubscriptionProvider({
     const info = await restorePurchases();
     if (info) {
       await syncCustomerInfo(info);
-      return Boolean(info.entitlements.active.premium);
+      return Boolean(info.entitlements.active[ENTITLEMENT_ID]);
     }
     return Boolean(activeSubscription);
   }, [activeSubscription, syncCustomerInfo]);

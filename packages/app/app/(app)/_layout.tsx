@@ -46,7 +46,7 @@ function AuthedShell() {
   useEffect(() => {
     const handleResponse = (response: Notifications.NotificationResponse) => {
       const link = response.notification.request.content.data?.link;
-      if (typeof link !== "string" || !link.includes("unlock")) {
+      if (typeof link !== "string" || link !== "unlock") {
         return;
       }
       if (pathnameRef.current?.endsWith("/unlock")) {

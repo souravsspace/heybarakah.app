@@ -1,6 +1,6 @@
 import { selectionAsync } from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,7 @@ const PRIMARY = "#29603E";
 const INK = "#0F1311";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_PATTERN = /^\d{6}$/;
+const RESEND_COOLDOWN_SECONDS = 30;
 
 export default function EmailOtp() {
   const router = useRouter();
@@ -28,6 +29,25 @@ export default function EmailOtp() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) {
+      return;
+    }
+    const id = setInterval(() => {
+      setCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [cooldown]);
+
+  async function requestOtp(target: string) {
+    return await authClient.emailOtp.sendVerificationOtp({
+      email: target,
+      type: mode === "signup" ? "email-verification" : "sign-in",
+    });
+  }
 
   async function sendCode() {
     const trimmed = email.trim().toLowerCase();
@@ -38,16 +58,14 @@ export default function EmailOtp() {
     selectionAsync().catch(() => undefined);
     setIsLoading(true);
     try {
-      const { error } = await authClient.emailOtp.sendVerificationOtp({
-        email: trimmed,
-        type: mode === "signup" ? "email-verification" : "sign-in",
-      });
+      const { error } = await requestOtp(trimmed);
       if (error) {
         Alert.alert("Could not send code", error.message ?? "Try again.");
         return;
       }
       setEmail(trimmed);
       setStep("code");
+      setCooldown(RESEND_COOLDOWN_SECONDS);
     } catch {
       Alert.alert(
         "Could not send code",
@@ -55,6 +73,29 @@ export default function EmailOtp() {
       );
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function resendCode() {
+    if (cooldown > 0 || isResending) {
+      return;
+    }
+    selectionAsync().catch(() => undefined);
+    setIsResending(true);
+    try {
+      const { error } = await requestOtp(email);
+      if (error) {
+        Alert.alert("Could not resend code", error.message ?? "Try again.");
+        return;
+      }
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch {
+      Alert.alert(
+        "Could not resend code",
+        "Check your connection and try again."
+      );
+    } finally {
+      setIsResending(false);
     }
   }
 
@@ -194,19 +235,51 @@ export default function EmailOtp() {
           </Pressable>
 
           {step === "code" ? (
-            <Pressable
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={() => setStep("email")}
-              style={{ alignItems: "center", marginTop: 8 }}
-            >
-              <Text
-                className="font-sans text-tertiary"
-                style={{ fontSize: 13, textDecorationLine: "underline" }}
+            <>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{
+                  busy: isResending,
+                  disabled: cooldown > 0 || isResending,
+                }}
+                disabled={cooldown > 0 || isResending}
+                hitSlop={8}
+                onPress={resendCode}
+                style={{ alignItems: "center", marginTop: 8 }}
               >
-                Use a different email
-              </Text>
-            </Pressable>
+                <Text
+                  className="font-sans text-tertiary"
+                  style={{
+                    fontSize: 13,
+                    textDecorationLine: cooldown > 0 ? "none" : "underline",
+                    opacity: cooldown > 0 || isResending ? 0.5 : 1,
+                  }}
+                >
+                  {isResending
+                    ? "Resending…"
+                    : cooldown > 0
+                      ? `Resend code in ${cooldown}s`
+                      : "Resend code"}
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={() => {
+                  setStep("email");
+                  setCode("");
+                  setCooldown(0);
+                }}
+                style={{ alignItems: "center", marginTop: 4 }}
+              >
+                <Text
+                  className="font-sans text-tertiary"
+                  style={{ fontSize: 13, textDecorationLine: "underline" }}
+                >
+                  Use a different email
+                </Text>
+              </Pressable>
+            </>
           ) : null}
         </View>
       </FadeSlideIn>

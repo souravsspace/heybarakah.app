@@ -91,6 +91,15 @@ export default function Plans() {
     }
     const result = await purchase(selected);
     if (result.ok) {
+      const now = new Date().toISOString();
+      dispatch({
+        type: "SET_FIELD",
+        payload: {
+          purchasedPlan: selected,
+          purchaseCompletedAt: now,
+          trialStartedAt: selected === "yearly" ? now : undefined,
+        },
+      });
       if (user) {
         router.replace("/home");
       } else {
@@ -115,11 +124,7 @@ export default function Plans() {
 
     dispatch({
       type: "SET_FIELD",
-      payload: {
-        plan: selected,
-        trialStartedAt:
-          selected === "yearly" ? new Date().toISOString() : undefined,
-      },
+      payload: { plan: selected },
     });
 
     setIsSubmitting(true);

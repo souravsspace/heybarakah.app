@@ -38,6 +38,8 @@ export interface OnboardingState {
     maghrib: boolean;
     isha: boolean;
   };
+  purchaseCompletedAt?: string;
+  purchasedPlan?: Plan;
   strictness?: "adhan-iqama" | "full-window" | "custom";
   struggle?: "phone" | "forgetting" | "fajr" | "khushu";
   trialStartedAt?: string;
