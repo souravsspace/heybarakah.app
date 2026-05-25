@@ -9,6 +9,7 @@
     "moduleDetection": "force",
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
+    "noEmit": true,
     "isolatedModules": true,
     "useDefineForClassFields": true,
     "strict": true,
