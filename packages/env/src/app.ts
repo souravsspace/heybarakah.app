@@ -18,7 +18,14 @@ export const env = createEnv({
    * What object holds the environment variables at runtime. This is usually
    * `process.env` or `import.meta.env`.
    */
-  runtimeEnv: process.env,
+  runtimeEnv: {
+    EXPO_PUBLIC_CONVEX_URL: process.env.EXPO_PUBLIC_CONVEX_URL,
+    EXPO_PUBLIC_CONVEX_SITE_URL: process.env.EXPO_PUBLIC_CONVEX_SITE_URL,
+    EXPO_PUBLIC_REVENUECAT_IOS_API_KEY:
+      process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
+    EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY:
+      process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY,
+  },
 
   /**
    * By default, this library will feed the environment variables directly to
