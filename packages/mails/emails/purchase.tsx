@@ -146,8 +146,7 @@ export default function PurchaseEmail({
                 </Section>
 
                 <Text className="mt-6 mb-0 text-[14px] text-ink leading-[22px]">
-                  We'll email you the moment early access opens. One quiet email
-                  — nothing else.
+                  Open the app and sign in — your lifetime access is ready.
                 </Text>
 
                 <Hr className="my-7 border-0 border-divider border-t border-solid" />
