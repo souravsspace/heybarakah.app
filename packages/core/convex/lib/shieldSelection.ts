@@ -35,6 +35,9 @@ export const upsertIos = mutation({
     if (!user) {
       throw new Error("Not authenticated");
     }
+    if (args.iosItemCount < 0) {
+      throw new Error("iosItemCount must be non-negative");
+    }
     if (args.iosSelectionData.length > MAX_IOS_SELECTION_BYTES) {
       throw new Error("iOS selection payload too large");
     }
