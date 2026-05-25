@@ -33,8 +33,12 @@ class ShieldActionExtension: ShieldActionDelegate {
       setPendingUnlockFlag()
       schedulePendingUnlockNotification { didSchedule in
         NSLog("[ShieldAction] schedulePendingUnlockNotification didSchedule=\(didSchedule)")
-        let response: ShieldActionResponse = didSchedule ? .close : .defer
-        self.complete(on: response, completionHandler: completionHandler)
+        // Always close the shield. The Darwin notification has already been
+        // posted by setPendingUnlockFlag, so the host app receives the unlock
+        // signal regardless of whether the local notification succeeded.
+        // Returning .defer would leave the user stuck behind the shield with
+        // no way to dismiss it.
+        self.complete(on: .close, completionHandler: completionHandler)
       }
 
     case .secondaryButtonPressed:
