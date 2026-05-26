@@ -10,7 +10,7 @@ export function useAppleAuth() {
     if (Platform.OS !== "ios") {
       Alert.alert(
         "Apple sign-in unavailable",
-        "Sign in with Apple is only available on iOS.",
+        "Sign in with Apple is only available on iOS."
       );
       return false;
     }
@@ -18,7 +18,7 @@ export function useAppleAuth() {
     if (!available) {
       Alert.alert(
         "Apple sign-in unavailable",
-        "This device does not support Sign in with Apple.",
+        "This device does not support Sign in with Apple."
       );
       return false;
     }
@@ -34,7 +34,7 @@ export function useAppleAuth() {
       if (!credential.identityToken) {
         Alert.alert(
           "Apple sign-in failed",
-          "Apple did not return an identity token.",
+          "Apple did not return an identity token."
         );
         return false;
       }
@@ -47,14 +47,14 @@ export function useAppleAuth() {
         console.error("[apple-oauth] error:", error);
         Alert.alert(
           "Apple sign-in failed",
-          error.message ?? "Unknown error. Check Metro logs.",
+          error.message ?? "Unknown error. Check Metro logs."
         );
         return false;
       }
       if (!data) {
         Alert.alert(
           "Apple sign-in did not complete",
-          "Sign-in returned no session.",
+          "Sign-in returned no session."
         );
         return false;
       }
@@ -70,7 +70,7 @@ export function useAppleAuth() {
       console.error("[apple-oauth] threw:", error);
       Alert.alert(
         "Apple sign-in error",
-        error instanceof Error ? error.message : "Unknown error",
+        error instanceof Error ? error.message : "Unknown error"
       );
       return false;
     } finally {
