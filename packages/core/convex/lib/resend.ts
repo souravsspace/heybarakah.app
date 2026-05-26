@@ -4,8 +4,6 @@ import { components, internal } from "../_generated/api";
 import { type ActionCtx, internalMutation } from "../_generated/server";
 import { requireEnv } from "./env";
 
-requireEnv("RESEND_WEBHOOK_SECRET");
-
 export const handleEmailEvent = internalMutation({
   args: vOnEmailEventArgs,
   handler: (_ctx, { id, event }) => {
