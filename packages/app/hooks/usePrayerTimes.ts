@@ -8,6 +8,7 @@ import {
   type PrayerTimesSource,
 } from "@barakah/core/prayer";
 import { useAction, useQuery } from "convex/react";
+import { useNetworkState } from "expo-network";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
 import {
@@ -175,6 +176,9 @@ export function usePrayerTimes() {
   const [error, setError] = useState<string | null>(null);
   const autoRefreshRequestKey = useRef<string | null>(null);
   const lastAutoRefreshAt = useRef(0);
+
+  const network = useNetworkState();
+  const isOnline = network.isConnected !== false;
 
   useEffect(() => {
     if (!storageHydrated) {
@@ -363,7 +367,8 @@ export function usePrayerTimes() {
       loadingLocation ||
       refreshing ||
       !storageHydrated ||
-      !isStale
+      !isStale ||
+      !isOnline
     ) {
       return;
     }
@@ -399,6 +404,7 @@ export function usePrayerTimes() {
       cancelled = true;
     };
   }, [
+    isOnline,
     isStale,
     loadingLocation,
     persistFromAlAdhan,
@@ -415,6 +421,9 @@ export function usePrayerTimes() {
     if (refreshing) {
       return "refreshing" as const;
     }
+    if (!isOnline && prayerTimes.length > 0) {
+      return "offline" as const;
+    }
     if (prayerTimes.length > 0) {
       return "hit" as const;
     }
@@ -422,7 +431,7 @@ export function usePrayerTimes() {
       return "error" as const;
     }
     return "idle" as const;
-  }, [error, loadingLocation, prayerTimes.length, refreshing]);
+  }, [error, isOnline, loadingLocation, prayerTimes.length, refreshing]);
 
   const sourceForToday = useMemo<PrayerTimesSource>(
     () => todayPrayerTimes?.source ?? "adhan-js",
@@ -460,5 +469,6 @@ export function usePrayerTimes() {
     source: sourceForToday,
     isStale,
     refreshing,
+    isOnline,
   };
 }
