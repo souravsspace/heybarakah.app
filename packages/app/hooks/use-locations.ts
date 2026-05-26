@@ -3,8 +3,13 @@ import type { Id } from "@barakah/core/convex/_generated/dataModel";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useUser } from "@/contexts/user-context";
 
-const STORAGE_KEY = "user-locations:v1";
+const STORAGE_KEY_PREFIX = "user-locations:v1:";
+
+function storageKeyFor(userId: string): string {
+  return `${STORAGE_KEY_PREFIX}${userId}`;
+}
 
 export interface SavedLocation {
   _id: Id<"userLocations">;
@@ -31,9 +36,9 @@ const EMPTY_MIRROR: MirrorShape = {
   activeId: null,
 };
 
-async function readMirror(): Promise<MirrorShape> {
+async function readMirror(userId: string): Promise<MirrorShape> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await AsyncStorage.getItem(storageKeyFor(userId));
     if (!raw) {
       return EMPTY_MIRROR;
     }
@@ -51,28 +56,36 @@ async function readMirror(): Promise<MirrorShape> {
   }
 }
 
-async function writeMirror(mirror: MirrorShape): Promise<void> {
+async function writeMirror(userId: string, mirror: MirrorShape): Promise<void> {
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(mirror));
+    await AsyncStorage.setItem(storageKeyFor(userId), JSON.stringify(mirror));
   } catch {
     // swallow
   }
 }
 
 export function useLocations() {
-  const remote = useQuery(api.lib.userLocations.listMine);
+  const { user } = useUser();
+  const userId = user?._id ?? null;
+  const remote = useQuery(api.lib.userLocations.listMine, userId ? {} : "skip");
   const [mirror, setMirror] = useState<MirrorShape>(EMPTY_MIRROR);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    readMirror().then((m) => {
+    if (!userId) {
+      setMirror(EMPTY_MIRROR);
+      setHydrated(true);
+      return;
+    }
+    setHydrated(false);
+    readMirror(userId).then((m) => {
       setMirror(m);
       setHydrated(true);
     });
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
-    if (!remote) {
+    if (!(remote && userId)) {
       return;
     }
     const next: MirrorShape = {
@@ -81,8 +94,8 @@ export function useLocations() {
       activeId: remote.activeId as Id<"userLocations"> | null,
     };
     setMirror(next);
-    writeMirror(next).catch(() => undefined);
-  }, [remote]);
+    writeMirror(userId, next).catch(() => undefined);
+  }, [remote, userId]);
 
   const createRemote = useMutation(api.lib.userLocations.create);
   const renameRemote = useMutation(api.lib.userLocations.rename);
