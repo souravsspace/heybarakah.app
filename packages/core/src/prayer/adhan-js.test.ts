@@ -50,4 +50,21 @@ describe("adhan js fallback", () => {
 
     expect(days).toBeNull();
   });
+
+  test("populates hijri date for every day in dd-mm-yyyy format", () => {
+    const days = calculateAdhanJsPrayerDays({
+      latitude: 21.4225,
+      longitude: 39.8262,
+      timezone: "Asia/Riyadh",
+      method: 4,
+      school: 0,
+      startDate: "2026-05-11",
+      days: 7,
+    });
+
+    expect(days).not.toBeNull();
+    for (const day of days ?? []) {
+      expect(day.hijriDate).toMatch(/^\d{2}-\d{2}-\d{3,4}$/);
+    }
+  });
 });
