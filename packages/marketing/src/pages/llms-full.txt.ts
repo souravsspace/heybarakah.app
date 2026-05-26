@@ -17,7 +17,7 @@ const faqBlock = faqItems
 const comparisonBlock = comparisons
   .map(
     (c) =>
-      `- **${c.name}** — ${c.description} ${c.price} ${c.comparison.replace(c.comparisonBold, c.comparisonBold)}`,
+      `- **${c.name}** — ${c.description} ${c.price} ${c.comparison.replace(c.comparisonBold, `**${c.comparisonBold}**`)}`,
   )
   .join("\n");
 

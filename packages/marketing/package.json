@@ -22,9 +22,9 @@
     "@tailwindcss/vite": "^4.2.4",
     "astro": "^6.2.1",
     "canvas-confetti": "^1.9.4",
-    "convex": "^1.17.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "convex": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "tailwindcss": "^4.2.4",
     "zod": "catalog:"
   },

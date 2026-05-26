@@ -23,6 +23,8 @@ export default function Faq() {
         <div className="mt-14 overflow-hidden rounded-[4px] border border-[color:var(--color-border)]">
           {items.map((item, i) => {
             const isOpen = open === i;
+            const triggerId = `faq-trigger-${i}`;
+            const panelId = `faq-panel-${i}`;
             return (
               <div
                 className={
@@ -31,8 +33,10 @@ export default function Faq() {
                 key={item.q}
               >
                 <button
+                  aria-controls={panelId}
                   aria-expanded={isOpen}
                   className="flex w-full items-center justify-between gap-6 bg-white px-6 py-5 text-left transition-colors hover:bg-[color:var(--color-surface-soft)]"
+                  id={triggerId}
                   onClick={() => setOpen(isOpen ? null : i)}
                   type="button"
                 >
@@ -47,7 +51,10 @@ export default function Faq() {
                   />
                 </button>
                 <div
+                  aria-labelledby={triggerId}
                   className="grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out"
+                  id={panelId}
+                  role="region"
                   style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                 >
                   <div className="min-h-0">

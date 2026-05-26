@@ -4,7 +4,11 @@ import SuccessConfetti from "../components/SuccessConfetti";
 import Layout from "../layouts/Layout.astro";
 
 const { brand, contact, islamic } = appConfig;
-const checkoutId = Astro.url.searchParams.get("checkout_id");
+const rawCheckoutId = Astro.url.searchParams.get("checkout_id");
+const checkoutId =
+  rawCheckoutId && /^[a-zA-Z0-9_-]{8,128}$/.test(rawCheckoutId)
+    ? rawCheckoutId
+    : null;
 ---
 
 <Layout

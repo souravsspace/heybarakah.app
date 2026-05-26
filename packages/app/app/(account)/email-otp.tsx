@@ -45,7 +45,7 @@ export default function EmailOtp() {
   async function requestOtp(target: string) {
     return await authClient.emailOtp.sendVerificationOtp({
       email: target,
-      type: mode === "signup" ? "email-verification" : "sign-in",
+      type: "sign-in",
     });
   }
 

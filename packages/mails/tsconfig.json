@@ -1,9 +1,8 @@
 {
   "extends": "@barakah/tsconfig/base.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "noEmit": true
+    "jsx": "react-jsx"
   },
-  "include": ["../mails/emails/**/*.ts", "../mails/emails/**/*.tsx"],
-  "exclude": ["../mails/node_modules"]
+  "include": ["emails/**/*.ts", "emails/**/*.tsx"],
+  "exclude": ["node_modules"]
 }

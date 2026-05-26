@@ -11,7 +11,8 @@
         "RESEND_AUDIENCE_ID",
         "RESEND_FROM",
         "RESEND_REPLY_TO",
-        "POLAR_WEBHOOK_SECRET"
+        "POLAR_WEBHOOK_SECRET",
+        "PUBLIC_CONVEX_URL"
       ]
     },
     "dev": { "cache": false, "persistent": true }

@@ -106,5 +106,9 @@ private struct DIExpandedBottom: View {
 private func timerRange(state: BarakahLockAttributes.ContentState) -> ClosedRange<Date> {
   let start = Date(timeIntervalSince1970: state.startEpoch)
   let end = Date(timeIntervalSince1970: state.endEpoch)
+  guard start <= end else {
+    let now = Date()
+    return now...now.addingTimeInterval(1)
+  }
   return start...end
 }

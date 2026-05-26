@@ -29,7 +29,10 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
   }
 
   private func reapplyBlockConfiguration() {
-    let userDefaults = sharedDefaults ?? UserDefaults.standard
+    // Extensions have no access to the host app's UserDefaults.standard sandbox.
+    // If sharedDefaults is nil (entitlement misconfigured), bail out rather than
+    // silently clearing all shields via the fall-through.
+    guard let userDefaults = sharedDefaults else { return }
 
     guard let configDict = userDefaults.dictionary(forKey: blockConfigStorageKey) else {
       store.shield.applications = nil

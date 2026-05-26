@@ -130,6 +130,9 @@ export function SubscriptionProvider({
             await syncCustomerInfo(info);
           }
         }
+        if (cancelled) {
+          return;
+        }
         await refresh();
       } catch {
         // Configuration failure leaves provider in query-only mode.

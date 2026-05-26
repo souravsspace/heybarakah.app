@@ -14,17 +14,16 @@ export function useAppleAuth() {
       );
       return false;
     }
+    const available = await AppleAuthentication.isAvailableAsync();
+    if (!available) {
+      Alert.alert(
+        "Apple sign-in unavailable",
+        "This device does not support Sign in with Apple."
+      );
+      return false;
+    }
     setIsLoading(true);
     try {
-      const available = await AppleAuthentication.isAvailableAsync();
-      if (!available) {
-        Alert.alert(
-          "Apple sign-in unavailable",
-          "This device does not support Sign in with Apple."
-        );
-        return false;
-      }
-
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
