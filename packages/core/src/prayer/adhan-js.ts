@@ -45,6 +45,35 @@ function formatInTimezone(date: Date, timezone: string): string {
   }).format(date);
 }
 
+function pad2(n: string): string {
+  return n.padStart(2, "0");
+}
+
+function formatHijriDate(date: Date, timezone: string): string | undefined {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US-u-ca-islamic-umalqura", {
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+      timeZone: timezone,
+    }).formatToParts(date);
+    const map = new Map(parts.map((p) => [p.type, p.value]));
+    const day = map.get("day");
+    const month = map.get("month");
+    const year = map.get("year");
+    if (!(day && month && year)) {
+      return;
+    }
+    const yearDigits = year.replace(/\D/g, "");
+    if (!yearDigits) {
+      return;
+    }
+    return `${pad2(day)}-${pad2(month)}-${yearDigits}`;
+  } catch {
+    return;
+  }
+}
+
 export function calculateAdhanJsPrayerDays(
   input: PrayerLocation & PrayerSettings & { startDate: string; days: number }
 ): PrayerDay[] | null {
@@ -66,6 +95,7 @@ export function calculateAdhanJsPrayerDays(
 
     return {
       date,
+      hijriDate: formatHijriDate(prayerTimes.dhuhr, input.timezone),
       timings: {
         fajr: formatInTimezone(prayerTimes.fajr, input.timezone),
         sunrise: formatInTimezone(prayerTimes.sunrise, input.timezone),
