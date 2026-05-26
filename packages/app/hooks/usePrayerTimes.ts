@@ -1,8 +1,22 @@
 import { api } from "@barakah/core/convex/_generated/api";
-import type { PrayerDay } from "@barakah/core/prayer";
+import {
+  calculateAdhanJsPrayerDays,
+  createPrayerTimesCacheKey,
+  DEFAULT_PRAYER_DAYS,
+  PRAYER_CACHE_TTL_MS,
+  type PrayerDay,
+  type PrayerTimesSource,
+} from "@barakah/core/prayer";
 import { useAction, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
+import {
+  findEntryByLocationId,
+  readPrayerStorage,
+  type StoredPrayerEntry,
+  type StoredPrayerState,
+  writePrayerEntry,
+} from "@/hooks/prayer-storage";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import {
   getCurrentLocation,
@@ -21,8 +35,8 @@ type CalcMethod =
 type Madhab = "hanafi" | "shafii" | "maliki" | "hanbali" | "none";
 type NextPrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 
-const DEFAULT_DAYS = 7;
 const AUTO_REFRESH_RETRY_MS = 30_000;
+const GPS_LOCATION_ID = "gps";
 
 const CALC_METHOD_MAP: Record<CalcMethod, number> = {
   isna: 2,
@@ -105,6 +119,22 @@ function pickNextPrayer(days: PrayerDay[]) {
   };
 }
 
+function mergeDaysPreferStored(
+  sdkDays: PrayerDay[],
+  stored: StoredPrayerEntry | null
+): PrayerDay[] {
+  if (!stored?.timings?.length) {
+    return sdkDays;
+  }
+  if (sdkDays.length === 0) {
+    return stored.timings;
+  }
+  return sdkDays.map((sdkDay) => {
+    const match = stored.timings.find((s) => s.date === sdkDay.date);
+    return match ?? sdkDay;
+  });
+}
+
 export function usePrayerTimes() {
   const { state } = useOnboardingState();
   const [today, setToday] = useState(todayDateKey);
@@ -119,6 +149,19 @@ export function usePrayerTimes() {
     return () => sub.remove();
   }, []);
 
+  const [storageState, setStorageState] = useState<StoredPrayerState>({
+    version: 1,
+    entries: {},
+  });
+  const [storageHydrated, setStorageHydrated] = useState(false);
+
+  useEffect(() => {
+    readPrayerStorage().then((s) => {
+      setStorageState(s);
+      setStorageHydrated(true);
+    });
+  }, []);
+
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -130,9 +173,21 @@ export function usePrayerTimes() {
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [refreshResult, setRefreshResult] = useState<PrayerDay[] | null>(null);
   const autoRefreshRequestKey = useRef<string | null>(null);
   const lastAutoRefreshAt = useRef(0);
+
+  useEffect(() => {
+    if (!storageHydrated) {
+      return;
+    }
+    if (location) {
+      return;
+    }
+    const fallback = findEntryByLocationId(storageState, GPS_LOCATION_ID);
+    if (fallback) {
+      setLocation(fallback.location);
+    }
+  }, [storageHydrated, storageState, location]);
 
   const requestArgs = useMemo(() => {
     if (!location) {
@@ -151,9 +206,14 @@ export function usePrayerTimes() {
       ),
       school: mapSchool(state.madhab as Madhab | undefined),
       startDate: today,
-      days: DEFAULT_DAYS,
+      days: DEFAULT_PRAYER_DAYS,
     };
   }, [location, state.calcMethod, state.madhab, today]);
+
+  const cacheKey = useMemo(
+    () => (requestArgs ? createPrayerTimesCacheKey(requestArgs) : null),
+    [requestArgs]
+  );
 
   const cached = useQuery(
     api.lib.prayerTimes.getCachedPrayerTimes,
@@ -219,13 +279,91 @@ export function usePrayerTimes() {
     };
   }, [state.locationGranted]);
 
+  const storedEntry = useMemo<StoredPrayerEntry | null>(
+    () => (cacheKey ? (storageState.entries[cacheKey] ?? null) : null),
+    [storageState, cacheKey]
+  );
+
+  const sdkDays = useMemo<PrayerDay[]>(() => {
+    if (!(location && requestArgs)) {
+      return [];
+    }
+    return (
+      calculateAdhanJsPrayerDays({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        timezone: location.timezone,
+        method: requestArgs.method,
+        school: requestArgs.school,
+        startDate: today,
+        days: DEFAULT_PRAYER_DAYS,
+      }) ?? []
+    );
+  }, [location, requestArgs, today]);
+
+  const prayerTimes = useMemo(
+    () => mergeDaysPreferStored(sdkDays, storedEntry),
+    [sdkDays, storedEntry]
+  );
+
+  const todayPrayerTimes = useMemo(
+    () => prayerTimes.find((item) => item.date === today) ?? null,
+    [prayerTimes, today]
+  );
+
+  const nextPrayer = useMemo(() => pickNextPrayer(prayerTimes), [prayerTimes]);
+
+  const isStale = useMemo(() => {
+    if (!storedEntry) {
+      return true;
+    }
+    return Date.now() - storedEntry.fetchedAt > PRAYER_CACHE_TTL_MS;
+  }, [storedEntry]);
+
+  const persistFromAlAdhan = useCallback(
+    async (timings: PrayerDay[], source: PrayerTimesSource) => {
+      if (!(location && requestArgs && cacheKey)) {
+        return;
+      }
+      const entry: StoredPrayerEntry = {
+        cacheKey,
+        fetchedAt: Date.now(),
+        location: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          timezone: location.timezone,
+          city: location.city,
+          countryCode: location.countryCode,
+          isBangladesh: location.isBangladesh,
+        },
+        locationId: GPS_LOCATION_ID,
+        settings: { method: requestArgs.method, school: requestArgs.school },
+        source,
+        timings,
+      };
+      const next = await writePrayerEntry(entry);
+      setStorageState(next);
+    },
+    [cacheKey, location, requestArgs]
+  );
+
+  useEffect(() => {
+    if (!(cached?.timings?.length && cacheKey)) {
+      return;
+    }
+    if (storedEntry && storedEntry.fetchedAt >= cached.generatedAt) {
+      return;
+    }
+    persistFromAlAdhan(cached.timings, cached.source).catch(() => undefined);
+  }, [cached, cacheKey, storedEntry, persistFromAlAdhan]);
+
   useEffect(() => {
     if (
       !requestArgs ||
       loadingLocation ||
-      cached === undefined ||
-      cached !== null ||
-      refreshing
+      refreshing ||
+      !storageHydrated ||
+      !isStale
     ) {
       return;
     }
@@ -245,14 +383,13 @@ export function usePrayerTimes() {
 
     refreshAction(requestArgs)
       .then((refreshed) => {
-        if (!cancelled) {
-          setRefreshResult(refreshed?.timings ?? []);
+        if (cancelled || !refreshed?.timings?.length) {
+          return;
         }
+        return persistFromAlAdhan(refreshed.timings, refreshed.source);
       })
       .catch(() => {
-        if (!cancelled) {
-          setError("Could not refresh prayer times. Please try again.");
-        }
+        // swallow — SDK fallback already rendered; will retry on next stale tick
       })
       .finally(() => {
         setRefreshing(false);
@@ -261,24 +398,15 @@ export function usePrayerTimes() {
     return () => {
       cancelled = true;
     };
-  }, [cached, loadingLocation, refreshAction, refreshing, requestArgs]);
-
-  const prayerTimes = useMemo(() => {
-    if (refreshResult?.length) {
-      return refreshResult;
-    }
-    if (cached?.timings?.length) {
-      return cached.timings;
-    }
-    return [] as PrayerDay[];
-  }, [cached?.timings, refreshResult]);
-
-  const todayPrayerTimes = useMemo(
-    () => prayerTimes.find((item) => item.date === today) ?? null,
-    [prayerTimes, today]
-  );
-
-  const nextPrayer = useMemo(() => pickNextPrayer(prayerTimes), [prayerTimes]);
+  }, [
+    isStale,
+    loadingLocation,
+    persistFromAlAdhan,
+    refreshAction,
+    refreshing,
+    requestArgs,
+    storageHydrated,
+  ]);
 
   const cacheStatus = useMemo(() => {
     if (loadingLocation) {
@@ -290,14 +418,16 @@ export function usePrayerTimes() {
     if (prayerTimes.length > 0) {
       return "hit" as const;
     }
-    if (cached === null) {
-      return "miss" as const;
-    }
     if (error) {
       return "error" as const;
     }
     return "idle" as const;
-  }, [cached, error, loadingLocation, prayerTimes.length, refreshing]);
+  }, [error, loadingLocation, prayerTimes.length, refreshing]);
+
+  const sourceForToday = useMemo<PrayerTimesSource>(
+    () => todayPrayerTimes?.source ?? "adhan-js",
+    [todayPrayerTimes]
+  );
 
   const refresh = useCallback(async () => {
     if (!requestArgs) {
@@ -308,22 +438,27 @@ export function usePrayerTimes() {
     setRefreshing(true);
     try {
       const refreshed = await refreshAction(requestArgs);
-      setRefreshResult(refreshed?.timings ?? []);
+      if (refreshed?.timings?.length) {
+        await persistFromAlAdhan(refreshed.timings, refreshed.source);
+      }
     } catch {
       setError("Unable to refresh prayer times right now.");
     } finally {
       setRefreshing(false);
     }
-  }, [refreshAction, requestArgs]);
+  }, [persistFromAlAdhan, refreshAction, requestArgs]);
 
   return {
     location,
     prayerTimes,
     todayPrayerTimes,
     nextPrayer,
-    loading: loadingLocation || cached === undefined,
+    loading: loadingLocation || (prayerTimes.length === 0 && refreshing),
     error,
     refresh,
     cacheStatus,
+    source: sourceForToday,
+    isStale,
+    refreshing,
   };
 }
