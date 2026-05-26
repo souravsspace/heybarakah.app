@@ -18,6 +18,7 @@ import {
   type StoredPrayerState,
   writePrayerEntry,
 } from "@/hooks/prayer-storage";
+import { useLocations } from "@/hooks/use-locations";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import {
   getCurrentLocation,
@@ -163,7 +164,9 @@ export function usePrayerTimes() {
     });
   }, []);
 
-  const [location, setLocation] = useState<{
+  const { activeLocation } = useLocations();
+
+  const [gpsLocation, setGpsLocation] = useState<{
     latitude: number;
     longitude: number;
     timezone: string;
@@ -171,7 +174,7 @@ export function usePrayerTimes() {
     countryCode: string | null;
     isBangladesh: boolean;
   } | null>(null);
-  const [loadingLocation, setLoadingLocation] = useState(true);
+  const [loadingGps, setLoadingGps] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const autoRefreshRequestKey = useRef<string | null>(null);
@@ -180,18 +183,36 @@ export function usePrayerTimes() {
   const network = useNetworkState();
   const isOnline = network.isConnected !== false;
 
+  const locationId = activeLocation ? activeLocation._id : GPS_LOCATION_ID;
+
+  const location = useMemo(() => {
+    if (activeLocation) {
+      const tz = activeLocation.timezone;
+      return {
+        latitude: activeLocation.latitude,
+        longitude: activeLocation.longitude,
+        timezone: tz,
+        city: activeLocation.city ?? null,
+        countryCode: activeLocation.countryCode ?? null,
+        isBangladesh:
+          activeLocation.countryCode === "BD" || tz === "Asia/Dhaka",
+      };
+    }
+    return gpsLocation;
+  }, [activeLocation, gpsLocation]);
+
   useEffect(() => {
     if (!storageHydrated) {
       return;
     }
-    if (location) {
+    if (gpsLocation || activeLocation) {
       return;
     }
     const fallback = findEntryByLocationId(storageState, GPS_LOCATION_ID);
     if (fallback) {
-      setLocation(fallback.location);
+      setGpsLocation(fallback.location);
     }
-  }, [storageHydrated, storageState, location]);
+  }, [storageHydrated, storageState, gpsLocation, activeLocation]);
 
   const requestArgs = useMemo(() => {
     if (!location) {
@@ -226,10 +247,14 @@ export function usePrayerTimes() {
   const refreshAction = useAction(api.lib.prayerTimes.refreshPrayerTimes);
 
   useEffect(() => {
+    if (activeLocation) {
+      setLoadingGps(false);
+      return;
+    }
     let cancelled = false;
 
     async function loadLocation() {
-      setLoadingLocation(true);
+      setLoadingGps(true);
       setError(null);
 
       const granted =
@@ -237,7 +262,7 @@ export function usePrayerTimes() {
       if (!granted) {
         if (!cancelled) {
           setError("Location permission was denied.");
-          setLoadingLocation(false);
+          setLoadingGps(false);
         }
         return;
       }
@@ -246,7 +271,7 @@ export function usePrayerTimes() {
       if (!current) {
         if (!cancelled) {
           setError("Unable to determine your location.");
-          setLoadingLocation(false);
+          setLoadingGps(false);
         }
         return;
       }
@@ -259,7 +284,7 @@ export function usePrayerTimes() {
       const isBangladesh = countryCode === "BD" || timezone === "Asia/Dhaka";
 
       if (!cancelled) {
-        setLocation({
+        setGpsLocation({
           latitude,
           longitude,
           timezone,
@@ -267,21 +292,23 @@ export function usePrayerTimes() {
           countryCode,
           isBangladesh,
         });
-        setLoadingLocation(false);
+        setLoadingGps(false);
       }
     }
 
     loadLocation().catch(() => {
       if (!cancelled) {
         setError("Unable to determine your location.");
-        setLoadingLocation(false);
+        setLoadingGps(false);
       }
     });
 
     return () => {
       cancelled = true;
     };
-  }, [state.locationGranted]);
+  }, [state.locationGranted, activeLocation]);
+
+  const loadingLocation = activeLocation ? false : loadingGps;
 
   const storedEntry = useMemo<StoredPrayerEntry | null>(
     () => (cacheKey ? (storageState.entries[cacheKey] ?? null) : null),
@@ -340,7 +367,7 @@ export function usePrayerTimes() {
           countryCode: location.countryCode,
           isBangladesh: location.isBangladesh,
         },
-        locationId: GPS_LOCATION_ID,
+        locationId,
         settings: { method: requestArgs.method, school: requestArgs.school },
         source,
         timings,
@@ -348,7 +375,7 @@ export function usePrayerTimes() {
       const next = await writePrayerEntry(entry);
       setStorageState(next);
     },
-    [cacheKey, location, requestArgs]
+    [cacheKey, location, locationId, requestArgs]
   );
 
   useEffect(() => {
