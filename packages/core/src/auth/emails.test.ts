@@ -7,7 +7,7 @@ describe("OTP verification email", () => {
 
     expect(email.subject).toBe("Your Barakah verification code");
     expect(email.html).toContain("Verify your Barakah account");
-    expect(email.html).toContain("123456");
+    expect(email.html).toContain("1 2 3 4 5 6");
     expect(email.text).toContain("1 2 3 4 5 6");
   });
 });
