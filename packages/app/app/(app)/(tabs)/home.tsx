@@ -18,6 +18,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeMesh } from "@/components/meshes";
 import { MosqueMinaret } from "@/components/onboarding/illustrations/mosque-minaret";
+import { PrayerSourceChip } from "@/components/prayer-source-chip";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
@@ -231,8 +232,17 @@ export default function Home() {
     user?.name?.trim() ||
     "Friend";
 
-  const { todayPrayerTimes, nextPrayer, location, loading, prayerTimes } =
-    usePrayerTimes();
+  const {
+    todayPrayerTimes,
+    nextPrayer,
+    location,
+    loading,
+    prayerTimes,
+    source,
+    isStale,
+    refreshing,
+    isOnline,
+  } = usePrayerTimes();
   const active = useMemo(
     () => activePrayerNow(todayPrayerTimes),
     [todayPrayerTimes]
@@ -469,15 +479,25 @@ export default function Home() {
               >
                 {heroLabel}
               </Text>
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "600",
-                  color: colors.inkSubtle,
-                }}
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
               >
-                {location?.city ?? "Locating…"}
-              </Text>
+                <PrayerSourceChip
+                  isOnline={isOnline}
+                  isStale={isStale}
+                  refreshing={refreshing}
+                  source={source}
+                />
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: colors.inkSubtle,
+                  }}
+                >
+                  {location?.city ?? "Locating…"}
+                </Text>
+              </View>
             </View>
 
             <View style={{ gap: 4 }}>
