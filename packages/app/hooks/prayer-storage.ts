@@ -7,7 +7,6 @@ const MAX_ENTRIES = 8;
 export interface StoredPrayerLocation {
   city: string | null;
   countryCode: string | null;
-  isBangladesh: boolean;
   latitude: number;
   longitude: number;
   timezone: string;

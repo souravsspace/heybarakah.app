@@ -40,6 +40,8 @@ type NextPrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 const AUTO_REFRESH_RETRY_MS = 30_000;
 const GPS_LOCATION_ID = "gps";
 
+const DEFAULT_METHOD_ID = 3;
+
 const CALC_METHOD_MAP: Record<CalcMethod, number> = {
   isna: 2,
   mwl: 3,
@@ -62,14 +64,11 @@ function mapSchool(madhab?: Madhab): number {
   return madhab === "hanafi" ? 1 : 0;
 }
 
-function mapMethod(
-  calcMethod: CalcMethod | undefined,
-  isBangladesh: boolean
-): number {
+function mapMethod(calcMethod: CalcMethod | undefined): number {
   if (calcMethod) {
     return CALC_METHOD_MAP[calcMethod];
   }
-  return isBangladesh ? 1 : 3;
+  return DEFAULT_METHOD_ID;
 }
 
 function pickNextPrayer(days: PrayerDay[]) {
@@ -172,7 +171,6 @@ export function usePrayerTimes() {
     timezone: string;
     city: string | null;
     countryCode: string | null;
-    isBangladesh: boolean;
   } | null>(null);
   const [loadingGps, setLoadingGps] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -187,15 +185,12 @@ export function usePrayerTimes() {
 
   const location = useMemo(() => {
     if (activeLocation) {
-      const tz = activeLocation.timezone;
       return {
         latitude: activeLocation.latitude,
         longitude: activeLocation.longitude,
-        timezone: tz,
+        timezone: activeLocation.timezone,
         city: activeLocation.city ?? null,
         countryCode: activeLocation.countryCode ?? null,
-        isBangladesh:
-          activeLocation.countryCode === "BD" || tz === "Asia/Dhaka",
       };
     }
     return gpsLocation;
@@ -225,10 +220,7 @@ export function usePrayerTimes() {
       timezone: location.timezone,
       countryCode: location.countryCode ?? undefined,
       city: location.city ?? undefined,
-      method: mapMethod(
-        state.calcMethod as CalcMethod | undefined,
-        location.isBangladesh
-      ),
+      method: mapMethod(state.calcMethod as CalcMethod | undefined),
       school: mapSchool(state.madhab as Madhab | undefined),
       startDate: today,
       days: DEFAULT_PRAYER_DAYS,
@@ -281,7 +273,6 @@ export function usePrayerTimes() {
         Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const geocode = await reverseGeocodeLocation(latitude, longitude);
       const countryCode = geocode?.countryCode?.toUpperCase() ?? null;
-      const isBangladesh = countryCode === "BD" || timezone === "Asia/Dhaka";
 
       if (!cancelled) {
         setGpsLocation({
@@ -290,7 +281,6 @@ export function usePrayerTimes() {
           timezone,
           city: geocode?.city ?? null,
           countryCode,
-          isBangladesh,
         });
         setLoadingGps(false);
       }
@@ -365,7 +355,6 @@ export function usePrayerTimes() {
           timezone: location.timezone,
           city: location.city,
           countryCode: location.countryCode,
-          isBangladesh: location.isBangladesh,
         },
         locationId,
         settings: { method: requestArgs.method, school: requestArgs.school },
