@@ -488,15 +488,23 @@ export default function Home() {
                   refreshing={refreshing}
                   source={source}
                 />
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: "600",
-                    color: colors.inkSubtle,
-                  }}
+                <Pressable
+                  accessibilityLabel="Manage prayer locations"
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => router.push("/locations" as never)}
                 >
-                  {location?.city ?? "Locating…"}
-                </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "600",
+                      color: colors.inkSubtle,
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    {location?.city ?? "Locating…"}
+                  </Text>
+                </Pressable>
               </View>
             </View>
 
