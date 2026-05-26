@@ -87,21 +87,18 @@ export const getCachedPrayerTimes = query({
   handler: async (ctx, request) => {
     validatePrayerRequest(request);
 
-    const user = await authComponent.safeGetAuthUser(ctx);
     const days = DEFAULT_PRAYER_DAYS;
     const cacheKey = createPrayerTimesCacheKey({ ...request, days });
-    const userCacheKey = createUserPrayerTimesCacheKey(cacheKey, user?._id);
 
-    const hit = await ctx.db
+    const hits = await ctx.db
       .query("prayerTimeCaches")
-      .withIndex("by_userCacheKey", (q) => q.eq("userCacheKey", userCacheKey))
-      .first();
+      .withIndex("by_cacheKey", (q) => q.eq("cacheKey", cacheKey))
+      .order("desc")
+      .take(10);
 
-    if (!hit || hit.expiresAt <= Date.now() || !hit.timings?.length) {
-      return null;
-    }
-
-    return hit;
+    const now = Date.now();
+    const valid = hits.find((h) => h.expiresAt > now && h.timings?.length > 0);
+    return valid ?? null;
   },
 });
 
@@ -251,9 +248,8 @@ export const upsertPrayerTimesCache = internalMutation({
   handler: async (ctx, request) => {
     const existing = await ctx.db
       .query("prayerTimeCaches")
-      .withIndex("by_userCacheKey", (q) =>
-        q.eq("userCacheKey", request.userCacheKey)
-      )
+      .withIndex("by_cacheKey", (q) => q.eq("cacheKey", request.cacheKey))
+      .order("desc")
       .first();
 
     if (existing) {
