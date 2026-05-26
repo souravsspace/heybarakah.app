@@ -371,6 +371,9 @@ export function usePrayerTimes() {
     if (!(cached?.timings?.length && cacheKey)) {
       return;
     }
+    if (cached.cacheKey !== cacheKey) {
+      return;
+    }
     if (storedEntry && storedEntry.fetchedAt >= cached.generatedAt) {
       return;
     }
