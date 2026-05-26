@@ -29,6 +29,61 @@ export interface StoredPrayerState {
 
 const INITIAL: StoredPrayerState = { version: 1, entries: {} };
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isValidLocation(value: unknown): value is StoredPrayerLocation {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const loc = value as Record<string, unknown>;
+  return (
+    isFiniteNumber(loc.latitude) &&
+    isFiniteNumber(loc.longitude) &&
+    typeof loc.timezone === "string" &&
+    (loc.city === null || typeof loc.city === "string") &&
+    (loc.countryCode === null || typeof loc.countryCode === "string")
+  );
+}
+
+function isValidTimingsArray(value: unknown): boolean {
+  if (!Array.isArray(value) || value.length === 0) {
+    return false;
+  }
+  for (const day of value) {
+    if (!day || typeof day !== "object") {
+      return false;
+    }
+    const d = day as Record<string, unknown>;
+    if (typeof d.date !== "string" || !d.timings) {
+      return false;
+    }
+    const t = d.timings as Record<string, unknown>;
+    for (const name of ["fajr", "dhuhr", "asr", "maghrib", "isha"]) {
+      if (typeof t[name] !== "string") {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function isValidEntry(value: unknown): value is StoredPrayerEntry {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const entry = value as Record<string, unknown>;
+  return (
+    typeof entry.cacheKey === "string" &&
+    typeof entry.locationId === "string" &&
+    isFiniteNumber(entry.fetchedAt) &&
+    isValidLocation(entry.location) &&
+    isValidTimingsArray(entry.timings) &&
+    typeof entry.source === "string"
+  );
+}
+
 export async function readPrayerStorage(): Promise<StoredPrayerState> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -39,7 +94,13 @@ export async function readPrayerStorage(): Promise<StoredPrayerState> {
     if (parsed.version !== 1 || !parsed.entries) {
       return INITIAL;
     }
-    return { version: 1, entries: parsed.entries };
+    const validated: Record<string, StoredPrayerEntry> = {};
+    for (const [key, value] of Object.entries(parsed.entries)) {
+      if (isValidEntry(value)) {
+        validated[key] = value;
+      }
+    }
+    return { version: 1, entries: validated };
   } catch {
     return INITIAL;
   }
