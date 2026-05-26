@@ -163,6 +163,17 @@ export default defineSchema({
     total: v.number(),
     updatedAt: v.number(),
   }).index("by_user", ["authUserId"]),
+  userLocations: defineTable({
+    authUserId: v.string(),
+    name: v.string(),
+    latitude: v.number(),
+    longitude: v.number(),
+    timezone: v.string(),
+    city: v.optional(v.string()),
+    countryCode: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["authUserId"]),
   userAchievements: defineTable({
     authUserId: v.string(),
     code: v.string(),
