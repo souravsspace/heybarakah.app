@@ -255,9 +255,7 @@ export function usePrayerTimes() {
         }
       })
       .finally(() => {
-        if (!cancelled) {
-          setRefreshing(false);
-        }
+        setRefreshing(false);
       });
 
     return () => {
