@@ -66,6 +66,30 @@ export default function Subscription() {
     );
   };
 
+  const openFamilySettings = () => {
+    Haptics.selectionAsync().catch(() => undefined);
+    if (Platform.OS === "android") {
+      Linking.openURL(
+        "https://support.google.com/googleplay/answer/7007852"
+      ).catch(() =>
+        Alert.alert("Cannot open", "See Google Play Family Library.")
+      );
+      return;
+    }
+    Linking.openURL("App-Prefs:FAMILY_SHARING").catch(() =>
+      Linking.openSettings().catch(() => undefined)
+    );
+  };
+
+  const openFamilyHelp = () => {
+    Haptics.selectionAsync().catch(() => undefined);
+    const url =
+      Platform.OS === "android"
+        ? "https://support.google.com/googleplay/answer/7007852"
+        : "https://support.apple.com/HT201079";
+    Linking.openURL(url).catch(() => Alert.alert("Cannot open link", url));
+  };
+
   const manage = () => {
     Haptics.selectionAsync().catch(() => undefined);
     if (Platform.OS === "android") {
@@ -156,6 +180,32 @@ export default function Subscription() {
             ))}
           </Card>
         </Section>
+
+        {isPremium && productId === "family" ? (
+          <Section colors={colors} title="Family sharing">
+            <Card colors={colors}>
+              <FamilyInfoRow colors={colors} />
+              <Divider colors={colors} />
+              <ActionRow
+                colors={colors}
+                onPress={openFamilySettings}
+                sf={Platform.OS === "android" ? "person.2.fill" : "gear"}
+                title={
+                  Platform.OS === "android"
+                    ? "Open Play Family Library"
+                    : "Manage family in Settings"
+                }
+              />
+              <Divider colors={colors} />
+              <ActionRow
+                colors={colors}
+                onPress={openFamilyHelp}
+                sf="questionmark.circle.fill"
+                title="How family sharing works"
+              />
+            </Card>
+          </Section>
+        ) : null}
 
         {isPremium ? (
           <Section colors={colors} title="Manage">
@@ -391,6 +441,54 @@ function BenefitRow({
         name={"checkmark" as never}
         size={16}
       />
+    </View>
+  );
+}
+
+function FamilyInfoRow({ colors }: { colors: ThemeColors }) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "flex-start",
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        gap: 12,
+      }}
+    >
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 11,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.neutralSoft,
+        }}
+      >
+        <IconSymbol
+          color={colors.ink}
+          name={"person.2.fill" as never}
+          size={20}
+        />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ fontSize: 15, fontWeight: "600", color: colors.ink }}>
+          Up to 6 members
+        </Text>
+        <Text
+          style={{
+            fontSize: 12,
+            color: colors.inkMuted,
+            marginTop: 4,
+            lineHeight: 18,
+          }}
+        >
+          {Platform.OS === "android"
+            ? "Share Barakah Premium with your Play family group. Add members in the Play Store family settings."
+            : "Share Barakah Premium with your Apple Family group. Add members in iOS Settings — Apple manages invites for privacy."}
+        </Text>
+      </View>
     </View>
   );
 }
