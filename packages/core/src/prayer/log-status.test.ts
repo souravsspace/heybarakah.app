@@ -25,7 +25,7 @@ describe("classifyPrayerStatus", () => {
     expect(status).toBe("on_time");
   });
 
-  it("treats prayer slightly before scheduled start as on_time (edge)", () => {
+  it("returns early when prayed before scheduled start", () => {
     const status = classifyPrayerStatus({
       prayedAt: utc(2026, 5, 14, 4, 50),
       prayer: "fajr",
@@ -33,7 +33,7 @@ describe("classifyPrayerStatus", () => {
       dateKey: "2026-05-14",
       timezone: "UTC",
     });
-    expect(status).toBe("on_time");
+    expect(status).toBe("early");
   });
 
   it("returns late when prayed after next prayer started, same day", () => {
