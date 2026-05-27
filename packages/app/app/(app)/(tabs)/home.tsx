@@ -40,6 +40,7 @@ const PRAYER_LABEL: Record<PrayerName, string> = {
 };
 
 const STATUS_LABEL: Record<PrayerStatus, string> = {
+  early: "Early",
   on_time: "On time",
   late: "Late",
   qada: "Qadā",
