@@ -1,9 +1,12 @@
 import { describe, expect, test } from "bun:test";
+import { HighLatitudeRule, PolarCircleResolution } from "adhan";
 import {
   calculateAdhanJsPrayerDays,
   getAdhanJsCalculationParameters,
   isAdhanJsSupportedMethod,
 } from "./adhan-js";
+
+const HIJRI_DATE_PATTERN = /^\d{2}-\d{2}-\d{3,4}$/;
 
 describe("adhan js fallback", () => {
   test("supports known AlAdhan method ids", () => {
@@ -18,6 +21,43 @@ describe("adhan js fallback", () => {
       expect(isAdhanJsSupportedMethod(unsupportedMethod)).toBe(false);
       expect(getAdhanJsCalculationParameters(unsupportedMethod)).toBeNull();
     }
+  });
+
+  test("maps AlAdhan modifiers to adhan calculation parameters", () => {
+    const params = getAdhanJsCalculationParameters(3, {
+      latitudeAdjustmentMethod: 2,
+      midnightMode: 1,
+      tune: "0,2,3,4,5,6,0,7,0",
+    });
+
+    expect(params?.highLatitudeRule).toBe(HighLatitudeRule.SeventhOfTheNight);
+    expect(params?.polarCircleResolution).toBe(PolarCircleResolution.AqrabYaum);
+    expect(params?.adjustments).toEqual({
+      fajr: 2,
+      sunrise: 3,
+      dhuhr: 4,
+      asr: 5,
+      maghrib: 6,
+      isha: 7,
+    });
+  });
+
+  test("throws when tune includes fields adhan fallback cannot represent", () => {
+    expect(() =>
+      getAdhanJsCalculationParameters(3, {
+        tune: "1,0,0,0,0,0,0,0,0",
+      })
+    ).toThrow("imsak");
+    expect(() =>
+      getAdhanJsCalculationParameters(3, {
+        tune: "0,0,0,0,0,0,1,0,0",
+      })
+    ).toThrow("sunset");
+    expect(() =>
+      getAdhanJsCalculationParameters(3, {
+        tune: "0,0,0,0,0,0,0,0,1",
+      })
+    ).toThrow("midnight");
   });
 
   test("maps school=1 to hanafi and returns 7 daily records", () => {
@@ -64,7 +104,7 @@ describe("adhan js fallback", () => {
 
     expect(days).not.toBeNull();
     for (const day of days ?? []) {
-      expect(day.hijriDate).toMatch(/^\d{2}-\d{2}-\d{3,4}$/);
+      expect(day.hijriDate).toMatch(HIJRI_DATE_PATTERN);
     }
   });
 });
