@@ -195,6 +195,7 @@ export default function Profile() {
             isPremium={isPremium}
             name={name}
             onPress={() => go("/personal-details")}
+            planLabel={subscriptionLabel}
             surface={cardSurface}
           />
         </Animated.View>
@@ -316,6 +317,7 @@ function HeaderCard({
   isPremium,
   name,
   onPress,
+  planLabel,
   surface,
 }: {
   colors: ThemeColors;
@@ -326,6 +328,7 @@ function HeaderCard({
   isPremium: boolean;
   name: string;
   onPress: () => void;
+  planLabel: string;
   surface: string;
 }) {
   return (
@@ -380,7 +383,7 @@ function HeaderCard({
                   textTransform: "uppercase",
                 }}
               >
-                {isPremium ? "Premium" : "Free"}
+                {isPremium ? planLabel : "Free"}
               </Text>
             </View>
             <Text
