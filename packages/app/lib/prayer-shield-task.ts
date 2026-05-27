@@ -3,11 +3,11 @@ import * as TaskManager from "expo-task-manager";
 
 export const PRAYER_SHIELD_TASK = "barakah.prayerShield.refresh";
 
-TaskManager.defineTask(PRAYER_SHIELD_TASK, async () => {
+TaskManager.defineTask(PRAYER_SHIELD_TASK, () => {
   try {
-    return BackgroundTask.BackgroundTaskResult.Success;
+    return Promise.resolve(BackgroundTask.BackgroundTaskResult.Success);
   } catch {
-    return BackgroundTask.BackgroundTaskResult.Failed;
+    return Promise.resolve(BackgroundTask.BackgroundTaskResult.Failed);
   }
 });
 
