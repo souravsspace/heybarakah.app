@@ -1,6 +1,6 @@
 export type LoggablePrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 
-export type PrayerStatus = "on_time" | "late" | "qada" | "missed";
+export type PrayerStatus = "early" | "on_time" | "late" | "qada" | "missed";
 
 export type ClassifiableStatus = Exclude<PrayerStatus, "missed">;
 
@@ -77,6 +77,7 @@ export function classifyPrayerStatus(input: {
   const tomorrow = addDayKey(input.dateKey);
 
   const idx = PRAYER_ORDER.indexOf(input.prayer);
+  const currentStart = `${input.dateKey}T${input.schedule[input.prayer]}`;
 
   let nextStart: string;
   if (idx < PRAYER_ORDER.length - 1) {
@@ -88,6 +89,9 @@ export function classifyPrayerStatus(input: {
 
   const qadaStart = input.prayer === "isha" ? nextStart : `${tomorrow}T00:00`;
 
+  if (prayedKey < currentStart) {
+    return "early";
+  }
   if (prayedKey < nextStart) {
     return "on_time";
   }
