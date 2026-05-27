@@ -1,5 +1,5 @@
 import { api } from "@barakah/core/convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import {
   createContext,
@@ -59,9 +59,7 @@ export function SubscriptionProvider({
 }) {
   const { user } = useUser();
   const activeSubscription = useQuery(api.lib.subscriptions.getMySubscription);
-  const syncMutation = useMutation(
-    api.lib.subscriptions.syncRevenueCatEntitlement
-  );
+  const syncAction = useAction(api.lib.subscriptions.syncRevenueCatEntitlement);
   const claimMockMutation = useMutation(
     api.lib.subscriptions.claimMockSubscription
   );
@@ -76,9 +74,9 @@ export function SubscriptionProvider({
       if (!user) {
         return;
       }
-      await syncMutation(mapCustomerInfoToSync(info));
+      await syncAction({ ...mapCustomerInfoToSync(info) });
     },
-    [syncMutation, user]
+    [syncAction, user]
   );
 
   const syncCustomerInfoQuiet = useCallback(
