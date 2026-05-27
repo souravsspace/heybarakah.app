@@ -29,6 +29,7 @@ const PRAYER_LABEL: Record<LoggablePrayerName, string> = {
 };
 
 const STATUS_LABEL: Record<PrayerStatus, string> = {
+  early: "Early",
   on_time: "On time",
   late: "Late",
   qada: "Qadā",
@@ -36,6 +37,7 @@ const STATUS_LABEL: Record<PrayerStatus, string> = {
 };
 
 const STATUS_HINT: Record<PrayerStatus, string> = {
+  early: "Recorded before the window opened.",
   on_time: "Prayed inside the window.",
   late: "Prayed after the window closed.",
   qada: "Made up after the day passed.",
