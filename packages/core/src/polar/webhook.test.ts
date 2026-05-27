@@ -89,6 +89,7 @@ describe("buildPolarOrderDoc", () => {
   test("builds order document with all fields", () => {
     const doc = buildPolarOrderDoc(
       {
+        authUserId: "auth_user_123",
         polarOrderId: "order_123",
         polarCustomerId: "cust_456",
         customerEmail: "test@example.com",
@@ -103,6 +104,7 @@ describe("buildPolarOrderDoc", () => {
     );
 
     expect(doc).toEqual({
+      authUserId: "auth_user_123",
       polarOrderId: "order_123",
       polarCustomerId: "cust_456",
       customerEmail: "test@example.com",
@@ -139,6 +141,7 @@ describe("buildSubscriptionDoc", () => {
     const doc = buildSubscriptionDoc(
       {
         customerEmail: "test@example.com",
+        authUserId: "auth_user_123",
         polarCustomerId: "cust_456",
         polarProductId: "prod_789",
         polarOrderId: "order_123",
@@ -147,6 +150,7 @@ describe("buildSubscriptionDoc", () => {
     );
 
     expect(doc).toEqual({
+      authUserId: "auth_user_123",
       customerEmail: "test@example.com",
       productId: "lifetime",
       status: "active",
