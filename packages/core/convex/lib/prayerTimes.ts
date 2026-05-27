@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import {
   ALADHAN_METHOD_IDS,
   calculateAdhanJsPrayerDays,
@@ -46,6 +46,16 @@ function isValidTimezone(tz: string): boolean {
   }
 }
 
+function validateDateKey(dateKey: string) {
+  if (!DATE_KEY_PATTERN.test(dateKey)) {
+    throw new ConvexError("invalid date");
+  }
+  const d = new Date(`${dateKey}T00:00:00Z`);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== dateKey) {
+    throw new ConvexError("invalid date");
+  }
+}
+
 function validatePrayerRequest(request: {
   latitude: number;
   longitude: number;
@@ -74,12 +84,15 @@ function validatePrayerRequest(request: {
   if (request.tune !== undefined && !TUNE_PATTERN.test(request.tune)) {
     throw new Error("Invalid tune format");
   }
-  if (!DATE_KEY_PATTERN.test(request.startDate)) {
-    throw new Error("Invalid startDate format");
-  }
+  validateDateKey(request.startDate);
   if (request.days !== undefined && request.days !== DEFAULT_PRAYER_DAYS) {
     throw new Error("Only 7-day prayer windows are supported");
   }
+}
+
+function stripPrayerTimeCachePrivateFields(row: Doc<"prayerTimeCaches">) {
+  const { city, countryCode, userCacheKey, userId, ...safe } = row;
+  return safe;
 }
 
 export const getCachedPrayerTimes = query({
@@ -98,13 +111,13 @@ export const getCachedPrayerTimes = query({
 
     const now = Date.now();
     const valid = hits.find((h) => h.expiresAt > now && h.timings?.length > 0);
-    return valid ?? null;
+    return valid ? stripPrayerTimeCachePrivateFields(valid) : null;
   },
 });
 
 export const refreshPrayerTimes: ReturnType<typeof action> = action({
   args,
-  handler: async (ctx, request): Promise<Doc<"prayerTimeCaches"> | null> => {
+  handler: async (ctx, request) => {
     validatePrayerRequest(request);
 
     const cached = await ctx.runQuery(
@@ -181,10 +194,11 @@ export const refreshPrayerTimes: ReturnType<typeof action> = action({
       updatedAt: now,
     };
 
-    return await ctx.runMutation(
+    const fresh = await ctx.runMutation(
       internal.lib.prayerTimes.upsertPrayerTimesCache,
       payload
     );
+    return fresh ? stripPrayerTimeCachePrivateFields(fresh) : null;
   },
 });
 
