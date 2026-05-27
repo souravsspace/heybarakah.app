@@ -9,6 +9,7 @@ import {
   Linking,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -153,87 +154,92 @@ export default function Subscription() {
           onBack={() => router.back()}
           title="Subscription"
         />
-        <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
-          {isPremium ? (
-            <PlanCard colors={colors} productId={productId} />
-          ) : (
-            <UpgradeCard
-              colors={colors}
-              loading={loading}
-              onUpgrade={upgrade}
-            />
-          )}
-        </View>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
+            {isPremium ? (
+              <PlanCard colors={colors} productId={productId} />
+            ) : (
+              <UpgradeCard
+                colors={colors}
+                loading={loading}
+                onUpgrade={upgrade}
+              />
+            )}
+          </View>
 
-        <Section colors={colors} title="What's included">
-          <Card colors={colors}>
-            {BENEFITS.map((b, i) => (
-              <View key={b.sf}>
-                <BenefitRow
+          <Section colors={colors} title="What's included">
+            <Card colors={colors}>
+              {BENEFITS.map((b, i) => (
+                <View key={b.sf}>
+                  <BenefitRow
+                    colors={colors}
+                    sf={b.sf}
+                    subtitle={b.subtitle}
+                    title={b.title}
+                  />
+                  {i < BENEFITS.length - 1 ? <Divider colors={colors} /> : null}
+                </View>
+              ))}
+            </Card>
+          </Section>
+
+          {isPremium && productId === "family" ? (
+            <Section colors={colors} title="Family sharing">
+              <Card colors={colors}>
+                <FamilyInfoRow colors={colors} />
+                <Divider colors={colors} />
+                <ActionRow
                   colors={colors}
-                  sf={b.sf}
-                  subtitle={b.subtitle}
-                  title={b.title}
+                  onPress={openFamilySettings}
+                  sf={Platform.OS === "android" ? "person.2.fill" : "gear"}
+                  title={
+                    Platform.OS === "android"
+                      ? "Open Play Family Library"
+                      : "Manage family in Settings"
+                  }
                 />
-                {i < BENEFITS.length - 1 ? <Divider colors={colors} /> : null}
-              </View>
-            ))}
-          </Card>
-        </Section>
+                <Divider colors={colors} />
+                <ActionRow
+                  colors={colors}
+                  onPress={openFamilyHelp}
+                  sf="questionmark.circle.fill"
+                  title="How family sharing works"
+                />
+              </Card>
+            </Section>
+          ) : null}
 
-        {isPremium && productId === "family" ? (
-          <Section colors={colors} title="Family sharing">
-            <Card colors={colors}>
-              <FamilyInfoRow colors={colors} />
-              <Divider colors={colors} />
-              <ActionRow
-                colors={colors}
-                onPress={openFamilySettings}
-                sf={Platform.OS === "android" ? "person.2.fill" : "gear"}
-                title={
-                  Platform.OS === "android"
-                    ? "Open Play Family Library"
-                    : "Manage family in Settings"
-                }
-              />
-              <Divider colors={colors} />
-              <ActionRow
-                colors={colors}
-                onPress={openFamilyHelp}
-                sf="questionmark.circle.fill"
-                title="How family sharing works"
-              />
-            </Card>
-          </Section>
-        ) : null}
-
-        {isPremium ? (
-          <Section colors={colors} title="Manage">
-            <Card colors={colors}>
-              <ActionRow
-                colors={colors}
-                onPress={manage}
-                sf="creditcard.fill"
-                title="Manage subscription"
-              />
-              <Divider colors={colors} />
-              <ActionRow
-                colors={colors}
-                loading={isRestoring}
-                onPress={onRestore}
-                sf="arrow.clockwise"
-                title="Restore purchases"
-              />
-              <Divider colors={colors} />
-              <ActionRow
-                colors={colors}
-                onPress={openSupport}
-                sf="envelope.fill"
-                title="Billing support"
-              />
-            </Card>
-          </Section>
-        ) : null}
+          {isPremium ? (
+            <Section colors={colors} title="Manage">
+              <Card colors={colors}>
+                <ActionRow
+                  colors={colors}
+                  onPress={manage}
+                  sf="creditcard.fill"
+                  title="Manage subscription"
+                />
+                <Divider colors={colors} />
+                <ActionRow
+                  colors={colors}
+                  loading={isRestoring}
+                  onPress={onRestore}
+                  sf="arrow.clockwise"
+                  title="Restore purchases"
+                />
+                <Divider colors={colors} />
+                <ActionRow
+                  colors={colors}
+                  onPress={openSupport}
+                  sf="envelope.fill"
+                  title="Billing support"
+                />
+              </Card>
+            </Section>
+          ) : null}
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
