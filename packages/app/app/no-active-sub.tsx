@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { BodyText } from "@/components/onboarding/body-text";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
@@ -58,15 +58,6 @@ export default function NoActiveSub() {
             onPress={onRestore}
             variant="secondary"
           />
-          {isRestoring ? (
-            <View
-              className="items-center"
-              pointerEvents="none"
-              style={{ marginTop: -52, height: 0 }}
-            >
-              <ActivityIndicator color={PRIMARY} size="small" />
-            </View>
-          ) : null}
           <Pressable
             accessibilityRole="button"
             hitSlop={12}
