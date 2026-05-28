@@ -1,15 +1,15 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
-import {
-  ackPendingDhikr,
-  peekPendingDhikr,
-  setSnapshot,
-} from "expo-widget-bridge";
 import { useEffect, useMemo, useRef } from "react";
 import { AppState } from "react-native";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { pickDailyAyah } from "@/lib/daily-ayah";
 import { buildWidgetSnapshot } from "@/lib/widget-snapshot";
+import {
+  ackPendingDhikr,
+  peekPendingDhikr,
+  setSnapshot,
+} from "@/lib/widgets-native";
 
 const DEBOUNCE_MS = 800;
 const INCREMENT_CHUNK = 1000;
@@ -58,8 +58,12 @@ export function useWidgetSync(): void {
       todayDateKey: today,
       timezone,
       streakDays: streak?.days ?? 0,
+      streakBest: streak?.best ?? 0,
+      streakHistory: streak?.history ?? [],
+      streakTodayDone: streak?.todayDone ?? 0,
       dhikrCount: dhikr?.count ?? 0,
       dhikrTarget: dhikr?.target ?? 33,
+      dhikrSessionTotal: dhikr?.sessionTotal ?? 0,
       ayah,
     });
     if (!snapshot) {
@@ -89,8 +93,12 @@ export function useWidgetSync(): void {
     ayah,
     dhikr?.count,
     dhikr?.target,
+    dhikr?.sessionTotal,
     prayerTimes,
     streak?.days,
+    streak?.best,
+    streak?.history,
+    streak?.todayDone,
     timezone,
     today,
     tomorrow,

@@ -1,14 +1,14 @@
 import type { PrayerDay } from "@barakah/core/prayer";
-import type { PrayerName } from "expo-widget-bridge";
-import {
-  endAllLockActivities,
-  endLockActivity,
-  startLockActivity,
-} from "expo-widget-bridge";
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { lockBoundsMinutes } from "@/lib/prayer-window-config";
+import {
+  endAllLockActivities,
+  endLockActivity,
+  type PrayerName,
+  startLockActivity,
+} from "@/lib/widgets-native";
 
 const TICK_MS = 30_000;
 const PRAYER_ORDER: readonly PrayerName[] = [
