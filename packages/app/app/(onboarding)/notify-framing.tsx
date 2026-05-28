@@ -1,10 +1,10 @@
+import { Image } from "expo-image";
 import { Pressable, Text, View } from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 
-const ACCENT = "#29603E";
 const INK = "#0F1311";
 const MUTED = "#6B7280";
 const HAIRLINE = "#E5E7EB";
@@ -130,23 +130,15 @@ function NotificationMock() {
         gap: 12,
       }}
     >
-      <View
+      <Image
+        contentFit="cover"
+        source={require("@/assets/images/icon.png")}
         style={{
           width: 36,
           height: 36,
           borderRadius: 8,
-          backgroundColor: ACCENT,
-          alignItems: "center",
-          justifyContent: "center",
         }}
-      >
-        <Text
-          className="font-serif"
-          style={{ color: "#F4EDDF", fontSize: 16, fontWeight: "700" }}
-        >
-          B
-        </Text>
-      </View>
+      />
       <View style={{ flex: 1 }}>
         <View
           className="flex-row items-baseline justify-between"

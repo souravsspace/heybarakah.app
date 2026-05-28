@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, View } from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
-import { TrialTimeline } from "@/components/onboarding/paywall/trial-timeline";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
@@ -80,10 +79,6 @@ export default function TryFree() {
           >
             No Payment Due Now
           </Text>
-        </View>
-
-        <View className="mt-md" style={{ paddingHorizontal: 8 }}>
-          <TrialTimeline />
         </View>
       </FadeSlideIn>
     </ScreenShell>

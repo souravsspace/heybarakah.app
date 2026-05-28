@@ -1,15 +1,11 @@
 import { Text, View } from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
+import { Headline } from "@/components/onboarding/headline";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { QUIZ_OPTIONS } from "@/constants/onboarding-config";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
-
-const ACCENT = "#29603E";
-const INK = "#0F1311";
-const MUTED = "#6B7280";
-const LINE = "rgba(15, 19, 17, 0.14)";
 
 const PRAYER_LABELS: Record<string, string> = {
   fajr: "Fajr",
@@ -18,6 +14,8 @@ const PRAYER_LABELS: Record<string, string> = {
   maghrib: "Maghrib",
   isha: "Isha",
 };
+
+const ARABIC_NUMERALS = ["١", "٢", "٣", "٤", "٥"];
 
 function labelFor<T extends { value: string; label: string }>(
   list: readonly T[],
@@ -52,12 +50,15 @@ export default function PlanSummary() {
     {
       label: "Tracked",
       value:
-        lockedPrayers.length > 0
-          ? `${lockedPrayers.length} of 5 · ${lockedPrayers.join(", ")}`
-          : "All five",
+        lockedPrayers.length === 0 || lockedPrayers.length === 5
+          ? "All five"
+          : `${lockedPrayers.length} of 5`,
     },
     { label: "Goal", value: labelFor(QUIZ_OPTIONS.goal, state.goal) },
   ];
+
+  const showPrayerCaption =
+    lockedPrayers.length > 0 && lockedPrayers.length < 5;
 
   return (
     <ScreenShell
@@ -69,169 +70,135 @@ export default function PlanSummary() {
         style={{ width: "100%", maxWidth: 360, alignSelf: "center" }}
       >
         <FadeSlideIn delay={80}>
-          <Masthead />
+          <BismillahMark />
         </FadeSlideIn>
 
-        <FadeSlideIn delay={180}>
-          <Title />
+        <FadeSlideIn delay={220}>
+          <View style={{ marginTop: 20 }}>
+            <Headline align="left" size="h1">
+              My covenant.
+            </Headline>
+            <Text
+              className="font-sans text-tertiary"
+              style={{
+                marginTop: 8,
+                fontSize: 13,
+                lineHeight: 18,
+                fontStyle: "italic",
+              }}
+            >
+              Five prayers, one return.
+            </Text>
+          </View>
         </FadeSlideIn>
 
         <View style={{ marginTop: 24 }}>
           {rows.map((row, i) => (
-            <FadeSlideIn delay={280 + i * 80} key={row.label}>
-              <LedgerRow index={i + 1} label={row.label} value={row.value} />
+            <FadeSlideIn delay={300 + i * 70} key={row.label}>
+              <CovenantRow
+                index={i}
+                isLast={i === rows.length - 1}
+                label={row.label}
+                value={row.value}
+              />
             </FadeSlideIn>
           ))}
         </View>
 
-        <View style={{ flex: 1, minHeight: 16 }} />
+        {showPrayerCaption ? (
+          <FadeSlideIn delay={720}>
+            <View
+              className="flex-row items-center"
+              style={{ marginTop: 14, gap: 10 }}
+            >
+              <View
+                className="bg-primary"
+                style={{ width: 18, height: 1, opacity: 0.5 }}
+              />
+              <Text
+                className="font-sans text-caption text-tertiary"
+                style={{ flex: 1 }}
+              >
+                {lockedPrayers.join(" · ")}
+              </Text>
+            </View>
+          </FadeSlideIn>
+        ) : null}
 
-        <FadeSlideIn delay={780}>
-          <SealLine />
-        </FadeSlideIn>
+        <View style={{ flex: 1, minHeight: 16 }} />
       </View>
     </ScreenShell>
   );
 }
 
-function Masthead() {
+function BismillahMark() {
   return (
-    <View>
-      <View className="flex-row items-baseline justify-between">
-        <Text
-          className="font-sans"
-          style={{
-            fontSize: 9,
-            fontWeight: "800",
-            letterSpacing: 3,
-            color: ACCENT,
-          }}
-        >
-          ﷽
-        </Text>
-        <Text
-          className="font-sans"
-          style={{
-            fontSize: 9,
-            fontWeight: "800",
-            letterSpacing: 3,
-            color: INK,
-          }}
-        >
-          YOUR LEDGER
-        </Text>
-        <Text
-          className="font-sans"
-          style={{
-            fontSize: 9,
-            fontWeight: "700",
-            letterSpacing: 2.4,
-            color: MUTED,
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          FOLIO I
-        </Text>
-      </View>
-      <View style={{ marginTop: 10, height: 1, backgroundColor: LINE }} />
-    </View>
-  );
-}
-
-function Title() {
-  return (
-    <View style={{ marginTop: 22 }}>
+    <View className="items-center" style={{ paddingTop: 8 }}>
       <Text
-        className="font-serif"
-        style={{
-          fontSize: 38,
-          lineHeight: 42,
-          fontWeight: "700",
-          color: INK,
-          letterSpacing: -0.6,
-        }}
+        className="font-serif text-ink"
+        style={{ fontSize: 32, lineHeight: 38 }}
       >
-        Your{"\n"}covenant.
+        ﷽
       </Text>
     </View>
   );
 }
 
-function LedgerRow({
+function CovenantRow({
   index,
   label,
   value,
+  isLast,
 }: {
   index: number;
   label: string;
   value: string;
+  isLast: boolean;
 }) {
   return (
-    <View style={{ paddingVertical: 12 }}>
-      <View className="flex-row" style={{ gap: 14 }}>
+    <View>
+      <View
+        className="flex-row items-center"
+        style={{ paddingVertical: 14, gap: 14 }}
+      >
         <Text
-          className="font-serif"
+          className="font-serif text-primary"
           style={{
-            width: 22,
-            fontSize: 13,
-            color: ACCENT,
-            fontWeight: "700",
-            fontVariant: ["tabular-nums"],
-            paddingTop: 4,
+            width: 20,
+            fontSize: 16,
+            lineHeight: 20,
+            textAlign: "center",
           }}
         >
-          {`0${index}`}
+          {ARABIC_NUMERALS[index]}
         </Text>
-        <View style={{ flex: 1 }}>
-          <Text
-            className="font-sans"
-            style={{
-              fontSize: 9,
-              fontWeight: "800",
-              letterSpacing: 2.4,
-              color: MUTED,
-            }}
-          >
-            {label.toUpperCase()}
-          </Text>
-          <Text
-            className="font-serif"
-            style={{
-              fontSize: 17,
-              lineHeight: 22,
-              color: INK,
-              marginTop: 4,
-              fontWeight: "700",
-            }}
-          >
-            {value}
-          </Text>
-        </View>
+        <Text
+          className="font-sans text-tertiary"
+          style={{
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 2.2,
+            textTransform: "uppercase",
+            flexShrink: 0,
+          }}
+        >
+          {label}
+        </Text>
+        <Text
+          className="text-right font-serif text-ink"
+          style={{ fontSize: 17, lineHeight: 22, flex: 1 }}
+        >
+          {value}
+        </Text>
       </View>
-      <View style={{ marginTop: 12, height: 1, backgroundColor: LINE }} />
-    </View>
-  );
-}
-
-function SealLine() {
-  return (
-    <View
-      className="flex-row items-center"
-      style={{ gap: 10, marginBottom: 4 }}
-    >
-      <View style={{ flex: 1, height: 1, backgroundColor: LINE }} />
-      <Text
-        className="font-sans"
-        style={{
-          fontSize: 9,
-          fontWeight: "800",
-          letterSpacing: 3,
-          color: MUTED,
-        }}
-      >
-        SEALED FOR YOU
-      </Text>
-      <View style={{ flex: 1, height: 1, backgroundColor: LINE }} />
+      {isLast ? null : (
+        <View
+          style={{
+            height: 1,
+            backgroundColor: "rgba(15, 19, 17, 0.08)",
+          }}
+        />
+      )}
     </View>
   );
 }

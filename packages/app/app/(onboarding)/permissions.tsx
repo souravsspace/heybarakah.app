@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Text, useWindowDimensions, View } from "react-native";
-import { BodyText } from "@/components/onboarding/body-text";
+import { Text, View } from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { LinkButton } from "@/components/onboarding/link-button";
@@ -14,26 +13,24 @@ import {
   requestNotificationPermission,
 } from "@/hooks/use-permissions";
 
-const SCREEN_PAD_X = 24;
-
 const PERMS = [
   {
-    icon: "location-outline" as const,
-    title: "Location",
-    detail: "Accurate prayer times for where you are.",
+    icon: "compass-outline" as const,
+    numeral: "١",
+    title: "Where you stand",
+    detail: "Your times match your sky.",
   },
   {
     icon: "notifications-outline" as const,
-    title: "Notifications",
-    detail: "A quiet adhan one minute before each lock.",
+    numeral: "٢",
+    title: "When to call",
+    detail: "One quiet adhan before each salah.",
   },
 ];
 
 export default function Permissions() {
   const { dispatch } = useOnboardingState();
   const { next } = useOnboardingNav();
-  const { width } = useWindowDimensions();
-  const fullWidth = width - SCREEN_PAD_X * 2;
   const [busy, setBusy] = useState(false);
 
   async function allow() {
@@ -70,103 +67,116 @@ export default function Permissions() {
       }
       scroll={false}
     >
-      <FadeSlideIn className="flex-1 items-center gap-md" delay={120}>
-        <View className="items-center gap-[2px]">
-          <Headline size="h1">{"Two quiet\npermissions."}</Headline>
-          <BodyText size="sm" tone="muted">
-            Both are needed to lock your phone at {"\n"} the right moment, in
-            the right place.
-          </BodyText>
-        </View>
+      <View
+        className="flex-1"
+        style={{ width: "100%", maxWidth: 360, alignSelf: "center" }}
+      >
+        <FadeSlideIn delay={80}>
+          <View className="items-center" style={{ paddingTop: 8 }}>
+            <Text
+              className="font-serif text-ink"
+              style={{ fontSize: 26, lineHeight: 32 }}
+            >
+              ﷽
+            </Text>
+          </View>
+        </FadeSlideIn>
 
-        <FadeSlideIn delay={260}>
-          <View
-            className="rounded-2xl border border-neutral bg-surface"
-            style={{
-              width: fullWidth,
-              paddingHorizontal: 18,
-              paddingTop: 4,
-              paddingBottom: 4,
-            }}
-          >
-            {PERMS.map((p, i) => (
-              <PermRow
+        <FadeSlideIn delay={220}>
+          <View style={{ marginTop: 24 }}>
+            <Headline align="center" size="h1">
+              {"Two needs.\nOne salah."}
+            </Headline>
+            <Text
+              className="text-center font-sans text-tertiary"
+              style={{
+                marginTop: 8,
+                fontSize: 13,
+                lineHeight: 18,
+                fontStyle: "italic",
+              }}
+            >
+              Both lead you to prayer.
+            </Text>
+          </View>
+        </FadeSlideIn>
+
+        <FadeSlideIn delay={340}>
+          <View className="flex-row" style={{ marginTop: 28, gap: 12 }}>
+            {PERMS.map((p) => (
+              <PillarCard
                 detail={p.detail}
                 icon={p.icon}
-                isLast={i === PERMS.length - 1}
                 key={p.title}
+                numeral={p.numeral}
                 title={p.title}
               />
             ))}
           </View>
         </FadeSlideIn>
 
-        <FadeSlideIn delay={380}>
-          <View className="mt-xs flex-row items-center gap-sm">
+        <FadeSlideIn delay={500}>
+          <View className="mt-md flex-row items-center justify-center gap-sm">
             <Reassure label="No tracking" />
             <Dot />
             <Reassure label="Revoke any time" />
           </View>
         </FadeSlideIn>
-      </FadeSlideIn>
+
+        <View style={{ flex: 1 }} />
+      </View>
     </ScreenShell>
   );
 }
 
-function PermRow({
+function PillarCard({
   icon,
+  numeral,
   title,
   detail,
-  isLast,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
+  numeral: string;
   title: string;
   detail: string;
-  isLast: boolean;
 }) {
   return (
-    <View>
-      <View
-        className="flex-row items-center"
-        style={{ paddingVertical: 18, gap: 14 }}
-      >
-        <View
-          className="items-center justify-center"
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            backgroundColor: "rgba(41,96,62,0.07)",
-          }}
+    <View
+      className="rounded-lg border border-neutral bg-surface"
+      style={{
+        flex: 1,
+        paddingHorizontal: 14,
+        paddingTop: 14,
+        paddingBottom: 16,
+      }}
+    >
+      <View className="flex-row items-center justify-between">
+        <Text
+          className="font-serif text-primary"
+          style={{ fontSize: 16, lineHeight: 20 }}
         >
-          <Ionicons color="#29603E" name={icon} size={20} />
-        </View>
-        <View className="flex-1">
-          <View className="flex-row items-center justify-between">
-            <Text
-              className="font-sans text-ink"
-              style={{ fontSize: 15, fontWeight: "600", letterSpacing: -0.1 }}
-            >
-              {title}
-            </Text>
-            <Text
-              className="font-sans text-tertiary"
-              style={{ fontSize: 10, letterSpacing: 1.4, fontWeight: "700" }}
-            >
-              REQUIRED
-            </Text>
-          </View>
-          <Text
-            className="font-sans text-tertiary"
-            style={{ fontSize: 13, lineHeight: 18, marginTop: 2 }}
-          >
-            {detail}
-          </Text>
-        </View>
+          {numeral}
+        </Text>
+        <View
+          className="bg-primary"
+          style={{ width: 14, height: 1, opacity: 0.6 }}
+        />
       </View>
-      {isLast ? null : (
-        <View style={{ height: 1, backgroundColor: "#EFEFEF" }} />
-      )}
+      <View style={{ marginTop: 22, alignItems: "flex-start" }}>
+        <Ionicons color="#29603E" name={icon} size={26} />
+      </View>
+      <Text
+        className="font-serif text-ink"
+        style={{ marginTop: 12, fontSize: 17, lineHeight: 22 }}
+      >
+        {title}
+      </Text>
+      <Text
+        className="font-sans text-tertiary"
+        style={{ marginTop: 6, fontSize: 12, lineHeight: 17 }}
+      >
+        {detail}
+      </Text>
     </View>
   );
 }
