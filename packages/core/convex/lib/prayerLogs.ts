@@ -123,6 +123,7 @@ export const logPrayer = mutation({
 });
 
 const STREAK_MAX_LOOKBACK = 365;
+const STREAK_HISTORY_DAYS = 28;
 const ALL_FIVE = 5;
 const STREAK_COUNTABLE_STATUSES = new Set(["on_time", "late", "qada"]);
 
@@ -186,7 +187,13 @@ export const getStreak = query({
     validateDateKey(today);
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
-      return { days: 0, asOf: today };
+      return {
+        days: 0,
+        best: 0,
+        history: Array.from({ length: STREAK_HISTORY_DAYS }, () => 0),
+        todayDone: 0,
+        asOf: today,
+      };
     }
     const startDate = addDays(today, -STREAK_MAX_LOOKBACK);
     const logs = await ctx.db
@@ -214,7 +221,28 @@ export const getStreak = query({
       days++;
       cursor = addDays(cursor, -1);
     }
-    return { days, asOf: today };
+
+    // Longest consecutive complete-day run across the lookback window.
+    let best = days;
+    let run = 0;
+    for (let i = STREAK_MAX_LOOKBACK; i >= 0; i--) {
+      if (isComplete(addDays(today, -i))) {
+        run++;
+        best = Math.max(best, run);
+      } else {
+        run = 0;
+      }
+    }
+
+    // Last STREAK_HISTORY_DAYS days, oldest first, as 1 (all five) or 0.
+    const history: number[] = [];
+    for (let i = STREAK_HISTORY_DAYS - 1; i >= 0; i--) {
+      history.push(isComplete(addDays(today, -i)) ? 1 : 0);
+    }
+
+    const todayDone = Math.min(ALL_FIVE, byDate.get(today)?.size ?? 0);
+
+    return { days, best, history, todayDone, asOf: today };
   },
 });
 
