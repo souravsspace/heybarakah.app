@@ -1,11 +1,11 @@
 import type { PrayerDay } from "@barakah/core/prayer";
+import type { Ayah } from "@/constants/ayahs";
+import { lockBoundsMinutes } from "@/lib/prayer-window-config";
 import type {
   PrayerName,
   WidgetPrayerEntry,
   WidgetSnapshot,
-} from "expo-widget-bridge";
-import type { Ayah } from "@/constants/ayahs";
-import { lockBoundsMinutes } from "@/lib/prayer-window-config";
+} from "@/lib/widgets-native";
 
 const PRAYER_ORDER: readonly PrayerName[] = [
   "fajr",
@@ -72,12 +72,28 @@ function buildPrayerEntry(
 export interface BuildSnapshotInput {
   ayah: Ayah;
   dhikrCount: number;
+  dhikrSessionTotal: number;
   dhikrTarget: number;
+  streakBest: number;
   streakDays: number;
+  streakHistory: number[];
+  streakTodayDone: number;
   timezone: string;
   today: PrayerDay | null;
   todayDateKey: string;
   tomorrow: PrayerDay | null;
+}
+
+/** Split "Al-Ankabut 29:45" → { surah: "Al-Ankabut", reference: "29:45" }. */
+function splitReference(raw: string): { surah: string; reference: string } {
+  const lastSpace = raw.lastIndexOf(" ");
+  if (lastSpace < 0) {
+    return { surah: raw, reference: raw };
+  }
+  return {
+    surah: raw.slice(0, lastSpace),
+    reference: raw.slice(lastSpace + 1),
+  };
 }
 
 export function buildWidgetSnapshot(
@@ -114,12 +130,21 @@ export function buildWidgetSnapshot(
     date: todayDateKey,
     prayers,
     tomorrowFajrISO,
-    streak: { days: input.streakDays },
-    dhikr: { count: input.dhikrCount, target: input.dhikrTarget },
+    streak: {
+      days: input.streakDays,
+      best: input.streakBest,
+      history: input.streakHistory,
+      todayDone: input.streakTodayDone,
+    },
+    dhikr: {
+      count: input.dhikrCount,
+      target: input.dhikrTarget,
+      sessionTotal: input.dhikrSessionTotal,
+    },
     ayah: {
       arabic: ayah.arabic,
       translation: ayah.translation,
-      reference: ayah.reference,
+      ...splitReference(ayah.reference),
     },
     lockNow: null,
   };
