@@ -14,6 +14,50 @@ import { useUser } from "@/contexts/user-context";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { useSubscription } from "@/lib/subscription";
+import { FaqRow } from "./_components/faq-row";
+import { ReviewTile } from "./_components/review-tile";
+import { TrialTimeline } from "./_components/trial-timeline";
+
+const HAIRLINE = "#E5E7EB";
+const MUTED_TEXT = "#6B7280";
+const EYEBROW = "#0F1311";
+
+const REVIEWS = [
+  {
+    name: "Yusuf",
+    city: "London",
+    quote: "First app that doesn't gamify worship. It just kept me consistent.",
+  },
+  {
+    name: "Aisha",
+    city: "Toronto",
+    quote: "Locked my distractions until I prayed. I needed that mercy.",
+  },
+  {
+    name: "Bilal",
+    city: "Kuala Lumpur",
+    quote: "Plain numbers, no shame. Allah accepts the return.",
+  },
+];
+
+const FAQS = [
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes. Cancel from your App Store or Google Play subscription settings. You keep access until the period ends.",
+  },
+  {
+    q: "What is included with Premium?",
+    a: "All five prayer locks, custom strictness, full hadith library, household sharing, and every future feature.",
+  },
+  {
+    q: "Will I be charged today?",
+    a: "If you choose the yearly plan, you get a 7-day free trial. We remind you on day 5 before billing on day 7. Monthly bills today.",
+  },
+  {
+    q: "Is my data private?",
+    a: "Yes. Prayer logs stay on your device by default. Nothing is sold, nothing is shared. Names in reviews are changed.",
+  },
+];
 
 type Plan = (typeof PLANS)[number];
 type PlanId = Plan["id"];
@@ -68,9 +112,11 @@ export default function Plans() {
     claimMockSubscription,
     isPurchasing,
     refresh,
+    restore,
   } = useSubscription();
   const [showAll, setShowAll] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const selected: PlanId = state.plan ?? "yearly";
 
   const visible = PLANS.filter((p) => showAll || p.id !== "family");
@@ -115,6 +161,29 @@ export default function Plans() {
     }
     Alert.alert("Purchase failed", result.reason);
     return true;
+  }
+
+  async function handleRestore() {
+    if (isRestoring) {
+      return;
+    }
+    setIsRestoring(true);
+    try {
+      const restored = await restore();
+      if (restored) {
+        router.replace("/home");
+      } else {
+        Alert.alert(
+          "Nothing to restore",
+          "We could not find an active subscription on this Apple ID."
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      Alert.alert("Restore failed", message);
+    } finally {
+      setIsRestoring(false);
+    }
   }
 
   async function start() {
@@ -191,9 +260,29 @@ export default function Plans() {
               </Text>
             </Pressable>
           )}
+          <Pressable
+            accessibilityRole="button"
+            disabled={isRestoring}
+            onPress={handleRestore}
+            style={{ alignItems: "center", paddingVertical: 4 }}
+          >
+            <Text
+              className="font-sans"
+              style={{
+                fontSize: 12,
+                fontWeight: "600",
+                letterSpacing: 0.4,
+                color: MUTED_TEXT,
+                opacity: isRestoring ? 0.5 : 1,
+              }}
+            >
+              {isRestoring ? "Restoring…" : "Restore purchase"}
+            </Text>
+          </Pressable>
+          <LegalRow />
         </View>
       }
-      scroll={false}
+      scroll={true}
     >
       <FadeSlideIn className="gap-md">
         <View
@@ -249,8 +338,102 @@ export default function Plans() {
             />
           ))}
         </View>
+
+        <Section label="Trial timeline">
+          <TrialTimeline />
+        </Section>
+
+        <Section label="Voices">
+          {REVIEWS.map((r, i) => (
+            <View key={r.name}>
+              <ReviewTile city={r.city} name={r.name} quote={r.quote} />
+              {i === REVIEWS.length - 1 ? null : (
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: HAIRLINE,
+                  }}
+                />
+              )}
+            </View>
+          ))}
+        </Section>
+
+        <Section label="Questions">
+          {FAQS.map((f) => (
+            <FaqRow answer={f.a} key={f.q} question={f.q} />
+          ))}
+        </Section>
       </FadeSlideIn>
     </ScreenShell>
+  );
+}
+
+function Section({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={{ marginTop: 32 }}>
+      <View className="flex-row items-center" style={{ gap: 10 }}>
+        <Text
+          className="font-sans"
+          style={{
+            fontSize: 9,
+            fontWeight: "800",
+            letterSpacing: 3,
+            color: EYEBROW,
+          }}
+        >
+          {label.toUpperCase()}
+        </Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: HAIRLINE }} />
+      </View>
+      <View style={{ marginTop: 14 }}>{children}</View>
+    </View>
+  );
+}
+
+function LegalRow() {
+  return (
+    <View
+      className="flex-row items-center justify-center"
+      style={{ gap: 8, marginTop: 2 }}
+    >
+      <Pressable onPress={() => Linking.openURL(LINKS.terms)}>
+        <Text
+          className="font-sans"
+          style={{ fontSize: 11, color: MUTED_TEXT, fontWeight: "500" }}
+        >
+          Terms
+        </Text>
+      </Pressable>
+      <Text className="font-sans" style={{ fontSize: 11, color: MUTED_TEXT }}>
+        ·
+      </Text>
+      <Pressable onPress={() => Linking.openURL(LINKS.privacy)}>
+        <Text
+          className="font-sans"
+          style={{ fontSize: 11, color: MUTED_TEXT, fontWeight: "500" }}
+        >
+          Privacy
+        </Text>
+      </Pressable>
+      <Text className="font-sans" style={{ fontSize: 11, color: MUTED_TEXT }}>
+        ·
+      </Text>
+      <Pressable onPress={() => Linking.openURL(LINKS.terms)}>
+        <Text
+          className="font-sans"
+          style={{ fontSize: 11, color: MUTED_TEXT, fontWeight: "500" }}
+        >
+          EULA
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
