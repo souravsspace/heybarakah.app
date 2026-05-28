@@ -3,9 +3,35 @@ import {
   requireOptionalNativeModule,
 } from "expo-modules-core";
 import { Platform } from "react-native";
-import type { WidgetSnapshot } from "./types";
 
-interface WidgetBridgeNative extends NativeModule {
+export type PrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
+
+export interface WidgetPrayerEntry {
+  adhanISO: string;
+  endISO: string;
+  name: PrayerName;
+  startISO: string;
+}
+
+export interface WidgetSnapshot {
+  ayah: {
+    arabic: string;
+    reference: string;
+    surah: string;
+    translation: string;
+  };
+  date: string;
+  dhikr: { count: number; sessionTotal: number; target: number };
+  generatedAt: string;
+  lockNow: { name: PrayerName; endISO: string } | null;
+  prayers: WidgetPrayerEntry[];
+  streak: { best: number; days: number; history: number[]; todayDone: number };
+  tomorrowFajrISO: string | null;
+  tz: string;
+  v: 1;
+}
+
+interface ExpoWidgetsNative extends NativeModule {
   ackPendingDhikr(count: number): Promise<void>;
   endAllLockActivities(): Promise<void>;
   endLockActivity(id: string): Promise<void>;
@@ -19,9 +45,9 @@ interface WidgetBridgeNative extends NativeModule {
   ): Promise<string>;
 }
 
-const native: WidgetBridgeNative | null =
+const native: ExpoWidgetsNative | null =
   Platform.OS === "ios"
-    ? requireOptionalNativeModule<WidgetBridgeNative>("WidgetBridge")
+    ? requireOptionalNativeModule<ExpoWidgetsNative>("ExpoWidgets")
     : null;
 
 export async function setSnapshot(snapshot: WidgetSnapshot): Promise<void> {
@@ -58,7 +84,7 @@ export function startLockActivity(args: {
   endISO: string;
 }): Promise<string> {
   if (!native) {
-    return Promise.reject(new Error("WidgetBridge: iOS only"));
+    return Promise.reject(new Error("ExpoWidgets: iOS only"));
   }
   return native.startLockActivity(args.name, args.startISO, args.endISO);
 }
@@ -76,9 +102,3 @@ export function endAllLockActivities(): Promise<void> {
   }
   return native.endAllLockActivities();
 }
-
-export type {
-  PrayerName,
-  WidgetPrayerEntry,
-  WidgetSnapshot,
-} from "./types";
