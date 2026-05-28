@@ -20,7 +20,8 @@
       "entitlements": {
         "com.apple.developer.family-controls": true,
         "com.apple.security.application-groups": [
-          "group.com.souravsspace.Barakah.shield"
+          "group.com.souravsspace.Barakah.shield",
+          "group.com.souravsspace.Barakah.expowidgets"
         ]
       },
       "privacyManifests": {
@@ -137,7 +138,8 @@
             }
           }
         }
-      ]
+      ],
+      "./plugins/with-app-groups"
     ],
     "experiments": {
       "typedRoutes": true,
