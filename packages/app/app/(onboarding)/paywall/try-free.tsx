@@ -2,10 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, View } from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
+import { TrialTimeline } from "@/components/onboarding/paywall/trial-timeline";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
-import { TrialTimeline } from "./_components/trial-timeline";
 
 const FEATURES = [
   {
