@@ -1,10 +1,21 @@
-import * as StoreReview from "expo-store-review";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
+
+async function requestStoreReview(): Promise<void> {
+  try {
+    const mod = await import("expo-store-review");
+    const available = await mod.isAvailableAsync();
+    if (available) {
+      await mod.requestReview();
+    }
+  } catch {
+    // native module not in dev client yet — silently skip
+  }
+}
 
 const ACCENT = "#29603E";
 const INK = "#0F1311";
@@ -14,14 +25,7 @@ export default function RatingPrompt() {
   const { next } = useOnboardingNav();
 
   async function rate() {
-    try {
-      const available = await StoreReview.isAvailableAsync();
-      if (available) {
-        await StoreReview.requestReview();
-      }
-    } catch {
-      // silent — store review is best-effort
-    }
+    await requestStoreReview();
     next();
   }
 
