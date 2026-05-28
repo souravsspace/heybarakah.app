@@ -1,0 +1,75 @@
+/**
+ * Ensures the main app AND the widget extension keep BOTH App Groups on their
+ * entitlements:
+ *   - group.com.souravsspace.Barakah.shield      (expo-app-blocker / shield)
+ *   - group.com.souravsspace.Barakah.expowidgets  (@bittingz/expo-widgets)
+ *
+ * The app's ExpoWidgets bridge writes the snapshot to the expowidgets group and
+ * the widget reads it back, so the app must carry that group. @bacons/apple-
+ * targets (pulled in by expo-app-blocker) rewrites the app's application-groups
+ * to only the shield group during its xcodeproj mod — which runs after
+ * withEntitlementsPlist — so a structured pass alone loses. The dangerous mod
+ * below rewrites the generated entitlements files on disk as a final pass.
+ */
+const fs = require("node:fs");
+const path = require("node:path");
+const { withMod, withEntitlementsPlist } = require("expo/config-plugins");
+
+const KEY = "com.apple.security.application-groups";
+const GROUPS = [
+  "group.com.souravsspace.Barakah.shield",
+  "group.com.souravsspace.Barakah.expowidgets",
+];
+
+/** Inject the union of GROUPS into one entitlements plist on disk. */
+function patchEntitlementsFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return;
+  }
+  let xml = fs.readFileSync(filePath, "utf8");
+  if (GROUPS.every((g) => xml.includes(g))) {
+    return;
+  }
+  const block = `<key>${KEY}</key>\n  <array>\n${GROUPS.map(
+    (g) => `    <string>${g}</string>`
+  ).join("\n")}\n  </array>`;
+  const arrayRe = new RegExp(
+    `<key>${KEY}</key>\\s*<array>[\\s\\S]*?</array>`,
+    "m"
+  );
+  xml = arrayRe.test(xml)
+    ? xml.replace(arrayRe, block)
+    : xml.replace(/<dict>/, `<dict>\n  ${block}`);
+  fs.writeFileSync(filePath, xml);
+}
+
+module.exports = function withAppGroups(config) {
+  config = withEntitlementsPlist(config, (cfg) => {
+    const current = Array.isArray(cfg.modResults[KEY])
+      ? cfg.modResults[KEY]
+      : [];
+    cfg.modResults[KEY] = Array.from(new Set([...current, ...GROUPS]));
+    return cfg;
+  });
+
+  // `finalized` runs after every other mod (entitlements + bacons' xcodeproj
+  // write), so patching the files on disk here has the final say.
+  return withMod(config, {
+    platform: "ios",
+    mod: "finalized",
+    action: (cfg) => {
+      const iosRoot = cfg.modRequest.platformProjectRoot;
+      patchEntitlementsFile(
+        path.join(iosRoot, "Barakah", "Barakah.entitlements")
+      );
+      patchEntitlementsFile(
+        path.join(
+          iosRoot,
+          "BarakahWidgetExtension",
+          "BarakahWidgetExtension.entitlements"
+        )
+      );
+      return cfg;
+    },
+  });
+};
