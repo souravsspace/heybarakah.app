@@ -2,7 +2,6 @@ export const ONBOARDING_ROUTES = [
   "/(onboarding)/welcome",
   "/(onboarding)/problem",
   "/(onboarding)/promise",
-  "/(onboarding)/lock-preview",
   "/(onboarding)/quiz/gender",
   "/(onboarding)/quiz/madhab",
   "/(onboarding)/quiz/consistency",
