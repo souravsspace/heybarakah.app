@@ -5,6 +5,7 @@ import { Headline } from "@/components/onboarding/headline";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
+import { TrialTimeline } from "./_components/trial-timeline";
 
 const FEATURES = [
   {
@@ -79,6 +80,10 @@ export default function TryFree() {
           >
             No Payment Due Now
           </Text>
+        </View>
+
+        <View className="mt-md" style={{ paddingHorizontal: 8 }}>
+          <TrialTimeline />
         </View>
       </FadeSlideIn>
     </ScreenShell>
