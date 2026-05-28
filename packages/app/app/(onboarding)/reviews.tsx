@@ -7,40 +7,41 @@ import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 const ACCENT = "#29603E";
 const INK = "#0F1311";
 const MUTED = "#6B7280";
-const HAIRLINE = "#E5E7EB";
+const CARD_TONES = ["#F2F4F1", "#EDF1ED", "#F2F4F1"];
+const TICK = "rgba(41, 96, 62, 0.35)";
 
 interface Review {
   city: string;
-  fajrs: string;
-  initial: string;
+  folio: string;
   name: string;
+  prayerLine: string;
   quote: string;
 }
 
 const REVIEWS: Review[] = [
   {
-    initial: "A",
+    folio: "٠١",
     name: "Aisha",
     city: "Toronto",
     quote:
       "I had not prayed fajr in months. The reminder is gentle, the lock on TikTok is not. I needed both.",
-    fajrs: "26 fajrs · 4 weeks",
+    prayerLine: "26 fajrs · 4 weeks",
   },
   {
-    initial: "B",
+    folio: "٠٢",
     name: "Bilal",
     city: "Kuala Lumpur",
     quote:
-      "It does not nag. It just shows me what I owe Allah, in plain numbers. The honesty changed me.",
-    fajrs: "53 prayers · 11 days",
+      "It does not nag. It shows me what I owe Allah, in plain numbers. The honesty changed me.",
+    prayerLine: "53 prayers · 11 days",
   },
   {
-    initial: "M",
+    folio: "٠٣",
     name: "Maryam",
     city: "Birmingham",
     quote:
-      "First app that treats salah like worship, not gamification. No streak fire emoji, alhamdulillah.",
-    fajrs: "5 daily prayers · 22 days",
+      "First app that treats salah like worship, not gamification. Alhamdulillah.",
+    prayerLine: "5 daily prayers · 22 days",
   },
 ];
 
@@ -53,42 +54,68 @@ export default function Reviews() {
       scroll={false}
     >
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 16 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
         style={{ flex: 1 }}
       >
         <View style={{ width: "100%", maxWidth: 360, alignSelf: "center" }}>
           <FadeSlideIn delay={80}>
-            <Header />
+            <View style={{ marginTop: 2 }}>
+              <Text style={{ fontSize: 12, color: ACCENT }}>✦</Text>
+              <Text
+                className="font-sans"
+                style={{
+                  marginTop: 6,
+                  fontSize: 11,
+                  color: MUTED,
+                  fontStyle: "italic",
+                }}
+              >
+                From the ummah
+              </Text>
+            </View>
           </FadeSlideIn>
 
           <FadeSlideIn delay={200}>
-            <View style={{ marginTop: 18 }}>
+            <View style={{ marginTop: 10 }}>
               <Text
                 className="font-serif"
                 style={{
                   fontSize: 32,
-                  lineHeight: 36,
+                  lineHeight: 38,
                   fontWeight: "700",
                   color: INK,
                   letterSpacing: -0.5,
                 }}
               >
-                Returned, by{"\n"}the mercy of Allah.
+                Three returns,{"\n"}by His mercy.
               </Text>
             </View>
           </FadeSlideIn>
 
-          <View style={{ marginTop: 28 }}>
+          <View style={{ marginTop: 24, gap: 12 }}>
             {REVIEWS.map((r, i) => (
-              <FadeSlideIn delay={320 + i * 140} key={r.name}>
-                <ReviewBlock review={r} />
+              <FadeSlideIn delay={300 + i * 130} key={r.name}>
+                <ReviewCard
+                  bg={CARD_TONES[i % CARD_TONES.length] ?? "#F2F4F1"}
+                  review={r}
+                />
               </FadeSlideIn>
             ))}
           </View>
 
           <FadeSlideIn delay={780}>
-            <FooterMark />
+            <Text
+              className="font-sans"
+              style={{
+                marginTop: 18,
+                fontSize: 11,
+                color: MUTED,
+                fontStyle: "italic",
+              }}
+            >
+              Names changed. Words kept.
+            </Text>
           </FadeSlideIn>
         </View>
       </ScrollView>
@@ -96,131 +123,126 @@ export default function Reviews() {
   );
 }
 
-function Header() {
+function ReviewCard({ review, bg }: { review: Review; bg: string }) {
   return (
-    <View className="flex-row items-baseline justify-between">
-      <Text
-        className="font-sans"
-        style={{
-          fontSize: 9,
-          fontWeight: "800",
-          letterSpacing: 3,
-          color: ACCENT,
-        }}
+    <View
+      style={{
+        backgroundColor: bg,
+        borderRadius: 18,
+        paddingVertical: 24,
+        paddingHorizontal: 22,
+        overflow: "hidden",
+      }}
+    >
+      {/* Decorative corner star — top-right ornament */}
+      <View
+        pointerEvents="none"
+        style={{ position: "absolute", top: 14, right: 16 }}
       >
-        FROM THE UMMAH
-      </Text>
-      <Text
-        className="font-sans"
-        style={{
-          fontSize: 9,
-          fontWeight: "700",
-          letterSpacing: 2.4,
-          color: MUTED,
-          fontVariant: ["tabular-nums"],
-        }}
-      >
-        III VOICES
-      </Text>
-    </View>
-  );
-}
+        <Text style={{ fontSize: 10, color: ACCENT, opacity: 0.55 }}>✦</Text>
+      </View>
 
-function ReviewBlock({ review }: { review: Review }) {
-  return (
-    <View style={{ paddingVertical: 18 }}>
-      <View className="flex-row" style={{ gap: 16 }}>
-        <Monogram letter={review.initial} />
-        <View style={{ flex: 1 }}>
+      {/* Top row: folio numeral (with tick) · city */}
+      <View
+        className="flex-row items-start"
+        style={{ justifyContent: "space-between" }}
+      >
+        <View>
+          <Text
+            className="font-serif"
+            style={{
+              fontSize: 24,
+              lineHeight: 26,
+              color: ACCENT,
+              fontWeight: "400",
+              fontVariant: ["tabular-nums"],
+            }}
+          >
+            {review.folio}
+          </Text>
+          <View
+            style={{
+              marginTop: 6,
+              height: 1,
+              width: 18,
+              backgroundColor: TICK,
+            }}
+          />
+        </View>
+        <Text
+          className="font-sans"
+          style={{
+            marginTop: 6,
+            marginRight: 18,
+            fontSize: 9,
+            fontWeight: "800",
+            letterSpacing: 2.6,
+            color: MUTED,
+          }}
+        >
+          {review.city.toUpperCase()}
+        </Text>
+      </View>
+
+      {/* Open-quote glyph — manuscript pull-quote anchor */}
+      <Text
+        className="font-serif"
+        style={{
+          marginTop: 14,
+          fontSize: 34,
+          lineHeight: 28,
+          color: ACCENT,
+          fontWeight: "700",
+        }}
+      >
+        ❝
+      </Text>
+
+      {/* Quote body */}
+      <Text
+        className="font-serif"
+        style={{
+          marginTop: 6,
+          fontSize: 17,
+          lineHeight: 26,
+          color: INK,
+          fontStyle: "italic",
+        }}
+      >
+        {review.quote}
+      </Text>
+
+      {/* Footer: name · ✦ · prayer line */}
+      <View
+        className="flex-row items-center"
+        style={{ marginTop: 18, justifyContent: "space-between" }}
+      >
+        <Text
+          className="font-sans"
+          style={{
+            fontSize: 12,
+            color: INK,
+            fontWeight: "600",
+          }}
+        >
+          {`— ${review.name}`}
+        </Text>
+        <View className="flex-row items-center" style={{ gap: 8 }}>
+          <Text style={{ fontSize: 8, color: ACCENT, opacity: 0.7 }}>✦</Text>
           <Text
             className="font-sans"
             style={{
               fontSize: 9,
-              fontWeight: "800",
-              letterSpacing: 2.4,
-              color: MUTED,
-            }}
-          >
-            {`${review.name.toUpperCase()} · ${review.city.toUpperCase()}`}
-          </Text>
-          <Text
-            className="font-serif"
-            style={{
-              fontSize: 16,
-              lineHeight: 24,
-              color: INK,
-              marginTop: 8,
-              fontStyle: "italic",
-            }}
-          >
-            {`“${review.quote}”`}
-          </Text>
-          <Text
-            className="font-sans"
-            style={{
-              marginTop: 10,
-              fontSize: 10,
               fontWeight: "700",
               letterSpacing: 1.8,
               color: ACCENT,
               fontVariant: ["tabular-nums"],
             }}
           >
-            {review.fajrs.toUpperCase()}
+            {review.prayerLine.toUpperCase()}
           </Text>
         </View>
       </View>
-      <View style={{ marginTop: 18, height: 1, backgroundColor: HAIRLINE }} />
-    </View>
-  );
-}
-
-function Monogram({ letter }: { letter: string }) {
-  return (
-    <View
-      style={{
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: ACCENT,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Text
-        className="font-serif"
-        style={{
-          fontSize: 16,
-          color: ACCENT,
-          fontWeight: "700",
-        }}
-      >
-        {letter}
-      </Text>
-    </View>
-  );
-}
-
-function FooterMark() {
-  return (
-    <View
-      className="flex-row items-center"
-      style={{ marginTop: 8, gap: 10, paddingBottom: 8 }}
-    >
-      <View style={{ flex: 1, height: 1, backgroundColor: HAIRLINE }} />
-      <Text
-        className="font-sans"
-        style={{
-          fontSize: 9,
-          fontWeight: "800",
-          letterSpacing: 3,
-          color: MUTED,
-        }}
-      >
-        REAL USERS · NAMES CHANGED
-      </Text>
-      <View style={{ flex: 1, height: 1, backgroundColor: HAIRLINE }} />
     </View>
   );
 }
