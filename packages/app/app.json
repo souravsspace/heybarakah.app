@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "barakah",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.souravsspace.Barakah",
@@ -139,7 +138,20 @@
           }
         }
       ],
-      "./plugins/with-app-groups"
+      "./plugins/with-app-groups",
+      "expo-font",
+      "expo-image",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
