@@ -249,6 +249,10 @@ export const webhook = httpAction(async (ctx, request) => {
     invoiceNumber: order.invoiceNumber ?? null,
   });
 
+  // Only a genuine send failure clears the queue marker and asks Polar to retry.
+  // If the send succeeded but marking it confirmed throws, do NOT clear/retry —
+  // that would re-send a receipt that already went out. Confirmation is reconciled
+  // on the next webhook via recordPaidOrder's alreadyConfirmed/queued guard.
   try {
     await sendEmail(ctx, {
       to: email,
@@ -256,11 +260,8 @@ export const webhook = httpAction(async (ctx, request) => {
       html,
       text,
     });
-    await ctx.runMutation(internal.lib.polar.markOrderEmailConfirmed, {
-      orderId: recorded.orderId,
-    });
   } catch (err) {
-    console.error("[polar webhook] purchase email failed", email, err);
+    console.error("[polar webhook] purchase email send failed", email, err);
     await ctx.runMutation(
       internal.lib.polar.clearOrderConfirmationEmailQueued,
       {
@@ -268,6 +269,18 @@ export const webhook = httpAction(async (ctx, request) => {
       }
     );
     return new Response("purchase email failed", { status: 502 });
+  }
+
+  try {
+    await ctx.runMutation(internal.lib.polar.markOrderEmailConfirmed, {
+      orderId: recorded.orderId,
+    });
+  } catch (err) {
+    console.error(
+      "[polar webhook] mark email confirmed failed (email already sent)",
+      email,
+      err
+    );
   }
 
   return new Response("ok", { status: 200 });
