@@ -18,7 +18,11 @@ import {
   cancelShieldNotifications,
   scheduleShieldNotifications,
 } from "@/lib/prayer-shield-notifications";
-import { registerPrayerShieldTask } from "@/lib/prayer-shield-task";
+import {
+  clearShieldSchedule,
+  persistShieldSchedule,
+  registerPrayerShieldTask,
+} from "@/lib/prayer-shield-task";
 import { lockBoundsMinutes } from "@/lib/prayer-window-config";
 import { usePrayerTimes } from "./usePrayerTimes";
 
@@ -85,6 +89,7 @@ export function usePrayerShield() {
         // noop — library may throw on simulator or pre-permission
       }
       cancelShieldNotifications().catch(() => null);
+      clearShieldSchedule().catch(() => null);
       return;
     }
     if (!todayPrayerTimes) {
@@ -92,10 +97,14 @@ export function usePrayerShield() {
       return;
     }
 
+    const times = todayPrayerTimes.timings as Timings;
     scheduleShieldNotifications({
       windows: selection.windows,
-      times: todayPrayerTimes.timings as Timings,
+      times,
     }).catch(() => null);
+    persistShieldSchedule({ windows: selection.windows, times }).catch(
+      () => null
+    );
 
     const windows = computeWindows(
       selection.windows,
