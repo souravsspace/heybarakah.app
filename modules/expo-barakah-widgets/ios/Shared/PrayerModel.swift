@@ -65,8 +65,10 @@ struct PrayerState {
     let current = parsed.first { now >= $0.start && now <= $0.end }
     let next = parsed.first { $0.adhan > now }
 
-    // countdown target
-    let displayParsed = current ?? next ?? parsed.last
+    // countdown target. After the last prayer of the day the countdown points at
+    // tomorrow's Fajr, so the displayed prayer must be Fajr (parsed.first) — not the
+    // trailing Isha, which would read "Isha · 7h" while timing to Fajr.
+    let displayParsed = current ?? next ?? parsed.first
     let display = displayParsed?.info ?? PrayerCatalog.order[0]
 
     var countdown: TimeInterval = 0
