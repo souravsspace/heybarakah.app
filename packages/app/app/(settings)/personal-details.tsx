@@ -278,8 +278,8 @@ function GradientAvatar({
       <Svg height={size} width={size}>
         <Defs>
           <LinearGradient id="grad" x1="0%" x2="100%" y1="0%" y2="100%">
-            <Stop offset="0%" stopColor="#00E5A0" />
-            <Stop offset="100%" stopColor="#00A98F" />
+            <Stop offset="0%" stopColor="#29603E" />
+            <Stop offset="100%" stopColor="#29603E" />
           </LinearGradient>
         </Defs>
         <Circle cx={r} cy={r} fill="url(#grad)" r={r} />
