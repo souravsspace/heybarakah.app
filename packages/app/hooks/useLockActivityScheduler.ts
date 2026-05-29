@@ -2,6 +2,7 @@ import type { PrayerDay } from "@barakah/core/prayer";
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import { dateKey, PRAYER_ORDER, pad2 } from "@/lib/date-utils";
 import { lockBoundsMinutes } from "@/lib/prayer-window-config";
 import {
   endAllLockActivities,
@@ -11,21 +12,6 @@ import {
 } from "@/lib/widgets-native";
 
 const TICK_MS = 30_000;
-const PRAYER_ORDER: readonly PrayerName[] = [
-  "fajr",
-  "dhuhr",
-  "asr",
-  "maghrib",
-  "isha",
-];
-
-function pad2(n: number): string {
-  return n.toString().padStart(2, "0");
-}
-
-function todayKey(d: Date): string {
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-}
 
 function adhanMinutes(hhmm: string): number | null {
   const [h, m] = hhmm.split(":").map(Number);
@@ -106,7 +92,7 @@ export function useLockActivityScheduler(): void {
         }
       }
       const now = new Date();
-      const dayKey = todayKey(now);
+      const dayKey = dateKey(now);
       const day = prayerTimes.find((item) => item.date === dayKey);
       if (!day) {
         return;
