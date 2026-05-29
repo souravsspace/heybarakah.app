@@ -9,6 +9,7 @@ import { authComponent } from "./auth";
 
 const NAME_MAX_LENGTH = 60;
 const NAME_REGEX = /^[\p{L}\p{N}\s'\-.,]+$/u;
+const MAX_LOCATIONS = 20;
 
 function validateName(name: string) {
   const trimmed = name.trim();
@@ -85,6 +86,14 @@ export const create = mutation({
     const name = validateName(args.name);
     validateCoords(args.latitude, args.longitude);
     validateTimezone(args.timezone);
+
+    const existing = await ctx.db
+      .query("userLocations")
+      .withIndex("by_user", (q) => q.eq("authUserId", user._id))
+      .take(MAX_LOCATIONS);
+    if (existing.length >= MAX_LOCATIONS) {
+      throw new Error(`Maximum of ${MAX_LOCATIONS} saved locations`);
+    }
 
     const now = Date.now();
     const id = await ctx.db.insert("userLocations", {
