@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const PREFIX = "@barakah/pref/";
 
@@ -20,10 +20,13 @@ export function usePref(key: string, defaultValue: boolean) {
       .finally(() => setHydrated(true));
   }, [key]);
 
-  const set = (v: boolean) => {
-    setValue(v);
-    AsyncStorage.setItem(PREFIX + key, v ? "1" : "0").catch(() => undefined);
-  };
+  const set = useCallback(
+    (v: boolean) => {
+      setValue(v);
+      AsyncStorage.setItem(PREFIX + key, v ? "1" : "0").catch(() => undefined);
+    },
+    [key]
+  );
 
   return { value, set, hydrated };
 }
