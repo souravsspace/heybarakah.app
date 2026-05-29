@@ -122,16 +122,14 @@ function useDhikrReconciliation(today: string): void {
         if (cancelled || pending <= 0) {
           return;
         }
-        let committed = 0;
         let remaining = pending;
         while (remaining > 0 && !cancelled) {
           const chunk = Math.min(remaining, INCREMENT_CHUNK);
           await increment({ date: today, by: chunk });
-          committed += chunk;
+          // Ack each chunk right after it commits. If a later chunk throws, the
+          // already-committed chunks stay acked and are not re-incremented on retry.
+          await ackPendingDhikr(chunk);
           remaining -= chunk;
-        }
-        if (committed > 0) {
-          await ackPendingDhikr(committed);
         }
       } catch {
         // bridge unavailable or commit failed — pending count preserved
