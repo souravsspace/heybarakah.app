@@ -74,6 +74,7 @@
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@barakah/tsconfig": "workspace:*",
+    "@react-native-community/cli": "^20.1.3",
     "@types/react": "~19.1.0",
     "babel-preset-expo": "~54.0.10",
     "eslint": "^9.25.0",
