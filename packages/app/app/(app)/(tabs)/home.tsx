@@ -2,7 +2,6 @@ import { api } from "@barakah/core/convex/_generated/api";
 import {
   classifyPrayerStatus,
   type LoggablePrayerName,
-  type PrayerDay,
   type PrayerStatus,
 } from "@barakah/core/prayer";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,10 +24,16 @@ import { useUser } from "@/contexts/user-context";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { useLogPrayer, useWeekLogs } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import {
+  activePrayerNow,
+  dateKey,
+  fmtRangeTime,
+  PRAYER_ORDER,
+  pad2,
+} from "@/lib/date-utils";
 
 type PrayerName = LoggablePrayerName;
 
-const PRAYER_ORDER: PrayerName[] = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
 const BARAKAH_GREEN = "#29603E";
 
 const PRAYER_LABEL: Record<PrayerName, string> = {
@@ -46,15 +51,6 @@ const STATUS_LABEL: Record<PrayerStatus, string> = {
   qada: "Qadā",
   missed: "Missed",
 };
-
-function pad(n: number) {
-  return n.toString().padStart(2, "0");
-}
-
-function todayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
 
 const HIJRI_MONTHS = [
   "Muḥarram",
@@ -104,15 +100,7 @@ function fmt12(time: string) {
   }
   const period = h >= 12 ? "PM" : "AM";
   const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour}:${pad(m)} ${period}`;
-}
-
-function fmtRangeTime(date: Date): string {
-  const h = date.getHours();
-  const m = date.getMinutes();
-  const period = h >= 12 ? "p" : "a";
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour}:${pad(m)}${period}`;
+  return `${hour}:${pad2(m)} ${period}`;
 }
 
 function windowProgress(start: Date | null, end: Date | null): number {
@@ -125,26 +113,6 @@ function windowProgress(start: Date | null, end: Date | null): number {
   }
   const elapsed = Date.now() - start.getTime();
   return Math.max(0, Math.min(1, elapsed / total));
-}
-
-function activePrayerNow(day: PrayerDay | null): PrayerName | null {
-  if (!day) {
-    return null;
-  }
-  const now = new Date();
-  let active: PrayerName | null = null;
-  for (const name of PRAYER_ORDER) {
-    const [h, m] = day.timings[name].split(":").map(Number);
-    if (Number.isNaN(h) || Number.isNaN(m)) {
-      continue;
-    }
-    const at = new Date(now);
-    at.setHours(h, m, 0, 0);
-    if (at <= now) {
-      active = name;
-    }
-  }
-  return active;
 }
 
 function useCountdown(target: Date | null) {
@@ -251,7 +219,7 @@ export default function Home() {
   const countdown = useCountdown(nextPrayer?.at ?? null);
   const hijri = todayPrayerTimes?.hijriDate ?? null;
 
-  const today = todayKey();
+  const today = dateKey();
   const gregLine = formatDateLine(new Date());
   const hijriLine = formatHijri(hijri);
   const dateLine = hijriLine ? `${gregLine}  ·  ${hijriLine}` : gregLine;
@@ -552,7 +520,7 @@ export default function Home() {
                   fontVariant: ["tabular-nums"],
                 }}
               >
-                {`In ${countdown.h}h ${pad(countdown.m)}m ${pad(countdown.s)}s`}
+                {`In ${countdown.h}h ${pad2(countdown.m)}m ${pad2(countdown.s)}s`}
               </Text>
             ) : null}
 
