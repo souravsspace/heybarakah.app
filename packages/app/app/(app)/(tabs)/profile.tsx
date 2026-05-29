@@ -290,7 +290,7 @@ export default function Profile() {
               colors={colors}
               onPress={handleLogout}
               sf="rectangle.portrait.and.arrow.right"
-              title="Logout"
+              title="Log out"
             />
             <Divider colors={colors} />
             <Row
@@ -428,8 +428,8 @@ function GradientAvatar({
       <Svg height={size} width={size}>
         <Defs>
           <LinearGradient id="avatar-grad" x1="0%" x2="100%" y1="0%" y2="100%">
-            <Stop offset="0%" stopColor="#00E5A0" />
-            <Stop offset="100%" stopColor="#00A98F" />
+            <Stop offset="0%" stopColor="#29603E" />
+            <Stop offset="100%" stopColor="#29603E" />
           </LinearGradient>
         </Defs>
         <Circle cx={r} cy={r} fill="url(#avatar-grad)" r={r} />
@@ -680,7 +680,7 @@ function PermissionRow({
               letterSpacing: 0.4,
             }}
           >
-            ENABLED
+            Enabled
           </Text>
         </View>
       ) : (
