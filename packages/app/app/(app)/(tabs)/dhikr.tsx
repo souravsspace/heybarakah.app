@@ -223,7 +223,7 @@ export default function DhikrScreen() {
                   textAlign: "center",
                 }}
               >
-                Mashā Allāh
+                Mā shāʾ Allāh
               </Text>
               <Text
                 style={{
@@ -255,7 +255,7 @@ export default function DhikrScreen() {
                 >
                   {isLast
                     ? "Session complete · Start over"
-                    : `Next · ${next.name} →`}
+                    : `Next · ${next.name}`}
                 </Text>
               </Pressable>
             </>
