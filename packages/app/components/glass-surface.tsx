@@ -52,14 +52,14 @@ export function GlassSurface({
           colorScheme={colorScheme ?? "auto"}
           glassEffectStyle="regular"
           pointerEvents="none"
-          style={[StyleSheet.absoluteFillObject, { borderRadius: radius }]}
+          style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
         />
       ) : (
         <BlurView
           experimentalBlurMethod="dimezisBlurView"
           intensity={Platform.OS === "ios" ? 60 : 40}
           pointerEvents="none"
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           tint={resolvedBlurTint}
         />
       )}
