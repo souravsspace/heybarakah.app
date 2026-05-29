@@ -1,23 +1,12 @@
 import type { PrayerDay } from "@barakah/core/prayer";
 import type { Ayah } from "@/constants/ayahs";
+import { PRAYER_ORDER, pad2 } from "@/lib/date-utils";
 import { lockBoundsMinutes } from "@/lib/prayer-window-config";
 import type {
   PrayerName,
   WidgetPrayerEntry,
   WidgetSnapshot,
 } from "@/lib/widgets-native";
-
-const PRAYER_ORDER: readonly PrayerName[] = [
-  "fajr",
-  "dhuhr",
-  "asr",
-  "maghrib",
-  "isha",
-];
-
-function pad2(n: number): string {
-  return n.toString().padStart(2, "0");
-}
 
 function parseHHmm(raw: string): { hour: number; minute: number } | null {
   const [hourText, minuteText] = raw.split(":");
