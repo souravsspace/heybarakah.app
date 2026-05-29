@@ -20,7 +20,8 @@
       "entitlements": {
         "com.apple.developer.family-controls": true,
         "com.apple.security.application-groups": [
-          "group.com.souravsspace.Barakah.shield"
+          "group.com.souravsspace.Barakah.shield",
+          "group.com.souravsspace.Barakah.expowidgets"
         ]
       },
       "privacyManifests": {
@@ -98,7 +99,47 @@
           }
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      [
+        "expo-native-fonts",
+        {
+          "Inter": [
+            {
+              "path": "./assets/fonts/Inter.ttf",
+              "weight": 400
+            }
+          ],
+          "LibreBaskerville-Bold": [
+            {
+              "path": "./assets/fonts/LibreBaskerville-Bold.ttf",
+              "weight": 700
+            }
+          ]
+        }
+      ],
+      [
+        "@bittingz/expo-widgets",
+        {
+          "ios": {
+            "src": "../../modules/expo-barakah-widgets/ios",
+            "devTeamId": "CG5WX63737",
+            "deploymentTarget": "17.0",
+            "useLiveActivities": true,
+            "frequentUpdates": true,
+            "moduleDependencies": [
+              "Shared/WidgetSnapshot.swift",
+              "Shared/SharedStore.swift",
+              "Shared/LockActivityAttributes.swift",
+              "Shared/LockActivityController.swift"
+            ],
+            "mode": "production",
+            "xcode": {
+              "widgetBundleIdentifier": "com.souravsspace.Barakah.BarakahWidgets"
+            }
+          }
+        }
+      ],
+      "./plugins/with-app-groups"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -135,54 +176,6 @@
                   "targetName": "ShieldConfiguration",
                   "entitlements": {
                     "com.apple.developer.family-controls": true,
-                    "com.apple.security.application-groups": [
-                      "group.com.souravsspace.Barakah.shield"
-                    ]
-                  }
-                },
-                {
-                  "bundleIdentifier": "com.souravsspace.Barakah.BarakahWidgets",
-                  "targetName": "BarakahWidgets",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.souravsspace.Barakah.shield"
-                    ]
-                  }
-                },
-                {
-                  "bundleIdentifier": "com.souravsspace.Barakah.DeviceActivityMonitor",
-                  "targetName": "DeviceActivityMonitor",
-                  "entitlements": {
-                    "com.apple.developer.family-controls": true,
-                    "com.apple.security.application-groups": [
-                      "group.com.souravsspace.Barakah.shield"
-                    ]
-                  }
-                },
-                {
-                  "bundleIdentifier": "com.souravsspace.Barakah.ShieldAction",
-                  "targetName": "ShieldAction",
-                  "entitlements": {
-                    "com.apple.developer.family-controls": true,
-                    "com.apple.security.application-groups": [
-                      "group.com.souravsspace.Barakah.shield"
-                    ]
-                  }
-                },
-                {
-                  "bundleIdentifier": "com.souravsspace.Barakah.ShieldConfiguration",
-                  "targetName": "ShieldConfiguration",
-                  "entitlements": {
-                    "com.apple.developer.family-controls": true,
-                    "com.apple.security.application-groups": [
-                      "group.com.souravsspace.Barakah.shield"
-                    ]
-                  }
-                },
-                {
-                  "bundleIdentifier": "com.souravsspace.Barakah.BarakahWidgets",
-                  "targetName": "BarakahWidgets",
-                  "entitlements": {
                     "com.apple.security.application-groups": [
                       "group.com.souravsspace.Barakah.shield"
                     ]

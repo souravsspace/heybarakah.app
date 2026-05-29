@@ -49,8 +49,13 @@ export const getToday = query({
     }
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
-      return { count: 0, target: DEFAULT_TARGET };
+      return { count: 0, target: DEFAULT_TARGET, sessionTotal: 0 };
     }
+    const aggregate = await ctx.db
+      .query("dhikrAggregate")
+      .withIndex("by_user", (q) => q.eq("authUserId", user._id))
+      .unique();
+    const sessionTotal = aggregate?.total ?? 0;
     const row = await ctx.db
       .query("dhikrDaily")
       .withIndex("by_user_date", (q) =>
@@ -58,9 +63,9 @@ export const getToday = query({
       )
       .unique();
     if (!row) {
-      return { count: 0, target: DEFAULT_TARGET };
+      return { count: 0, target: DEFAULT_TARGET, sessionTotal };
     }
-    return { count: row.count, target: row.target };
+    return { count: row.count, target: row.target, sessionTotal };
   },
 });
 

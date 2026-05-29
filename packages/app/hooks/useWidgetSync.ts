@@ -1,37 +1,29 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
-import {
-  ackPendingDhikr,
-  peekPendingDhikr,
-  setSnapshot,
-} from "expo-widget-bridge";
 import { useEffect, useMemo, useRef } from "react";
 import { AppState } from "react-native";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { pickDailyAyah } from "@/lib/daily-ayah";
+import { dateKey } from "@/lib/date-utils";
 import { buildWidgetSnapshot } from "@/lib/widget-snapshot";
+import {
+  ackPendingDhikr,
+  peekPendingDhikr,
+  setSnapshot,
+} from "@/lib/widgets-native";
 
 const DEBOUNCE_MS = 800;
 const INCREMENT_CHUNK = 1000;
 
-function pad2(n: number): string {
-  return n.toString().padStart(2, "0");
-}
-
-function todayKey(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-}
-
 function tomorrowKey(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  return dateKey(d);
 }
 
 export function useWidgetSync(): void {
   const { prayerTimes } = usePrayerTimes();
-  const today = todayKey();
+  const today = dateKey();
   const tomorrow = tomorrowKey();
 
   const streak = useQuery(api.lib.prayerLogs.getStreak, { today });
@@ -58,8 +50,12 @@ export function useWidgetSync(): void {
       todayDateKey: today,
       timezone,
       streakDays: streak?.days ?? 0,
+      streakBest: streak?.best ?? 0,
+      streakHistory: streak?.history ?? [],
+      streakTodayDone: streak?.todayDone ?? 0,
       dhikrCount: dhikr?.count ?? 0,
       dhikrTarget: dhikr?.target ?? 33,
+      dhikrSessionTotal: dhikr?.sessionTotal ?? 0,
       ayah,
     });
     if (!snapshot) {
@@ -89,8 +85,12 @@ export function useWidgetSync(): void {
     ayah,
     dhikr?.count,
     dhikr?.target,
+    dhikr?.sessionTotal,
     prayerTimes,
     streak?.days,
+    streak?.best,
+    streak?.history,
+    streak?.todayDone,
     timezone,
     today,
     tomorrow,
@@ -114,16 +114,14 @@ function useDhikrReconciliation(today: string): void {
         if (cancelled || pending <= 0) {
           return;
         }
-        let committed = 0;
         let remaining = pending;
         while (remaining > 0 && !cancelled) {
           const chunk = Math.min(remaining, INCREMENT_CHUNK);
           await increment({ date: today, by: chunk });
-          committed += chunk;
+          // Ack each chunk right after it commits. If a later chunk throws, the
+          // already-committed chunks stay acked and are not re-incremented on retry.
+          await ackPendingDhikr(chunk);
           remaining -= chunk;
-        }
-        if (committed > 0) {
-          await ackPendingDhikr(committed);
         }
       } catch {
         // bridge unavailable or commit failed — pending count preserved

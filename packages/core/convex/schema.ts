@@ -50,6 +50,7 @@ export default defineSchema({
     .index("by_polarCustomerId", ["polarCustomerId"])
     .index("by_rcAppUserId", ["rcAppUserId"]),
   polarOrders: defineTable({
+    authUserId: v.optional(v.string()),
     polarOrderId: v.string(),
     polarCustomerId: v.optional(v.string()),
     customerEmail: v.string(),
@@ -60,6 +61,7 @@ export default defineSchema({
     invoiceNumber: v.optional(v.string()),
     eventType: v.string(),
     receivedAt: v.string(),
+    confirmationEmailQueuedAt: v.optional(v.string()),
     confirmedEmailAt: v.optional(v.string()),
     raw: v.optional(v.any()),
   })
@@ -125,6 +127,7 @@ export default defineSchema({
     .index("by_cacheKey", ["cacheKey"])
     .index("by_userCacheKey", ["userCacheKey"])
     .index("by_userId", ["userId"])
+    .index("by_user_updated", ["userId", "updatedAt"])
     .index("by_expiry", ["expiresAt"]),
   prayerLogs: defineTable({
     authUserId: v.string(),
@@ -137,6 +140,7 @@ export default defineSchema({
       v.literal("isha")
     ),
     status: v.union(
+      v.literal("early"),
       v.literal("on_time"),
       v.literal("late"),
       v.literal("qada"),
@@ -163,6 +167,17 @@ export default defineSchema({
     total: v.number(),
     updatedAt: v.number(),
   }).index("by_user", ["authUserId"]),
+  userLocations: defineTable({
+    authUserId: v.string(),
+    name: v.string(),
+    latitude: v.number(),
+    longitude: v.number(),
+    timezone: v.string(),
+    city: v.optional(v.string()),
+    countryCode: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["authUserId"]),
   userAchievements: defineTable({
     authUserId: v.string(),
     code: v.string(),
@@ -172,4 +187,12 @@ export default defineSchema({
     .index("by_user", ["authUserId"])
     .index("by_user_code", ["authUserId", "code"])
     .index("by_user_seen", ["authUserId", "seenAt"]),
+  userAchievementCounters: defineTable({
+    authUserId: v.string(),
+    countablePrayerLogs: v.number(),
+    fajrOnTimePrayerLogs: v.number(),
+    onTimePrayerLogs: v.number(),
+    qadaPrayerLogs: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["authUserId"]),
 });

@@ -54,7 +54,7 @@ export default function TabsLayout() {
         <Icon sf="chart.xyaxis.line" />
         <Label>Progress</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="profile" role="search">
+      <NativeTabs.Trigger name="profile">
         <Icon
           sf={{
             default: "person.crop.circle",

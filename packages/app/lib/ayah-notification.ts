@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { AYAHS } from "@/constants/ayahs";
 import { AYAH_TITLES, pickDaily } from "@/constants/notification-copy";
+import { dateKey } from "@/lib/date-utils";
 import { lockBoundsMinutes } from "@/lib/prayer-window-config";
 
 const AYAH_NOTIF_KEY = "ayah-notification:v1";
@@ -60,14 +61,6 @@ function parseHHmm(hhmm: string): number | null {
     return null;
   }
   return hour * 60 + minute;
-}
-
-function pad2(n: number): string {
-  return n < 10 ? `0${n}` : String(n);
-}
-
-function dateKey(d: Date): string {
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
 function forbiddenRanges(times: PrayerTimes): Range[] {

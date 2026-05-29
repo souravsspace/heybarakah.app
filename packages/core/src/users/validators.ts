@@ -86,4 +86,5 @@ export const profileFields = {
   ),
   completedAt: v.optional(v.string()),
   image: v.optional(v.id("_storage")),
+  activePrayerLocationId: v.optional(v.id("userLocations")),
 };

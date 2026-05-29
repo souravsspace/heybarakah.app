@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import {
   buildRevenueCatSubscriptionDoc,
+  type RevenueCatPeriodType,
+  type RevenueCatStore,
   shouldSkipRcSync,
 } from "../../src/subscriptions";
 import {
@@ -8,8 +10,17 @@ import {
   revenueCatPeriodType,
   revenueCatStore,
 } from "../../src/subscriptions/validators";
-import { mutation, query } from "../_generated/server";
+import { internal } from "../_generated/api";
+import type { Doc } from "../_generated/dataModel";
+import {
+  action,
+  internalMutation,
+  mutation,
+  query,
+} from "../_generated/server";
 import { authComponent } from "./auth";
+
+const REVENUECAT_PREMIUM_ENTITLEMENT = "Barakah Premium";
 
 export const getMySubscription = query({
   args: {},
@@ -19,12 +30,15 @@ export const getMySubscription = query({
       return null;
     }
 
+    // A user can briefly hold two active rows (e.g. a mock sub plus a real Polar
+    // order in sandbox). Prefer the most recent active row instead of throwing.
     const row = await ctx.db
       .query("subscriptions")
       .withIndex("by_authUserId_status", (q) =>
         q.eq("authUserId", user._id).eq("status", "active")
       )
-      .unique();
+      .order("desc")
+      .first();
     if (!row) {
       return null;
     }
@@ -52,7 +66,8 @@ export const claimMockSubscription = mutation({
       .withIndex("by_authUserId_status", (q) =>
         q.eq("authUserId", user._id).eq("status", "active")
       )
-      .unique();
+      .order("desc")
+      .first();
     if (existing) {
       if (existing.productId !== args.productId) {
         throw new Error(
@@ -76,7 +91,109 @@ export const claimMockSubscription = mutation({
   },
 });
 
-export const syncRevenueCatEntitlement = mutation({
+function parseRevenueCatStore(value: unknown): RevenueCatStore | undefined {
+  switch (value) {
+    case "app_store":
+    case "play_store":
+    case "stripe":
+    case "promotional":
+    case "mac_app_store":
+    case "amazon":
+      return value;
+    default:
+      return;
+  }
+}
+
+function parseRevenueCatPeriodType(
+  value: unknown
+): RevenueCatPeriodType | undefined {
+  switch (value) {
+    case "normal":
+    case "trial":
+    case "intro":
+      return value;
+    default:
+      return;
+  }
+}
+
+function stringField(
+  record: Record<string, unknown>,
+  key: string
+): string | undefined {
+  const value = record[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function booleanField(
+  record: Record<string, unknown>,
+  key: string
+): boolean | undefined {
+  const value = record[key];
+  return typeof value === "boolean" ? value : undefined;
+}
+
+function parseRevenueCatEntitlementPayload(
+  payload: unknown,
+  appUserId: string
+) {
+  const root =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : {};
+  const subscriber =
+    root.subscriber && typeof root.subscriber === "object"
+      ? (root.subscriber as Record<string, unknown>)
+      : {};
+  const entitlements =
+    subscriber.entitlements && typeof subscriber.entitlements === "object"
+      ? (subscriber.entitlements as Record<string, unknown>)
+      : {};
+  const entitlement =
+    entitlements[REVENUECAT_PREMIUM_ENTITLEMENT] &&
+    typeof entitlements[REVENUECAT_PREMIUM_ENTITLEMENT] === "object"
+      ? (entitlements[REVENUECAT_PREMIUM_ENTITLEMENT] as Record<
+          string,
+          unknown
+        >)
+      : null;
+  const expiresAt = entitlement
+    ? stringField(entitlement, "expires_date")
+    : undefined;
+  const expiresAtMs = expiresAt
+    ? Date.parse(expiresAt)
+    : Number.POSITIVE_INFINITY;
+  const entitlementActive =
+    Boolean(entitlement) &&
+    !Number.isNaN(expiresAtMs) &&
+    expiresAtMs > Date.now();
+
+  return {
+    entitlementActive,
+    entitlementId: REVENUECAT_PREMIUM_ENTITLEMENT,
+    expiresAt,
+    latestPurchaseAt: entitlement
+      ? stringField(entitlement, "purchase_date")
+      : undefined,
+    originalAppUserId: stringField(subscriber, "original_app_user_id"),
+    periodType: entitlement
+      ? parseRevenueCatPeriodType(stringField(entitlement, "period_type"))
+      : undefined,
+    productIdentifier: entitlement
+      ? stringField(entitlement, "product_identifier")
+      : undefined,
+    rcAppUserId: appUserId,
+    store: entitlement
+      ? parseRevenueCatStore(stringField(entitlement, "store"))
+      : undefined,
+    willRenew: entitlement
+      ? booleanField(entitlement, "will_renew")
+      : undefined,
+  };
+}
+
+export const syncRevenueCatEntitlement: ReturnType<typeof action> = action({
   args: {
     entitlementActive: v.boolean(),
     productIdentifier: v.optional(v.string()),
@@ -89,15 +206,51 @@ export const syncRevenueCatEntitlement = mutation({
     latestPurchaseAt: v.optional(v.string()),
     expiresAt: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, _args): Promise<Doc<"subscriptions"> | null> => {
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("Not authenticated");
     }
 
+    const secretKey = process.env.REVENUECAT_SECRET_KEY;
+    if (!secretKey) {
+      throw new Error("REVENUECAT_SECRET_KEY is not configured");
+    }
+    const appUserId = user._id;
+    const response = await fetch(
+      `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(appUserId)}`,
+      { headers: { Authorization: `Bearer ${secretKey}` } }
+    );
+    if (!response.ok) {
+      throw new Error(`RevenueCat subscriber fetch failed: ${response.status}`);
+    }
+    const payload = await response.json();
+    const verified = parseRevenueCatEntitlementPayload(payload, appUserId);
+    return await ctx.runMutation(
+      internal.lib.subscriptions.applyRevenueCatEntitlement,
+      { authUserId: user._id, ...verified }
+    );
+  },
+});
+
+export const applyRevenueCatEntitlement = internalMutation({
+  args: {
+    authUserId: v.string(),
+    entitlementActive: v.boolean(),
+    productIdentifier: v.optional(v.string()),
+    entitlementId: v.optional(v.string()),
+    store: v.optional(revenueCatStore),
+    periodType: v.optional(revenueCatPeriodType),
+    willRenew: v.optional(v.boolean()),
+    rcAppUserId: v.optional(v.string()),
+    originalAppUserId: v.optional(v.string()),
+    latestPurchaseAt: v.optional(v.string()),
+    expiresAt: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("subscriptions")
-      .withIndex("by_authUserId", (q) => q.eq("authUserId", user._id))
+      .withIndex("by_authUserId", (q) => q.eq("authUserId", args.authUserId))
       .take(20);
 
     const polarRow = existing.find((row) => shouldSkipRcSync(row.source));
@@ -109,7 +262,7 @@ export const syncRevenueCatEntitlement = mutation({
     const now = new Date().toISOString();
     const doc = buildRevenueCatSubscriptionDoc(
       {
-        authUserId: user._id,
+        authUserId: args.authUserId,
         entitlementActive: args.entitlementActive,
         productIdentifier: args.productIdentifier,
         entitlementId: args.entitlementId,

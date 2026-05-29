@@ -8,10 +8,12 @@ import { AuthLoading } from "@/components/auth-loading";
 import { ProgressBar } from "@/components/onboarding/progress-bar";
 import { useUser } from "@/contexts/user-context";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
+import { useSubscription } from "@/lib/subscription";
 
 export default function OnboardingLayout() {
   const { progress, back, index, currentPath } = useOnboardingNav();
   const { user, isLoading } = useUser();
+  const { activeSubscription, isSubscriptionLoading } = useSubscription();
 
   const focusedName = useNavigationState((state) => {
     if (!state) {
@@ -21,10 +23,11 @@ export default function OnboardingLayout() {
   });
   const [gestureToWelcome, setGestureToWelcome] = useState(false);
 
-  if (isLoading) {
+  if (isLoading || isSubscriptionLoading) {
     return <AuthLoading />;
   }
-  if (user) {
+  const isPaywallRoute = currentPath?.startsWith("/(onboarding)/paywall");
+  if (user && !(isPaywallRoute && !activeSubscription)) {
     return <Redirect href="/home" />;
   }
 

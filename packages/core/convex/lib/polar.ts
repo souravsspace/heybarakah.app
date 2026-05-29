@@ -17,6 +17,7 @@ import { sendEmail } from "./resend";
 
 export const recordPaidOrder = internalMutation({
   args: {
+    authUserId: v.optional(v.string()),
     polarOrderId: v.string(),
     polarCustomerId: v.optional(v.string()),
     customerEmail: v.string(),
@@ -44,6 +45,7 @@ export const recordPaidOrder = internalMutation({
       alreadyConfirmed = Boolean(existingOrder.confirmedEmailAt);
       orderId = existingOrder._id;
       await ctx.db.patch(existingOrder._id, {
+        ...(args.authUserId ? { authUserId: args.authUserId } : {}),
         polarCustomerId: args.polarCustomerId,
         customerEmail: args.customerEmail,
         customerName: args.customerName,
@@ -60,6 +62,7 @@ export const recordPaidOrder = internalMutation({
         "polarOrders",
         buildPolarOrderDoc(
           {
+            authUserId: args.authUserId,
             polarOrderId: args.polarOrderId,
             polarCustomerId: args.polarCustomerId,
             customerEmail: args.customerEmail,
@@ -75,22 +78,36 @@ export const recordPaidOrder = internalMutation({
       );
     }
 
-    const existingSub = args.polarCustomerId
+    const byAuthUserId = args.authUserId
       ? await ctx.db
           .query("subscriptions")
-          .withIndex("by_polarCustomerId", (q) =>
-            q.eq("polarCustomerId", args.polarCustomerId)
+          .withIndex("by_authUserId", (q) =>
+            q.eq("authUserId", args.authUserId)
           )
           .first()
-      : await ctx.db
-          .query("subscriptions")
-          .withIndex("by_customerEmail", (q) =>
-            q.eq("customerEmail", args.customerEmail)
-          )
-          .first();
+      : null;
+    const byPolarCustomerId =
+      !byAuthUserId && args.polarCustomerId
+        ? await ctx.db
+            .query("subscriptions")
+            .withIndex("by_polarCustomerId", (q) =>
+              q.eq("polarCustomerId", args.polarCustomerId)
+            )
+            .first()
+        : null;
+    const existingSub =
+      byAuthUserId ??
+      byPolarCustomerId ??
+      (await ctx.db
+        .query("subscriptions")
+        .withIndex("by_customerEmail", (q) =>
+          q.eq("customerEmail", args.customerEmail)
+        )
+        .first());
 
     if (existingSub) {
       await ctx.db.patch(existingSub._id, {
+        authUserId: args.authUserId ?? existingSub.authUserId,
         status: "active",
         productId: "lifetime",
         source: "polar",
@@ -107,6 +124,7 @@ export const recordPaidOrder = internalMutation({
       "subscriptions",
       buildSubscriptionDoc(
         {
+          authUserId: args.authUserId,
           customerEmail: args.customerEmail,
           polarCustomerId: args.polarCustomerId,
           polarProductId: args.productId,
@@ -120,6 +138,20 @@ export const recordPaidOrder = internalMutation({
   },
 });
 
+export const queueOrderConfirmationEmail = internalMutation({
+  args: { orderId: v.id("polarOrders") },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!(order?.confirmedEmailAt || order?.confirmationEmailQueuedAt)) {
+      await ctx.db.patch(args.orderId, {
+        confirmationEmailQueuedAt: new Date().toISOString(),
+      });
+      return true;
+    }
+    return false;
+  },
+});
+
 export const markOrderEmailConfirmed = internalMutation({
   args: { orderId: v.id("polarOrders") },
   handler: async (ctx, args) => {
@@ -128,6 +160,23 @@ export const markOrderEmailConfirmed = internalMutation({
     });
   },
 });
+
+export const clearOrderConfirmationEmailQueued = internalMutation({
+  args: { orderId: v.id("polarOrders") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.orderId, {
+      confirmationEmailQueuedAt: undefined,
+    });
+  },
+});
+
+function metadataAuthUserId(metadata: unknown): string | undefined {
+  if (!(metadata && typeof metadata === "object")) {
+    return;
+  }
+  const value = (metadata as Record<string, unknown>).authUserId;
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
 
 export const webhook = httpAction(async (ctx, request) => {
   const body = await request.text();
@@ -163,8 +212,12 @@ export const webhook = httpAction(async (ctx, request) => {
 
   const email = rawEmail.toLowerCase().trim();
   const name = order.customer?.name ?? order.billingName ?? null;
+  const authUserId = metadataAuthUserId(
+    (order as unknown as { metadata?: unknown }).metadata
+  );
 
   const recorded = await ctx.runMutation(internal.lib.polar.recordPaidOrder, {
+    authUserId,
     polarOrderId: order.id,
     polarCustomerId: order.customer?.id,
     customerEmail: email,
@@ -179,6 +232,15 @@ export const webhook = httpAction(async (ctx, request) => {
   if (recorded.alreadyConfirmed) {
     return new Response("ok", { status: 200 });
   }
+  const queued = await ctx.runMutation(
+    internal.lib.polar.queueOrderConfirmationEmail,
+    {
+      orderId: recorded.orderId,
+    }
+  );
+  if (!queued) {
+    return new Response("ok", { status: 200 });
+  }
 
   const { subject, text, html } = await purchaseEmail({
     name,
@@ -187,6 +249,10 @@ export const webhook = httpAction(async (ctx, request) => {
     invoiceNumber: order.invoiceNumber ?? null,
   });
 
+  // Only a genuine send failure clears the queue marker and asks Polar to retry.
+  // If the send succeeded but marking it confirmed throws, do NOT clear/retry —
+  // that would re-send a receipt that already went out. Confirmation is reconciled
+  // on the next webhook via recordPaidOrder's alreadyConfirmed/queued guard.
   try {
     await sendEmail(ctx, {
       to: email,
@@ -194,11 +260,27 @@ export const webhook = httpAction(async (ctx, request) => {
       html,
       text,
     });
+  } catch (err) {
+    console.error("[polar webhook] purchase email send failed", email, err);
+    await ctx.runMutation(
+      internal.lib.polar.clearOrderConfirmationEmailQueued,
+      {
+        orderId: recorded.orderId,
+      }
+    );
+    return new Response("purchase email failed", { status: 502 });
+  }
+
+  try {
     await ctx.runMutation(internal.lib.polar.markOrderEmailConfirmed, {
       orderId: recorded.orderId,
     });
   } catch (err) {
-    console.error("[polar webhook] purchase email failed", email, err);
+    console.error(
+      "[polar webhook] mark email confirmed failed (email already sent)",
+      email,
+      err
+    );
   }
 
   return new Response("ok", { status: 200 });

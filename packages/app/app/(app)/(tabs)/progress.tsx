@@ -13,6 +13,7 @@ import { PrayerMatrix } from "@/components/prayer-matrix";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { useTheme } from "@/contexts/theme-context";
 import { useWeekLogs } from "@/hooks/usePrayerLogs";
+import { dateKey } from "@/lib/date-utils";
 
 const PRAYERS: LoggablePrayerName[] = [
   "fajr",
@@ -36,14 +37,6 @@ const MONTH_SHORT = [
   "Nov",
   "Dec",
 ];
-
-function pad2(n: number): string {
-  return n.toString().padStart(2, "0");
-}
-
-function dateKey(d: Date): string {
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-}
 
 function addDays(d: Date, days: number): Date {
   const next = new Date(d);

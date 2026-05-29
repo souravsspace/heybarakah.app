@@ -25,6 +25,7 @@ export function validateWebhook(
 
 export function buildPolarOrderDoc(
   args: {
+    authUserId?: string;
     polarOrderId: string;
     polarCustomerId?: string;
     customerEmail: string;
@@ -38,6 +39,7 @@ export function buildPolarOrderDoc(
   now: string
 ) {
   return {
+    authUserId: args.authUserId,
     polarOrderId: args.polarOrderId,
     polarCustomerId: args.polarCustomerId,
     customerEmail: args.customerEmail,
@@ -54,6 +56,7 @@ export function buildPolarOrderDoc(
 
 export function buildSubscriptionDoc(
   args: {
+    authUserId?: string;
     customerEmail: string;
     polarCustomerId?: string;
     polarProductId?: string;
@@ -62,6 +65,7 @@ export function buildSubscriptionDoc(
   now: string
 ) {
   return {
+    authUserId: args.authUserId,
     customerEmail: args.customerEmail,
     productId: "lifetime" as const,
     status: "active" as const,

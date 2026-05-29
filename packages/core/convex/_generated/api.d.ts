@@ -21,6 +21,7 @@ import type * as lib_prayerTimes from "../lib/prayerTimes.js";
 import type * as lib_resend from "../lib/resend.js";
 import type * as lib_shieldSelection from "../lib/shieldSelection.js";
 import type * as lib_subscriptions from "../lib/subscriptions.js";
+import type * as lib_userLocations from "../lib/userLocations.js";
 import type * as lib_users from "../lib/users.js";
 
 import type {
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   "lib/resend": typeof lib_resend;
   "lib/shieldSelection": typeof lib_shieldSelection;
   "lib/subscriptions": typeof lib_subscriptions;
+  "lib/userLocations": typeof lib_userLocations;
   "lib/users": typeof lib_users;
 }>;
 

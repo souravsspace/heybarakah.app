@@ -3,28 +3,28 @@ import type { LoggablePrayerName, PrayerStatus } from "@barakah/core/prayer";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useMemo } from "react";
 
-export type PrayerLogRow = {
+export interface PrayerLogRow {
   _id: string;
   date: string;
+  prayedAt?: number;
   prayer: LoggablePrayerName;
   status: PrayerStatus;
-  prayedAt?: number;
   updatedAt: number;
-};
+}
 
-export type WeekLogs = {
-  rows: PrayerLogRow[];
+export interface WeekLogs {
   getStatus: (
     date: string,
     prayer: LoggablePrayerName
   ) => PrayerStatus | undefined;
-  onTimeCount: number;
   lateCount: number;
-  qadaCount: number;
-  missedCount: number;
-  totalLogged: number;
   loading: boolean;
-};
+  missedCount: number;
+  onTimeCount: number;
+  qadaCount: number;
+  rows: PrayerLogRow[];
+  totalLogged: number;
+}
 
 export function useWeekLogs(startDate: string): WeekLogs {
   const data = useQuery(api.lib.prayerLogs.getMyWeek, { startDate });

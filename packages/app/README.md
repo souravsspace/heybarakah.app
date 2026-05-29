@@ -37,7 +37,7 @@ This command will move the starter code to the **app-example** directory and cre
 
 ## Widgets (iOS 18+)
 
-The `targets/BarakahWidgets/` extension and the local `modules/expo-widget-bridge` Expo module power the home-screen, lock-screen, Live Activity, and Control Center widgets.
+The `modules/expo-barakah-widgets/` source folder, driven by the `@bittingz/expo-widgets` config plugin, powers the home-screen, lock-screen, Live Activity, and Control Center widgets.
 
 To run them:
 

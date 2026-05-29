@@ -86,7 +86,7 @@ export interface PrayerLogEntry {
   date: string;
   prayedAt?: number;
   prayer: "asr" | "dhuhr" | "fajr" | "isha" | "maghrib";
-  status: "late" | "missed" | "on_time" | "qada";
+  status: "early" | "late" | "missed" | "on_time" | "qada";
   updatedAt: number;
 }
 

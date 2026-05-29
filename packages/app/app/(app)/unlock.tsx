@@ -1,7 +1,6 @@
 import {
   classifyPrayerStatus,
   type LoggablePrayerName,
-  type PrayerDay,
   type PrayerStatus,
 } from "@barakah/core/prayer";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,10 +15,9 @@ import { useTheme } from "@/contexts/theme-context";
 import { useLogPrayer, useWeekLogs } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { temporaryUnlock } from "@/lib/app-blocker";
+import { activePrayerNow, dateKey } from "@/lib/date-utils";
 
 type PrayerName = LoggablePrayerName;
-
-const PRAYER_ORDER: PrayerName[] = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
 
 const PRAYER_LABEL: Record<PrayerName, string> = {
   fajr: "Fajr",
@@ -29,42 +27,13 @@ const PRAYER_LABEL: Record<PrayerName, string> = {
   isha: "Isha",
 };
 
-function pad(n: number) {
-  return n.toString().padStart(2, "0");
-}
-
-function todayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function activePrayerNow(day: PrayerDay | null): PrayerName | null {
-  if (!day) {
-    return null;
-  }
-  const now = new Date();
-  let active: PrayerName | null = null;
-  for (const name of PRAYER_ORDER) {
-    const [h, m] = day.timings[name].split(":").map(Number);
-    if (Number.isNaN(h) || Number.isNaN(m)) {
-      continue;
-    }
-    const at = new Date(now);
-    at.setHours(h, m, 0, 0);
-    if (at <= now) {
-      active = name;
-    }
-  }
-  return active;
-}
-
 export default function Unlock() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const [busy, setBusy] = useState(false);
   const [prayerBusy, setPrayerBusy] = useState(false);
-  const today = todayKey();
+  const today = dateKey();
   const { todayPrayerTimes, location, prayerTimes } = usePrayerTimes();
   const week = useWeekLogs(today);
   const logPrayer = useLogPrayer();

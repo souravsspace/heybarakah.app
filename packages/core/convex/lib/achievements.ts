@@ -1,6 +1,7 @@
 import {
   ACHIEVEMENTS,
   type AchievementCode,
+  type AchievementEvaluation,
   evaluateAchievements,
   evaluateAllProgress,
 } from "@barakah/core/achievements";
@@ -11,6 +12,13 @@ import { authComponent } from "./auth";
 
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_TIMEZONE = "UTC";
+const LIST_PRAYER_LOG_LIMIT = 1000;
+// Lifetime achievements (ramadan_complete, fajr_100, comebacks, jumuah_*) scan the
+// full history, so we can't date-bound here without breaking unlocks. Cap instead at
+// a value well above realistic lifetime usage (~2.7 years of 5 prayers/day) so a
+// pathological row count can't blow the mutation's read limit/timeout.
+const EVALUATE_PRAYER_LOG_LIMIT = 5000;
+const EVALUATE_DHIKR_DAILY_LIMIT = 10_000;
 
 function pad2(n: number): string {
   return n.toString().padStart(2, "0");
@@ -41,20 +49,26 @@ function localToday(timezone: string): string {
   return utcToday();
 }
 
+function counterProgress(
+  current: number,
+  target: number,
+  unit: string
+): AchievementEvaluation {
+  return {
+    progress: { current: Math.min(current, target), target, unit },
+    unlocked: current >= target,
+  };
+}
+
 async function latestPrayerTimezone(
   ctx: QueryCtx | MutationCtx,
   authUserId: string
 ): Promise<string> {
-  const rows = await ctx.db
+  const latest = await ctx.db
     .query("prayerTimeCaches")
-    .withIndex("by_userId", (q) => q.eq("userId", authUserId))
-    .collect();
-  let latest: (typeof rows)[number] | null = null;
-  for (const row of rows) {
-    if (!latest || row.updatedAt > latest.updatedAt) {
-      latest = row;
-    }
-  }
+    .withIndex("by_user_updated", (q) => q.eq("userId", authUserId))
+    .order("desc")
+    .first();
   return latest?.timezone ?? DEFAULT_TIMEZONE;
 }
 
@@ -72,7 +86,7 @@ async function dhikrTotalForUser(
   const rows = await ctx.db
     .query("dhikrDaily")
     .withIndex("by_user_date", (q) => q.eq("authUserId", authUserId))
-    .collect();
+    .take(EVALUATE_DHIKR_DAILY_LIMIT);
   return rows.reduce((sum, row) => sum + row.count, 0);
 }
 
@@ -87,7 +101,7 @@ export const runEvaluate = internalMutation({
       ctx.db
         .query("prayerLogs")
         .withIndex("by_user_updated", (q) => q.eq("authUserId", authUserId))
-        .collect(),
+        .take(EVALUATE_PRAYER_LOG_LIMIT),
       dhikrTotalForUser(ctx, authUserId),
       ctx.db
         .query("users")
@@ -167,21 +181,28 @@ export const listForMe = query({
     }
     const timezone = await latestPrayerTimezone(ctx, user._id);
     const dateKey = localToday(timezone);
-    const [rows, prayerLogs, dhikrTotal, profile] = await Promise.all([
-      ctx.db
-        .query("userAchievements")
-        .withIndex("by_user", (q) => q.eq("authUserId", user._id))
-        .collect(),
-      ctx.db
-        .query("prayerLogs")
-        .withIndex("by_user_updated", (q) => q.eq("authUserId", user._id))
-        .collect(),
-      dhikrTotalForUser(ctx, user._id),
-      ctx.db
-        .query("users")
-        .withIndex("by_authUserId", (q) => q.eq("authUserId", user._id))
-        .unique(),
-    ]);
+    const [rows, prayerLogs, counters, dhikrTotal, profile] = await Promise.all(
+      [
+        ctx.db
+          .query("userAchievements")
+          .withIndex("by_user", (q) => q.eq("authUserId", user._id))
+          .collect(),
+        ctx.db
+          .query("prayerLogs")
+          .withIndex("by_user_updated", (q) => q.eq("authUserId", user._id))
+          .order("desc")
+          .take(LIST_PRAYER_LOG_LIMIT),
+        ctx.db
+          .query("userAchievementCounters")
+          .withIndex("by_user", (q) => q.eq("authUserId", user._id))
+          .unique(),
+        dhikrTotalForUser(ctx, user._id),
+        ctx.db
+          .query("users")
+          .withIndex("by_authUserId", (q) => q.eq("authUserId", user._id))
+          .unique(),
+      ]
+    );
     const byCode = new Map(rows.map((r) => [r.code, r]));
     const alreadyUnlocked = new Set<AchievementCode>(
       rows.map((r) => r.code as AchievementCode)
@@ -202,6 +223,23 @@ export const listForMe = query({
       },
       alreadyUnlocked
     );
+    // User achievement counters are lazy-built from new prayer log writes only;
+    // existing users start at 0 until they log again, with no backfill.
+    if (counters) {
+      evaluations.first_log = { unlocked: counters.countablePrayerLogs > 0 };
+      evaluations.first_on_time = { unlocked: counters.onTimePrayerLogs > 0 };
+      evaluations.fajr_100 = counterProgress(
+        counters.fajrOnTimePrayerLogs,
+        100,
+        "Fajr"
+      );
+      evaluations.qada_first = { unlocked: counters.qadaPrayerLogs > 0 };
+      evaluations.qada_seven = counterProgress(
+        counters.qadaPrayerLogs,
+        7,
+        "qadā"
+      );
+    }
     const items = ACHIEVEMENTS.map((a) => {
       const evaluation = evaluations[a.code];
       return {

@@ -1,37 +1,158 @@
-import { CalculationMethod, Coordinates, Madhab, PrayerTimes } from "adhan";
+import {
+  CalculationMethod,
+  Coordinates,
+  HighLatitudeRule,
+  Madhab,
+  PolarCircleResolution,
+  PrayerTimes,
+} from "adhan";
 import { ALADHAN_METHOD_IDS } from "./constants";
 import { addDays, parseDateKey } from "./normalize";
 import type { PrayerDay, PrayerLocation, PrayerSettings } from "./types";
 
-export function getAdhanJsCalculationParameters(method: number) {
-  switch (method) {
-    case ALADHAN_METHOD_IDS.KARACHI:
-      return CalculationMethod.Karachi();
-    case ALADHAN_METHOD_IDS.ISNA:
-      return CalculationMethod.NorthAmerica();
-    case ALADHAN_METHOD_IDS.MUSLIM_WORLD_LEAGUE:
-      return CalculationMethod.MuslimWorldLeague();
-    case ALADHAN_METHOD_IDS.UMM_AL_QURA:
-      return CalculationMethod.UmmAlQura();
-    case ALADHAN_METHOD_IDS.EGYPTIAN:
-      return CalculationMethod.Egyptian();
-    case ALADHAN_METHOD_IDS.KUWAIT:
-      return CalculationMethod.Kuwait();
-    case ALADHAN_METHOD_IDS.QATAR:
-      return CalculationMethod.Qatar();
-    case ALADHAN_METHOD_IDS.SINGAPORE:
-      return CalculationMethod.Singapore();
-    case ALADHAN_METHOD_IDS.TURKEY:
-      return CalculationMethod.Turkey();
-    case ALADHAN_METHOD_IDS.MOONSIGHTING:
-      return CalculationMethod.MoonsightingCommittee();
+type AdhanJsModifiers = Pick<
+  PrayerSettings,
+  "latitudeAdjustmentMethod" | "midnightMode" | "tune"
+>;
+
+export function getAdhanJsCalculationParameters(
+  method: number,
+  modifiers: AdhanJsModifiers = {}
+) {
+  const params = (() => {
+    switch (method) {
+      case ALADHAN_METHOD_IDS.KARACHI:
+        return CalculationMethod.Karachi();
+      case ALADHAN_METHOD_IDS.ISNA:
+        return CalculationMethod.NorthAmerica();
+      case ALADHAN_METHOD_IDS.MUSLIM_WORLD_LEAGUE:
+        return CalculationMethod.MuslimWorldLeague();
+      case ALADHAN_METHOD_IDS.UMM_AL_QURA:
+        return CalculationMethod.UmmAlQura();
+      case ALADHAN_METHOD_IDS.EGYPTIAN:
+        return CalculationMethod.Egyptian();
+      case ALADHAN_METHOD_IDS.KUWAIT:
+        return CalculationMethod.Kuwait();
+      case ALADHAN_METHOD_IDS.QATAR:
+        return CalculationMethod.Qatar();
+      case ALADHAN_METHOD_IDS.SINGAPORE:
+        return CalculationMethod.Singapore();
+      case ALADHAN_METHOD_IDS.TURKEY:
+        return CalculationMethod.Turkey();
+      case ALADHAN_METHOD_IDS.MOONSIGHTING:
+        return CalculationMethod.MoonsightingCommittee();
+      default:
+        return null;
+    }
+  })();
+
+  if (!params) {
+    return null;
+  }
+
+  applyHighLatitudeRule(params, modifiers.latitudeAdjustmentMethod);
+  applyPolarCircleResolution(params, modifiers.midnightMode);
+  applyTune(params, modifiers.tune);
+  return params;
+}
+
+function applyHighLatitudeRule(
+  params: NonNullable<ReturnType<typeof CalculationMethod.Karachi>>,
+  latitudeAdjustmentMethod: number | undefined
+) {
+  if (latitudeAdjustmentMethod === undefined) {
+    return;
+  }
+  switch (latitudeAdjustmentMethod) {
+    case 1:
+      params.highLatitudeRule = HighLatitudeRule.MiddleOfTheNight;
+      return;
+    case 2:
+      params.highLatitudeRule = HighLatitudeRule.SeventhOfTheNight;
+      return;
+    case 3:
+      params.highLatitudeRule = HighLatitudeRule.TwilightAngle;
+      return;
     default:
-      return null;
+      throw new Error(
+        `Unsupported latitudeAdjustmentMethod for adhan-js fallback: ${latitudeAdjustmentMethod}`
+      );
   }
 }
 
+function applyPolarCircleResolution(
+  params: NonNullable<ReturnType<typeof CalculationMethod.Karachi>>,
+  midnightMode: number | undefined
+) {
+  if (midnightMode === undefined) {
+    return;
+  }
+  switch (midnightMode) {
+    case 0:
+      params.polarCircleResolution = PolarCircleResolution.Unresolved;
+      return;
+    case 1:
+      params.polarCircleResolution = PolarCircleResolution.AqrabYaum;
+      return;
+    case 2:
+      params.polarCircleResolution = PolarCircleResolution.AqrabBalad;
+      return;
+    default:
+      throw new Error(
+        `Unsupported midnightMode for adhan-js fallback: ${midnightMode}`
+      );
+  }
+}
+
+function applyTune(
+  params: NonNullable<ReturnType<typeof CalculationMethod.Karachi>>,
+  tune: string | undefined
+) {
+  if (tune === undefined) {
+    return;
+  }
+  const values = tune.split(",").map((raw) => Number(raw));
+  if (values.some((value) => !Number.isInteger(value))) {
+    throw new Error("Invalid tune format for adhan-js fallback");
+  }
+  const [
+    imsak = 0,
+    fajr = 0,
+    sunrise = 0,
+    dhuhr = 0,
+    asr = 0,
+    maghrib = 0,
+    sunset = 0,
+    isha = 0,
+    midnight = 0,
+  ] = values;
+
+  if (imsak !== 0) {
+    throw new Error("adhan-js fallback cannot represent tune imsak");
+  }
+  if (sunset !== 0) {
+    throw new Error("adhan-js fallback cannot represent tune sunset");
+  }
+  if (midnight !== 0) {
+    throw new Error("adhan-js fallback cannot represent tune midnight");
+  }
+
+  params.adjustments = {
+    fajr,
+    sunrise,
+    dhuhr,
+    asr,
+    maghrib,
+    isha,
+  };
+}
+
 export function isAdhanJsSupportedMethod(method: number): boolean {
-  return getAdhanJsCalculationParameters(method) !== null;
+  try {
+    return getAdhanJsCalculationParameters(method) !== null;
+  } catch {
+    return false;
+  }
 }
 
 export const supportsAdhanFallback = isAdhanJsSupportedMethod;
@@ -45,10 +166,39 @@ function formatInTimezone(date: Date, timezone: string): string {
   }).format(date);
 }
 
+function pad2(n: string): string {
+  return n.padStart(2, "0");
+}
+
+function formatHijriDate(date: Date, timezone: string): string | undefined {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US-u-ca-islamic-umalqura", {
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+      timeZone: timezone,
+    }).formatToParts(date);
+    const map = new Map(parts.map((p) => [p.type, p.value]));
+    const day = map.get("day");
+    const month = map.get("month");
+    const year = map.get("year");
+    if (!(day && month && year)) {
+      return;
+    }
+    const yearDigits = year.replace(/\D/g, "");
+    if (!yearDigits) {
+      return;
+    }
+    return `${pad2(day)}-${pad2(month)}-${yearDigits}`;
+  } catch {
+    return;
+  }
+}
+
 export function calculateAdhanJsPrayerDays(
   input: PrayerLocation & PrayerSettings & { startDate: string; days: number }
 ): PrayerDay[] | null {
-  const params = getAdhanJsCalculationParameters(input.method);
+  const params = getAdhanJsCalculationParameters(input.method, input);
   if (!params) {
     return null;
   }
@@ -66,6 +216,7 @@ export function calculateAdhanJsPrayerDays(
 
     return {
       date,
+      hijriDate: formatHijriDate(prayerTimes.dhuhr, input.timezone),
       timings: {
         fajr: formatInTimezone(prayerTimes.fajr, input.timezone),
         sunrise: formatInTimezone(prayerTimes.sunrise, input.timezone),

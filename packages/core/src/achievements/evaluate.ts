@@ -8,6 +8,9 @@ import type {
 } from "./types";
 
 const ALL_FIVE = 5;
+// Upper bound on how many days back a consecutive streak is counted. Mirrored by
+// STREAK_MAX_LOOKBACK in convex/lib/prayerLogs.ts (the display path).
+const MAX_STREAK_LOOKBACK_DAYS = 800;
 const COUNTABLE = new Set(["on_time", "late", "qada"]);
 const REFLECTION_BUCKET = new Set<AchievementCode>([
   "all_bronze",
@@ -60,7 +63,7 @@ function currentFullStreak(
   const isComplete = (d: string) => (byDate.get(d)?.size ?? 0) >= ALL_FIVE;
   let days = isComplete(today) ? 1 : 0;
   let cursor = addDays(today, -1);
-  for (let i = 0; i < 800; i++) {
+  for (let i = 0; i < MAX_STREAK_LOOKBACK_DAYS; i++) {
     if (!isComplete(cursor)) {
       break;
     }

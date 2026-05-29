@@ -1,23 +1,12 @@
 import type { PrayerDay } from "@barakah/core/prayer";
+import type { Ayah } from "@/constants/ayahs";
+import { PRAYER_ORDER, pad2 } from "@/lib/date-utils";
+import { lockBoundsMinutes } from "@/lib/prayer-window-config";
 import type {
   PrayerName,
   WidgetPrayerEntry,
   WidgetSnapshot,
-} from "expo-widget-bridge";
-import type { Ayah } from "@/constants/ayahs";
-import { lockBoundsMinutes } from "@/lib/prayer-window-config";
-
-const PRAYER_ORDER: readonly PrayerName[] = [
-  "fajr",
-  "dhuhr",
-  "asr",
-  "maghrib",
-  "isha",
-];
-
-function pad2(n: number): string {
-  return n.toString().padStart(2, "0");
-}
+} from "@/lib/widgets-native";
 
 function parseHHmm(raw: string): { hour: number; minute: number } | null {
   const [hourText, minuteText] = raw.split(":");
@@ -43,7 +32,13 @@ function localISO(dateKey: string, hour: number, minute: number): string {
   const sign = offsetMin >= 0 ? "+" : "-";
   const abs = Math.abs(offsetMin);
   const tz = `${sign}${pad2(Math.floor(abs / 60))}:${pad2(abs % 60)}`;
-  return `${dateKey}T${pad2(hour)}:${pad2(minute)}:00${tz}`;
+  // Read components back from the normalized Date so an end time that overflows
+  // past midnight (e.g. isha window minutes > 1440) rolls to the next day and the
+  // offset matches that instant — never an invalid "T24:58" string Swift rejects.
+  const datePart = `${local.getFullYear()}-${pad2(local.getMonth() + 1)}-${pad2(
+    local.getDate()
+  )}`;
+  return `${datePart}T${pad2(local.getHours())}:${pad2(local.getMinutes())}:00${tz}`;
 }
 
 function buildPrayerEntry(
@@ -72,12 +67,30 @@ function buildPrayerEntry(
 export interface BuildSnapshotInput {
   ayah: Ayah;
   dhikrCount: number;
+  dhikrSessionTotal: number;
   dhikrTarget: number;
+  streakBest: number;
   streakDays: number;
+  streakHistory: number[];
+  streakTodayDone: number;
   timezone: string;
   today: PrayerDay | null;
   todayDateKey: string;
   tomorrow: PrayerDay | null;
+}
+
+/** Split "Al-Ankabut 29:45" → { surah: "Al-Ankabut", reference: "29:45" }. */
+function splitReference(raw: string): { surah: string; reference: string } {
+  const lastSpace = raw.lastIndexOf(" ");
+  if (lastSpace <= 0) {
+    // No surah-name portion (no space, or a leading space) — show the whole
+    // string as the heading instead of duplicating it into the numeric ref.
+    return { surah: raw.trim(), reference: "" };
+  }
+  return {
+    surah: raw.slice(0, lastSpace),
+    reference: raw.slice(lastSpace + 1),
+  };
 }
 
 export function buildWidgetSnapshot(
@@ -114,12 +127,21 @@ export function buildWidgetSnapshot(
     date: todayDateKey,
     prayers,
     tomorrowFajrISO,
-    streak: { days: input.streakDays },
-    dhikr: { count: input.dhikrCount, target: input.dhikrTarget },
+    streak: {
+      days: input.streakDays,
+      best: input.streakBest,
+      history: input.streakHistory,
+      todayDone: input.streakTodayDone,
+    },
+    dhikr: {
+      count: input.dhikrCount,
+      target: input.dhikrTarget,
+      sessionTotal: input.dhikrSessionTotal,
+    },
     ayah: {
       arabic: ayah.arabic,
       translation: ayah.translation,
-      reference: ayah.reference,
+      ...splitReference(ayah.reference),
     },
     lockNow: null,
   };

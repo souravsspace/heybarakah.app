@@ -18,8 +18,8 @@ const {
   withDangerousMod,
   createRunOncePlugin,
 } = resolve("expo/config-plugins");
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Privacy manifest helper
@@ -312,7 +312,7 @@ function withAppBlockerIOS(config, pluginConfig) {
     config.modResults.BGTaskSchedulerPermittedIdentifiers = [
       `${config.ios?.bundleIdentifier || "expo.app-blocker"}.relock`,
     ];
-    config.modResults["ExpoAppBlockerAppGroup"] = appGroup;
+    config.modResults.ExpoAppBlockerAppGroup = appGroup;
     return config;
   });
 

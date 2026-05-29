@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -84,6 +85,9 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [count, setCount] = useState(0);
   const [totals, setTotals] = useState<Lifetime>({});
+  // Authoritative live counter. State lags a render behind, so rapid double-taps
+  // would otherwise read a stale `count`; the ref advances synchronously per tap.
+  const countRef = useRef(0);
 
   useEffect(() => {
     AsyncStorage.getItem(LIFETIME_KEY)
@@ -120,30 +124,35 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
 
   const goTo = useCallback((idx: number) => {
     setActiveIndex(idx);
+    countRef.current = 0;
     setCount(0);
   }, []);
 
   const resetSession = useCallback(() => {
     Haptics.selectionAsync().catch(() => undefined);
+    countRef.current = 0;
     setCount(0);
   }, []);
 
   const nextDhikr = useCallback(() => {
     Haptics.selectionAsync().catch(() => undefined);
     setActiveIndex((idx) => (idx + 1) % PRESETS.length);
+    countRef.current = 0;
     setCount(0);
   }, []);
 
   const increment = useCallback(() => {
-    if (complete) {
+    const prev = countRef.current;
+    if (prev >= active.target) {
       return;
     }
-    const willComplete = count + 1 >= active.target;
-    if (willComplete) {
+    const nextCount = prev + 1;
+    countRef.current = nextCount;
+    if (nextCount >= active.target) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(
         () => undefined
       );
-    } else if ((count + 1) % 10 === 0) {
+    } else if (nextCount % 10 === 0) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
         () => undefined
       );
@@ -152,9 +161,9 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
         () => undefined
       );
     }
-    setCount((prev) => (prev >= active.target ? prev : prev + 1));
+    setCount(nextCount);
     addLifetime(active.id, 1);
-  }, [active.id, active.target, addLifetime, complete, count]);
+  }, [active.id, active.target, addLifetime]);
 
   const grandTotal = useMemo(
     () => Object.values(totals).reduce((s, n) => s + n, 0),

@@ -2,7 +2,6 @@ import type {
   AndroidBlockableApp,
   BlockedAppsNativeListProps,
   BlockedItemRemoveEvent,
-  FamilyActivityPickerSelectionEvent,
   FamilyActivityPickerViewProps,
   IOSBlockConfiguration,
   IOSBlockedItem,
@@ -26,7 +25,7 @@ export type {
   RelockResult,
   RemoveBlockedItemResult,
   TemporaryUnlockResult,
-};
+} from "expo-app-blocker";
 
 type Mod = typeof import("expo-app-blocker");
 

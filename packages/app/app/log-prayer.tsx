@@ -1,4 +1,5 @@
 import type { LoggablePrayerName, PrayerStatus } from "@barakah/core/prayer";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -9,16 +10,9 @@ import {
   useWeekLogs,
 } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import { dateKey, fmtRangeTime, PRAYER_ORDER } from "@/lib/date-utils";
 
 const BARAKAH_GREEN = "#29603E";
-
-const PRAYER_ORDER: LoggablePrayerName[] = [
-  "fajr",
-  "dhuhr",
-  "asr",
-  "maghrib",
-  "isha",
-];
 
 const PRAYER_LABEL: Record<LoggablePrayerName, string> = {
   fajr: "Fajr",
@@ -29,6 +23,7 @@ const PRAYER_LABEL: Record<LoggablePrayerName, string> = {
 };
 
 const STATUS_LABEL: Record<PrayerStatus, string> = {
+  early: "Early",
   on_time: "On time",
   late: "Late",
   qada: "Qadā",
@@ -36,6 +31,7 @@ const STATUS_LABEL: Record<PrayerStatus, string> = {
 };
 
 const STATUS_HINT: Record<PrayerStatus, string> = {
+  early: "Recorded before the window opened.",
   on_time: "Prayed inside the window.",
   late: "Prayed after the window closed.",
   qada: "Made up after the day passed.",
@@ -51,23 +47,6 @@ const LOG_STATUS_OPTIONS: PrayerStatus[] = [
 
 const ROMAN_NUMERALS = ["i", "ii", "iii", "iv"] as const;
 
-function pad(n: number) {
-  return n.toString().padStart(2, "0");
-}
-
-function todayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function fmtRangeTime(date: Date): string {
-  const h = date.getHours();
-  const m = date.getMinutes();
-  const period = h >= 12 ? "p" : "a";
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour}:${pad(m)}${period}`;
-}
-
 export default function LogPrayerScreen() {
   const params = useLocalSearchParams<{
     prayer?: LoggablePrayerName;
@@ -78,7 +57,7 @@ export default function LogPrayerScreen() {
 
   const insets = useSafeAreaInsets();
   const { todayPrayerTimes, prayerTimes } = usePrayerTimes();
-  const week = useWeekLogs(date ?? todayKey());
+  const week = useWeekLogs(date ?? dateKey());
   const logPrayer = useLogPrayer();
   const clearPrayer = useClearPrayer();
 
@@ -282,19 +261,12 @@ export default function LogPrayerScreen() {
                     {STATUS_HINT[statusOption]}
                   </Text>
                 </View>
-                <Text
-                  style={{
-                    fontFamily: "LibreBaskerville-Bold",
-                    fontSize: selected ? 22 : 20,
-                    lineHeight: 26,
-                    color: selected ? accent : subtle,
-                    minWidth: 18,
-                    textAlign: "right",
-                    includeFontPadding: false,
-                  }}
-                >
-                  {selected ? "✓" : "›"}
-                </Text>
+                <Ionicons
+                  color={selected ? accent : subtle}
+                  name={selected ? "checkmark" : "chevron-forward"}
+                  size={selected ? 22 : 20}
+                  style={{ width: 18, textAlign: "right" }}
+                />
               </View>
             </Pressable>
           );

@@ -40,7 +40,6 @@ export function ScrollBlurHeader({
       {Array.from({ length: STRIPS }).map((_, i) => (
         <BlurView
           intensity={STRIP_INTENSITY}
-          // biome-ignore lint/suspicious/noArrayIndexKey: static count
           key={i}
           style={{
             position: "absolute",
