@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { AppState } from "react-native";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { pickDailyAyah } from "@/lib/daily-ayah";
+import { dateKey } from "@/lib/date-utils";
 import { buildWidgetSnapshot } from "@/lib/widget-snapshot";
 import {
   ackPendingDhikr,
@@ -14,24 +15,15 @@ import {
 const DEBOUNCE_MS = 800;
 const INCREMENT_CHUNK = 1000;
 
-function pad2(n: number): string {
-  return n.toString().padStart(2, "0");
-}
-
-function todayKey(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-}
-
 function tomorrowKey(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  return dateKey(d);
 }
 
 export function useWidgetSync(): void {
   const { prayerTimes } = usePrayerTimes();
-  const today = todayKey();
+  const today = dateKey();
   const tomorrow = tomorrowKey();
 
   const streak = useQuery(api.lib.prayerLogs.getStreak, { today });
