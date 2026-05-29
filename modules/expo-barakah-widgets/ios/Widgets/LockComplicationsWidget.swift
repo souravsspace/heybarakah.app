@@ -4,7 +4,7 @@ import WidgetKit
 @available(iOS 17.0, *)
 struct LockComplicationsWidget: Widget {
   var body: some WidgetConfiguration {
-    StaticConfiguration(kind: "barakah.lock", provider: LockProvider()) { entry in
+    StaticConfiguration(kind: "barakah.lock-complications", provider: LockProvider()) { entry in
       LockComplicationView(entry: entry)
     }
     .configurationDisplayName("Next prayer")
