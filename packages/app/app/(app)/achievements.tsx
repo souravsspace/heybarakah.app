@@ -110,7 +110,7 @@ function BeadRow({
     <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
       {beads.map((on, i) => (
         <View
-          key={`${on}-${i}`}
+          key={i}
           style={{
             width: 6,
             height: 6,
