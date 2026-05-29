@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Barakah — App UI Kit</title>
+<style>
+  @font-face { font-family: "Inter"; src: url("../../fonts/Inter-VariableFont_opsz_wght.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+  @font-face { font-family: "Libre Baskerville"; src: url("../../fonts/LibreBaskerville-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #F4F2EE; font-family: "Inter", sans-serif; min-height: 100vh; }
+  .doc { padding: 40px 28px 140px; max-width: 1640px; margin: 0 auto; }
+  .doc-head { text-align: center; margin-bottom: 24px; }
+  .doc-head h1 { font: 700 28px/1.15 "Libre Baskerville", Georgia, serif; color: #0F1311; margin: 0; letter-spacing: -0.01em; }
+  .doc-head p { font-size: 13px; color: #6B7280; margin: 8px 0 0; }
+  .group { margin-top: 36px; }
+  .group-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; max-width: 1500px; margin-left: auto; margin-right: auto; }
+  .group-head h2 { font: 700 11px/1 "Inter"; letter-spacing: 0.24em; text-transform: uppercase; color: #6B7280; margin: 0; }
+  .group-head .rule { flex: 1; height: 1px; background: #E5E7EB; }
+  .group-head .count { font: 600 11px/1 "Inter"; color: #6B7280; letter-spacing: 0.02em; }
+  .stage { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+  .frame-label { font: 700 11px/1 "Inter"; text-align: center; margin-top: 14px; letter-spacing: 0.18em; text-transform: uppercase; color: #6B7280; }
+  .frame-col { display: flex; flex-direction: column; align-items: center; }
+  .nav-strip {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #0F1311; color: #fff; border-radius: 9999px;
+    display: flex; padding: 5px; gap: 2px; box-shadow: 0 12px 32px rgba(11,23,16,0.22);
+    z-index: 9999; align-items: center;
+  }
+  .nav-strip button {
+    background: transparent; border: 0; color: rgba(255,255,255,0.65);
+    padding: 7px 12px; border-radius: 9999px; cursor: pointer;
+    font: 600 11.5px/1 "Inter"; letter-spacing: 0.02em;
+  }
+  .nav-strip button.active { background: #29603E; color: #fff; }
+  .nav-strip .divider { width: 1px; height: 18px; background: rgba(255,255,255,0.18); margin: 0 4px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="app-screens.jsx"></script>
+<script type="text/babel" src="screens-extra.jsx"></script>
+
+<script type="text/babel">
+  const screens = [
+    { id: 'welcome',      label: '01 Welcome',       group: 'Onboarding',  Comp: WelcomeScreen,     supportsDark: false },
+    { id: 'promise',      label: '02 Promise',       group: 'Onboarding',  Comp: PromiseScreen,     supportsDark: false },
+    { id: 'lock',         label: '03 Lock preview',  group: 'Onboarding',  Comp: LockPreviewScreen, supportsDark: false },
+    { id: 'madhab',       label: '04 Madhab',        group: 'Onboarding',  Comp: MadhabScreen,      supportsDark: false },
+    { id: 'paywall',      label: '05 Paywall',       group: 'Onboarding',  Comp: PaywallScreen,     supportsDark: false },
+    { id: 'home',         label: '06 Home',          group: 'App',         Comp: HomeScreen,        supportsDark: false },
+    { id: 'progress',     label: '07 Progress',      group: 'App',         Comp: ProgressScreen,    supportsDark: false },
+    { id: 'dhikr',        label: '08 Dhikr',         group: 'App',         Comp: DhikrScreen,       supportsDark: false },
+    { id: 'locked',       label: '09 Locked',        group: 'App',         Comp: LockedScreen,      supportsDark: false },
+    { id: 'profile',      label: '10 Profile',       group: 'App',         Comp: ProfileScreen,     supportsDark: false },
+    { id: 'achievements', label: '11 Achievements',  group: 'New',         Comp: AchievementsScreen,supportsDark: true  },
+    { id: 'unlock',       label: '12 Unlock',        group: 'New',         Comp: UnlockScreen,      supportsDark: true  },
+  ];
+
+  function App() {
+    const [active, setActive] = React.useState('welcome');
+    const [dark, setDark] = React.useState(false);
+    React.useEffect(() => {
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      document.body.style.background = dark ? '#0B0E0C' : '#F4F2EE';
+    }, [dark]);
+    const next = (cur) => () => {
+      const i = screens.findIndex(s => s.id === cur);
+      setActive(screens[Math.min(i + 1, screens.length - 1)].id);
+    };
+    const back = (cur) => () => {
+      const i = screens.findIndex(s => s.id === cur);
+      setActive(screens[Math.max(i - 1, 0)].id);
+    };
+
+    const groups = [
+      { id: 'Onboarding', subtitle: 'First-run flow' },
+      { id: 'App',        subtitle: 'Signed-in tabs' },
+      { id: 'New',        subtitle: 'Added in this update — supports dark mode' },
+    ];
+
+    return (
+      <React.Fragment>
+        <div className="doc" style={{ color: dark ? '#FFF' : '#0F1311' }}>
+          <div className="doc-head">
+            <h1 style={{ color: dark ? '#FFF' : '#0F1311' }}>Barakah — App UI Kit</h1>
+            <p style={{ color: dark ? '#8E8E93' : '#6B7280' }}>Pixel recreation of the heybarakah.app mobile flow · onboarding + main app + new surfaces</p>
+          </div>
+
+          {groups.map(g => {
+            const list = screens.filter(s => s.group === g.id);
+            if (list.length === 0) return null;
+            return (
+              <div className="group" key={g.id}>
+                <div className="group-head">
+                  <h2 style={{ color: dark ? '#8E8E93' : '#6B7280' }}>{g.id}</h2>
+                  <span className="count" style={{ color: dark ? '#5E5E62' : '#6B7280' }}>· {g.subtitle}</span>
+                  <div className="rule" style={{ background: dark ? '#262626' : '#E5E7EB' }}/>
+                  <span className="count" style={{ color: dark ? '#5E5E62' : '#6B7280' }}>{list.length} screens</span>
+                </div>
+                <div className="stage">
+                  {list.map(s => {
+                    const isActive = s.id === active;
+                    const Comp = s.Comp;
+                    const props = { onNext: next(s.id), onBack: back(s.id) };
+                    if (s.supportsDark) {
+                      props.dark = dark;
+                    }
+                    return (
+                      <div className="frame-col" key={s.id} data-screen-label={s.label}>
+                        <IOSDevice>
+                          <Comp {...props}/>
+                        </IOSDevice>
+                        <div className="frame-label" style={{ opacity: isActive ? 1 : 0.55, color: isActive ? '#29603E' : (dark ? '#8E8E93' : '#6B7280') }}>{s.label}{!s.supportsDark ? ' · light' : ''}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="nav-strip">
+          <button
+            onClick={() => setDark(d => !d)}
+            style={{
+              background: dark ? 'rgba(255,255,255,0.10)' : 'transparent',
+              color: dark ? '#FFF' : 'rgba(255,255,255,0.65)',
+              border: 0, padding: '7px 12px', borderRadius: 9999, cursor: 'pointer',
+              font: '600 11.5px/1 Inter', letterSpacing: '0.02em',
+            }}
+            title="Toggle dark mode (applies to screens marked 'New')"
+          >
+            {dark ? '● Dark' : '○ Light'}
+          </button>
+          <div className="divider"/>
+          {screens.map((s, i) => {
+            const prevGroup = i > 0 ? screens[i - 1].group : null;
+            const showDivider = prevGroup && prevGroup !== s.group;
+            return (
+              <React.Fragment key={s.id}>
+                {showDivider && <div className="divider"/>}
+                <button className={s.id === active ? 'active' : ''} onClick={() => setActive(s.id)}>
+                  {s.label}
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </React.Fragment>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

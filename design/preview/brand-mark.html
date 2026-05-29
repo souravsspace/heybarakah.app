@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Brand mark</title>
+<style>
+@font-face { font-family: "Libre Baskerville"; src: url("../fonts/LibreBaskerville-Bold.ttf") format("truetype"); font-weight: 700; }
+@font-face { font-family: "Inter"; src: url("../fonts/Inter-VariableFont_opsz_wght.ttf") format("truetype"); font-weight: 100 900; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #fff; font-family: "Inter", sans-serif; color: #000; }
+body { padding: 30px 36px; display: flex; align-items: center; gap: 36px; }
+.cell { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.cell .label { font-size: 11px; color: #6B7280; }
+.dark { background: #29603E; padding: 16px 24px; border-radius: 12px; }
+.lockup { display: flex; align-items: center; gap: 12px; }
+.lockup img { width: 36px; height: 56px; }
+.lockup .name { font-family: "Libre Baskerville", serif; font-size: 24px; font-weight: 700; letter-spacing: 0.4px; color: #000; }
+.lockup.on-dark .name { color: #fff; }
+</style></head><body>
+<div class="cell">
+  <img src="../assets/barakah-mark.svg" style="width:80px;height:auto" alt="Barakah mark"/>
+  <div class="label">Glyph · primary green</div>
+</div>
+<div class="cell">
+  <div class="dark"><img src="../assets/barakah-mark.svg" style="width:64px;filter:brightness(0) invert(1)"/></div>
+  <div class="label">Glyph · on green</div>
+</div>
+<div class="cell">
+  <div class="lockup">
+    <img src="../assets/barakah-mark.svg" alt=""/>
+    <div class="name">Barakah</div>
+  </div>
+  <div class="label">Lockup · serif</div>
+</div>
+<div class="cell">
+  <img src="../assets/barakah-logo-gradient.svg" style="height:80px;width:auto"/>
+  <div class="label">Gradient logotype variant</div>
+</div>
+</body></html>
