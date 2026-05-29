@@ -1,4 +1,5 @@
 import type { LoggablePrayerName, PrayerStatus } from "@barakah/core/prayer";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -284,19 +285,12 @@ export default function LogPrayerScreen() {
                     {STATUS_HINT[statusOption]}
                   </Text>
                 </View>
-                <Text
-                  style={{
-                    fontFamily: "LibreBaskerville-Bold",
-                    fontSize: selected ? 22 : 20,
-                    lineHeight: 26,
-                    color: selected ? accent : subtle,
-                    minWidth: 18,
-                    textAlign: "right",
-                    includeFontPadding: false,
-                  }}
-                >
-                  {selected ? "✓" : "›"}
-                </Text>
+                <Ionicons
+                  color={selected ? accent : subtle}
+                  name={selected ? "checkmark" : "chevron-forward"}
+                  size={selected ? 22 : 20}
+                  style={{ width: 18, textAlign: "right" }}
+                />
               </View>
             </Pressable>
           );
