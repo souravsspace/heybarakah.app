@@ -122,7 +122,9 @@ export const logPrayer = mutation({
   },
 });
 
-const STREAK_MAX_LOOKBACK = 365;
+// Matches MAX_STREAK_LOOKBACK_DAYS in src/achievements/evaluate.ts so the
+// displayed streak length never caps below what achievement unlocking counts.
+const STREAK_MAX_LOOKBACK = 800;
 const STREAK_HISTORY_DAYS = 28;
 const ALL_FIVE = 5;
 const STREAK_COUNTABLE_STATUSES = new Set(["on_time", "late", "qada"]);
