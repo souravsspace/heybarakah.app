@@ -30,12 +30,15 @@ export const getMySubscription = query({
       return null;
     }
 
+    // A user can briefly hold two active rows (e.g. a mock sub plus a real Polar
+    // order in sandbox). Prefer the most recent active row instead of throwing.
     const row = await ctx.db
       .query("subscriptions")
       .withIndex("by_authUserId_status", (q) =>
         q.eq("authUserId", user._id).eq("status", "active")
       )
-      .unique();
+      .order("desc")
+      .first();
     if (!row) {
       return null;
     }
@@ -63,7 +66,8 @@ export const claimMockSubscription = mutation({
       .withIndex("by_authUserId_status", (q) =>
         q.eq("authUserId", user._id).eq("status", "active")
       )
-      .unique();
+      .order("desc")
+      .first();
     if (existing) {
       if (existing.productId !== args.productId) {
         throw new Error(
