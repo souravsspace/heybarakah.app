@@ -5,7 +5,7 @@ import WidgetKit
 struct SalahArcWidget: Widget {
   var body: some WidgetConfiguration {
     AppIntentConfiguration(
-      kind: "barakah.salah",
+      kind: "barakah.salah-arc",
       intent: SalahArcConfigIntent.self,
       provider: BarakahProvider<SalahArcConfigIntent>()
     ) { entry in
