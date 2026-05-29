@@ -66,7 +66,7 @@ index 14583f4537b402e6d55f8919324d33f1b3c57f12..7decaddfb7fd3c2c3e8ab8de29e8af23
 @@ -14,21 +14,12 @@ export const withPodfile = (config: ExportedConfigWithProps<XcodeProject>, optio
    const podFilePath = path.join(config.modRequest.platformProjectRoot, "Podfile");
    let podFileContent = fs.readFileSync(podFilePath).toString();
- 
+
 +  // Pure SwiftUI widget extension: no React Native / Expo pods. Linking them
 +  // (use_react_native! / use_expo_modules!) integrates shared pods into both
 +  // the app and the extension with mismatched Swift versions, which aborts
@@ -88,7 +88,7 @@ index 14583f4537b402e6d55f8919324d33f1b3c57f12..7decaddfb7fd3c2c3e8ab8de29e8af23
 -  )
  end
  `;
- 
+
 diff --git a/plugin/build/ios/withWidgetXCode.js b/plugin/build/ios/withWidgetXCode.js
 index d03cef2..4faecf7 100644
 --- a/plugin/build/ios/withWidgetXCode.js
@@ -134,5 +134,5 @@ index f94333d..5c3f20a 100644
 +        )
 +      }
      }
- 
+
      if (filesByType.xcassets) {
