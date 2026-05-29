@@ -10,16 +10,9 @@ import {
   useWeekLogs,
 } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import { dateKey, fmtRangeTime, PRAYER_ORDER } from "@/lib/date-utils";
 
 const BARAKAH_GREEN = "#29603E";
-
-const PRAYER_ORDER: LoggablePrayerName[] = [
-  "fajr",
-  "dhuhr",
-  "asr",
-  "maghrib",
-  "isha",
-];
 
 const PRAYER_LABEL: Record<LoggablePrayerName, string> = {
   fajr: "Fajr",
@@ -54,23 +47,6 @@ const LOG_STATUS_OPTIONS: PrayerStatus[] = [
 
 const ROMAN_NUMERALS = ["i", "ii", "iii", "iv"] as const;
 
-function pad(n: number) {
-  return n.toString().padStart(2, "0");
-}
-
-function todayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function fmtRangeTime(date: Date): string {
-  const h = date.getHours();
-  const m = date.getMinutes();
-  const period = h >= 12 ? "p" : "a";
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour}:${pad(m)}${period}`;
-}
-
 export default function LogPrayerScreen() {
   const params = useLocalSearchParams<{
     prayer?: LoggablePrayerName;
@@ -81,7 +57,7 @@ export default function LogPrayerScreen() {
 
   const insets = useSafeAreaInsets();
   const { todayPrayerTimes, prayerTimes } = usePrayerTimes();
-  const week = useWeekLogs(date ?? todayKey());
+  const week = useWeekLogs(date ?? dateKey());
   const logPrayer = useLogPrayer();
   const clearPrayer = useClearPrayer();
 
