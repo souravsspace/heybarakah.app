@@ -729,15 +729,7 @@ function SuggestedRow({
                       width: 18,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: "#FFFFFF",
-                        fontSize: 10,
-                        fontWeight: "700",
-                      }}
-                    >
-                      ✓
-                    </Text>
+                    <Ionicons color="#FFFFFF" name="checkmark" size={10} />
                   </View>
                 ) : null}
               </View>
@@ -955,15 +947,7 @@ function PickMore({
                   }}
                 >
                   {on ? (
-                    <Text
-                      style={{
-                        color: "#FFFFFF",
-                        fontSize: 12,
-                        fontWeight: "700",
-                      }}
-                    >
-                      ✓
-                    </Text>
+                    <Ionicons color="#FFFFFF" name="checkmark" size={12} />
                   ) : null}
                 </View>
               </TouchableOpacity>
@@ -1150,15 +1134,7 @@ function PermissionNotice({
         >
           {cta}
         </Text>
-        <Text
-          style={{
-            color: colors.ink,
-            fontSize: 14,
-            fontWeight: "600",
-          }}
-        >
-          →
-        </Text>
+        <Ionicons color={colors.ink} name="arrow-forward" size={14} />
       </TouchableOpacity>
       <View
         style={{
