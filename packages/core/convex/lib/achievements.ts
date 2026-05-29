@@ -13,6 +13,12 @@ import { authComponent } from "./auth";
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_TIMEZONE = "UTC";
 const LIST_PRAYER_LOG_LIMIT = 1000;
+// Lifetime achievements (ramadan_complete, fajr_100, comebacks, jumuah_*) scan the
+// full history, so we can't date-bound here without breaking unlocks. Cap instead at
+// a value well above realistic lifetime usage (~2.7 years of 5 prayers/day) so a
+// pathological row count can't blow the mutation's read limit/timeout.
+const EVALUATE_PRAYER_LOG_LIMIT = 5000;
+const EVALUATE_DHIKR_DAILY_LIMIT = 10_000;
 
 function pad2(n: number): string {
   return n.toString().padStart(2, "0");
@@ -80,7 +86,7 @@ async function dhikrTotalForUser(
   const rows = await ctx.db
     .query("dhikrDaily")
     .withIndex("by_user_date", (q) => q.eq("authUserId", authUserId))
-    .collect();
+    .take(EVALUATE_DHIKR_DAILY_LIMIT);
   return rows.reduce((sum, row) => sum + row.count, 0);
 }
 
@@ -95,7 +101,7 @@ export const runEvaluate = internalMutation({
       ctx.db
         .query("prayerLogs")
         .withIndex("by_user_updated", (q) => q.eq("authUserId", authUserId))
-        .collect(),
+        .take(EVALUATE_PRAYER_LOG_LIMIT),
       dhikrTotalForUser(ctx, authUserId),
       ctx.db
         .query("users")
