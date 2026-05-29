@@ -25,6 +25,7 @@ import {
   requestLocationPermission,
   reverseGeocodeLocation,
 } from "@/hooks/use-permissions";
+import { dateKey } from "@/lib/date-utils";
 
 type CalcMethod =
   | "isna"
@@ -51,15 +52,6 @@ const CALC_METHOD_MAP: Record<CalcMethod, number> = {
   custom: 3,
 };
 
-function pad2(n: number): string {
-  return n.toString().padStart(2, "0");
-}
-
-function todayDateKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-}
-
 function mapSchool(madhab?: Madhab): number {
   return madhab === "hanafi" ? 1 : 0;
 }
@@ -73,7 +65,7 @@ function mapMethod(calcMethod: CalcMethod | undefined): number {
 
 function pickNextPrayer(days: PrayerDay[]) {
   const now = new Date();
-  const today = todayDateKey();
+  const today = dateKey();
   const todayRecord = days.find((item) => item.date === today);
   const names: NextPrayerName[] = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
 
@@ -100,7 +92,7 @@ function pickNextPrayer(days: PrayerDay[]) {
 
   const tomorrowDate = new Date(now);
   tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const tomorrowKey = `${tomorrowDate.getFullYear()}-${pad2(tomorrowDate.getMonth() + 1)}-${pad2(tomorrowDate.getDate())}`;
+  const tomorrowKey = dateKey(tomorrowDate);
   const tomorrow = days.find((item) => item.date === tomorrowKey);
   if (!tomorrow) {
     return null;
@@ -138,12 +130,12 @@ function mergeDaysPreferStored(
 
 export function usePrayerTimes() {
   const { state } = useOnboardingState();
-  const [today, setToday] = useState(todayDateKey);
+  const [today, setToday] = useState(dateKey);
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (status) => {
       if (status === "active") {
-        const current = todayDateKey();
+        const current = dateKey();
         setToday((prev) => (prev === current ? prev : current));
       }
     });
