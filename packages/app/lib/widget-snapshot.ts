@@ -43,7 +43,13 @@ function localISO(dateKey: string, hour: number, minute: number): string {
   const sign = offsetMin >= 0 ? "+" : "-";
   const abs = Math.abs(offsetMin);
   const tz = `${sign}${pad2(Math.floor(abs / 60))}:${pad2(abs % 60)}`;
-  return `${dateKey}T${pad2(hour)}:${pad2(minute)}:00${tz}`;
+  // Read components back from the normalized Date so an end time that overflows
+  // past midnight (e.g. isha window minutes > 1440) rolls to the next day and the
+  // offset matches that instant — never an invalid "T24:58" string Swift rejects.
+  const datePart = `${local.getFullYear()}-${pad2(local.getMonth() + 1)}-${pad2(
+    local.getDate()
+  )}`;
+  return `${datePart}T${pad2(local.getHours())}:${pad2(local.getMinutes())}:00${tz}`;
 }
 
 function buildPrayerEntry(
