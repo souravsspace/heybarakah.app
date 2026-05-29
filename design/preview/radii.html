@@ -1,0 +1,22 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Radii</title>
+<style>
+@font-face { font-family: "Inter"; src: url("../fonts/Inter-VariableFont_opsz_wght.ttf") format("truetype"); font-weight: 100 900; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #fff; font-family: "Inter", sans-serif; color: #000; }
+body { padding: 28px 32px; }
+.grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+.cell { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.tile { width: 78px; height: 78px; background: #E8F0EA; border: 1.5px solid #29603E; }
+.name { font-size: 12px; font-weight: 600; }
+.spec { font-size: 11px; color: #6B7280; font-family: ui-monospace, Menlo, monospace; }
+</style></head><body>
+<div class="grid">
+  <div class="cell"><div class="tile" style="border-radius:0"></div><div class="name">none</div><div class="spec">0px</div></div>
+  <div class="cell"><div class="tile" style="border-radius:4px"></div><div class="name">sm</div><div class="spec">4px</div></div>
+  <div class="cell"><div class="tile" style="border-radius:8px"></div><div class="name">md</div><div class="spec">8px</div></div>
+  <div class="cell"><div class="tile" style="border-radius:12px"></div><div class="name">lg</div><div class="spec">12px</div></div>
+  <div class="cell"><div class="tile" style="border-radius:16px"></div><div class="name">xl · default</div><div class="spec">16px</div></div>
+  <div class="cell"><div class="tile" style="border-radius:9999px"></div><div class="name">full</div><div class="spec">9999px</div></div>
+</div>
+</body></html>

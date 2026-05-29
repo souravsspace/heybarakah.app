@@ -6,7 +6,6 @@
   "private": true,
   "scripts": {
     "dev:app": "bun --cwd packages/app start",
-    "dev:api": "bun --cwd packages/api dev",
     "dev:convex": "bun --cwd packages/core dev",
     "dev:marketing": "bun --cwd packages/marketing dev",
     "reset:db": "bun --cwd packages/core reset:db",
