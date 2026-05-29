@@ -12,7 +12,7 @@ import { lockBoundsMinutes, NOTIF_LEAD_MIN } from "@/lib/prayer-window-config";
 const SHIELD_NOTIFICATION_IDS_KEY = "shield-notification-ids:v1";
 const SHIELD_TIME_REGEX = /^(\d{1,2}):(\d{2})/;
 
-interface ShieldTimes {
+export interface ShieldTimes {
   asr: string;
   dhuhr: string;
   fajr: string;
