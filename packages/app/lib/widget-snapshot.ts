@@ -87,8 +87,10 @@ export interface BuildSnapshotInput {
 /** Split "Al-Ankabut 29:45" → { surah: "Al-Ankabut", reference: "29:45" }. */
 function splitReference(raw: string): { surah: string; reference: string } {
   const lastSpace = raw.lastIndexOf(" ");
-  if (lastSpace < 0) {
-    return { surah: raw, reference: raw };
+  if (lastSpace <= 0) {
+    // No surah-name portion (no space, or a leading space) — show the whole
+    // string as the heading instead of duplicating it into the numeric ref.
+    return { surah: raw.trim(), reference: "" };
   }
   return {
     surah: raw.slice(0, lastSpace),
