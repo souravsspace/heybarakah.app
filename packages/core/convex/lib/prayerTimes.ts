@@ -91,7 +91,18 @@ function validatePrayerRequest(request: {
 }
 
 function stripPrayerTimeCachePrivateFields(row: Doc<"prayerTimeCaches">) {
-  const { city, countryCode, userCacheKey, userId, ...safe } = row;
+  // Drop exact GPS too: the cacheKey is keyed on rounded coords, so an
+  // unauthenticated caller must not receive the seed user's precise fix.
+  // Clients already hold their own coords from the request.
+  const {
+    city,
+    countryCode,
+    userCacheKey,
+    userId,
+    latitude,
+    longitude,
+    ...safe
+  } = row;
   return safe;
 }
 
