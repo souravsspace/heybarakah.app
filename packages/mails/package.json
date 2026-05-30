@@ -9,7 +9,8 @@
     "./emails/purchase": "./emails/purchase.tsx"
   },
   "scripts": {
-    "dev": "email dev"
+    "dev": "email dev",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "react": "catalog:",
