@@ -71,6 +71,7 @@ export function usePrayerShield() {
   const selection = useQuery(api.lib.shieldSelection.getMine);
   const { todayPrayerTimes } = usePrayerTimes();
   const appStateRef = useRef(AppState.currentState);
+  const lastScheduleKey = useRef<string>("");
   const [activeWindow, setActiveWindow] = useState<PrayerWindow | null>(null);
 
   const sync = useCallback(() => {
@@ -90,6 +91,7 @@ export function usePrayerShield() {
       }
       cancelShieldNotifications().catch(() => null);
       clearShieldSchedule().catch(() => null);
+      lastScheduleKey.current = "";
       return;
     }
     if (!todayPrayerTimes) {
@@ -98,13 +100,20 @@ export function usePrayerShield() {
     }
 
     const times = todayPrayerTimes.timings as Timings;
-    scheduleShieldNotifications({
-      windows: selection.windows,
-      times,
-    }).catch(() => null);
-    persistShieldSchedule({ windows: selection.windows, times }).catch(
-      () => null
-    );
+    // Re-scheduling cancels + re-issues every shield notification id. Skip it
+    // unless the windows/times actually changed, so the 30s active-app tick
+    // doesn't churn the iOS 64-notification quota.
+    const scheduleKey = JSON.stringify({ windows: selection.windows, times });
+    if (scheduleKey !== lastScheduleKey.current) {
+      lastScheduleKey.current = scheduleKey;
+      scheduleShieldNotifications({
+        windows: selection.windows,
+        times,
+      }).catch(() => null);
+      persistShieldSchedule({ windows: selection.windows, times }).catch(
+        () => null
+      );
+    }
 
     const windows = computeWindows(
       selection.windows,
