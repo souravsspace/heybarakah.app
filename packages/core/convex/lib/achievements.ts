@@ -298,7 +298,7 @@ export const markSeen = mutation({
     const rows = await ctx.db
       .query("userAchievements")
       .withIndex("by_user", (q) => q.eq("authUserId", user._id))
-      .collect();
+      .take(ACHIEVEMENTS.length + 10);
     for (const row of rows) {
       if (codeSet.has(row.code) && row.seenAt === undefined) {
         await ctx.db.patch(row._id, { seenAt: now });
