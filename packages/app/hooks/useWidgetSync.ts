@@ -67,19 +67,15 @@ export function useWidgetSync(): void {
     }
     lastJson.current = json;
 
-    if (timer.current) {
-      clearTimeout(timer.current);
-    }
-    timer.current = setTimeout(() => {
+    const id = setTimeout(() => {
       setSnapshot(snapshot).catch(() => {
         // Widget bridge is iOS-only and may no-op on other platforms.
       });
     }, DEBOUNCE_MS);
+    timer.current = id;
 
     return () => {
-      if (timer.current) {
-        clearTimeout(timer.current);
-      }
+      clearTimeout(id);
     };
   }, [
     ayah,
