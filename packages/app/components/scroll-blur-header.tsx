@@ -17,7 +17,8 @@ export function ScrollBlurHeader({
 }) {
   const insets = useSafeAreaInsets();
   const { scheme } = useTheme();
-  const height = insets.top * 0.7;
+  // Floor avoids 0-height (and dead blur strips) on Android before insets resolve.
+  const height = Math.max(insets.top * 0.7, 20);
   const tint = scheme === "dark" ? "dark" : "light";
   const containerStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scrollY.value, [0, 24], [0, 1], "clamp"),
