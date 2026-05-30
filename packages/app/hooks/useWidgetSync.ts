@@ -1,19 +1,13 @@
 import { api } from "@barakah/core/convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { useEffect, useMemo, useRef } from "react";
-import { AppState } from "react-native";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { pickDailyAyah } from "@/lib/daily-ayah";
 import { dateKey } from "@/lib/date-utils";
 import { buildWidgetSnapshot } from "@/lib/widget-snapshot";
-import {
-  ackPendingDhikr,
-  peekPendingDhikr,
-  setSnapshot,
-} from "@/lib/widgets-native";
+import { setSnapshot } from "@/lib/widgets-native";
 
 const DEBOUNCE_MS = 800;
-const INCREMENT_CHUNK = 1000;
 
 function tomorrowKey(): string {
   const d = new Date();
@@ -91,52 +85,4 @@ export function useWidgetSync(): void {
     today,
     tomorrow,
   ]);
-
-  useDhikrReconciliation(today);
-}
-
-function useDhikrReconciliation(today: string): void {
-  const increment = useMutation(api.lib.dhikr.increment);
-  const inFlight = useRef(false);
-  useEffect(() => {
-    let cancelled = false;
-    async function drain(): Promise<void> {
-      if (inFlight.current) {
-        return;
-      }
-      inFlight.current = true;
-      try {
-        const pending = await peekPendingDhikr();
-        if (cancelled || pending <= 0) {
-          return;
-        }
-        let remaining = pending;
-        while (remaining > 0 && !cancelled) {
-          const chunk = Math.min(remaining, INCREMENT_CHUNK);
-          await increment({ date: today, by: chunk });
-          if (cancelled) {
-            break;
-          }
-          // Ack each chunk right after it commits. If a later chunk throws, the
-          // already-committed chunks stay acked and are not re-incremented on retry.
-          await ackPendingDhikr(chunk);
-          remaining -= chunk;
-        }
-      } catch {
-        // bridge unavailable or commit failed — pending count preserved
-      } finally {
-        inFlight.current = false;
-      }
-    }
-    drain();
-    const sub = AppState.addEventListener("change", (status) => {
-      if (status === "active") {
-        drain();
-      }
-    });
-    return () => {
-      cancelled = true;
-      sub.remove();
-    };
-  }, [increment, today]);
 }
