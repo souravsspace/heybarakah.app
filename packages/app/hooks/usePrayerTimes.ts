@@ -149,10 +149,12 @@ export function usePrayerTimes() {
   const [storageHydrated, setStorageHydrated] = useState(false);
 
   useEffect(() => {
-    readPrayerStorage().then((s) => {
-      setStorageState(s);
-      setStorageHydrated(true);
-    });
+    readPrayerStorage()
+      .then((s) => {
+        setStorageState(s);
+        setStorageHydrated(true);
+      })
+      .catch(() => undefined);
   }, []);
 
   const { activeLocation } = useLocations();
@@ -408,7 +410,9 @@ export function usePrayerTimes() {
         // swallow — SDK fallback already rendered; will retry on next stale tick
       })
       .finally(() => {
-        setRefreshing(false);
+        if (!cancelled) {
+          setRefreshing(false);
+        }
       });
 
     return () => {

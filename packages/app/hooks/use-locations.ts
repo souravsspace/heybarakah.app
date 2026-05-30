@@ -78,10 +78,12 @@ export function useLocations() {
       return;
     }
     setHydrated(false);
-    readMirror(userId).then((m) => {
-      setMirror(m);
-      setHydrated(true);
-    });
+    readMirror(userId)
+      .then((m) => {
+        setMirror(m);
+        setHydrated(true);
+      })
+      .catch(() => undefined);
   }, [userId]);
 
   useEffect(() => {

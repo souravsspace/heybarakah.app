@@ -1087,8 +1087,7 @@ struct FamilyActivityPickerView: View {
         "type": "app",
         "token": tokenId,
         "bundleIdentifier": bundleIdentifier,
-        "displayName": resolvedName,
-        "description": descriptionString
+        "displayName": resolvedName
       ]
     }
 

@@ -1,0 +1,107 @@
+import {
+  Divider,
+  HStack,
+  Image,
+  Spacer,
+  Text,
+  VStack,
+} from "@expo/ui/swift-ui";
+import {
+  containerBackground,
+  font,
+  foregroundStyle,
+  frame,
+  italic,
+  kerning,
+  multilineTextAlignment,
+  padding,
+} from "@expo/ui/swift-ui/modifiers";
+import { createWidget, type WidgetEnvironment } from "expo-widgets";
+import type { WidgetSnapshot } from "@/lib/widgets-native";
+import { asDirection, directionTokens } from "@/widgets/theme";
+
+interface AyahConfig {
+  style: string;
+}
+
+function AyahLayout(
+  props: WidgetSnapshot,
+  environment: WidgetEnvironment<AyahConfig>
+) {
+  "widget";
+
+  const dir = asDirection(environment.configuration?.style, "dawn");
+  const tok = directionTokens(dir, environment.colorScheme ?? "light");
+  const a = props.ayah;
+  const ref = a.reference ? a.reference.replace(":", " : ") : "";
+
+  return (
+    <VStack
+      alignment="leading"
+      modifiers={[
+        padding({ all: 16 }),
+        frame({
+          maxWidth: Number.POSITIVE_INFINITY,
+          maxHeight: Number.POSITIVE_INFINITY,
+        }),
+        containerBackground(tok.bg, "widget"),
+      ]}
+      spacing={12}
+    >
+      <HStack modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}>
+        <Text
+          modifiers={[
+            font({ size: 10, weight: "bold" }),
+            kerning(1.4),
+            foregroundStyle(tok.accent),
+          ]}
+        >
+          AYAH OF THE DAY
+        </Text>
+        <Spacer />
+        <Image color={tok.accent} size={14} systemName="play.circle" />
+      </HStack>
+
+      <Text
+        modifiers={[
+          font({ size: 24 }),
+          foregroundStyle(tok.ink),
+          multilineTextAlignment("trailing"),
+        ]}
+      >
+        {a.arabic}
+      </Text>
+
+      <Divider />
+
+      <Text
+        modifiers={[font({ size: 14 }), italic(), foregroundStyle(tok.ink)]}
+      >
+        {`“${a.translation}”`}
+      </Text>
+
+      <Spacer minLength={0} />
+
+      <HStack modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}>
+        <Text
+          modifiers={[
+            font({ size: 10, weight: "bold" }),
+            kerning(1.4),
+            foregroundStyle(tok.accent),
+          ]}
+        >
+          {a.surah.toUpperCase()}
+        </Text>
+        <Spacer />
+        <Text modifiers={[font({ size: 10 }), foregroundStyle(tok.muted)]}>
+          {ref}
+        </Text>
+      </HStack>
+    </VStack>
+  );
+}
+
+export const ayahWidget = createWidget<WidgetSnapshot, AyahConfig>(
+  "AyahWidget",
+  AyahLayout
+);

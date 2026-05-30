@@ -3,6 +3,9 @@ import { z } from "zod";
 
 export const env = createEnv({
   clientPrefix: "PUBLIC_",
+  // Empty but present so t3-env's client/server cross-contamination check is
+  // active — a server-only secret added here would now fail validation.
+  server: {},
   client: {
     PUBLIC_CONVEX_URL: z.url(),
   },

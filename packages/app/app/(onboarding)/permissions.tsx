@@ -35,14 +35,20 @@ export default function Permissions() {
 
   async function allow() {
     setBusy(true);
-    const loc = await requestLocationPermission();
-    const notif = await requestNotificationPermission();
-    dispatch({
-      type: "SET_FIELD",
-      payload: { locationGranted: loc, notifGranted: notif },
-    });
-    setBusy(false);
-    next();
+    try {
+      const loc = await requestLocationPermission();
+      const notif = await requestNotificationPermission();
+      dispatch({
+        type: "SET_FIELD",
+        payload: { locationGranted: loc, notifGranted: notif },
+      });
+      next();
+    } catch {
+      // Unexpected permission throw — advance rather than wedging busy=true.
+      next();
+    } finally {
+      setBusy(false);
+    }
   }
 
   function skip() {

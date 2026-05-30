@@ -16,14 +16,15 @@ export default function WaitlistForm() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    if (!EMAIL_PATTERN.test(email)) {
+    const trimmed = email.trim();
+    if (!EMAIL_PATTERN.test(trimmed)) {
       setError("Enter a valid email.");
       setStatus("error");
       return;
     }
     setStatus("submitting");
     try {
-      const data = await joinWaitlist(email);
+      const data = await joinWaitlist(trimmed);
       if (!data.ok) {
         setError(data.error ?? "Something went wrong. Try again.");
         setStatus("error");
@@ -63,7 +64,7 @@ export default function WaitlistForm() {
       <div className="flex items-center gap-1.5 rounded-full border border-[color:var(--color-border)] bg-white p-1 pl-1.5 transition-all duration-200 ease-[var(--ease-out)] focus-within:border-[color:var(--color-primary)] focus-within:shadow-[0_0_0_3px_rgba(41,96,62,0.12)] hover:border-[color:var(--color-border-strong)]">
         <input
           aria-label="Email address"
-          autoComplete="off"
+          autoComplete="email"
           className="min-w-0 flex-1 appearance-none border-0 bg-transparent px-3 py-2 font-medium text-[color:var(--color-fg)] text-sm tracking-wide outline-none placeholder:text-[color:var(--color-fg-subtle)] focus:border-0 focus:shadow-none focus:outline-none focus:ring-0"
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"

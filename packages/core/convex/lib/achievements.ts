@@ -110,7 +110,7 @@ export const runEvaluate = internalMutation({
       ctx.db
         .query("userAchievements")
         .withIndex("by_user", (q) => q.eq("authUserId", authUserId))
-        .collect(),
+        .take(ACHIEVEMENTS.length + 10),
     ]);
 
     const alreadyUnlocked = new Set<AchievementCode>(
@@ -186,7 +186,7 @@ export const listForMe = query({
         ctx.db
           .query("userAchievements")
           .withIndex("by_user", (q) => q.eq("authUserId", user._id))
-          .collect(),
+          .take(ACHIEVEMENTS.length + 10),
         ctx.db
           .query("prayerLogs")
           .withIndex("by_user_updated", (q) => q.eq("authUserId", user._id))
@@ -268,7 +268,7 @@ export const listUnseen = query({
       .withIndex("by_user_seen", (q) =>
         q.eq("authUserId", user._id).eq("seenAt", undefined)
       )
-      .collect();
+      .take(ACHIEVEMENTS.length + 10);
     const byCode = new Map(ACHIEVEMENTS.map((a) => [a.code, a]));
     return rows
       .map((r) => {
@@ -290,12 +290,15 @@ export const markSeen = mutation({
     if (!user) {
       throw new Error("Not authenticated");
     }
+    if (codes.length > ACHIEVEMENTS.length) {
+      throw new Error("Too many codes");
+    }
     const now = Date.now();
     const codeSet = new Set(codes);
     const rows = await ctx.db
       .query("userAchievements")
       .withIndex("by_user", (q) => q.eq("authUserId", user._id))
-      .collect();
+      .take(ACHIEVEMENTS.length + 10);
     for (const row of rows) {
       if (codeSet.has(row.code) && row.seenAt === undefined) {
         await ctx.db.patch(row._id, { seenAt: now });

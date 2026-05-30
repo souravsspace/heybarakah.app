@@ -58,7 +58,7 @@ export function TasbihRow({
   count?: number;
 }) {
   const r = 7;
-  const gap = (width - r * 2 * count) / (count - 1);
+  const gap = count > 1 ? (width - r * 2 * count) / (count - 1) : 0;
   const y = 16;
   const center = Math.floor(count / 2);
 

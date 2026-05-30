@@ -7,6 +7,9 @@ export const env = createEnv({
    * a type-level and at runtime.
    */
   clientPrefix: "EXPO_PUBLIC_",
+  // Empty but present so t3-env's client/server cross-contamination check is
+  // active — a server-only secret added here would now fail validation.
+  server: {},
   client: {
     EXPO_PUBLIC_CONVEX_URL: z.url(),
     EXPO_PUBLIC_CONVEX_SITE_URL: z.url(),

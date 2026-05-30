@@ -45,7 +45,7 @@ import {
 } from "@/lib/app-blocker";
 
 type ThemeColors = ReturnType<typeof useTheme>["colors"];
-const SHOW_UNLOCK_PREVIEW = process.env.NODE_ENV !== "production";
+const SHOW_UNLOCK_PREVIEW = __DEV__;
 
 function summarizeIosSelection(items: IOSBlockedItem[]): string {
   const apps = items.filter((i) => i.type === "app").length;

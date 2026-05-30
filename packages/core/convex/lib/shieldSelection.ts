@@ -113,6 +113,9 @@ export const setWindows = mutation({
     if (!user) {
       throw new Error("Not authenticated");
     }
+    if (args.windows.length > ALL_WINDOWS.length) {
+      throw new Error("Too many windows");
+    }
     const existing = await ctx.db
       .query("shieldSelection")
       .withIndex("by_user", (q) => q.eq("authUserId", user._id))

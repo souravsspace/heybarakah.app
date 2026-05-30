@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "barakah",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.souravsspace.Barakah",
@@ -118,28 +117,63 @@
         }
       ],
       [
-        "@bittingz/expo-widgets",
+        "expo-widgets",
         {
-          "ios": {
-            "src": "../../modules/expo-barakah-widgets/ios",
-            "devTeamId": "CG5WX63737",
-            "deploymentTarget": "17.0",
-            "useLiveActivities": true,
-            "frequentUpdates": true,
-            "moduleDependencies": [
-              "Shared/WidgetSnapshot.swift",
-              "Shared/SharedStore.swift",
-              "Shared/LockActivityAttributes.swift",
-              "Shared/LockActivityController.swift"
-            ],
-            "mode": "production",
-            "xcode": {
-              "widgetBundleIdentifier": "com.souravsspace.Barakah.BarakahWidgets"
+          "bundleIdentifier": "com.souravsspace.Barakah.BarakahWidgets",
+          "groupIdentifier": "group.com.souravsspace.Barakah.expowidgets",
+          "frequentUpdates": true,
+          "widgets": [
+            {
+              "name": "AyahWidget",
+              "displayName": "Ayah of the day",
+              "description": "One verse, quietly placed.",
+              "supportedFamilies": ["systemLarge"]
+            },
+            {
+              "name": "DhikrWidget",
+              "displayName": "Dhikr",
+              "description": "Tap to count. Remember Allah.",
+              "supportedFamilies": ["systemSmall"]
+            },
+            {
+              "name": "StreakWidget",
+              "displayName": "Streak",
+              "description": "Your consistency, day by day.",
+              "supportedFamilies": ["systemSmall"]
+            },
+            {
+              "name": "SalahArcWidget",
+              "displayName": "Salah Arc",
+              "description": "Your next prayer at a glance.",
+              "supportedFamilies": ["systemMedium"]
+            },
+            {
+              "name": "LockComplications",
+              "displayName": "Next prayer",
+              "description": "Lock-screen complication for your next prayer.",
+              "supportedFamilies": [
+                "accessoryCircular",
+                "accessoryRectangular",
+                "accessoryInline"
+              ]
             }
-          }
+          ]
         }
       ],
-      "./plugins/with-app-groups"
+      "./plugins/with-app-groups",
+      "expo-font",
+      "expo-image",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

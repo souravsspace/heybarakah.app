@@ -25,15 +25,15 @@ export function ToggleRow({ label, hint, value, onToggle }: Props) {
           </Text>
         ) : null}
       </View>
-      <Switch
-        onValueChange={() => {
-          Haptics.selectionAsync().catch(() => undefined);
-          onToggle();
-        }}
-        thumbColor="#FFFFFF"
-        trackColor={{ false: "#E5E7EB", true: "#29603E" }}
-        value={value}
-      />
+      {/* Visual only — Pressable owns the toggle so a single tap fires once. */}
+      <View pointerEvents="none">
+        <Switch
+          onValueChange={onToggle}
+          thumbColor="#FFFFFF"
+          trackColor={{ false: "#E5E7EB", true: "#29603E" }}
+          value={value}
+        />
+      </View>
     </Pressable>
   );
 }

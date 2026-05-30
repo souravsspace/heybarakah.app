@@ -91,7 +91,18 @@ function validatePrayerRequest(request: {
 }
 
 function stripPrayerTimeCachePrivateFields(row: Doc<"prayerTimeCaches">) {
-  const { city, countryCode, userCacheKey, userId, ...safe } = row;
+  // Drop exact GPS too: the cacheKey is keyed on rounded coords, so an
+  // unauthenticated caller must not receive the seed user's precise fix.
+  // Clients already hold their own coords from the request.
+  const {
+    city,
+    countryCode,
+    userCacheKey,
+    userId,
+    latitude,
+    longitude,
+    ...safe
+  } = row;
   return safe;
 }
 
@@ -120,6 +131,11 @@ export const refreshPrayerTimes: ReturnType<typeof action> = action({
   handler: async (ctx, request) => {
     validatePrayerRequest(request);
 
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new Error("Not authenticated");
+    }
+
     const cached = await ctx.runQuery(
       api.lib.prayerTimes.getCachedPrayerTimes,
       request
@@ -128,12 +144,11 @@ export const refreshPrayerTimes: ReturnType<typeof action> = action({
       return cached;
     }
 
-    const user = await authComponent.safeGetAuthUser(ctx);
     const days = DEFAULT_PRAYER_DAYS;
     const requestWithDays = { ...request, days };
 
     const cacheKey = createPrayerTimesCacheKey(requestWithDays);
-    const userCacheKey = createUserPrayerTimesCacheKey(cacheKey, user?._id);
+    const userCacheKey = createUserPrayerTimesCacheKey(cacheKey, user._id);
 
     const normalized = await fetchAndNormalize(requestWithDays);
     const fallback = isAdhanJsSupportedMethod(requestWithDays.method)
@@ -161,7 +176,7 @@ export const refreshPrayerTimes: ReturnType<typeof action> = action({
 
     const now = Date.now();
     const payload = {
-      userId: user?._id,
+      userId: user._id,
       cacheKey,
       userCacheKey,
       latitude: requestWithDays.latitude,

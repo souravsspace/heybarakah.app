@@ -31,10 +31,11 @@ export function AchievementPopupProvider({
     if (unseen.length === 0) {
       return;
     }
+    const activeCode = active?.code;
     setQueue((prev) => {
       const knownCodes = new Set<string>(prev.map((p) => p.code));
-      if (active) {
-        knownCodes.add(active.code);
+      if (activeCode) {
+        knownCodes.add(activeCode);
       }
       for (const code of dismissedRef.current) {
         knownCodes.add(code);

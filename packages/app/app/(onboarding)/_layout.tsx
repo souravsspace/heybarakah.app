@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigationState } from "@react-navigation/native";
 import { Redirect, Stack } from "expo-router";
+import { useNavigationState } from "expo-router/react-navigation";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,7 +27,8 @@ export default function OnboardingLayout() {
     return <AuthLoading />;
   }
   const isPaywallRoute = currentPath?.startsWith("/(onboarding)/paywall");
-  if (user && !(isPaywallRoute && !activeSubscription)) {
+  const shouldRedirectHome = user && (activeSubscription || !isPaywallRoute);
+  if (shouldRedirectHome) {
     return <Redirect href="/home" />;
   }
 

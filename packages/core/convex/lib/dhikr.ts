@@ -5,15 +5,28 @@ import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// Regex alone accepts impossible dates (e.g. 2024-02-30). Round-trip through
+// Date to reject them, matching prayerLogs.validateDateKey.
+function isValidDateKey(date: string): boolean {
+  if (!DATE_KEY_PATTERN.test(date)) {
+    return false;
+  }
+  const d = new Date(`${date}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === date;
+}
 const DEFAULT_TARGET = 33;
 const MAX_TARGET = 10_000;
 const MAX_INCREMENT = 1000;
+// Bounds the aggregate-miss recompute path so a pathological per-user row
+// count can't blow the mutation read limit. One row per day → ~137 years.
+const SUM_DHIKR_DAILY_LIMIT = 50_000;
 
 async function sumDhikrDaily(ctx: MutationCtx, authUserId: string) {
   const rows = await ctx.db
     .query("dhikrDaily")
     .withIndex("by_user_date", (q) => q.eq("authUserId", authUserId))
-    .collect();
+    .take(SUM_DHIKR_DAILY_LIMIT);
   return rows.reduce((sum, row) => sum + row.count, 0);
 }
 
@@ -44,7 +57,7 @@ async function updateDhikrAggregate(
 export const getToday = query({
   args: { date: v.string() },
   handler: async (ctx, { date }) => {
-    if (!DATE_KEY_PATTERN.test(date)) {
+    if (!isValidDateKey(date)) {
       throw new Error("Invalid date");
     }
     const user = await authComponent.safeGetAuthUser(ctx);
@@ -72,7 +85,7 @@ export const getToday = query({
 export const increment = mutation({
   args: { date: v.string(), by: v.optional(v.number()) },
   handler: async (ctx, { date, by }) => {
-    if (!DATE_KEY_PATTERN.test(date)) {
+    if (!isValidDateKey(date)) {
       throw new Error("Invalid date");
     }
     const delta = by ?? 1;
@@ -116,7 +129,7 @@ export const increment = mutation({
 export const setTarget = mutation({
   args: { date: v.string(), target: v.number() },
   handler: async (ctx, { date, target }) => {
-    if (!DATE_KEY_PATTERN.test(date)) {
+    if (!isValidDateKey(date)) {
       throw new Error("Invalid date");
     }
     if (!Number.isInteger(target) || target < 1 || target > MAX_TARGET) {
@@ -151,7 +164,7 @@ export const setTarget = mutation({
 export const reset = mutation({
   args: { date: v.string() },
   handler: async (ctx, { date }) => {
-    if (!DATE_KEY_PATTERN.test(date)) {
+    if (!isValidDateKey(date)) {
       throw new Error("Invalid date");
     }
     const user = await authComponent.safeGetAuthUser(ctx);

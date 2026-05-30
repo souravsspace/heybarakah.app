@@ -2,14 +2,12 @@ import "../global.css";
 
 import { env } from "@barakah/env/app";
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
-import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { ConvexReactClient } from "convex/react";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { hideAsync, preventAutoHideAsync } from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
-import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
@@ -43,21 +41,6 @@ export default function RootLayout() {
       hideAsync().catch(() => undefined);
     }
   }, [fontsLoaded]);
-
-  useEffect(() => {
-    if (Platform.OS !== "android") {
-      return;
-    }
-    import("expo-navigation-bar")
-      .then((NavigationBar) => {
-        NavigationBar.setPositionAsync("absolute").catch(() => undefined);
-        NavigationBar.setBackgroundColorAsync("#00000000").catch(
-          () => undefined
-        );
-        NavigationBar.setButtonStyleAsync("dark").catch(() => undefined);
-      })
-      .catch(() => undefined);
-  }, []);
 
   const handleSplashFinish = useCallback(() => {
     setSplashDone(true);
