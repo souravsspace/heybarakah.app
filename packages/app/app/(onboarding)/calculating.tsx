@@ -26,14 +26,21 @@ export default function Calculating() {
   const [active, setActive] = useState(0);
   const nextRef = useRef(next);
   nextRef.current = next;
+  const mounted = useRef(true);
 
   useEffect(() => {
+    mounted.current = true;
     const step = TOTAL_MS / STAGES.length;
     const interval = setInterval(() => {
       setActive((i) => Math.min(i + 1, STAGES.length - 1));
     }, step);
-    const t = setTimeout(() => nextRef.current(), TOTAL_MS);
+    const t = setTimeout(() => {
+      if (mounted.current) {
+        nextRef.current();
+      }
+    }, TOTAL_MS);
     return () => {
+      mounted.current = false;
       clearTimeout(t);
       clearInterval(interval);
     };
