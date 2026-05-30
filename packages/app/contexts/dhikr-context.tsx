@@ -88,6 +88,7 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
   // Authoritative live counter. State lags a render behind, so rapid double-taps
   // would otherwise read a stale `count`; the ref advances synchronously per tap.
   const countRef = useRef(0);
+  const totalsHydrated = useRef(false);
 
   useEffect(() => {
     AsyncStorage.getItem(LIFETIME_KEY)
@@ -104,17 +105,25 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
           // ignore malformed
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        totalsHydrated.current = true;
+      });
   }, []);
 
+  // Persist totals as a pure effect — keeping the write out of the setState
+  // updater (updaters must be pure; React may double-invoke them).
+  useEffect(() => {
+    if (!totalsHydrated.current) {
+      return;
+    }
+    AsyncStorage.setItem(LIFETIME_KEY, JSON.stringify(totals)).catch(
+      () => undefined
+    );
+  }, [totals]);
+
   const addLifetime = useCallback((id: string, n = 1) => {
-    setTotals((prev) => {
-      const next = { ...prev, [id]: (prev[id] ?? 0) + n };
-      AsyncStorage.setItem(LIFETIME_KEY, JSON.stringify(next)).catch(
-        () => undefined
-      );
-      return next;
-    });
+    setTotals((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + n }));
   }, []);
 
   const active = PRESETS[activeIndex];
