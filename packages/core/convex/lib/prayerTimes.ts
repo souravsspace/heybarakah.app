@@ -165,7 +165,7 @@ export const refreshPrayerTimes: ReturnType<typeof action> = action({
 
     const now = Date.now();
     const payload = {
-      userId: user?._id,
+      userId: user._id,
       cacheKey,
       userCacheKey,
       latitude: requestWithDays.latitude,
