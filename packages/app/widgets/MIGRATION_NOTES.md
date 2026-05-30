@@ -21,8 +21,15 @@ none of the native rendering has been compiled or seen on a device yet.
 - **Live Activity.** `widgets/lock-activity.tsx` (`createLiveActivity`). The old
   opaque-id API is preserved through a synthetic-id → instance map so
   `useLockActivityScheduler` is unchanged.
-- **Control Center control.** `LockNowControl` stays a `@bacons/apple-targets`
-  target, now activated at `targets/LockNowWidget/`.
+- **Control Center control — DROPPED 2026-05-31.** `LockNowControl` was a
+  `@bacons/apple-targets` widget target at `targets/LockNowWidget/`. It collided
+  with `expo-widgets`: both add a WidgetKit extension, and apple-targets'
+  `applyXcodeChanges` falls back to `targets[0]` (= expo-widgets'
+  `ExpoWidgetsTarget`) and crashes on `removeFromProject` of undefined during
+  prebuild. Lock-screen presence is covered by expo-widgets' `LockComplications`
+  (accessoryCircular/Rectangular/Inline). To restore the Control later, patch
+  apple-targets to drop the `?? targets[0]` fallback so a 2nd widget extension is
+  created (re-adds a `patches/` entry, the thing this migration removed).
 
 ## Known fidelity losses (no `@expo/ui` equivalent)
 
@@ -34,14 +41,13 @@ device.
 
 ## Device / Mac validation (NOT done — required before shipping)
 
-1. `bun run prebuild:clean` — confirm the `LockNowWidget` target appears and
-   `@bacons/apple-targets` no longer crashes (it could not add a 2nd WidgetKit
-   extension while `@bittingz`'s `BarakahWidgetExtension` existed; that's gone now).
+1. `bun run prebuild:clean` — verified green 2026-05-31 after dropping
+   `targets/LockNowWidget/` (see Control Center note above).
 2. `bun run pod` — expect no "Unable to determine Swift version".
 3. Build to a **physical iOS 18+ device** (widgets/Live Activities/Control don't
    fully exercise in Simulator).
 4. Verify each family, the Dhikr tap round-trip (incl. background/cold-start
-   delivery), the Live Activity tied to salah/quiet windows, and the Control.
+   delivery), and the Live Activity tied to salah/quiet windows.
 5. `expo-doctor` — the `@bittingz` warning should be gone.
 
 ## Open follow-ups to confirm on device
