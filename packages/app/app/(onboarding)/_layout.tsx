@@ -27,7 +27,8 @@ export default function OnboardingLayout() {
     return <AuthLoading />;
   }
   const isPaywallRoute = currentPath?.startsWith("/(onboarding)/paywall");
-  if (user && !(isPaywallRoute && !activeSubscription)) {
+  const shouldRedirectHome = user && (activeSubscription || !isPaywallRoute);
+  if (shouldRedirectHome) {
     return <Redirect href="/home" />;
   }
 
