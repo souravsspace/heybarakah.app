@@ -8,12 +8,15 @@ const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_TARGET = 33;
 const MAX_TARGET = 10_000;
 const MAX_INCREMENT = 1000;
+// Bounds the aggregate-miss recompute path so a pathological per-user row
+// count can't blow the mutation read limit. One row per day → ~137 years.
+const SUM_DHIKR_DAILY_LIMIT = 50_000;
 
 async function sumDhikrDaily(ctx: MutationCtx, authUserId: string) {
   const rows = await ctx.db
     .query("dhikrDaily")
     .withIndex("by_user_date", (q) => q.eq("authUserId", authUserId))
-    .collect();
+    .take(SUM_DHIKR_DAILY_LIMIT);
   return rows.reduce((sum, row) => sum + row.count, 0);
 }
 
