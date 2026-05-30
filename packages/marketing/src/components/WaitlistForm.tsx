@@ -16,14 +16,15 @@ export default function WaitlistForm() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    if (!EMAIL_PATTERN.test(email)) {
+    const trimmed = email.trim();
+    if (!EMAIL_PATTERN.test(trimmed)) {
       setError("Enter a valid email.");
       setStatus("error");
       return;
     }
     setStatus("submitting");
     try {
-      const data = await joinWaitlist(email);
+      const data = await joinWaitlist(trimmed);
       if (!data.ok) {
         setError(data.error ?? "Something went wrong. Try again.");
         setStatus("error");
