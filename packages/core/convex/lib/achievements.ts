@@ -110,7 +110,7 @@ export const runEvaluate = internalMutation({
       ctx.db
         .query("userAchievements")
         .withIndex("by_user", (q) => q.eq("authUserId", authUserId))
-        .collect(),
+        .take(ACHIEVEMENTS.length + 10),
     ]);
 
     const alreadyUnlocked = new Set<AchievementCode>(
@@ -268,7 +268,7 @@ export const listUnseen = query({
       .withIndex("by_user_seen", (q) =>
         q.eq("authUserId", user._id).eq("seenAt", undefined)
       )
-      .collect();
+      .take(ACHIEVEMENTS.length + 10);
     const byCode = new Map(ACHIEVEMENTS.map((a) => [a.code, a]));
     return rows
       .map((r) => {
@@ -289,6 +289,9 @@ export const markSeen = mutation({
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
       throw new Error("Not authenticated");
+    }
+    if (codes.length > ACHIEVEMENTS.length) {
+      throw new Error("Too many codes");
     }
     const now = Date.now();
     const codeSet = new Set(codes);
