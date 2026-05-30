@@ -46,8 +46,5 @@
       "bun x ultracite fix"
     ]
   },
-  "dependencies": {},
-  "patchedDependencies": {
-    "@bittingz/expo-widgets@3.0.2": "patches/@bittingz%2Fexpo-widgets@3.0.2.patch"
-  }
+  "dependencies": {}
 }
