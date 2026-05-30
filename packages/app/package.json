@@ -53,6 +53,7 @@
     "expo-system-ui": "~56.0.5",
     "expo-task-manager": "~56.0.16",
     "expo-web-browser": "~56.0.5",
+    "expo-widgets": "~56.0.16",
     "fs-extra": "^11.3.5",
     "nativewind": "^4.2.4",
     "react": "catalog:",
