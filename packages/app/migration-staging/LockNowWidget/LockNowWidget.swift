@@ -4,6 +4,8 @@ import WidgetKit
 @main
 struct LockNowWidgetBundle: WidgetBundle {
   var body: some Widget {
-    LockNowControl()
+    if #available(iOS 18.0, *) {
+      LockNowControl()
+    }
   }
 }
