@@ -86,7 +86,7 @@ export default function DhikrRecord() {
               key={p.id}
               lifetime={totals[p.id] ?? 0}
               preset={p}
-              roman={ROMAN[i]}
+              roman={ROMAN[i % ROMAN.length]}
             />
           ) : (
             <CompactRow
@@ -99,7 +99,7 @@ export default function DhikrRecord() {
                 close();
               }}
               preset={p}
-              roman={ROMAN[i]}
+              roman={ROMAN[i % ROMAN.length]}
             />
           )
         )}
