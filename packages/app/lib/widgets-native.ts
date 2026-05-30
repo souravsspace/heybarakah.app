@@ -1,7 +1,3 @@
-import {
-  type NativeModule,
-  requireOptionalNativeModule,
-} from "expo-modules-core";
 import { Platform } from "react-native";
 
 export type PrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
@@ -31,74 +27,90 @@ export interface WidgetSnapshot {
   v: 1;
 }
 
-interface ExpoWidgetsNative extends NativeModule {
-  ackPendingDhikr(count: number): Promise<void>;
-  endAllLockActivities(): Promise<void>;
-  endLockActivity(id: string): Promise<void>;
-  peekPendingDhikr(): Promise<number>;
-  reloadTimelines(): Promise<void>;
-  setSnapshot(json: string): Promise<void>;
-  startLockActivity(
-    name: string,
-    startISO: string,
-    endISO: string
-  ): Promise<string>;
+const isIOS = Platform.OS === "ios";
+
+// `expo-widgets` constructs native `Widget` objects at module-eval time, which
+// only exist on iOS. Import the registry lazily and behind a platform guard so
+// the widget modules are never evaluated on Android/web.
+async function getWidgets() {
+  if (!isIOS) {
+    return [];
+  }
+  try {
+    const mod = await import("@/widgets");
+    return mod.WIDGETS;
+  } catch {
+    return [];
+  }
 }
 
-const native: ExpoWidgetsNative | null =
-  Platform.OS === "ios"
-    ? requireOptionalNativeModule<ExpoWidgetsNative>("ExpoWidgets")
-    : null;
+/**
+ * Timeline entries at "now" plus every future prayer boundary — the moments the
+ * displayed prayer and countdown change. Mirrors the old native provider's
+ * `.after(boundary)` timeline; the widget layouts derive their state from each
+ * entry's `ctx.date`.
+ */
+function buildTimelineEntries(
+  snapshot: WidgetSnapshot
+): { date: Date; props: WidgetSnapshot }[] {
+  const now = Date.now();
+  const timestamps = new Set<number>([now]);
+  for (const prayer of snapshot.prayers) {
+    for (const iso of [prayer.startISO, prayer.endISO]) {
+      const t = Date.parse(iso);
+      if (!Number.isNaN(t) && t > now) {
+        timestamps.add(t);
+      }
+    }
+  }
+  return [...timestamps]
+    .sort((a, b) => a - b)
+    .map((t) => ({ date: new Date(t), props: snapshot }));
+}
 
 export async function setSnapshot(snapshot: WidgetSnapshot): Promise<void> {
-  if (!native) {
+  const widgets = await getWidgets();
+  if (widgets.length === 0) {
     return;
   }
-  await native.setSnapshot(JSON.stringify(snapshot));
+  const entries = buildTimelineEntries(snapshot);
+  for (const widget of widgets) {
+    widget.updateTimeline(entries);
+  }
 }
 
-export function reloadTimelines(): Promise<void> {
-  if (!native) {
-    return Promise.resolve();
+export async function reloadTimelines(): Promise<void> {
+  const widgets = await getWidgets();
+  for (const widget of widgets) {
+    widget.reload();
   }
-  return native.reloadTimelines();
-}
-
-export function peekPendingDhikr(): Promise<number> {
-  if (!native) {
-    return Promise.resolve(0);
-  }
-  return native.peekPendingDhikr();
-}
-
-export function ackPendingDhikr(count: number): Promise<void> {
-  if (!native) {
-    return Promise.resolve();
-  }
-  return native.ackPendingDhikr(count);
 }
 
 export function startLockActivity(args: {
-  name: string;
-  startISO: string;
   endISO: string;
+  name: PrayerName;
+  startISO: string;
 }): Promise<string> {
-  if (!native) {
+  if (!isIOS) {
     return Promise.reject(new Error("ExpoWidgets: iOS only"));
   }
-  return native.startLockActivity(args.name, args.startISO, args.endISO);
+  return import("@/widgets/lock-activity").then((m) =>
+    m.startLockActivityInstance(args)
+  );
 }
 
-export function endLockActivity(id: string): Promise<void> {
-  if (!native) {
-    return Promise.resolve();
+export async function endLockActivity(id: string): Promise<void> {
+  if (!isIOS) {
+    return;
   }
-  return native.endLockActivity(id);
+  const m = await import("@/widgets/lock-activity");
+  await m.endLockActivityInstance(id);
 }
 
-export function endAllLockActivities(): Promise<void> {
-  if (!native) {
-    return Promise.resolve();
+export async function endAllLockActivities(): Promise<void> {
+  if (!isIOS) {
+    return;
   }
-  return native.endAllLockActivities();
+  const m = await import("@/widgets/lock-activity");
+  await m.endAllLockActivityInstances();
 }
