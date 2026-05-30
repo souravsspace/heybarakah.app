@@ -186,7 +186,7 @@ export const listForMe = query({
         ctx.db
           .query("userAchievements")
           .withIndex("by_user", (q) => q.eq("authUserId", user._id))
-          .collect(),
+          .take(ACHIEVEMENTS.length + 10),
         ctx.db
           .query("prayerLogs")
           .withIndex("by_user_updated", (q) => q.eq("authUserId", user._id))
