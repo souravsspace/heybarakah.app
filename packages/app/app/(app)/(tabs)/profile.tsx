@@ -223,7 +223,7 @@ export default function Profile() {
               onPress={() => go("/calc-method")}
               sf="globe"
               title="Calculation Method"
-              value={METHOD_LABEL[methodKey]}
+              value={METHOD_LABEL[methodKey] ?? methodKey}
             />
           </Card>
         </Section>
