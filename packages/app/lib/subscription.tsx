@@ -58,6 +58,7 @@ export function SubscriptionProvider({
   children: React.ReactNode;
 }) {
   const { user } = useUser();
+  const userId = user?._id;
   const activeSubscription = useQuery(api.lib.subscriptions.getMySubscription);
   const syncAction = useAction(api.lib.subscriptions.syncRevenueCatEntitlement);
   const claimMockMutation = useMutation(
@@ -71,12 +72,12 @@ export function SubscriptionProvider({
 
   const syncCustomerInfo = useCallback(
     async (info: CustomerInfo) => {
-      if (!user) {
+      if (!userId) {
         return;
       }
       await syncAction({ ...mapCustomerInfoToSync(info) });
     },
-    [syncAction, user]
+    [syncAction, userId]
   );
 
   const syncCustomerInfoQuiet = useCallback(
@@ -115,14 +116,14 @@ export function SubscriptionProvider({
     let cancelled = false;
     (async () => {
       try {
-        const ok = user
-          ? await linkRevenueCatToUser(user._id)
+        const ok = userId
+          ? await linkRevenueCatToUser(userId)
           : await configureRevenueCatAnonymous();
         if (cancelled || !ok) {
           return;
         }
         setRevenueCatReady(true);
-        if (user) {
+        if (userId) {
           const info = await getCustomerInfo();
           if (info && !cancelled) {
             await syncCustomerInfo(info);
@@ -139,7 +140,7 @@ export function SubscriptionProvider({
     return () => {
       cancelled = true;
     };
-  }, [user, refresh, syncCustomerInfo]);
+  }, [userId, refresh, syncCustomerInfo]);
 
   useEffect(() => {
     if (!(revenueCatReady && isRevenueCatSupported())) {
