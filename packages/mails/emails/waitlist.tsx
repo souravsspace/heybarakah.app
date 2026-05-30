@@ -64,7 +64,7 @@ export default function WaitlistEmail() {
           <Container className="mx-auto w-full max-w-[560px]">
             <Section className="mb-6 text-center">
               <Img
-                alt=""
+                alt="Barakah App logo"
                 className="inline-block align-middle"
                 height="36"
                 src={brandIconUrl}
