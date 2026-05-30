@@ -1,11 +1,8 @@
 /** @type {import('@bacons/apple-targets/app.plugin').ConfigFunction} */
 module.exports = (config) => {
-  const groups =
-    config.ios?.entitlements?.["com.apple.security.application-groups"] ?? [];
-  // Pick the shield group by identity, not array position — order in app.json
-  // entitlements must not silently route extensions to the wrong App Group.
   const appGroup =
-    groups.find((g) => g.includes(".shield")) ?? "group.expo.app-blocker";
+    config.ios?.entitlements?.["com.apple.security.application-groups"]?.[0] ||
+    "group.expo.app-blocker";
 
   return {
     type: "shield-config",
