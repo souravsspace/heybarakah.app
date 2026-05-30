@@ -120,6 +120,11 @@ export const refreshPrayerTimes: ReturnType<typeof action> = action({
   handler: async (ctx, request) => {
     validatePrayerRequest(request);
 
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new Error("Not authenticated");
+    }
+
     const cached = await ctx.runQuery(
       api.lib.prayerTimes.getCachedPrayerTimes,
       request
@@ -128,12 +133,11 @@ export const refreshPrayerTimes: ReturnType<typeof action> = action({
       return cached;
     }
 
-    const user = await authComponent.safeGetAuthUser(ctx);
     const days = DEFAULT_PRAYER_DAYS;
     const requestWithDays = { ...request, days };
 
     const cacheKey = createPrayerTimesCacheKey(requestWithDays);
-    const userCacheKey = createUserPrayerTimesCacheKey(cacheKey, user?._id);
+    const userCacheKey = createUserPrayerTimesCacheKey(cacheKey, user._id);
 
     const normalized = await fetchAndNormalize(requestWithDays);
     const fallback = isAdhanJsSupportedMethod(requestWithDays.method)
