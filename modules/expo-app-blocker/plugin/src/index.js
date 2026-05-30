@@ -569,8 +569,13 @@ function withAppBlockerIOS(config, pluginConfig) {
       if (fs.existsSync(pbxprojPath)) {
         let pbxproj = fs.readFileSync(pbxprojPath, "utf-8");
         pbxproj = pbxproj.replace(
-          /IPHONEOS_DEPLOYMENT_TARGET = \d+\.\d+;/g,
-          "IPHONEOS_DEPLOYMENT_TARGET = 16.0;"
+          /IPHONEOS_DEPLOYMENT_TARGET = (\d+)\.(\d+);/g,
+          (match, major, minor) => {
+            const current = Number(major) + Number(minor) / 100;
+            return current < 16.0
+              ? "IPHONEOS_DEPLOYMENT_TARGET = 16.0;"
+              : match;
+          }
         );
         fs.writeFileSync(pbxprojPath, pbxproj);
       }
