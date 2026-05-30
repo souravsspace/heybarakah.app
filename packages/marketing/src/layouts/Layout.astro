@@ -164,21 +164,21 @@ const faqLd = {
 
     <script
       type="application/ld+json"
-      set:html={JSON.stringify(organizationLd)}
+      set:html={JSON.stringify(organizationLd).replace(/<\/script/gi, "<\\/script")}
     />
     <script
       type="application/ld+json"
-      set:html={JSON.stringify(websiteLd)}
+      set:html={JSON.stringify(websiteLd).replace(/<\/script/gi, "<\\/script")}
     />
     <script
       type="application/ld+json"
-      set:html={JSON.stringify(softwareLd)}
+      set:html={JSON.stringify(softwareLd).replace(/<\/script/gi, "<\\/script")}
     />
     {
       includeFaqJsonLd && (
         <script
           type="application/ld+json"
-          set:html={JSON.stringify(faqLd)}
+          set:html={JSON.stringify(faqLd).replace(/<\/script/gi, "<\\/script")}
         />
       )
     }
