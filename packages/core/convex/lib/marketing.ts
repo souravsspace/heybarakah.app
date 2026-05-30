@@ -29,7 +29,7 @@ export const joinWaitlist = action({
 
     if (contact.error) {
       if (contact.error.name === "validation_error") {
-        return { ok: true };
+        return { ok: false, error: "That email address is not valid." };
       }
       console.error("[waitlist] contacts.create error", contact.error);
       return { ok: false, error: "Could not save your email." };
