@@ -48,3 +48,6 @@ docs
 
 # tmp
 tmp
+
+# claude runtime
+.claude/scheduled_tasks.lock
