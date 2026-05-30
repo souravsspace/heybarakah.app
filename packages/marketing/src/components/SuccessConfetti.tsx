@@ -36,7 +36,10 @@ export default function SuccessConfetti() {
       }
     })();
 
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      cancelAnimationFrame(rafId);
+      confetti.reset();
+    };
   }, []);
 
   return null;
