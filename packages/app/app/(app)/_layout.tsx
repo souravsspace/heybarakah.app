@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { AuthLoading } from "@/components/auth-loading";
 import { DhikrProvider } from "@/contexts/dhikr-context";
 import { useUser } from "@/contexts/user-context";
+import { useWidgetInteractions } from "@/hooks/use-widget-interactions";
 import { useDailyAyahNotification } from "@/hooks/useDailyAyahNotification";
 import { useLockActivityScheduler } from "@/hooks/useLockActivityScheduler";
 import { usePrayerShield } from "@/hooks/usePrayerShield";
@@ -18,6 +19,7 @@ function AuthedShell() {
   useDailyAyahNotification();
   useWidgetSync();
   useLockActivityScheduler();
+  useWidgetInteractions();
 
   const { activeWindow } = usePrayerShield();
   const router = useRouter();
