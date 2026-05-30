@@ -80,6 +80,11 @@ export async function logOutRevenueCat(): Promise<void> {
   if (!isRevenueCatSupported() || configuredFor === null) {
     return;
   }
+  if (configuredFor === ANONYMOUS) {
+    // RC SDK throws LOGOUT_CALLED_WITH_ANONYMOUS_USER for anonymous users;
+    // already anonymous, nothing to log out of.
+    return;
+  }
   try {
     await Purchases.logOut();
   } finally {
