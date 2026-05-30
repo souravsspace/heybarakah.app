@@ -63,18 +63,25 @@ export default function LogPrayerScreen() {
 
   const existing = prayer && date ? week.getStatus(date, prayer) : undefined;
 
+  const datePrayerTimes = useMemo(
+    () => prayerTimes.find((d) => d.date === date) ?? null,
+    [prayerTimes, date]
+  );
+
+  const activePrayerTimes = datePrayerTimes ?? todayPrayerTimes;
+
   const rangeStart = useMemo<Date | null>(() => {
-    if (!(todayPrayerTimes && prayer)) {
+    if (!(activePrayerTimes && prayer)) {
       return null;
     }
-    const [h, m] = todayPrayerTimes.timings[prayer].split(":").map(Number);
+    const [h, m] = activePrayerTimes.timings[prayer].split(":").map(Number);
     if (Number.isNaN(h) || Number.isNaN(m)) {
       return null;
     }
     const d = new Date();
     d.setHours(h, m, 0, 0);
     return d;
-  }, [todayPrayerTimes, prayer]);
+  }, [activePrayerTimes, prayer]);
 
   const rangeEnd = useMemo<Date | null>(() => {
     if (!prayer) {
@@ -82,11 +89,11 @@ export default function LogPrayerScreen() {
     }
     const idx = PRAYER_ORDER.indexOf(prayer);
     if (idx < PRAYER_ORDER.length - 1) {
-      if (!todayPrayerTimes) {
+      if (!activePrayerTimes) {
         return null;
       }
       const next = PRAYER_ORDER[idx + 1];
-      const [h, m] = todayPrayerTimes.timings[next].split(":").map(Number);
+      const [h, m] = activePrayerTimes.timings[next].split(":").map(Number);
       if (Number.isNaN(h) || Number.isNaN(m)) {
         return null;
       }
@@ -108,7 +115,7 @@ export default function LogPrayerScreen() {
     d.setDate(d.getDate() + 1);
     d.setHours(h, m, 0, 0);
     return d;
-  }, [prayer, todayPrayerTimes, prayerTimes, date]);
+  }, [prayer, activePrayerTimes, prayerTimes, date]);
 
   if (!(prayer && date)) {
     return null;
