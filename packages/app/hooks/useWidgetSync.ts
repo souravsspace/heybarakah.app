@@ -114,6 +114,9 @@ function useDhikrReconciliation(today: string): void {
         while (remaining > 0 && !cancelled) {
           const chunk = Math.min(remaining, INCREMENT_CHUNK);
           await increment({ date: today, by: chunk });
+          if (cancelled) {
+            break;
+          }
           // Ack each chunk right after it commits. If a later chunk throws, the
           // already-committed chunks stay acked and are not re-incremented on retry.
           await ackPendingDhikr(chunk);
