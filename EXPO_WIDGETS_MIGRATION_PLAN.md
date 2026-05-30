@@ -60,7 +60,7 @@ Each is a SwiftUI file to re-express as a `createWidget` Expo UI component. Read
 
 - Put a button/toggle in `DhikrWidget` (Expo UI) with a stable `target` id (e.g. `"increment"`).
 - Register `addUserInteractionListener` at app startup (e.g. in `app/_layout.tsx` or a widgets bootstrap module): on `{source:"dhikr", target:"increment"}` → increment dhikr in app state → `setSnapshot(next)` → reload.
-- Delete the native `IncrementDhikrIntent`/`StartQuietControlIntent` and the `pending`/`peek`/`ack` queue — the JS listener handles it directly and authoritatively. (Audit consumers of `peekPendingDhikr`/`ackPendingDhikr` and remove.)
+- Delete the native `IncrementDhikrIntent` (the dhikr-widget interaction) and the `pending`/`peek`/`ack` queue — the JS listener handles it directly and authoritatively. (Audit consumers of `peekPendingDhikr`/`ackPendingDhikr` and remove.) **Keep** `StartQuietControlIntent`/`OpenBarakahIntent` — they belong to the staged Control target (§6), not the widget interaction layer.
 
 ## 5. Live Activity
 
@@ -69,14 +69,13 @@ Each is a SwiftUI file to re-express as a `createWidget` Expo UI component. Read
 - Wire to the existing app-blocker quiet flow (whatever calls `startLockActivity` today — confirm via grep).
 - Reproduce Dynamic Island + lock-screen layouts from `LockedNowLiveActivity.swift`.
 
-## 6. The Control gap (`LockNowControl`, iOS 18) — decision required
+## 6. The Control (`LockNowControl`, iOS 18) — solved via apple-targets, staged
 
-Official `expo-widgets` cannot define a Control Center control. Options:
+**Decision: keep it (do not drop).** Official `expo-widgets` cannot host a Control Center control, so it lives in a standalone **`@bacons/apple-targets` `widget` target** (the app already uses apple-targets for the Screen Time extensions).
 
-1. **Separate `@bacons/apple-targets` control target** — the app already uses `@bacons/apple-targets` for the Screen Time extensions (`DeviceActivityMonitor`, `ShieldAction`, `ShieldConfiguration`). Add one more target containing just `LockNowControl.swift` + the App Intent it needs, sharing the app group. Keeps the feature, isolated from the widget pipeline. **Recommended.**
-2. **Drop the Control** — lose the Control-Center/lock-screen quick-lock. Simplest; a UX regression. Requires product sign-off.
+**Authored + staged** at `packages/app/migration-staging/LockNowWidget/` — `expo-target.config.js` + `@main` `WidgetBundle` + `LockNowControl.swift` + `StartQuietControlIntent.swift`, verbatim from the working `@bittingz` Control. See that folder's `README.md`.
 
-This is the one item that needs a human decision before `@bittingz` removal.
+**Hard sequencing constraint (verified by prebuild):** apple-targets **cannot add a second WidgetKit extension while `@bittingz`'s `BarakahWidgetExtension` exists** — prebuild crashes in `applyXcodeChanges` (`Cannot read properties of undefined (reading 'removeFromProject')`) because apple-targets matches the `@bittingz` widgetkit-extension as its update target. So this Control target can only be moved into `packages/app/targets/` **as part of the `@bittingz` removal cutover (§8)** — not before. It is staged outside `targets/` so prebuild stays green meanwhile.
 
 ## 7. Config-plugin cutover (`app.json`)
 
@@ -88,11 +87,14 @@ This is the one item that needs a human decision before `@bittingz` removal.
 
 ## 8. Remove `@bittingz` (only after §1–§7 validated on device)
 
+> **The `patches/` + root `patchedDependencies` removal you asked about lives here — it is the LAST step.** The patch patches `@bittingz`; the widgets are rendered by `@bittingz`'s SwiftUI. Removing the patch ⇒ removing `@bittingz` ⇒ the widgets must already be ported to official `expo-widgets` and device-validated. Doing it earlier would leave the app with no widgets. That is why it is **not** done in the current PR.
+
 - Remove `@bittingz/expo-widgets` from `packages/app/package.json`.
-- Delete `patches/@bittingz%2Fexpo-widgets@3.0.2.patch`; remove `patchedDependencies` entry from the **root** `package.json`; remove `patches/` if empty.
+- Delete `patches/@bittingz%2Fexpo-widgets@3.0.2.patch`; remove the `patchedDependencies` entry from the **root** `package.json`; remove `patches/` if it is then empty.
 - Remove the `@bittingz` doctor exclude from `packages/app/package.json`.
+- Move `packages/app/migration-staging/LockNowWidget/` → `packages/app/targets/LockNowWidget/` (now that `BarakahWidgetExtension` is gone, apple-targets can add it — see §6).
 - Archive (don't silently delete) `modules/expo-barakah-widgets/ios/` — keep a git tag/branch before removal for rollback.
-- `bun install`; confirm lockfile no longer references the patch.
+- `bun install`; confirm the lockfile no longer references the patch.
 
 ## 9. Native regeneration & verification
 
@@ -125,7 +127,8 @@ This is the one item that needs a human decision before `@bittingz` removal.
 ## What's already done on this branch
 
 - Installed official `expo-widgets@56.0.16` into `packages/app` (correct workspace placement).
-- `@bittingz` left fully intact and active — **the app still builds and the widgets still work.**
+- **`LockNowControl` Control authored as an `@bacons/apple-targets` `widget` target** and staged at `packages/app/migration-staging/LockNowWidget/` (kept, not dropped). Cannot be activated until `@bittingz` is removed — see §6.
+- `@bittingz` left fully intact and active — **the app still builds, all widgets + the Control still work.** `prebuild --clean` is green.
 - This plan, grounded in the real package API + the app's actual data seam.
 
 ## Remaining checklist (needs a Mac + device)
@@ -135,7 +138,7 @@ This is the one item that needs a human decision before `@bittingz` removal.
 - [ ] Re-implement `lib/widgets-native.ts` against official `expo-widgets` (keep signatures).
 - [ ] Register `addUserInteractionListener` for dhikr increment; delete the pending-dhikr queue + native App Intents.
 - [ ] Port the Live Activity via `createLiveActivity`.
-- [ ] Decide the `LockNowControl` fate (§6) — recommend a separate `@bacons/apple-targets` target.
+- [x] **Control: kept via apple-targets** — authored + staged (§6); activate during the cutover.
 - [ ] Swap the `app.json` plugin block (§7), keep the app group id stable.
-- [ ] Remove `@bittingz` + patch + Swift tree (§8).
+- [ ] Remove `@bittingz` + patch + `patches/` + root `patchedDependencies` + Swift tree (§8) — **this is where the patch/patches removal happens** (gated on the port).
 - [ ] `prebuild --clean` + `pod install` + device build + `expo-doctor` (§9).
