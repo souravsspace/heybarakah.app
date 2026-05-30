@@ -6,6 +6,7 @@ export default function SuccessConfetti() {
     const colors = ["#29603E", "#234F34", "#1B3F29", "#EAF2EC", "#FFFFFF"];
     const duration = 2200;
     const end = Date.now() + duration;
+    let rafId = 0;
 
     confetti({
       particleCount: 90,
@@ -31,9 +32,11 @@ export default function SuccessConfetti() {
         colors,
       });
       if (Date.now() < end) {
-        requestAnimationFrame(frame);
+        rafId = requestAnimationFrame(frame);
       }
     })();
+
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
   return null;
