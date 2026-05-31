@@ -39,7 +39,12 @@ function AyahLayout(
           muted: "#2a1c1094",
           accent: "#29603E",
         };
-  const a = props.ayah;
+  const a = props.ayah ?? {
+    arabic: "",
+    reference: "",
+    surah: "",
+    translation: "",
+  };
   const ref = a.reference ? a.reference.replace(":", " : ") : "";
 
   return (
