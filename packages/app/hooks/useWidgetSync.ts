@@ -63,7 +63,12 @@ export function useWidgetSync(): void {
 
     const id = setTimeout(() => {
       setSnapshot(snapshot).catch(() => {
-        // Widget bridge is iOS-only and may no-op on other platforms.
+        // Widget bridge is iOS-only and may no-op on other platforms. Clear the
+        // dedupe marker so a transient failure doesn't permanently suppress the
+        // retry for this snapshot on the next render.
+        if (lastJson.current === json) {
+          lastJson.current = "";
+        }
       });
     }, DEBOUNCE_MS);
     timer.current = id;
