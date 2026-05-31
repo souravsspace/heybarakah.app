@@ -17,21 +17,28 @@ import {
   padding,
 } from "@expo/ui/swift-ui/modifiers";
 import { createWidget, type WidgetEnvironment } from "expo-widgets";
-import type { WidgetSnapshot } from "@/lib/widgets-native";
-import { asDirection, directionTokens } from "@/widgets/theme";
+import type { WidgetProps } from "@/lib/widgets-native";
 
 interface AyahConfig {
   style: string;
 }
 
 function AyahLayout(
-  props: WidgetSnapshot,
-  environment: WidgetEnvironment<AyahConfig>
+  props: WidgetProps,
+  environment: WidgetEnvironment<AyahConfig>,
 ) {
   "widget";
 
-  const dir = asDirection(environment.configuration?.style, "dawn");
-  const tok = directionTokens(dir, environment.colorScheme ?? "light");
+  const scheme = environment.colorScheme ?? "light";
+  const tok =
+    scheme === "dark"
+      ? { bg: "#0b0e0c", ink: "#f5ebdb", muted: "#f5ebdb94", accent: "#29603E" }
+      : {
+          bg: "#f3d8c0",
+          ink: "#2a1c10",
+          muted: "#2a1c1094",
+          accent: "#29603E",
+        };
   const a = props.ayah;
   const ref = a.reference ? a.reference.replace(":", " : ") : "";
 
@@ -101,7 +108,7 @@ function AyahLayout(
   );
 }
 
-export const ayahWidget = createWidget<WidgetSnapshot, AyahConfig>(
+export const ayahWidget = createWidget<WidgetProps, AyahConfig>(
   "AyahWidget",
-  AyahLayout
+  AyahLayout,
 );
