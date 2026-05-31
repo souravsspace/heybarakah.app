@@ -13,7 +13,7 @@ import type { WidgetProps } from "@/lib/widgets-native";
 
 function LockComplicationLayout(
   props: WidgetProps,
-  environment: WidgetEnvironment,
+  environment: WidgetEnvironment
 ) {
   "widget";
 
@@ -29,7 +29,7 @@ function LockComplicationLayout(
   };
   const pct = Math.max(
     0.04,
-    Math.min(1, 1 - state.countdownMinutes / COUNTDOWN_WINDOW_MIN),
+    Math.min(1, 1 - state.countdownMinutes / COUNTDOWN_WINDOW_MIN)
   );
 
   if (environment.widgetFamily === "accessoryCircular") {
@@ -73,5 +73,5 @@ function LockComplicationLayout(
 
 export const lockComplicationsWidget = createWidget<WidgetProps>(
   "LockComplications",
-  LockComplicationLayout,
+  LockComplicationLayout
 );
