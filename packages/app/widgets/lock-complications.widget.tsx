@@ -18,7 +18,15 @@ function LockComplicationLayout(
   "widget";
 
   const COUNTDOWN_WINDOW_MIN = 180;
-  const state = props.salah;
+  const state = props.salah ?? {
+    countdownMinutes: 0,
+    countdownText: "",
+    display: { arabic: "", letter: "", name: "fajr" as const, title: "" },
+    isLocked: false,
+    nextTitle: "",
+    points: [],
+    timeText: "",
+  };
   const pct = Math.max(
     0.04,
     Math.min(1, 1 - state.countdownMinutes / COUNTDOWN_WINDOW_MIN),
