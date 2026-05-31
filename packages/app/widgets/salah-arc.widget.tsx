@@ -48,6 +48,7 @@ function SalahArcLayout(
     timeText: "",
   };
   const hijri = props.hijri ?? "";
+  const points = Array.isArray(state.points) ? state.points : [];
 
   return (
     <VStack
@@ -116,7 +117,7 @@ function SalahArcLayout(
         modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}
         spacing={0}
       >
-        {state.points.map((p) => (
+        {points.map((p) => (
           <VStack
             key={p.name}
             modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}
