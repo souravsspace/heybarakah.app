@@ -53,7 +53,9 @@ function StreakLayout(
     history: [],
     todayDone: 0,
   };
-  const history = s.history.slice(-HISTORY_DAYS);
+  const history = (Array.isArray(s.history) ? s.history : []).slice(
+    -HISTORY_DAYS
+  );
 
   return (
     <VStack
