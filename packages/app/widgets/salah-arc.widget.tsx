@@ -17,7 +17,7 @@ interface SalahArcConfig {
 
 function SalahArcLayout(
   props: WidgetProps,
-  environment: WidgetEnvironment<SalahArcConfig>,
+  environment: WidgetEnvironment<SalahArcConfig>
 ) {
   "widget";
 
@@ -129,11 +129,7 @@ function SalahArcLayout(
                   height: p.isCurrent ? 9 : 6,
                 }),
                 foregroundStyle(
-                  p.isCurrent
-                    ? tok.accent
-                    : p.isPast
-                      ? tok.muted
-                      : tok.hairline,
+                  p.isCurrent ? tok.accent : p.isPast ? tok.muted : tok.hairline
                 ),
               ]}
             />
@@ -149,5 +145,5 @@ function SalahArcLayout(
 
 export const salahArcWidget = createWidget<WidgetProps, SalahArcConfig>(
   "SalahArcWidget",
-  SalahArcLayout,
+  SalahArcLayout
 );
