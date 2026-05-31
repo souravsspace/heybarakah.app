@@ -8,27 +8,34 @@ import {
   padding,
 } from "@expo/ui/swift-ui/modifiers";
 import { createWidget, type WidgetEnvironment } from "expo-widgets";
-import type { WidgetSnapshot } from "@/lib/widgets-native";
-import { asDirection, directionTokens } from "@/widgets/theme";
+import type { WidgetProps } from "@/lib/widgets-native";
 
 interface DhikrConfig {
   style: string;
 }
 
-const DHIKR_CYCLE = ["سبحان الله", "الحمد لله", "الله أكبر"];
-const MASHA_ALLAH = "ما شاء الله";
-
 /** Stable interaction target — matched by `addUserInteractionListener`. */
 export const DHIKR_INCREMENT_TARGET = "increment";
 
 function DhikrLayout(
-  props: WidgetSnapshot,
-  environment: WidgetEnvironment<DhikrConfig>
+  props: WidgetProps,
+  environment: WidgetEnvironment<DhikrConfig>,
 ) {
   "widget";
 
-  const dir = asDirection(environment.configuration?.style, "editorial");
-  const tok = directionTokens(dir, environment.colorScheme ?? "light");
+  const DHIKR_CYCLE = ["سبحان الله", "الحمد لله", "الله أكبر"];
+  const MASHA_ALLAH = "ما شاء الله";
+
+  const scheme = environment.colorScheme ?? "light";
+  const tok =
+    scheme === "dark"
+      ? { bg: "#0f0e0b", ink: "#f5ebdb", muted: "#f5ebdb94", accent: "#29603E" }
+      : {
+          bg: "#e8dcc4",
+          ink: "#1a1408",
+          muted: "#1a14088c",
+          accent: "#29603E",
+        };
 
   const count = props.dhikr.count;
   const target = Math.max(1, props.dhikr.target);
@@ -38,7 +45,7 @@ function DhikrLayout(
   const arabic = complete ? MASHA_ALLAH : DHIKR_CYCLE[cycleIndex];
 
   return (
-    <Button target={DHIKR_INCREMENT_TARGET}>
+    <Button target="increment">
       <VStack
         modifiers={[
           padding({ all: 12 }),
@@ -100,7 +107,7 @@ function DhikrLayout(
   );
 }
 
-export const dhikrWidget = createWidget<WidgetSnapshot, DhikrConfig>(
+export const dhikrWidget = createWidget<WidgetProps, DhikrConfig>(
   "DhikrWidget",
-  DhikrLayout
+  DhikrLayout,
 );
