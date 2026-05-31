@@ -94,6 +94,19 @@ function buildTimelineEntries(
     }));
 }
 
+/**
+ * Constructing each `Widget` writes its layout string to the shared app group
+ * storage (see `expo-widgets`' `WidgetObject`), which is what the widget
+ * extension reads at render time. The timeline sync (`setSnapshot`) is gated
+ * behind an active subscription, so without an unconditional registration a
+ * fresh install or non-subscriber would leave no layout in storage and every
+ * widget would fall back to the WidgetKit "Please adopt containerBackground API"
+ * placeholder. Calling this at app startup guarantees the layout always exists.
+ */
+export async function registerWidgets(): Promise<void> {
+  await getWidgets();
+}
+
 export async function setSnapshot(snapshot: WidgetSnapshot): Promise<void> {
   const widgets = await getWidgets();
   if (widgets.length === 0) {
