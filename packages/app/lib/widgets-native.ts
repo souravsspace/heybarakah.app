@@ -95,16 +95,36 @@ function buildTimelineEntries(
 }
 
 /**
- * Constructing each `Widget` writes its layout string to the shared app group
- * storage (see `expo-widgets`' `WidgetObject`), which is what the widget
- * extension reads at render time. The timeline sync (`setSnapshot`) is gated
- * behind an active subscription, so without an unconditional registration a
- * fresh install or non-subscriber would leave no layout in storage and every
- * widget would fall back to the WidgetKit "Please adopt containerBackground API"
- * placeholder. Calling this at app startup guarantees the layout always exists.
+ * Empty-but-valid snapshot used to seed the timeline at startup. Every field is
+ * present so `buildTimelineEntries`/`derivePrayerState` produce a single valid
+ * entry without throwing (no prayers → fallback prayer state, empty ayah/streak).
+ */
+const DEFAULT_SNAPSHOT: WidgetSnapshot = {
+  ayah: { arabic: "", reference: "", surah: "", translation: "" },
+  date: "",
+  dhikr: { count: 0, sessionTotal: 0, target: 33 },
+  generatedAt: "",
+  lockNow: null,
+  prayers: [],
+  streak: { best: 0, days: 0, history: [], todayDone: 0 },
+  tomorrowFajrISO: null,
+  tz: "",
+  v: 1,
+};
+
+/**
+ * Constructing each `Widget` writes its layout string to app-group storage, but
+ * the widget extension's `getTimeline` returns `Timeline(entries: [])` until a
+ * timeline is written — and WidgetKit rejects an empty timeline with
+ * `CHSErrorDomain 1101 "Returned view collection was either nil or empty"`,
+ * showing the placeholder on EVERY widget. The real timeline (`setSnapshot`) is
+ * gated behind an active subscription / reaching home, so a fresh install or
+ * non-subscriber would leave no entries at all. Seeding a default snapshot here
+ * (called unconditionally at app startup) guarantees each widget always has at
+ * least one timeline entry; real data overwrites it once available.
  */
 export async function registerWidgets(): Promise<void> {
-  await getWidgets();
+  await setSnapshot(DEFAULT_SNAPSHOT);
 }
 
 export async function setSnapshot(snapshot: WidgetSnapshot): Promise<void> {
