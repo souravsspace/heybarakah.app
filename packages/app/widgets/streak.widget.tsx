@@ -15,24 +15,38 @@ import {
   padding,
 } from "@expo/ui/swift-ui/modifiers";
 import { createWidget, type WidgetEnvironment } from "expo-widgets";
-import type { WidgetSnapshot } from "@/lib/widgets-native";
-import { asDirection, directionTokens } from "@/widgets/theme";
+import type { WidgetProps } from "@/lib/widgets-native";
 
 interface StreakConfig {
   style: string;
 }
 
-const HISTORY_DAYS = 14;
-const PRAYER_SLOTS = 5;
-
 function StreakLayout(
-  props: WidgetSnapshot,
-  environment: WidgetEnvironment<StreakConfig>
+  props: WidgetProps,
+  environment: WidgetEnvironment<StreakConfig>,
 ) {
   "widget";
 
-  const dir = asDirection(environment.configuration?.style, "editorial");
-  const tok = directionTokens(dir, environment.colorScheme ?? "light");
+  const HISTORY_DAYS = 14;
+  const PRAYER_SLOTS = 5;
+
+  const scheme = environment.colorScheme ?? "light";
+  const tok =
+    scheme === "dark"
+      ? {
+          bg: "#0f0e0b",
+          ink: "#f5ebdb",
+          muted: "#f5ebdb94",
+          accent: "#29603E",
+          hairline: "#f5ebdb2e",
+        }
+      : {
+          bg: "#e8dcc4",
+          ink: "#1a1408",
+          muted: "#1a14088c",
+          accent: "#29603E",
+          hairline: "#1a140829",
+        };
   const s = props.streak;
   const history = s.history.slice(-HISTORY_DAYS);
 
@@ -114,7 +128,7 @@ function StreakLayout(
   );
 }
 
-export const streakWidget = createWidget<WidgetSnapshot, StreakConfig>(
+export const streakWidget = createWidget<WidgetProps, StreakConfig>(
   "StreakWidget",
-  StreakLayout
+  StreakLayout,
 );
