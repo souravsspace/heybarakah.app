@@ -1,9 +1,6 @@
 import { Platform } from "react-native";
-import {
-  derivePrayerState,
-  hijriDateString,
-  type PrayerState,
-} from "@/lib/widget-derive";
+import type { PrayerState } from "@/lib/widget-derive";
+import { buildTimelineEntries, DEFAULT_SNAPSHOT } from "@/lib/widget-timeline";
 
 export type PrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 
@@ -64,55 +61,6 @@ async function getWidgets() {
 }
 
 /**
- * Timeline entries at "now" plus every future prayer boundary — the moments the
- * displayed prayer and countdown change. Mirrors the old native provider's
- * `.after(boundary)` timeline; the widget layouts derive their state from each
- * entry's `ctx.date`.
- */
-function buildTimelineEntries(
-  snapshot: WidgetSnapshot
-): { date: Date; props: WidgetProps }[] {
-  const now = Date.now();
-  const timestamps = new Set<number>([now]);
-  for (const prayer of snapshot.prayers) {
-    for (const iso of [prayer.startISO, prayer.endISO]) {
-      const t = Date.parse(iso);
-      if (!Number.isNaN(t) && t > now) {
-        timestamps.add(t);
-      }
-    }
-  }
-  return [...timestamps]
-    .sort((a, b) => a - b)
-    .map((t) => ({
-      date: new Date(t),
-      props: {
-        ...snapshot,
-        salah: derivePrayerState(snapshot, t),
-        hijri: hijriDateString(t),
-      },
-    }));
-}
-
-/**
- * Empty-but-valid snapshot used to seed the timeline at startup. Every field is
- * present so `buildTimelineEntries`/`derivePrayerState` produce a single valid
- * entry without throwing (no prayers → fallback prayer state, empty ayah/streak).
- */
-const DEFAULT_SNAPSHOT: WidgetSnapshot = {
-  ayah: { arabic: "", reference: "", surah: "", translation: "" },
-  date: "",
-  dhikr: { count: 0, sessionTotal: 0, target: 33 },
-  generatedAt: "",
-  lockNow: null,
-  prayers: [],
-  streak: { best: 0, days: 0, history: [], todayDone: 0 },
-  tomorrowFajrISO: null,
-  tz: "",
-  v: 1,
-};
-
-/**
  * Constructing each `Widget` writes its layout string to app-group storage, but
  * the widget extension's `getTimeline` returns `Timeline(entries: [])` until a
  * timeline is written — and WidgetKit rejects an empty timeline with
@@ -135,6 +83,19 @@ export async function setSnapshot(snapshot: WidgetSnapshot): Promise<void> {
   const entries = buildTimelineEntries(snapshot);
   for (const widget of widgets) {
     widget.updateTimeline(entries);
+  }
+  // TEMP probe: read the app's own write back through the App Group suite to
+  // confirm the timeline actually persisted (>0 ⇒ write fixed; 0 ⇒ deeper
+  // storage/cfprefsd issue). Remove once verified green on device.
+  if (__DEV__) {
+    try {
+      const persisted = await widgets[0].getTimeline();
+      console.log(
+        `[widgets] seeded ${entries.length} entries; read back ${persisted.length}`
+      );
+    } catch (error) {
+      console.log("[widgets] getTimeline probe failed", error);
+    }
   }
 }
 
