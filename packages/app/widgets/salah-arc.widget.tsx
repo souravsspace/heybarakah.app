@@ -38,8 +38,16 @@ function SalahArcLayout(
           accent: "#29603E",
           hairline: "#1a140829",
         };
-  const state = props.salah;
-  const hijri = props.hijri;
+  const state = props.salah ?? {
+    countdownMinutes: 0,
+    countdownText: "",
+    display: { arabic: "", letter: "", name: "fajr" as const, title: "" },
+    isLocked: false,
+    nextTitle: "",
+    points: [],
+    timeText: "",
+  };
+  const hijri = props.hijri ?? "";
 
   return (
     <VStack
