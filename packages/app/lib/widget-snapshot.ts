@@ -8,7 +8,12 @@ import type {
   WidgetSnapshot,
 } from "@/lib/widgets-native";
 
-function parseHHmm(raw: string): { hour: number; minute: number } | null {
+function parseHHmm(
+  raw: string | undefined
+): { hour: number; minute: number } | null {
+  if (typeof raw !== "string") {
+    return null;
+  }
   const [hourText, minuteText] = raw.split(":");
   const hour = Number(hourText);
   const minute = Number(minuteText);
