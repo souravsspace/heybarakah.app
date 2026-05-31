@@ -9,21 +9,19 @@ import {
 } from "@expo/ui/swift-ui";
 import { font, gaugeStyle, kerning } from "@expo/ui/swift-ui/modifiers";
 import { createWidget, type WidgetEnvironment } from "expo-widgets";
-import { derivePrayerState } from "@/lib/widget-derive";
-import type { WidgetSnapshot } from "@/lib/widgets-native";
-
-const COUNTDOWN_WINDOW_MIN = 180;
+import type { WidgetProps } from "@/lib/widgets-native";
 
 function LockComplicationLayout(
-  props: WidgetSnapshot,
-  environment: WidgetEnvironment
+  props: WidgetProps,
+  environment: WidgetEnvironment,
 ) {
   "widget";
 
-  const state = derivePrayerState(props, environment.date.getTime());
+  const COUNTDOWN_WINDOW_MIN = 180;
+  const state = props.salah;
   const pct = Math.max(
     0.04,
-    Math.min(1, 1 - state.countdownMinutes / COUNTDOWN_WINDOW_MIN)
+    Math.min(1, 1 - state.countdownMinutes / COUNTDOWN_WINDOW_MIN),
   );
 
   if (environment.widgetFamily === "accessoryCircular") {
@@ -65,7 +63,7 @@ function LockComplicationLayout(
   );
 }
 
-export const lockComplicationsWidget = createWidget<WidgetSnapshot>(
+export const lockComplicationsWidget = createWidget<WidgetProps>(
   "LockComplications",
-  LockComplicationLayout
+  LockComplicationLayout,
 );
