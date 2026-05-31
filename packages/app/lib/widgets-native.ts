@@ -1,4 +1,9 @@
 import { Platform } from "react-native";
+import {
+  derivePrayerState,
+  hijriDateString,
+  type PrayerState,
+} from "@/lib/widget-derive";
 
 export type PrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 
@@ -27,6 +32,20 @@ export interface WidgetSnapshot {
   v: 1;
 }
 
+/**
+ * What each timeline entry actually pushes to a widget. The `expo-widgets`
+ * babel transform stringifies the widget layout with no closure or imports, so
+ * the widget functions cannot call `derivePrayerState`/`hijriDateString` at
+ * render time — those refs would be undefined inside the widget JS runtime and
+ * the render would throw (showing the WidgetKit "Please adopt containerBackground
+ * API" placeholder). Instead the derived prayer state and Hijri label are
+ * computed app-side per entry date here and read straight off `props`.
+ */
+export interface WidgetProps extends WidgetSnapshot {
+  hijri: string;
+  salah: PrayerState;
+}
+
 const isIOS = Platform.OS === "ios";
 
 // `expo-widgets` constructs native `Widget` objects at module-eval time, which
@@ -51,8 +70,8 @@ async function getWidgets() {
  * entry's `ctx.date`.
  */
 function buildTimelineEntries(
-  snapshot: WidgetSnapshot
-): { date: Date; props: WidgetSnapshot }[] {
+  snapshot: WidgetSnapshot,
+): { date: Date; props: WidgetProps }[] {
   const now = Date.now();
   const timestamps = new Set<number>([now]);
   for (const prayer of snapshot.prayers) {
@@ -65,7 +84,14 @@ function buildTimelineEntries(
   }
   return [...timestamps]
     .sort((a, b) => a - b)
-    .map((t) => ({ date: new Date(t), props: snapshot }));
+    .map((t) => ({
+      date: new Date(t),
+      props: {
+        ...snapshot,
+        salah: derivePrayerState(snapshot, t),
+        hijri: hijriDateString(t),
+      },
+    }));
 }
 
 export async function setSnapshot(snapshot: WidgetSnapshot): Promise<void> {
@@ -95,7 +121,7 @@ export function startLockActivity(args: {
     return Promise.reject(new Error("ExpoWidgets: iOS only"));
   }
   return import("@/widgets/lock-activity").then((m) =>
-    m.startLockActivityInstance(args)
+    m.startLockActivityInstance(args),
   );
 }
 
