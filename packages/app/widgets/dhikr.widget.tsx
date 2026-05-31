@@ -19,7 +19,7 @@ export const DHIKR_INCREMENT_TARGET = "increment";
 
 function DhikrLayout(
   props: WidgetProps,
-  environment: WidgetEnvironment<DhikrConfig>,
+  environment: WidgetEnvironment<DhikrConfig>
 ) {
   "widget";
 
@@ -110,5 +110,5 @@ function DhikrLayout(
 
 export const dhikrWidget = createWidget<WidgetProps, DhikrConfig>(
   "DhikrWidget",
-  DhikrLayout,
+  DhikrLayout
 );
