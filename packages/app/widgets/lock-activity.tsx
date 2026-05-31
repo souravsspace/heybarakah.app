@@ -10,7 +10,6 @@ import {
   type LiveActivity,
   type LiveActivityEnvironment,
 } from "expo-widgets";
-import { PRAYER_CATALOG } from "@/lib/widget-derive";
 import type { PrayerName } from "@/lib/widgets-native";
 
 export interface LockActivityProps {
@@ -19,20 +18,26 @@ export interface LockActivityProps {
   startEpoch: number;
 }
 
-const CREAM = "#f5ebdb";
-const WHITE = "#ffffff";
-
-function info(name: PrayerName) {
-  return PRAYER_CATALOG[name] ?? PRAYER_CATALOG.fajr;
-}
-
 function LockActivityLayout(
   props: LockActivityProps,
   _environment: LiveActivityEnvironment
 ) {
   "widget";
 
-  const prayer = info(props.prayerName);
+  // Inlined: the `expo-widgets` babel transform stringifies this widget body
+  // with no closure or imports, so module-scope refs would be undefined inside
+  // the widget JS runtime and the render would throw.
+  const CREAM = "#f5ebdb";
+  const WHITE = "#ffffff";
+  const CATALOG = {
+    fajr: { title: "Fajr", arabic: "الفجر" },
+    dhuhr: { title: "Dhuhr", arabic: "الظهر" },
+    asr: { title: "Asr", arabic: "العصر" },
+    maghrib: { title: "Maghrib", arabic: "المغرب" },
+    isha: { title: "Isha", arabic: "العشاء" },
+  };
+
+  const prayer = CATALOG[props.prayerName] ?? CATALOG.fajr;
   const end = new Date(props.endEpoch);
 
   return {
