@@ -23,7 +23,7 @@ interface StreakConfig {
 
 function StreakLayout(
   props: WidgetProps,
-  environment: WidgetEnvironment<StreakConfig>,
+  environment: WidgetEnvironment<StreakConfig>
 ) {
   "widget";
 
@@ -135,5 +135,5 @@ function StreakLayout(
 
 export const streakWidget = createWidget<WidgetProps, StreakConfig>(
   "StreakWidget",
-  StreakLayout,
+  StreakLayout
 );
