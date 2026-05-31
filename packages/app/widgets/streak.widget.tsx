@@ -47,7 +47,12 @@ function StreakLayout(
           accent: "#29603E",
           hairline: "#1a140829",
         };
-  const s = props.streak;
+  const s = props.streak ?? {
+    best: 0,
+    days: 0,
+    history: [],
+    todayDone: 0,
+  };
   const history = s.history.slice(-HISTORY_DAYS);
 
   return (
