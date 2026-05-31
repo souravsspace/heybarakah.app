@@ -47,65 +47,80 @@ function DhikrLayout(
   const arabic = complete ? MASHA_ALLAH : DHIKR_CYCLE[cycleIndex];
 
   return (
-    <Button target="increment">
-      <VStack
-        modifiers={[
-          padding({ all: 12 }),
-          frame({
-            maxWidth: Number.POSITIVE_INFINITY,
-            maxHeight: Number.POSITIVE_INFINITY,
-          }),
-          containerBackground(tok.bg, "widget"),
-        ]}
-        spacing={4}
-      >
-        <HStack modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}>
-          <Spacer />
-          <Text modifiers={[font({ size: 10 }), foregroundStyle(tok.muted)]}>
-            {`${count}/${target}`}
-          </Text>
-        </HStack>
+    // The widget root must carry `containerBackground` for WidgetKit to adopt it
+    // (matches ayah/streak/salah-arc). When the root was a `<Button>` with the
+    // background on its child VStack, the timeline render returned an empty view
+    // collection (CHSErrorDomain 1101) and WidgetKit fell back to the "Please
+    // adopt containerBackground API" placeholder. Keep the root a VStack that
+    // owns the background + fill, and nest the interactive Button inside it.
+    <VStack
+      modifiers={[
+        frame({
+          maxWidth: Number.POSITIVE_INFINITY,
+          maxHeight: Number.POSITIVE_INFINITY,
+        }),
+        containerBackground(tok.bg, "widget"),
+      ]}
+    >
+      <Button target="increment">
+        <VStack
+          modifiers={[
+            padding({ all: 12 }),
+            frame({
+              maxWidth: Number.POSITIVE_INFINITY,
+              maxHeight: Number.POSITIVE_INFINITY,
+            }),
+          ]}
+          spacing={4}
+        >
+          <HStack modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}>
+            <Spacer />
+            <Text modifiers={[font({ size: 10 }), foregroundStyle(tok.muted)]}>
+              {`${count}/${target}`}
+            </Text>
+          </HStack>
 
-        <Gauge
-          currentValueLabel={
+          <Gauge
+            currentValueLabel={
+              <Text
+                modifiers={[
+                  font({ size: 28, weight: "bold" }),
+                  foregroundStyle(tok.ink),
+                ]}
+              >
+                {`${count}`}
+              </Text>
+            }
+            max={target}
+            min={0}
+            modifiers={[
+              gaugeStyle("circular"),
+              frame({ maxHeight: Number.POSITIVE_INFINITY }),
+            ]}
+            value={Math.min(count, target)}
+          />
+
+          <Text modifiers={[font({ size: 13 }), foregroundStyle(tok.ink)]}>
+            {arabic}
+          </Text>
+
+          <HStack modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}>
+            <Text modifiers={[font({ size: 9 }), foregroundStyle(tok.muted)]}>
+              {`${sessionTotal} today`}
+            </Text>
+            <Spacer />
             <Text
               modifiers={[
-                font({ size: 28, weight: "bold" }),
-                foregroundStyle(tok.ink),
+                font({ size: 9, weight: "bold" }),
+                foregroundStyle(tok.accent),
               ]}
             >
-              {`${count}`}
+              {complete ? "Reset" : "+1"}
             </Text>
-          }
-          max={target}
-          min={0}
-          modifiers={[
-            gaugeStyle("circular"),
-            frame({ maxHeight: Number.POSITIVE_INFINITY }),
-          ]}
-          value={Math.min(count, target)}
-        />
-
-        <Text modifiers={[font({ size: 13 }), foregroundStyle(tok.ink)]}>
-          {arabic}
-        </Text>
-
-        <HStack modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}>
-          <Text modifiers={[font({ size: 9 }), foregroundStyle(tok.muted)]}>
-            {`${sessionTotal} today`}
-          </Text>
-          <Spacer />
-          <Text
-            modifiers={[
-              font({ size: 9, weight: "bold" }),
-              foregroundStyle(tok.accent),
-            ]}
-          >
-            {complete ? "Reset" : "+1"}
-          </Text>
-        </HStack>
-      </VStack>
-    </Button>
+          </HStack>
+        </VStack>
+      </Button>
+    </VStack>
   );
 }
 
