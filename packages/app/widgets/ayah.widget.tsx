@@ -25,7 +25,7 @@ interface AyahConfig {
 
 function AyahLayout(
   props: WidgetProps,
-  environment: WidgetEnvironment<AyahConfig>,
+  environment: WidgetEnvironment<AyahConfig>
 ) {
   "widget";
 
@@ -115,5 +115,5 @@ function AyahLayout(
 
 export const ayahWidget = createWidget<WidgetProps, AyahConfig>(
   "AyahWidget",
-  AyahLayout,
+  AyahLayout
 );
