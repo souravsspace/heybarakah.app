@@ -9,25 +9,37 @@ import {
   padding,
 } from "@expo/ui/swift-ui/modifiers";
 import { createWidget, type WidgetEnvironment } from "expo-widgets";
-import { derivePrayerState, hijriDateString } from "@/lib/widget-derive";
-import type { WidgetSnapshot } from "@/lib/widgets-native";
-import { asDirection, directionTokens } from "@/widgets/theme";
+import type { WidgetProps } from "@/lib/widgets-native";
 
 interface SalahArcConfig {
   style: string;
 }
 
 function SalahArcLayout(
-  props: WidgetSnapshot,
-  environment: WidgetEnvironment<SalahArcConfig>
+  props: WidgetProps,
+  environment: WidgetEnvironment<SalahArcConfig>,
 ) {
   "widget";
 
-  const dir = asDirection(environment.configuration?.style, "editorial");
-  const tok = directionTokens(dir, environment.colorScheme ?? "light");
-  const now = environment.date.getTime();
-  const state = derivePrayerState(props, now);
-  const hijri = hijriDateString(now);
+  const scheme = environment.colorScheme ?? "light";
+  const tok =
+    scheme === "dark"
+      ? {
+          bg: "#0f0e0b",
+          ink: "#f5ebdb",
+          muted: "#f5ebdb94",
+          accent: "#29603E",
+          hairline: "#f5ebdb2e",
+        }
+      : {
+          bg: "#e8dcc4",
+          ink: "#1a1408",
+          muted: "#1a14088c",
+          accent: "#29603E",
+          hairline: "#1a140829",
+        };
+  const state = props.salah;
+  const hijri = props.hijri;
 
   return (
     <VStack
@@ -109,7 +121,11 @@ function SalahArcLayout(
                   height: p.isCurrent ? 9 : 6,
                 }),
                 foregroundStyle(
-                  p.isCurrent ? tok.accent : p.isPast ? tok.muted : tok.hairline
+                  p.isCurrent
+                    ? tok.accent
+                    : p.isPast
+                      ? tok.muted
+                      : tok.hairline,
                 ),
               ]}
             />
@@ -123,7 +139,7 @@ function SalahArcLayout(
   );
 }
 
-export const salahArcWidget = createWidget<WidgetSnapshot, SalahArcConfig>(
+export const salahArcWidget = createWidget<WidgetProps, SalahArcConfig>(
   "SalahArcWidget",
-  SalahArcLayout
+  SalahArcLayout,
 );
