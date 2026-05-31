@@ -37,8 +37,9 @@ function DhikrLayout(
           accent: "#29603E",
         };
 
-  const count = props.dhikr.count;
-  const target = Math.max(1, props.dhikr.target);
+  const d = props.dhikr ?? { count: 0, sessionTotal: 0, target: 33 };
+  const count = d.count;
+  const target = Math.max(1, d.target);
   const complete = count >= target;
   const cycleIndex =
     Math.max(0, Math.floor((count - 1) / target)) % DHIKR_CYCLE.length;
@@ -90,7 +91,7 @@ function DhikrLayout(
 
         <HStack modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}>
           <Text modifiers={[font({ size: 9 }), foregroundStyle(tok.muted)]}>
-            {`${props.dhikr.sessionTotal} today`}
+            {`${d.sessionTotal} today`}
           </Text>
           <Spacer />
           <Text
