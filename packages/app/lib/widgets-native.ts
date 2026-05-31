@@ -70,7 +70,7 @@ async function getWidgets() {
  * entry's `ctx.date`.
  */
 function buildTimelineEntries(
-  snapshot: WidgetSnapshot,
+  snapshot: WidgetSnapshot
 ): { date: Date; props: WidgetProps }[] {
   const now = Date.now();
   const timestamps = new Set<number>([now]);
@@ -134,7 +134,7 @@ export function startLockActivity(args: {
     return Promise.reject(new Error("ExpoWidgets: iOS only"));
   }
   return import("@/widgets/lock-activity").then((m) =>
-    m.startLockActivityInstance(args),
+    m.startLockActivityInstance(args)
   );
 }
 
