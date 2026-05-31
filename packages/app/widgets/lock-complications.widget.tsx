@@ -27,9 +27,12 @@ function LockComplicationLayout(
     points: [],
     timeText: "",
   };
+  const countdownMinutes = Number.isFinite(state.countdownMinutes)
+    ? state.countdownMinutes
+    : 0;
   const pct = Math.max(
     0.04,
-    Math.min(1, 1 - state.countdownMinutes / COUNTDOWN_WINDOW_MIN)
+    Math.min(1, 1 - countdownMinutes / COUNTDOWN_WINDOW_MIN)
   );
 
   if (environment.widgetFamily === "accessoryCircular") {
