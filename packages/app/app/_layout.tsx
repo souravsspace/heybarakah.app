@@ -18,6 +18,7 @@ import { UserProvider } from "@/contexts/user-context";
 import { OnboardingProvider } from "@/hooks/use-onboarding-state";
 import { authClient } from "@/lib/auth-client";
 import { SubscriptionProvider } from "@/lib/subscription";
+import { registerWidgets } from "@/lib/widgets-native";
 
 const convex = new ConvexReactClient(env.EXPO_PUBLIC_CONVEX_URL, {
   unsavedChangesWarning: false,
@@ -41,6 +42,10 @@ export default function RootLayout() {
       hideAsync().catch(() => undefined);
     }
   }, [fontsLoaded]);
+
+  useEffect(() => {
+    registerWidgets().catch(() => undefined);
+  }, []);
 
   const handleSplashFinish = useCallback(() => {
     setSplashDone(true);
