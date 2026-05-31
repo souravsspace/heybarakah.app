@@ -1,5 +1,5 @@
 import type { Widget } from "expo-widgets";
-import type { WidgetSnapshot } from "@/lib/widgets-native";
+import type { WidgetProps } from "@/lib/widgets-native";
 import { ayahWidget } from "@/widgets/ayah.widget";
 import { dhikrWidget } from "@/widgets/dhikr.widget";
 import { lockComplicationsWidget } from "@/widgets/lock-complications.widget";
@@ -14,10 +14,10 @@ export { DHIKR_INCREMENT_TARGET } from "@/widgets/dhikr.widget";
  * on these instances (see `lib/widgets-native.ts`), and the same modules are
  * picked up by the widget extension's JS runtime to render.
  */
-export const WIDGETS: Widget<WidgetSnapshot, never>[] = [
+export const WIDGETS: Widget<WidgetProps, never>[] = [
   ayahWidget,
   dhikrWidget,
   streakWidget,
   salahArcWidget,
   lockComplicationsWidget,
-] as unknown as Widget<WidgetSnapshot, never>[];
+] as unknown as Widget<WidgetProps, never>[];
