@@ -52,6 +52,7 @@ describe("buildTimelineEntries plist safety", () => {
     const snapshot: WidgetSnapshot = {
       ...DEFAULT_SNAPSHOT,
       dhikr: {
+        arabic: "",
         count: Number.NaN,
         sessionTotal: Number.POSITIVE_INFINITY,
         target: 33,
