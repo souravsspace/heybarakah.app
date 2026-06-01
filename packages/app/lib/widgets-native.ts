@@ -1,4 +1,6 @@
 import { Platform } from "react-native";
+import type { PrayerState } from "@/lib/widget-derive";
+import { buildTimelineEntries, DEFAULT_SNAPSHOT } from "@/lib/widget-timeline";
 
 export type PrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 
@@ -17,7 +19,12 @@ export interface WidgetSnapshot {
     translation: string;
   };
   date: string;
-  dhikr: { count: number; sessionTotal: number; target: number };
+  dhikr: {
+    arabic: string;
+    count: number;
+    sessionTotal: number;
+    target: number;
+  };
   generatedAt: string;
   lockNow: { name: PrayerName; endISO: string } | null;
   prayers: WidgetPrayerEntry[];
@@ -25,6 +32,20 @@ export interface WidgetSnapshot {
   tomorrowFajrISO: string | null;
   tz: string;
   v: 1;
+}
+
+/**
+ * What each timeline entry actually pushes to a widget. The `expo-widgets`
+ * babel transform stringifies the widget layout with no closure or imports, so
+ * the widget functions cannot call `derivePrayerState`/`hijriDateString` at
+ * render time — those refs would be undefined inside the widget JS runtime and
+ * the render would throw (showing the WidgetKit "Please adopt containerBackground
+ * API" placeholder). Instead the derived prayer state and Hijri label are
+ * computed app-side per entry date here and read straight off `props`.
+ */
+export interface WidgetProps extends WidgetSnapshot {
+  hijri: string;
+  salah: PrayerState;
 }
 
 const isIOS = Platform.OS === "ios";
@@ -45,27 +66,18 @@ async function getWidgets() {
 }
 
 /**
- * Timeline entries at "now" plus every future prayer boundary — the moments the
- * displayed prayer and countdown change. Mirrors the old native provider's
- * `.after(boundary)` timeline; the widget layouts derive their state from each
- * entry's `ctx.date`.
+ * Constructing each `Widget` writes its layout string to app-group storage, but
+ * the widget extension's `getTimeline` returns `Timeline(entries: [])` until a
+ * timeline is written — and WidgetKit rejects an empty timeline with
+ * `CHSErrorDomain 1101 "Returned view collection was either nil or empty"`,
+ * showing the placeholder on EVERY widget. The real timeline (`setSnapshot`) is
+ * gated behind an active subscription / reaching home, so a fresh install or
+ * non-subscriber would leave no entries at all. Seeding a default snapshot here
+ * (called unconditionally at app startup) guarantees each widget always has at
+ * least one timeline entry; real data overwrites it once available.
  */
-function buildTimelineEntries(
-  snapshot: WidgetSnapshot
-): { date: Date; props: WidgetSnapshot }[] {
-  const now = Date.now();
-  const timestamps = new Set<number>([now]);
-  for (const prayer of snapshot.prayers) {
-    for (const iso of [prayer.startISO, prayer.endISO]) {
-      const t = Date.parse(iso);
-      if (!Number.isNaN(t) && t > now) {
-        timestamps.add(t);
-      }
-    }
-  }
-  return [...timestamps]
-    .sort((a, b) => a - b)
-    .map((t) => ({ date: new Date(t), props: snapshot }));
+export async function registerWidgets(): Promise<void> {
+  await setSnapshot(DEFAULT_SNAPSHOT);
 }
 
 export async function setSnapshot(snapshot: WidgetSnapshot): Promise<void> {
@@ -76,6 +88,19 @@ export async function setSnapshot(snapshot: WidgetSnapshot): Promise<void> {
   const entries = buildTimelineEntries(snapshot);
   for (const widget of widgets) {
     widget.updateTimeline(entries);
+  }
+  // TEMP probe: read the app's own write back through the App Group suite to
+  // confirm the timeline actually persisted (>0 ⇒ write fixed; 0 ⇒ deeper
+  // storage/cfprefsd issue). Remove once verified green on device.
+  if (__DEV__) {
+    try {
+      const persisted = await widgets[0].getTimeline();
+      console.log(
+        `[widgets] seeded ${entries.length} entries; read back ${persisted.length}`
+      );
+    } catch (error) {
+      console.log("[widgets] getTimeline probe failed", error);
+    }
   }
 }
 

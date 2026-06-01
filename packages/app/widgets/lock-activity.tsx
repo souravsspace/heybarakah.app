@@ -4,13 +4,13 @@ import {
   foregroundStyle,
   frame,
   kerning,
+  monospacedDigit,
 } from "@expo/ui/swift-ui/modifiers";
 import {
   createLiveActivity,
   type LiveActivity,
   type LiveActivityEnvironment,
 } from "expo-widgets";
-import { PRAYER_CATALOG } from "@/lib/widget-derive";
 import type { PrayerName } from "@/lib/widgets-native";
 
 export interface LockActivityProps {
@@ -19,20 +19,26 @@ export interface LockActivityProps {
   startEpoch: number;
 }
 
-const CREAM = "#f5ebdb";
-const WHITE = "#ffffff";
-
-function info(name: PrayerName) {
-  return PRAYER_CATALOG[name] ?? PRAYER_CATALOG.fajr;
-}
-
 function LockActivityLayout(
   props: LockActivityProps,
   _environment: LiveActivityEnvironment
 ) {
   "widget";
 
-  const prayer = info(props.prayerName);
+  // Inlined: the `expo-widgets` babel transform stringifies this widget body
+  // with no closure or imports, so module-scope refs would be undefined inside
+  // the widget JS runtime and the render would throw.
+  const CREAM = "#f5ebdb";
+  const WHITE = "#ffffff";
+  const CATALOG = {
+    fajr: { title: "Fajr", arabic: "الفجر" },
+    dhuhr: { title: "Dhuhr", arabic: "الظهر" },
+    asr: { title: "Asr", arabic: "العصر" },
+    maghrib: { title: "Maghrib", arabic: "المغرب" },
+    isha: { title: "Isha", arabic: "العشاء" },
+  };
+
+  const prayer = CATALOG[props.prayerName] ?? CATALOG.fajr;
   const end = new Date(props.endEpoch);
 
   return {
@@ -41,7 +47,7 @@ function LockActivityLayout(
         modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}
         spacing={12}
       >
-        <Image color={CREAM} size={22} systemName="moon.stars.fill" />
+        <Image color={CREAM} size={18} systemName="moon.stars.fill" />
         <VStack alignment="leading" spacing={1}>
           <Text
             modifiers={[
@@ -52,15 +58,19 @@ function LockActivityLayout(
           >
             QUIET NOW
           </Text>
-          <Text modifiers={[font({ size: 19 }), foregroundStyle(WHITE)]}>
+          <Text modifiers={[font({ size: 16 }), foregroundStyle(WHITE)]}>
             {prayer.title}
           </Text>
         </VStack>
         <Spacer />
         <Text
-          date={end}
-          dateStyle="timer"
-          modifiers={[font({ size: 18 }), foregroundStyle(WHITE)]}
+          countsDown={true}
+          modifiers={[
+            font({ size: 16 }),
+            monospacedDigit(),
+            foregroundStyle(WHITE),
+          ]}
+          timerInterval={{ lower: new Date(props.startEpoch), upper: end }}
         />
       </HStack>
     ),
@@ -69,9 +79,13 @@ function LockActivityLayout(
     ),
     compactTrailing: (
       <Text
-        date={end}
-        dateStyle="timer"
-        modifiers={[font({ size: 12 }), foregroundStyle(CREAM)]}
+        countsDown={true}
+        modifiers={[
+          font({ size: 11 }),
+          monospacedDigit(),
+          foregroundStyle(CREAM),
+        ]}
+        timerInterval={{ lower: new Date(props.startEpoch), upper: end }}
       />
     ),
     minimal: <Image color={CREAM} size={14} systemName="moon.stars.fill" />,

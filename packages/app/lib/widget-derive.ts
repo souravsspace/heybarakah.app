@@ -83,6 +83,7 @@ export interface PrayerState {
   countdownMinutes: number;
   countdownText: string;
   display: PrayerInfo;
+  isActive: boolean;
   isLocked: boolean;
   nextTitle: string;
   points: RailPoint[];
@@ -114,30 +115,48 @@ export function derivePrayerState(
     }
   }
 
-  const current =
-    parsed.find((p) => nowMs >= p.start.epochMs && nowMs <= p.end.epochMs) ??
-    null;
+  // Active prayer mirrors the app's `activePrayerNow` (date-utils.ts): the latest
+  // prayer whose adhan has already passed stays "current" until the next adhan
+  // (the day's last prayer runs until tomorrow's Fajr). The lock window
+  // (`start`/`end`) is a separate, much narrower "quiet" period — it must NOT
+  // decide which prayer is shown, only the QUIET badge.
+  let current: ParsedPrayer | null = null;
+  for (const p of parsed) {
+    if (p.adhan.epochMs <= nowMs) {
+      current = p;
+    }
+  }
   const next = parsed.find((p) => p.adhan.epochMs > nowMs) ?? null;
 
-  // After the day's last prayer the countdown points at tomorrow's Fajr, so the
-  // displayed prayer must be Fajr (parsed[0]) — not the trailing Isha.
   const displayParsed = current ?? next ?? parsed[0] ?? null;
   const display = displayParsed?.info ?? PRAYER_FALLBACK;
 
+  const isLocked =
+    current !== null &&
+    nowMs >= current.start.epochMs &&
+    nowMs <= current.end.epochMs;
+
+  // Countdown always points at the next adhan boundary (after the last prayer,
+  // tomorrow's Fajr) — i.e. time left in the active prayer, or time until the
+  // upcoming one. `timeText` is the displayed prayer's own adhan clock.
   let countdownMs = 0;
   let timeIso: string | null = null;
+  const fajrTomorrow = snapshot.tomorrowFajrISO
+    ? parseSnapshotISO(snapshot.tomorrowFajrISO)
+    : null;
   if (current) {
-    countdownMs = current.end.epochMs - nowMs;
     timeIso = snapshotISOFor(snapshot, current.info.name, "adhanISO");
+    if (next) {
+      countdownMs = next.adhan.epochMs - nowMs;
+    } else if (fajrTomorrow) {
+      countdownMs = fajrTomorrow.epochMs - nowMs;
+    }
   } else if (next) {
     countdownMs = next.adhan.epochMs - nowMs;
     timeIso = snapshotISOFor(snapshot, next.info.name, "adhanISO");
-  } else if (snapshot.tomorrowFajrISO) {
-    const fajr = parseSnapshotISO(snapshot.tomorrowFajrISO);
-    if (fajr) {
-      countdownMs = fajr.epochMs - nowMs;
-      timeIso = snapshot.tomorrowFajrISO;
-    }
+  } else if (fajrTomorrow && snapshot.tomorrowFajrISO) {
+    countdownMs = fajrTomorrow.epochMs - nowMs;
+    timeIso = snapshot.tomorrowFajrISO;
   }
   const countdownMinutes = Math.max(0, Math.floor(countdownMs / 60_000));
 
@@ -145,18 +164,20 @@ export function derivePrayerState(
   const first = minutes.length > 0 ? Math.min(...minutes) : 0;
   const last = minutes.length > 0 ? Math.max(...minutes) : 1;
   const span = Math.max(1, last - first);
+  const currentAdhan = current?.adhan.epochMs ?? null;
   const points: RailPoint[] = parsed.map((p) => ({
     name: p.info.name,
     info: p.info,
     pct: (p.adhan.minuteOfDay - first) / span,
     isCurrent: current?.info.name === p.info.name,
-    isPast: nowMs > p.end.epochMs,
-    isUpcoming: nowMs < p.start.epochMs,
+    isPast: currentAdhan !== null && p.adhan.epochMs < currentAdhan,
+    isUpcoming: p.adhan.epochMs > nowMs,
   }));
 
   return {
     display,
-    isLocked: current !== null,
+    isActive: current !== null,
+    isLocked,
     timeText: timeIso ? formatHM(timeIso) : "--:--",
     countdownText: formatCountdown(countdownMinutes),
     countdownMinutes,

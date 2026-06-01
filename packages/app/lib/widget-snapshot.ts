@@ -8,7 +8,12 @@ import type {
   WidgetSnapshot,
 } from "@/lib/widgets-native";
 
-function parseHHmm(raw: string): { hour: number; minute: number } | null {
+function parseHHmm(
+  raw: string | undefined
+): { hour: number; minute: number } | null {
+  if (typeof raw !== "string") {
+    return null;
+  }
   const [hourText, minuteText] = raw.split(":");
   const hour = Number(hourText);
   const minute = Number(minuteText);
@@ -66,6 +71,7 @@ function buildPrayerEntry(
 
 export interface BuildSnapshotInput {
   ayah: Ayah;
+  dhikrArabic: string;
   dhikrCount: number;
   dhikrSessionTotal: number;
   dhikrTarget: number;
@@ -97,19 +103,20 @@ export function buildWidgetSnapshot(
   input: BuildSnapshotInput
 ): WidgetSnapshot | null {
   const { today, tomorrow, todayDateKey, timezone, ayah } = input;
-  if (!today) {
-    return null;
-  }
 
+  // Prayer entries are best-effort: when today's prayer-time day hasn't loaded
+  // (offline, no location yet, cold start) we still build a snapshot with empty
+  // `prayers` so streak/dhikr/ayah deliver. salah-arc derives a safe fallback
+  // state from `prayers: []`. Returning null here would suppress the entire
+  // push and freeze every widget at the seeded zeros.
   const prayers: WidgetPrayerEntry[] = [];
-  for (const name of PRAYER_ORDER) {
-    const entry = buildPrayerEntry(name, today);
-    if (entry) {
-      prayers.push(entry);
+  if (today) {
+    for (const name of PRAYER_ORDER) {
+      const entry = buildPrayerEntry(name, today);
+      if (entry) {
+        prayers.push(entry);
+      }
     }
-  }
-  if (prayers.length === 0) {
-    return null;
   }
 
   let tomorrowFajrISO: string | null = null;
@@ -134,6 +141,7 @@ export function buildWidgetSnapshot(
       todayDone: input.streakTodayDone,
     },
     dhikr: {
+      arabic: input.dhikrArabic,
       count: input.dhikrCount,
       target: input.dhikrTarget,
       sessionTotal: input.dhikrSessionTotal,

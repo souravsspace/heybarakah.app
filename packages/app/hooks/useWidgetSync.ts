@@ -1,6 +1,7 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { useEffect, useMemo, useRef } from "react";
+import { useDhikr } from "@/contexts/dhikr-context";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { pickDailyAyah } from "@/lib/daily-ayah";
 import { dateKey } from "@/lib/date-utils";
@@ -21,7 +22,11 @@ export function useWidgetSync(): void {
   const tomorrow = tomorrowKey();
 
   const streak = useQuery(api.lib.prayerLogs.getStreak, { today });
-  const dhikr = useQuery(api.lib.dhikr.getToday, { date: today });
+  // Dhikr mirrors the on-screen tasbih (DhikrProvider, AsyncStorage-backed) so
+  // the widget always matches `(tabs)/dhikr.tsx`. The Convex `dhikr.getToday`
+  // store is written only by the (currently inert) widget-tap path, so reading
+  // it left the widget desynced from what the user actually counts on screen.
+  const { active, count, grandTotal } = useDhikr();
 
   const timezone = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
@@ -47,9 +52,10 @@ export function useWidgetSync(): void {
       streakBest: streak?.best ?? 0,
       streakHistory: streak?.history ?? [],
       streakTodayDone: streak?.todayDone ?? 0,
-      dhikrCount: dhikr?.count ?? 0,
-      dhikrTarget: dhikr?.target ?? 33,
-      dhikrSessionTotal: dhikr?.sessionTotal ?? 0,
+      dhikrArabic: active.arabic,
+      dhikrCount: count,
+      dhikrTarget: active.target,
+      dhikrSessionTotal: grandTotal,
       ayah,
     });
     if (!snapshot) {
@@ -62,8 +68,21 @@ export function useWidgetSync(): void {
     lastJson.current = json;
 
     const id = setTimeout(() => {
+      if (__DEV__) {
+        // TEMP probe: prove what streak/dhikr values actually reach the widget.
+        // Real non-zero here but a zeroed widget ⇒ stale App-Group read; zeros
+        // here ⇒ query/status semantics. Remove once widget data is verified.
+        console.log(
+          `[widgets] push streak days=${snapshot.streak.days} best=${snapshot.streak.best} todayDone=${snapshot.streak.todayDone} hist=${snapshot.streak.history.length} | dhikr count=${snapshot.dhikr.count} target=${snapshot.dhikr.target} session=${snapshot.dhikr.sessionTotal}`
+        );
+      }
       setSnapshot(snapshot).catch(() => {
-        // Widget bridge is iOS-only and may no-op on other platforms.
+        // Widget bridge is iOS-only and may no-op on other platforms. Clear the
+        // dedupe marker so a transient failure doesn't permanently suppress the
+        // retry for this snapshot on the next render.
+        if (lastJson.current === json) {
+          lastJson.current = "";
+        }
       });
     }, DEBOUNCE_MS);
     timer.current = id;
@@ -72,10 +91,11 @@ export function useWidgetSync(): void {
       clearTimeout(id);
     };
   }, [
+    active.arabic,
+    active.target,
     ayah,
-    dhikr?.count,
-    dhikr?.target,
-    dhikr?.sessionTotal,
+    count,
+    grandTotal,
     prayerTimes,
     streak?.days,
     streak?.best,

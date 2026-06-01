@@ -31,6 +31,13 @@ export function useWidgetInteractions(): void {
         return;
       }
       sub = addUserInteractionListener((event) => {
+        if (__DEV__) {
+          // TEMP probe: logs only if the JS runtime is alive when the widget is
+          // tapped. A tap from the home screen with the app suspended that logs
+          // nothing here ⇒ the increment must move to native. Remove once the
+          // dhikr-tap path is verified end-to-end.
+          console.log(`[widgets] interaction target=${event.target}`);
+        }
         if (event.target === DHIKR_INCREMENT_TARGET) {
           increment({ date: dateKey(), by: 1 }).catch(() => {
             // Offline or unauthenticated — the next sync reconciles the count.

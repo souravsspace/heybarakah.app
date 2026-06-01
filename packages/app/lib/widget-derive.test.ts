@@ -58,7 +58,7 @@ function makeSnapshot(): WidgetSnapshot {
     ],
     tomorrowFajrISO: iso("2026-05-31", "05:00"),
     streak: { days: 1, best: 1, history: [], todayDone: 0 },
-    dhikr: { count: 0, target: 33, sessionTotal: 0 },
+    dhikr: { arabic: "", count: 0, target: 33, sessionTotal: 0 },
     ayah: { arabic: "", translation: "", surah: "", reference: "" },
     lockNow: null,
   };
@@ -79,28 +79,42 @@ describe("parseSnapshotISO", () => {
 describe("derivePrayerState", () => {
   const snap = makeSnapshot();
 
-  test("inside a prayer window → locked, counts down to window end", () => {
-    const s = derivePrayerState(snap, Date.parse(iso("2026-05-30", "12:10")));
-    expect(s.isLocked).toBe(true);
-    expect(s.display.name).toBe("dhuhr");
-    expect(s.countdownMinutes).toBe(20);
-    expect(s.countdownText).toBe("20m");
-    expect(s.timeText).toBe("12:00");
-  });
-
-  test("between prayers → next prayer, counts down to its adhan", () => {
-    const s = derivePrayerState(snap, Date.parse(iso("2026-05-30", "13:00")));
-    expect(s.isLocked).toBe(false);
+  test("active prayer stays shown OUTSIDE its lock window (Bug 1)", () => {
+    // 15:45 is 45 min past Asr adhan (15:00) and past its lock window
+    // [15:00,15:30], but before Maghrib (18:00). The app shows Asr in progress;
+    // the widget must too — not jump to the next prayer.
+    const s = derivePrayerState(snap, Date.parse(iso("2026-05-30", "15:45")));
     expect(s.display.name).toBe("asr");
-    expect(s.countdownMinutes).toBe(120);
-    expect(s.countdownText).toBe("2h");
+    expect(s.isActive).toBe(true);
+    expect(s.isLocked).toBe(false);
     expect(s.timeText).toBe("15:00");
+    expect(s.countdownMinutes).toBe(135); // 15:45 → 18:00 Maghrib
+    expect(s.countdownText).toBe("2h 15m");
   });
 
-  test("after the last prayer → tomorrow's Fajr", () => {
-    const s = derivePrayerState(snap, Date.parse(iso("2026-05-30", "21:00")));
+  test("inside the lock window → QUIET badge (isLocked)", () => {
+    const s = derivePrayerState(snap, Date.parse(iso("2026-05-30", "12:10")));
+    expect(s.display.name).toBe("dhuhr");
+    expect(s.isActive).toBe(true);
+    expect(s.isLocked).toBe(true);
+    expect(s.timeText).toBe("12:00");
+    expect(s.countdownMinutes).toBe(170); // 12:10 → 15:00 Asr
+  });
+
+  test("before the first prayer → next, not active", () => {
+    const s = derivePrayerState(snap, Date.parse(iso("2026-05-30", "04:30")));
     expect(s.display.name).toBe("fajr");
+    expect(s.isActive).toBe(false);
+    expect(s.isLocked).toBe(false);
     expect(s.timeText).toBe("05:00");
+    expect(s.countdownMinutes).toBe(30);
+  });
+
+  test("after the last prayer → stays on Isha until tomorrow's Fajr", () => {
+    const s = derivePrayerState(snap, Date.parse(iso("2026-05-30", "21:00")));
+    expect(s.display.name).toBe("isha");
+    expect(s.isActive).toBe(true);
+    expect(s.timeText).toBe("20:00");
     expect(s.countdownMinutes).toBe(8 * 60); // 21:00 → 05:00 next day
   });
 

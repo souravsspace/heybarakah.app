@@ -10,6 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Circle, G, Rect } from "react-native-svg";
 import { AchievementCard } from "@/components/achievement-card";
 import { AchievementDialog } from "@/components/achievement-dialog";
 import { AchievementsMesh } from "@/components/meshes";
@@ -64,35 +65,55 @@ function formatStamp(ts: number): string {
   return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()} · ${d.getFullYear()}`;
 }
 
-function Rosette({
+/**
+ * Rub-el-hizb seal — two squares rotated 45° around a center, drawn as
+ * hairlines. The canonical Islamic eight-point star, used here as the ledger's
+ * illuminated mark (hero, section heads, footer). Stroke width is given in
+ * device pixels and converted into the 100×100 viewBox so the hairline reads
+ * the same at every size.
+ */
+function KhatamSeal({
+  size,
   color,
-  trackColor,
-  width = 160,
+  ring,
+  strokeWidth = 1,
 }: {
   color: string;
-  trackColor: string;
-  width?: number;
+  ring?: string;
+  size: number;
+  strokeWidth?: number;
 }) {
+  const C = 50;
+  const R = 33;
+  const side = R * Math.SQRT2;
+  const o = C - side / 2;
+  const sw = strokeWidth * (100 / size);
+
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-        width,
-      }}
-    >
-      <View style={{ flex: 1, height: 1, backgroundColor: trackColor }} />
-      <View
-        style={{
-          width: 5,
-          height: 5,
-          borderRadius: 2.5,
-          backgroundColor: color,
-        }}
-      />
-      <View style={{ flex: 1, height: 1, backgroundColor: trackColor }} />
-    </View>
+    <Svg height={size} viewBox="0 0 100 100" width={size}>
+      {ring ? (
+        <Circle
+          cx={C}
+          cy={C}
+          fill="none"
+          r={46}
+          stroke={ring}
+          strokeWidth={sw}
+        />
+      ) : null}
+      <G fill="none" stroke={color} strokeLinejoin="round" strokeWidth={sw}>
+        <Rect height={side} rx={1.5} width={side} x={o} y={o} />
+        <Rect
+          height={side}
+          rx={1.5}
+          transform={`rotate(45 ${C} ${C})`}
+          width={side}
+          x={o}
+          y={o}
+        />
+        <Circle cx={C} cy={C} r={6.5} />
+      </G>
+    </Svg>
   );
 }
 
@@ -174,7 +195,8 @@ export default function AchievementsScreen() {
     return { unlocked: section.unlocked, total: section.total };
   }, [selected, grouped]);
 
-  const heroTrack = isDark ? "rgba(255,255,255,0.14)" : "rgba(41,96,62,0.22)";
+  const sealRing = isDark ? "rgba(0,210,106,0.28)" : "rgba(41,96,62,0.26)";
+  const ruleColor = isDark ? "rgba(245,235,219,0.12)" : "rgba(94,75,40,0.16)";
 
   return (
     <View
@@ -223,12 +245,13 @@ export default function AchievementsScreen() {
           </Pressable>
           <Text
             style={{
-              fontSize: 11,
-              fontStyle: "italic",
+              fontSize: 10,
+              fontWeight: "700",
+              letterSpacing: 1.6,
               color: colors.inkSubtle,
             }}
           >
-            Your ledger
+            YOUR LEDGER
           </Text>
           <View style={{ width: 36 }} />
         </View>
@@ -248,27 +271,27 @@ export default function AchievementsScreen() {
           }}
           style={({ pressed }) => ({
             paddingHorizontal: 32,
-            paddingTop: 36,
+            paddingTop: 30,
             paddingBottom: 8,
             alignItems: "center",
             opacity: pressed ? 0.85 : 1,
           })}
         >
-          <View style={{ alignSelf: "center" }}>
-            <Rosette
-              color={colors.primary}
-              trackColor={heroTrack}
-              width={180}
-            />
-          </View>
+          <KhatamSeal
+            color={colors.primary}
+            ring={sealRing}
+            size={74}
+            strokeWidth={1}
+          />
 
           <Text
             style={{
-              marginTop: 22,
+              marginTop: 24,
               alignSelf: "center",
               fontFamily: "LibreBaskerville-Bold",
-              fontSize: 34,
+              fontSize: 33,
               lineHeight: 40,
+              letterSpacing: -0.4,
               color: colors.ink,
               textAlign: "center",
             }}
@@ -277,26 +300,40 @@ export default function AchievementsScreen() {
           </Text>
 
           {mostRecent?.unlockedAt ? (
-            <Text
+            <View
               style={{
-                marginTop: 12,
-                alignSelf: "center",
-                fontSize: 11,
-                fontWeight: "700",
-                letterSpacing: 1.4,
-                color: colors.primary,
-                fontVariant: ["tabular-nums"],
+                marginTop: 14,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
               }}
             >
-              {formatStamp(mostRecent.unlockedAt).toUpperCase()}
-            </Text>
+              <View
+                style={{ width: 14, height: 1, backgroundColor: ruleColor }}
+              />
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "700",
+                  letterSpacing: 1.6,
+                  color: colors.primary,
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
+                {formatStamp(mostRecent.unlockedAt).toUpperCase()}
+              </Text>
+              <View
+                style={{ width: 14, height: 1, backgroundColor: ruleColor }}
+              />
+            </View>
           ) : (
             <Text
               style={{
                 marginTop: 12,
                 alignSelf: "center",
-                fontSize: 12,
+                fontSize: 13,
                 fontStyle: "italic",
+                fontFamily: "LibreBaskerville-Bold",
                 color: colors.inkMuted,
                 textAlign: "center",
                 maxWidth: 260,
@@ -308,7 +345,7 @@ export default function AchievementsScreen() {
         </Pressable>
 
         <View
-          style={{ alignItems: "center", paddingTop: 22, paddingBottom: 8 }}
+          style={{ alignItems: "center", paddingTop: 18, paddingBottom: 8 }}
         >
           <Text
             style={{
@@ -322,7 +359,7 @@ export default function AchievementsScreen() {
           </Text>
         </View>
 
-        <View style={{ gap: 34, paddingTop: 28 }}>
+        <View style={{ gap: 34, paddingTop: 26 }}>
           {grouped.map((section, sIdx) => (
             <View key={section.category} style={{ gap: 14 }}>
               <View style={{ paddingHorizontal: 24 }}>
@@ -333,17 +370,30 @@ export default function AchievementsScreen() {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Text
+                  <View
                     style={{
-                      fontFamily: "LibreBaskerville-Bold",
-                      fontSize: 22,
-                      lineHeight: 26,
-                      fontStyle: "italic",
-                      color: colors.ink,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 9,
                     }}
                   >
-                    {CATEGORY_LABEL[section.category]}
-                  </Text>
+                    <KhatamSeal
+                      color={colors.primary}
+                      size={14}
+                      strokeWidth={0.9}
+                    />
+                    <Text
+                      style={{
+                        fontFamily: "LibreBaskerville-Bold",
+                        fontSize: 22,
+                        lineHeight: 26,
+                        fontStyle: "italic",
+                        color: colors.ink,
+                      }}
+                    >
+                      {CATEGORY_LABEL[section.category]}
+                    </Text>
+                  </View>
                   <Text
                     style={{
                       fontSize: 11,
@@ -402,12 +452,18 @@ export default function AchievementsScreen() {
           ))}
         </View>
 
-        <View style={{ alignItems: "center", paddingTop: 40 }}>
-          <Rosette
-            color={colors.inkSubtle}
-            trackColor={colors.divider}
-            width={100}
-          />
+        <View style={{ alignItems: "center", paddingTop: 44, gap: 14 }}>
+          <KhatamSeal color={colors.inkSubtle} size={26} strokeWidth={0.9} />
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "700",
+              letterSpacing: 1.8,
+              color: colors.inkSubtle,
+            }}
+          >
+            IN SHĀʾ ALLĀH
+          </Text>
         </View>
       </ScrollView>
 
