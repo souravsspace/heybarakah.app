@@ -1,4 +1,11 @@
-import { Circle, HStack, Spacer, Text, VStack } from "@expo/ui/swift-ui";
+import {
+  Circle,
+  HStack,
+  RoundedRectangle,
+  Spacer,
+  Text,
+  VStack,
+} from "@expo/ui/swift-ui";
 import {
   containerBackground,
   font,
@@ -21,6 +28,19 @@ function SalahArcLayout(
 ) {
   "widget";
 
+  // Everything the layout references lives INSIDE this function: the
+  // expo-widgets babel plugin stringifies only the body, so any module-scope
+  // reference would be undefined in the widget JS runtime and the render would
+  // throw (no containerBackground → placeholder tile). Only primitives proven
+  // on device are used (Text/Circle/RoundedRectangle/HStack/VStack/Spacer +
+  // font/foregroundStyle/frame/kerning/padding/italic/containerBackground);
+  // no Path/Gauge/gradient/Image.
+  const FILL = Number.POSITIVE_INFINITY;
+  // Vertical travel of the day-arc; dots near dawn/night sink toward the
+  // horizon, midday peaks. The dots ride above a hairline horizon so the row
+  // reads as the sun's daily passage that the five prayers are tied to.
+  const ARC_RISE = 16;
+
   const scheme = environment.colorScheme ?? "light";
   const tok =
     scheme === "dark"
@@ -28,6 +48,7 @@ function SalahArcLayout(
           bg: "#0f0e0b",
           ink: "#f5ebdb",
           muted: "#f5ebdb94",
+          faint: "#f5ebdb5c",
           accent: "#29603E",
           hairline: "#f5ebdb2e",
         }
@@ -35,9 +56,11 @@ function SalahArcLayout(
           bg: "#e8dcc4",
           ink: "#1a1408",
           muted: "#1a14088c",
+          faint: "#1a14085c",
           accent: "#29603E",
           hairline: "#1a140829",
         };
+
   const state = props.salah ?? {
     countdownMinutes: 0,
     countdownText: "",
@@ -48,64 +71,41 @@ function SalahArcLayout(
     points: [],
     timeText: "",
   };
-  const hijri = props.hijri ?? "";
+  const hijri = typeof props.hijri === "string" ? props.hijri : "";
   const points = Array.isArray(state.points) ? state.points : [];
+  const title = state.display.title || "Salah";
+  const arabic = state.display.arabic || title;
+  const countdown = state.countdownText || "now";
+  const status = state.isLocked ? "QUIET" : state.isActive ? "NOW" : "NEXT";
+  const countLabel = state.isActive ? "left" : "until";
+  const timeText = state.timeText || "--:--";
 
   return (
     <VStack
       alignment="leading"
       modifiers={[
-        padding({ all: 14 }),
-        frame({
-          maxWidth: Number.POSITIVE_INFINITY,
-          maxHeight: Number.POSITIVE_INFINITY,
-        }),
+        padding({ all: 16 }),
+        frame({ maxWidth: FILL, maxHeight: FILL }),
         containerBackground(tok.bg, "widget"),
       ]}
-      spacing={2}
+      spacing={0}
     >
-      <HStack
-        alignment="top"
-        modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}
-      >
+      <HStack modifiers={[frame({ maxWidth: FILL })]}>
         <Text
           modifiers={[
-            font({ size: 9, weight: "bold" }),
-            kerning(1.4),
+            font({ size: 10, weight: "bold" }),
+            kerning(1.6),
             foregroundStyle(tok.accent),
           ]}
         >
-          {state.isLocked ? "QUIET NOW" : state.isActive ? "NOW" : "NEXT"}
-        </Text>
-        <Spacer />
-        <Text modifiers={[font({ size: 18 }), foregroundStyle(tok.muted)]}>
-          {state.display.arabic}
-        </Text>
-      </HStack>
-
-      <HStack alignment="bottom" spacing={10}>
-        <Text modifiers={[font({ size: 30 }), foregroundStyle(tok.ink)]}>
-          {state.display.title}
-        </Text>
-        <Text
-          modifiers={[font({ size: 16 }), italic(), foregroundStyle(tok.muted)]}
-        >
-          {state.isActive
-            ? `${state.countdownText} left`
-            : `in ${state.countdownText}`}
-        </Text>
-      </HStack>
-
-      <HStack modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}>
-        <Text modifiers={[font({ size: 10 }), foregroundStyle(tok.muted)]}>
-          {`${state.timeText} · Mecca`}
+          {status}
         </Text>
         <Spacer />
         <Text
           modifiers={[
-            font({ size: 9, weight: "bold" }),
-            kerning(1.3),
-            foregroundStyle(tok.muted),
+            font({ size: 10, weight: "bold" }),
+            kerning(1.4),
+            foregroundStyle(tok.faint),
           ]}
         >
           {hijri.toUpperCase()}
@@ -114,28 +114,108 @@ function SalahArcLayout(
 
       <Spacer minLength={0} />
 
+      {/* Arabic name leads (honoring the language); English + adhan read under
+          it. Countdown is the glance value on the trailing edge. */}
+      <HStack alignment="bottom" modifiers={[frame({ maxWidth: FILL })]}>
+        <VStack alignment="leading" spacing={2}>
+          <Text
+            modifiers={[
+              font({ size: 30, weight: "bold" }),
+              foregroundStyle(tok.ink),
+            ]}
+          >
+            {arabic}
+          </Text>
+          <Text modifiers={[font({ size: 12 }), foregroundStyle(tok.muted)]}>
+            {`${title} · adhan ${timeText}`}
+          </Text>
+        </VStack>
+        <Spacer />
+        <VStack alignment="trailing" spacing={0}>
+          <Text
+            modifiers={[
+              font({ size: 24, weight: "bold" }),
+              foregroundStyle(tok.ink),
+            ]}
+          >
+            {countdown}
+          </Text>
+          <Text
+            modifiers={[
+              font({ size: 10 }),
+              italic(),
+              foregroundStyle(tok.muted),
+            ]}
+          >
+            {countLabel}
+          </Text>
+        </VStack>
+      </HStack>
+
+      <Spacer minLength={0} />
+
       <HStack
-        modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}
+        alignment="top"
+        modifiers={[frame({ maxWidth: FILL })]}
+        spacing={0}
+      >
+        {points.map((p) => {
+          const pct = Number.isFinite(p.pct)
+            ? Math.max(0, Math.min(1, p.pct))
+            : 0;
+          const rise = Math.round(ARC_RISE * (1 - Math.sin(pct * Math.PI)));
+          const size = p.isCurrent ? 11 : 7;
+          const color = p.isCurrent
+            ? tok.accent
+            : p.isPast
+              ? tok.muted
+              : tok.hairline;
+          return (
+            <VStack
+              key={p.name}
+              modifiers={[frame({ maxWidth: FILL })]}
+              spacing={0}
+            >
+              <Circle
+                modifiers={[
+                  frame({ width: size, height: size }),
+                  foregroundStyle(color),
+                  padding({ top: rise }),
+                ]}
+              />
+            </VStack>
+          );
+        })}
+      </HStack>
+
+      {/* Horizon line the day-arc rides over. */}
+      <RoundedRectangle
+        cornerRadius={1}
+        modifiers={[
+          frame({ maxWidth: FILL, height: 1 }),
+          foregroundStyle(tok.hairline),
+          padding({ top: 6 }),
+        ]}
+      />
+
+      <HStack
+        modifiers={[frame({ maxWidth: FILL }), padding({ top: 5 })]}
         spacing={0}
       >
         {points.map((p) => (
           <VStack
             key={p.name}
-            modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}
-            spacing={3}
+            modifiers={[frame({ maxWidth: FILL })]}
+            spacing={0}
           >
-            <Circle
+            <Text
               modifiers={[
-                frame({
-                  width: p.isCurrent ? 9 : 6,
-                  height: p.isCurrent ? 9 : 6,
-                }),
-                foregroundStyle(
-                  p.isCurrent ? tok.accent : p.isPast ? tok.muted : tok.hairline
-                ),
+                p.isCurrent
+                  ? font({ size: 9, weight: "bold" })
+                  : font({ size: 9 }),
+                foregroundStyle(p.isCurrent ? tok.ink : tok.muted),
               ]}
-            />
-            <Text modifiers={[font({ size: 8 }), foregroundStyle(tok.muted)]}>
+            >
               {p.info.letter}
             </Text>
           </VStack>
