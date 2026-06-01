@@ -22,18 +22,10 @@ interface DhikrConfig {
 
 /**
  * Stable interaction target — matched by `addUserInteractionListener`.
- * Currently unused in the layout: an interactive `<Button>` root prevents
- * WidgetKit from detecting `containerBackground` ("The widget background view
- * is missing" on every entry → placeholder/white tile), confirmed on device.
- * Kept exported for the listener; restore tap-to-increment only via a
- * mechanism that does not break the widget background.
+ * Currently unused in the layout (dhikr is non-interactive); kept exported for
+ * the listener.
  */
 export const DHIKR_INCREMENT_TARGET = "increment";
-
-const FILL = Number.POSITIVE_INFINITY;
-// systemSmall inner content width after padding(14)*2; kept conservative so the
-// fixed-width progress rail never overflows the tile.
-const RAIL_WIDTH = 118;
 
 function DhikrLayout(
   props: WidgetProps,
@@ -41,6 +33,15 @@ function DhikrLayout(
 ) {
   "widget";
 
+  // Every value the layout references must live INSIDE this function: the
+  // expo-widgets babel plugin stringifies only the function body, so any
+  // module-scope reference is undefined in the widget JS runtime → the render
+  // throws (RedBox) → no containerBackground → "The widget background view is
+  // missing" on every entry → placeholder/white tile.
+  const FILL = Number.POSITIVE_INFINITY;
+  // systemSmall inner content width after padding(14)*2; kept conservative so
+  // the fixed-width progress rail never overflows the tile.
+  const RAIL_WIDTH = 118;
   const DHIKR_CYCLE = ["سبحان الله", "الحمد لله", "الله أكبر"];
   const MASHA_ALLAH = "ما شاء الله";
 
