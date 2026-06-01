@@ -120,6 +120,16 @@ Every file change must be committed individually. No batching.
 - **scope:** `app`, `marketing`, `ui`, `hooks`, `lib`, `constants`, `assets`, `config`, `types`, `tests`
 - **summary:** present tense, lowercase, no period, ≤72 chars
 
+### Versioning
+
+The app version lives in **three** files that must stay in sync:
+
+1. `package.json` (root) — `version`
+2. `packages/app/package.json` — `version`
+3. `packages/app/app.json` — `expo.version` (this is the iOS/Android user-facing app version)
+
+When the user asks to bump the version, bump all three at the same time. If the user only mentions one (e.g. "bump the root version"), confirm whether the app version (`app.json`) should bump too — never bump it silently and never leave it stale by accident. iOS `buildNumber` / Android `versionCode` are autoincremented by EAS; do not set them by hand.
+
 ---
 
 ## 5. Code Rules
