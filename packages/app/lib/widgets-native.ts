@@ -19,7 +19,12 @@ export interface WidgetSnapshot {
     translation: string;
   };
   date: string;
-  dhikr: { count: number; sessionTotal: number; target: number };
+  dhikr: {
+    arabic: string;
+    count: number;
+    sessionTotal: number;
+    target: number;
+  };
   generatedAt: string;
   lockNow: { name: PrayerName; endISO: string } | null;
   prayers: WidgetPrayerEntry[];
