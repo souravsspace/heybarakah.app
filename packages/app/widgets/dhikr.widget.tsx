@@ -1,7 +1,7 @@
 import {
   Button,
   HStack,
-  ProgressView,
+  RoundedRectangle,
   Spacer,
   Text,
   VStack,
@@ -13,8 +13,6 @@ import {
   frame,
   kerning,
   padding,
-  progressViewStyle,
-  tint,
 } from "@expo/ui/swift-ui/modifiers";
 import { createWidget, type WidgetEnvironment } from "expo-widgets";
 import type { WidgetProps } from "@/lib/widgets-native";
@@ -27,6 +25,9 @@ interface DhikrConfig {
 export const DHIKR_INCREMENT_TARGET = "increment";
 
 const FILL = Number.POSITIVE_INFINITY;
+// systemSmall inner content width after padding(14)*2; kept conservative so the
+// fixed-width progress rail never overflows the tile.
+const RAIL_WIDTH = 118;
 
 function DhikrLayout(
   props: WidgetProps,
@@ -45,12 +46,14 @@ function DhikrLayout(
           ink: "#f5ebdb",
           muted: "#f5ebdb94",
           accent: "#29603E",
+          hairline: "#f5ebdb2e",
         }
       : {
           bg: "#e8dcc4",
           ink: "#1a1408",
           muted: "#1a14088c",
           accent: "#29603E",
+          hairline: "#1a140829",
         };
 
   const d = props.dhikr ?? { count: 0, sessionTotal: 0, target: 33 };
@@ -62,12 +65,16 @@ function DhikrLayout(
     Math.max(0, Math.floor((count - 1) / target)) % DHIKR_CYCLE.length;
   const arabic = complete ? MASHA_ALLAH : DHIKR_CYCLE[cycleIndex];
   const progress = Math.min(1, count / target);
+  const filledWidth = Math.round(progress * RAIL_WIDTH);
+  const restWidth = RAIL_WIDTH - filledWidth;
 
   return (
     // Root must own `containerBackground` + fill with the interactive Button
     // nested inside — a Button root with the background on a child returns an
-    // empty view collection (CHSErrorDomain 1101) and WidgetKit shows the
-    // placeholder. Do not invert this nesting.
+    // empty view collection (CHSErrorDomain 1101). Only primitives/modifiers
+    // proven by the other rendering widgets are used here (Text/RoundedRectangle
+    // + font/foregroundStyle/frame/kerning/padding); a prior pass with
+    // ProgressView/tint/serif rendered a blank tile.
     <VStack
       modifiers={[
         frame({ maxWidth: FILL, maxHeight: FILL }),
@@ -103,11 +110,7 @@ function DhikrLayout(
 
           <Text
             modifiers={[
-              font({
-                size: complete ? 30 : 44,
-                weight: "bold",
-                design: "serif",
-              }),
+              font({ size: complete ? 30 : 46, weight: "bold" }),
               foregroundStyle(tok.ink),
             ]}
           >
@@ -119,14 +122,22 @@ function DhikrLayout(
 
           <Spacer minLength={0} />
 
-          <ProgressView
-            modifiers={[
-              progressViewStyle("linear"),
-              tint(tok.accent),
-              frame({ maxWidth: FILL }),
-            ]}
-            value={progress}
-          />
+          <HStack spacing={0}>
+            <RoundedRectangle
+              cornerRadius={2}
+              modifiers={[
+                frame({ width: filledWidth, height: 4 }),
+                foregroundStyle(tok.accent),
+              ]}
+            />
+            <RoundedRectangle
+              cornerRadius={2}
+              modifiers={[
+                frame({ width: restWidth, height: 4 }),
+                foregroundStyle(tok.hairline),
+              ]}
+            />
+          </HStack>
 
           <HStack modifiers={[frame({ maxWidth: FILL })]}>
             <Text modifiers={[font({ size: 9 }), foregroundStyle(tok.muted)]}>
