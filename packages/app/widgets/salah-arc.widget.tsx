@@ -1,6 +1,7 @@
 import {
   Circle,
   HStack,
+  Image,
   RoundedRectangle,
   Spacer,
   Text,
@@ -32,13 +33,13 @@ function SalahArcLayout(
   // expo-widgets babel plugin stringifies only the body, so any module-scope
   // reference would be undefined in the widget JS runtime and the render would
   // throw (no containerBackground → placeholder tile). Only primitives proven
-  // on device are used (Text/Circle/RoundedRectangle/HStack/VStack/Spacer +
-  // font/foregroundStyle/frame/kerning/padding/italic/containerBackground);
-  // no Path/Gauge/gradient/Image.
+  // on device are used (Text/Circle/RoundedRectangle/Image/HStack/VStack/Spacer
+  // + font/foregroundStyle/frame/kerning/padding/italic/containerBackground);
+  // no Path/Gauge/gradient. Image(systemName) is an SF Symbol, proven on device.
   const FILL = Number.POSITIVE_INFINITY;
   // Vertical travel of the day-arc; dots near dawn/night sink toward the
   // horizon, midday peaks. The dots ride above a hairline horizon so the row
-  // reads as the sun's daily passage that the five prayers are tied to.
+  // reads as the sun's daily passage the five prayers are tied to.
   const ARC_RISE = 16;
 
   const scheme = environment.colorScheme ?? "light";
@@ -76,15 +77,28 @@ function SalahArcLayout(
   const title = state.display.title || "Salah";
   const arabic = state.display.arabic || title;
   const countdown = state.countdownText || "now";
-  const status = state.isLocked ? "QUIET" : state.isActive ? "NOW" : "NEXT";
-  const countLabel = state.isActive ? "left" : "until";
   const timeText = state.timeText || "--:--";
+
+  // Sentence-case, reverent labels mirroring the home screen's heroLabel.
+  const label = state.isLocked
+    ? "Quiet hours"
+    : state.isActive
+      ? "In progress"
+      : "Next prayer";
+  const labelColor = state.isActive || state.isLocked ? tok.accent : tok.muted;
+  const countLabel = state.isActive ? "left" : "until";
+
+  // Celestial body for the current prayer: a crescent through the dark
+  // prayers (fajr/maghrib/isha) and the sun through the day (dhuhr/asr).
+  const dn = state.display.name;
+  const isNight = dn === "fajr" || dn === "maghrib" || dn === "isha";
+  const celestial = isNight ? "moon.stars.fill" : "sun.max.fill";
 
   return (
     <VStack
       alignment="leading"
       modifiers={[
-        padding({ all: 16 }),
+        padding({ all: 14 }),
         frame({ maxWidth: FILL, maxHeight: FILL }),
         containerBackground(tok.bg, "widget"),
       ]}
@@ -93,23 +107,25 @@ function SalahArcLayout(
       <HStack modifiers={[frame({ maxWidth: FILL })]}>
         <Text
           modifiers={[
-            font({ size: 10, weight: "bold" }),
-            kerning(1.6),
-            foregroundStyle(tok.accent),
+            font({ size: 12, weight: "semibold" }),
+            foregroundStyle(labelColor),
           ]}
         >
-          {status}
+          {label}
         </Text>
         <Spacer />
-        <Text
-          modifiers={[
-            font({ size: 10, weight: "bold" }),
-            kerning(1.4),
-            foregroundStyle(tok.faint),
-          ]}
-        >
-          {hijri.toUpperCase()}
-        </Text>
+        <HStack spacing={6}>
+          <Text
+            modifiers={[
+              font({ size: 9, weight: "bold" }),
+              kerning(1.4),
+              foregroundStyle(tok.faint),
+            ]}
+          >
+            {hijri.toUpperCase()}
+          </Text>
+          <Image color={tok.accent} size={13} systemName={celestial} />
+        </HStack>
       </HStack>
 
       <Spacer minLength={0} />
@@ -120,13 +136,13 @@ function SalahArcLayout(
         <VStack alignment="leading" spacing={2}>
           <Text
             modifiers={[
-              font({ size: 30, weight: "bold" }),
+              font({ size: 32, weight: "bold" }),
               foregroundStyle(tok.ink),
             ]}
           >
             {arabic}
           </Text>
-          <Text modifiers={[font({ size: 12 }), foregroundStyle(tok.muted)]}>
+          <Text modifiers={[font({ size: 11 }), foregroundStyle(tok.muted)]}>
             {`${title} · adhan ${timeText}`}
           </Text>
         </VStack>
