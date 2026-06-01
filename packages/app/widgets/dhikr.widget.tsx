@@ -1,11 +1,20 @@
-import { Button, Gauge, HStack, Spacer, Text, VStack } from "@expo/ui/swift-ui";
+import {
+  Button,
+  HStack,
+  ProgressView,
+  Spacer,
+  Text,
+  VStack,
+} from "@expo/ui/swift-ui";
 import {
   containerBackground,
   font,
   foregroundStyle,
   frame,
-  gaugeStyle,
+  kerning,
   padding,
+  progressViewStyle,
+  tint,
 } from "@expo/ui/swift-ui/modifiers";
 import { createWidget, type WidgetEnvironment } from "expo-widgets";
 import type { WidgetProps } from "@/lib/widgets-native";
@@ -16,6 +25,8 @@ interface DhikrConfig {
 
 /** Stable interaction target — matched by `addUserInteractionListener`. */
 export const DHIKR_INCREMENT_TARGET = "increment";
+
+const FILL = Number.POSITIVE_INFINITY;
 
 function DhikrLayout(
   props: WidgetProps,
@@ -29,7 +40,12 @@ function DhikrLayout(
   const scheme = environment.colorScheme ?? "light";
   const tok =
     scheme === "dark"
-      ? { bg: "#0f0e0b", ink: "#f5ebdb", muted: "#f5ebdb94", accent: "#29603E" }
+      ? {
+          bg: "#0f0e0b",
+          ink: "#f5ebdb",
+          muted: "#f5ebdb94",
+          accent: "#29603E",
+        }
       : {
           bg: "#e8dcc4",
           ink: "#1a1408",
@@ -45,73 +61,81 @@ function DhikrLayout(
   const cycleIndex =
     Math.max(0, Math.floor((count - 1) / target)) % DHIKR_CYCLE.length;
   const arabic = complete ? MASHA_ALLAH : DHIKR_CYCLE[cycleIndex];
+  const progress = Math.min(1, count / target);
 
   return (
-    // The widget root must carry `containerBackground` for WidgetKit to adopt it
-    // (matches ayah/streak/salah-arc). When the root was a `<Button>` with the
-    // background on its child VStack, the timeline render returned an empty view
-    // collection (CHSErrorDomain 1101) and WidgetKit fell back to the "Please
-    // adopt containerBackground API" placeholder. Keep the root a VStack that
-    // owns the background + fill, and nest the interactive Button inside it.
+    // Root must own `containerBackground` + fill with the interactive Button
+    // nested inside — a Button root with the background on a child returns an
+    // empty view collection (CHSErrorDomain 1101) and WidgetKit shows the
+    // placeholder. Do not invert this nesting.
     <VStack
       modifiers={[
-        frame({
-          maxWidth: Number.POSITIVE_INFINITY,
-          maxHeight: Number.POSITIVE_INFINITY,
-        }),
+        frame({ maxWidth: FILL, maxHeight: FILL }),
         containerBackground(tok.bg, "widget"),
       ]}
     >
       <Button target="increment">
         <VStack
+          alignment="leading"
           modifiers={[
-            padding({ all: 12 }),
-            frame({
-              maxWidth: Number.POSITIVE_INFINITY,
-              maxHeight: Number.POSITIVE_INFINITY,
-            }),
+            padding({ all: 14 }),
+            frame({ maxWidth: FILL, maxHeight: FILL }),
           ]}
-          spacing={4}
+          spacing={6}
         >
-          <HStack modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}>
+          <HStack modifiers={[frame({ maxWidth: FILL })]}>
+            <Text
+              modifiers={[
+                font({ size: 9, weight: "bold" }),
+                kerning(1.3),
+                foregroundStyle(tok.accent),
+              ]}
+            >
+              {complete ? "COMPLETE" : "DHIKR"}
+            </Text>
             <Spacer />
             <Text modifiers={[font({ size: 10 }), foregroundStyle(tok.muted)]}>
               {`${count}/${target}`}
             </Text>
           </HStack>
 
-          <Gauge
-            currentValueLabel={
-              <Text
-                modifiers={[
-                  font({ size: 28, weight: "bold" }),
-                  foregroundStyle(tok.ink),
-                ]}
-              >
-                {`${count}`}
-              </Text>
-            }
-            max={target}
-            min={0}
-            modifiers={[
-              gaugeStyle("circular"),
-              frame({ maxHeight: Number.POSITIVE_INFINITY }),
-            ]}
-            value={Math.min(count, target)}
-          />
+          <Spacer minLength={0} />
 
-          <Text modifiers={[font({ size: 13 }), foregroundStyle(tok.ink)]}>
+          <Text
+            modifiers={[
+              font({
+                size: complete ? 30 : 44,
+                weight: "bold",
+                design: "serif",
+              }),
+              foregroundStyle(tok.ink),
+            ]}
+          >
+            {complete ? "Mashā Allāh" : `${count}`}
+          </Text>
+          <Text modifiers={[font({ size: 17 }), foregroundStyle(tok.ink)]}>
             {arabic}
           </Text>
 
-          <HStack modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}>
+          <Spacer minLength={0} />
+
+          <ProgressView
+            modifiers={[
+              progressViewStyle("linear"),
+              tint(tok.accent),
+              frame({ maxWidth: FILL }),
+            ]}
+            value={progress}
+          />
+
+          <HStack modifiers={[frame({ maxWidth: FILL })]}>
             <Text modifiers={[font({ size: 9 }), foregroundStyle(tok.muted)]}>
               {`${sessionTotal} today`}
             </Text>
             <Spacer />
             <Text
               modifiers={[
-                font({ size: 9, weight: "bold" }),
+                font({ size: 10, weight: "bold" }),
                 foregroundStyle(tok.accent),
               ]}
             >
