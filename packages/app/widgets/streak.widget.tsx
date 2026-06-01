@@ -13,6 +13,7 @@ import {
   frame,
   kerning,
   padding,
+  widgetURL,
 } from "@expo/ui/swift-ui/modifiers";
 import { createWidget, type WidgetEnvironment } from "expo-widgets";
 import type { WidgetProps } from "@/lib/widgets-native";
@@ -67,6 +68,7 @@ function StreakLayout(
           maxHeight: Number.POSITIVE_INFINITY,
         }),
         containerBackground(tok.bg, "widget"),
+        widgetURL("barakah://progress"),
       ]}
       spacing={4}
     >
