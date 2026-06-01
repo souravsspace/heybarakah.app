@@ -63,14 +63,25 @@ function DhikrLayout(
           hairline: "#1a140829",
         };
 
-  const d = props.dhikr ?? { count: 0, sessionTotal: 0, target: 33 };
+  const d = props.dhikr ?? {
+    arabic: "",
+    count: 0,
+    sessionTotal: 0,
+    target: 33,
+  };
   const count = Number.isFinite(d.count) ? d.count : 0;
   const target = Math.max(1, Number.isFinite(d.target) ? d.target : 33);
   const sessionTotal = Number.isFinite(d.sessionTotal) ? d.sessionTotal : 0;
   const complete = count >= target;
   const cycleIndex =
     Math.max(0, Math.floor((count - 1) / target)) % DHIKR_CYCLE.length;
-  const arabic = complete ? MASHA_ALLAH : DHIKR_CYCLE[cycleIndex];
+  // Mirror the active dhikr on screen when provided; fall back to the cycle so
+  // the widget still renders if `arabic` is absent (older stored snapshot).
+  const arabic = complete
+    ? MASHA_ALLAH
+    : typeof d.arabic === "string" && d.arabic.length > 0
+      ? d.arabic
+      : DHIKR_CYCLE[cycleIndex];
   const progress = Math.min(1, count / target);
   const filledWidth = Math.round(progress * RAIL_WIDTH);
   const restWidth = RAIL_WIDTH - filledWidth;
@@ -144,7 +155,7 @@ function DhikrLayout(
 
       <HStack modifiers={[frame({ maxWidth: FILL })]}>
         <Text modifiers={[font({ size: 9 }), foregroundStyle(tok.muted)]}>
-          {`${sessionTotal} today`}
+          {`${sessionTotal} total`}
         </Text>
         <Spacer />
         <Text modifiers={[font({ size: 10 }), foregroundStyle(tok.muted)]}>
