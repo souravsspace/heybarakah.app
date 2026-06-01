@@ -58,7 +58,7 @@ function makeSnapshot(): WidgetSnapshot {
     ],
     tomorrowFajrISO: iso("2026-05-31", "05:00"),
     streak: { days: 1, best: 1, history: [], todayDone: 0 },
-    dhikr: { count: 0, target: 33, sessionTotal: 0 },
+    dhikr: { arabic: "", count: 0, target: 33, sessionTotal: 0 },
     ayah: { arabic: "", translation: "", surah: "", reference: "" },
     lockNow: null,
   };
