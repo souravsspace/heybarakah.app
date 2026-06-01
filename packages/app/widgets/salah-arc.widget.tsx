@@ -42,6 +42,7 @@ function SalahArcLayout(
     countdownMinutes: 0,
     countdownText: "",
     display: { arabic: "", letter: "", name: "fajr" as const, title: "" },
+    isActive: false,
     isLocked: false,
     nextTitle: "",
     points: [],
@@ -74,7 +75,7 @@ function SalahArcLayout(
             foregroundStyle(tok.accent),
           ]}
         >
-          {state.isLocked ? "QUIET NOW" : "NEXT"}
+          {state.isLocked ? "QUIET NOW" : state.isActive ? "NOW" : "NEXT"}
         </Text>
         <Spacer />
         <Text modifiers={[font({ size: 18 }), foregroundStyle(tok.muted)]}>
@@ -89,7 +90,7 @@ function SalahArcLayout(
         <Text
           modifiers={[font({ size: 16 }), italic(), foregroundStyle(tok.muted)]}
         >
-          {state.isLocked
+          {state.isActive
             ? `${state.countdownText} left`
             : `in ${state.countdownText}`}
         </Text>
