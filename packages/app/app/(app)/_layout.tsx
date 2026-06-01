@@ -90,28 +90,26 @@ function AuthedShell() {
   }, [router]);
 
   return (
-    <DhikrProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="achievements" />
-        <Stack.Screen
-          name="dhikr-record"
-          options={{
-            presentation: "modal",
-            animation: "slide_from_bottom",
-            gestureEnabled: true,
-          }}
-        />
-        <Stack.Screen
-          name="unlock"
-          options={{
-            presentation: "modal",
-            animation: "slide_from_bottom",
-            gestureEnabled: false,
-          }}
-        />
-      </Stack>
-    </DhikrProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="achievements" />
+      <Stack.Screen
+        name="dhikr-record"
+        options={{
+          presentation: "modal",
+          animation: "slide_from_bottom",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="unlock"
+        options={{
+          presentation: "modal",
+          animation: "slide_from_bottom",
+          gestureEnabled: false,
+        }}
+      />
+    </Stack>
   );
 }
 
@@ -129,5 +127,9 @@ export default function AppLayout() {
     return <Redirect href="/no-active-sub" />;
   }
 
-  return <AuthedShell />;
+  return (
+    <DhikrProvider>
+      <AuthedShell />
+    </DhikrProvider>
+  );
 }
