@@ -124,12 +124,6 @@
           "frequentUpdates": true,
           "widgets": [
             {
-              "name": "AyahWidget",
-              "displayName": "Ayah of the day",
-              "description": "One verse, quietly placed.",
-              "supportedFamilies": ["systemLarge"]
-            },
-            {
               "name": "DhikrWidget",
               "displayName": "Dhikr",
               "description": "Tap to count. Remember Allah.",
