@@ -4,6 +4,7 @@ import {
   foregroundStyle,
   frame,
   kerning,
+  monospacedDigit,
 } from "@expo/ui/swift-ui/modifiers";
 import {
   createLiveActivity,
@@ -46,7 +47,7 @@ function LockActivityLayout(
         modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}
         spacing={12}
       >
-        <Image color={CREAM} size={22} systemName="moon.stars.fill" />
+        <Image color={CREAM} size={18} systemName="moon.stars.fill" />
         <VStack alignment="leading" spacing={1}>
           <Text
             modifiers={[
@@ -57,15 +58,19 @@ function LockActivityLayout(
           >
             QUIET NOW
           </Text>
-          <Text modifiers={[font({ size: 19 }), foregroundStyle(WHITE)]}>
+          <Text modifiers={[font({ size: 16 }), foregroundStyle(WHITE)]}>
             {prayer.title}
           </Text>
         </VStack>
         <Spacer />
         <Text
-          date={end}
-          dateStyle="timer"
-          modifiers={[font({ size: 18 }), foregroundStyle(WHITE)]}
+          countsDown={true}
+          modifiers={[
+            font({ size: 16 }),
+            monospacedDigit(),
+            foregroundStyle(WHITE),
+          ]}
+          timerInterval={{ lower: new Date(props.startEpoch), upper: end }}
         />
       </HStack>
     ),
@@ -74,9 +79,13 @@ function LockActivityLayout(
     ),
     compactTrailing: (
       <Text
-        date={end}
-        dateStyle="timer"
-        modifiers={[font({ size: 12 }), foregroundStyle(CREAM)]}
+        countsDown={true}
+        modifiers={[
+          font({ size: 11 }),
+          monospacedDigit(),
+          foregroundStyle(CREAM),
+        ]}
+        timerInterval={{ lower: new Date(props.startEpoch), upper: end }}
       />
     ),
     minimal: <Image color={CREAM} size={14} systemName="moon.stars.fill" />,
