@@ -104,7 +104,7 @@ export function buildTimelineEntries(
 export const DEFAULT_SNAPSHOT: WidgetSnapshot = {
   ayah: { arabic: "", reference: "", surah: "", translation: "" },
   date: "",
-  dhikr: { count: 0, sessionTotal: 0, target: 33 },
+  dhikr: { arabic: "", count: 0, sessionTotal: 0, target: 33 },
   generatedAt: "",
   lockNow: null,
   prayers: [],
