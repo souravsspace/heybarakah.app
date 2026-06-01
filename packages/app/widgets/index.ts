@@ -1,6 +1,5 @@
 import type { Widget } from "expo-widgets";
 import type { WidgetProps } from "@/lib/widgets-native";
-import { ayahWidget } from "@/widgets/ayah.widget";
 import { dhikrWidget } from "@/widgets/dhikr.widget";
 import { lockComplicationsWidget } from "@/widgets/lock-complications.widget";
 import { salahArcWidget } from "@/widgets/salah-arc.widget";
@@ -15,7 +14,6 @@ export { DHIKR_INCREMENT_TARGET } from "@/widgets/dhikr.widget";
  * picked up by the widget extension's JS runtime to render.
  */
 export const WIDGETS: Widget<WidgetProps, never>[] = [
-  ayahWidget,
   dhikrWidget,
   streakWidget,
   salahArcWidget,
