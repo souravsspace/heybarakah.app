@@ -12,6 +12,7 @@ import {
   frame,
   kerning,
   padding,
+  widgetURL,
 } from "@expo/ui/swift-ui/modifiers";
 import { createWidget, type WidgetEnvironment } from "expo-widgets";
 import type { WidgetProps } from "@/lib/widgets-native";
@@ -101,6 +102,7 @@ function DhikrLayout(
         padding({ all: 14 }),
         frame({ maxWidth: FILL, maxHeight: FILL }),
         containerBackground(tok.bg, "widget"),
+        widgetURL("barakah://dhikr"),
       ]}
       spacing={6}
     >
