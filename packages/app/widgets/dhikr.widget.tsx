@@ -1,5 +1,4 @@
 import {
-  Button,
   HStack,
   RoundedRectangle,
   Spacer,
@@ -7,7 +6,6 @@ import {
   VStack,
 } from "@expo/ui/swift-ui";
 import {
-  buttonStyle,
   containerBackground,
   font,
   foregroundStyle,
@@ -22,7 +20,14 @@ interface DhikrConfig {
   style: string;
 }
 
-/** Stable interaction target — matched by `addUserInteractionListener`. */
+/**
+ * Stable interaction target — matched by `addUserInteractionListener`.
+ * Currently unused in the layout: an interactive `<Button>` root prevents
+ * WidgetKit from detecting `containerBackground` ("The widget background view
+ * is missing" on every entry → placeholder/white tile), confirmed on device.
+ * Kept exported for the listener; restore tap-to-increment only via a
+ * mechanism that does not break the widget background.
+ */
 export const DHIKR_INCREMENT_TARGET = "increment";
 
 const FILL = Number.POSITIVE_INFINITY;
@@ -70,96 +75,82 @@ function DhikrLayout(
   const restWidth = RAIL_WIDTH - filledWidth;
 
   return (
-    // The interactive Button is the ROOT and owns `containerBackground` +
-    // `buttonStyle("plain")`. Wrapping the Button in a VStack that holds the
-    // background hides containerBackground from WidgetKit ("The widget
-    // background view is missing" on every entry → placeholder on dark, white
-    // on tinted), because the background-detection pass does not traverse the
-    // interactive Button subtree; the default button style also fills white in
-    // tinted render mode. Apple's interactive-widget pattern applies
-    // containerBackground to the Button itself. Only primitives/modifiers
-    // proven by the other rendering widgets are used inside.
-    <Button
+    // Plain VStack root owning `containerBackground` — identical structure to
+    // the streak/ayah/salah-arc widgets that render correctly. An interactive
+    // `<Button>` (root or wrapper) hides containerBackground from WidgetKit
+    // ("The widget background view is missing" on every entry → placeholder on
+    // dark/light, white on tinted), confirmed twice on device, so dhikr is
+    // non-interactive; tapping the tile opens the app. Only primitives proven
+    // by the rendering widgets are used (Text/RoundedRectangle/HStack/VStack +
+    // font/foregroundStyle/frame/kerning/padding/containerBackground).
+    <VStack
+      alignment="leading"
       modifiers={[
-        buttonStyle("plain"),
+        padding({ all: 14 }),
         frame({ maxWidth: FILL, maxHeight: FILL }),
         containerBackground(tok.bg, "widget"),
       ]}
-      target="increment"
+      spacing={6}
     >
-      <VStack
-        alignment="leading"
-        modifiers={[
-          padding({ all: 14 }),
-          frame({ maxWidth: FILL, maxHeight: FILL }),
-        ]}
-        spacing={6}
-      >
-        <HStack modifiers={[frame({ maxWidth: FILL })]}>
-          <Text
-            modifiers={[
-              font({ size: 9, weight: "bold" }),
-              kerning(1.3),
-              foregroundStyle(tok.accent),
-            ]}
-          >
-            {complete ? "COMPLETE" : "DHIKR"}
-          </Text>
-          <Spacer />
-          <Text modifiers={[font({ size: 10 }), foregroundStyle(tok.muted)]}>
-            {`${count}/${target}`}
-          </Text>
-        </HStack>
-
-        <Spacer minLength={0} />
-
+      <HStack modifiers={[frame({ maxWidth: FILL })]}>
         <Text
           modifiers={[
-            font({ size: complete ? 30 : 46, weight: "bold" }),
-            foregroundStyle(tok.ink),
+            font({ size: 9, weight: "bold" }),
+            kerning(1.3),
+            foregroundStyle(tok.accent),
           ]}
         >
-          {complete ? "Mashā Allāh" : `${count}`}
+          {complete ? "COMPLETE" : "DHIKR"}
         </Text>
-        <Text modifiers={[font({ size: 17 }), foregroundStyle(tok.ink)]}>
-          {arabic}
+        <Spacer />
+        <Text modifiers={[font({ size: 10 }), foregroundStyle(tok.muted)]}>
+          {`${count}/${target}`}
         </Text>
+      </HStack>
 
-        <Spacer minLength={0} />
+      <Spacer minLength={0} />
 
-        <HStack spacing={0}>
-          <RoundedRectangle
-            cornerRadius={2}
-            modifiers={[
-              frame({ width: filledWidth, height: 4 }),
-              foregroundStyle(tok.accent),
-            ]}
-          />
-          <RoundedRectangle
-            cornerRadius={2}
-            modifiers={[
-              frame({ width: restWidth, height: 4 }),
-              foregroundStyle(tok.hairline),
-            ]}
-          />
-        </HStack>
+      <Text
+        modifiers={[
+          font({ size: complete ? 30 : 46, weight: "bold" }),
+          foregroundStyle(tok.ink),
+        ]}
+      >
+        {complete ? "Mashā Allāh" : `${count}`}
+      </Text>
+      <Text modifiers={[font({ size: 17 }), foregroundStyle(tok.ink)]}>
+        {arabic}
+      </Text>
 
-        <HStack modifiers={[frame({ maxWidth: FILL })]}>
-          <Text modifiers={[font({ size: 9 }), foregroundStyle(tok.muted)]}>
-            {`${sessionTotal} today`}
-          </Text>
-          <Spacer />
-          <Text
-            modifiers={[
-              font({ size: 10, weight: "bold" }),
-              foregroundStyle(tok.accent),
-            ]}
-          >
-            {complete ? "Reset" : "+1"}
-          </Text>
-        </HStack>
-      </VStack>
-    </Button>
+      <Spacer minLength={0} />
+
+      <HStack spacing={0}>
+        <RoundedRectangle
+          cornerRadius={2}
+          modifiers={[
+            frame({ width: filledWidth, height: 4 }),
+            foregroundStyle(tok.accent),
+          ]}
+        />
+        <RoundedRectangle
+          cornerRadius={2}
+          modifiers={[
+            frame({ width: restWidth, height: 4 }),
+            foregroundStyle(tok.hairline),
+          ]}
+        />
+      </HStack>
+
+      <HStack modifiers={[frame({ maxWidth: FILL })]}>
+        <Text modifiers={[font({ size: 9 }), foregroundStyle(tok.muted)]}>
+          {`${sessionTotal} today`}
+        </Text>
+        <Spacer />
+        <Text modifiers={[font({ size: 10 }), foregroundStyle(tok.muted)]}>
+          {complete ? "Done" : "Tap to open"}
+        </Text>
+      </HStack>
+    </VStack>
   );
 }
 
