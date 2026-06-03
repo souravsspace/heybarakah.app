@@ -1,3 +1,10 @@
+// Polar checkout — sandbox while developing (`astro dev`), live in production builds.
+const POLAR_CHECKOUT_PROD =
+  "https://buy.polar.sh/polar_cl_Y5OrCssvZrWKPBmeacK37ZHOtdBgjBd4R1Hw43u4P8Q";
+const POLAR_CHECKOUT_SANDBOX =
+  "https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_z6qSjYtqHLCf3EAjnxdzsXnrNXztHj0Nh7PHb20qNTf/redirect";
+const checkoutUrl = import.meta.env.DEV ? POLAR_CHECKOUT_SANDBOX : POLAR_CHECKOUT_PROD;
+
 export const appConfig = {
   brand: {
     name: "Barakah App",
@@ -52,8 +59,7 @@ export const appConfig = {
     lifetimePrice: "$39.99",
     originalPrice: "$165",
     label: "Early access — lifetime",
-    checkoutUrl:
-      "https://buy.polar.sh/polar_cl_Y5OrCssvZrWKPBmeacK37ZHOtdBgjBd4R1Hw43u4P8Q",
+    checkoutUrl,
   },
 
   routes: {
