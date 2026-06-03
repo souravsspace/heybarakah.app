@@ -24,6 +24,16 @@ export default defineConfig({
         !page.includes("/success") &&
         !page.includes("/llms.txt") &&
         !page.includes("/llms-full.txt"),
+      changefreq: "weekly",
+      priority: 0.7,
+      lastmod: new Date(),
+      serialize: (item) => {
+        if (item.url === "https://heybarakah.app/") {
+          item.changefreq = "daily";
+          item.priority = 1.0;
+        }
+        return item;
+      },
     }),
   ],
   vite: {
