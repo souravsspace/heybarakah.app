@@ -10,6 +10,7 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
   private let temporaryUnlockKey = "appBlocker.temporaryUnlock.v1"
   private let blockConfigStorageKey = "appBlocker.blockConfiguration.v1"
   private let prayerActivityPrefix = "appBlocker.prayer."
+  private let prayerWindowsKey = "appBlocker.prayerWindows.v1"
 
   private let store = ManagedSettingsStore()
   private var sharedDefaults: UserDefaults?
@@ -27,9 +28,32 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
       clearShields()
       return
     }
-    // Temporary-unlock relock path: the earned unlock has expired.
+    // Temporary-unlock relock path: the earned unlock has expired. Only put the
+    // shield back if we're still inside a prayer window — otherwise the window
+    // already ended and apps should stay free until the next salah.
     sharedDefaults?.removeObject(forKey: temporaryUnlockKey)
-    reapplyBlockConfiguration()
+    if isInsidePrayerWindow() {
+      reapplyBlockConfiguration()
+    } else {
+      clearShields()
+    }
+  }
+
+  private func isInsidePrayerWindow() -> Bool {
+    guard
+      let windows = sharedDefaults?.array(forKey: prayerWindowsKey)
+        as? [[String: Int]]
+    else {
+      return false
+    }
+    let now = Calendar.current.dateComponents([.hour, .minute], from: Date())
+    let nowMinutes = (now.hour ?? 0) * 60 + (now.minute ?? 0)
+    return windows.contains { window in
+      guard let start = window["start"], let end = window["end"] else {
+        return false
+      }
+      return nowMinutes >= start && nowMinutes < end
+    }
   }
 
   override func intervalDidStart(for activity: DeviceActivityName) {
