@@ -104,35 +104,6 @@ export const appConfig = {
     },
   ],
 
-  footer: {
-    blurb: "A quiet companion for salah. Show up; not scroll.",
-    groups: [
-      {
-        title: "Barakah",
-        links: [
-          {
-            label: "Early Access (lifetime)",
-            href: "https://buy.polar.sh/polar_cl_Y5OrCssvZrWKPBmeacK37ZHOtdBgjBd4R1Hw43u4P8Q",
-          },
-          { label: "FAQs", href: "#faq" },
-          { label: "Join Waitlist", href: "#waitlist" },
-          { label: "Consent Preferences", href: "#", emphasis: true },
-        ],
-      },
-      {
-        title: "About",
-        links: [
-          { label: "iOS (Coming soon)", href: "#" },
-          { label: "Android (Coming soon)", href: "#" },
-          { label: "Email Us", href: "mailto:hello@heybarakah.app" },
-          { label: "Twitter / X", href: "https://x.com/heybarakah_app" },
-          { label: "Terms", href: "/terms" },
-          { label: "Privacy", href: "/privacy" },
-        ],
-      },
-    ],
-  },
-
   islamic: {
     prayers: ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const,
   },
