@@ -57,17 +57,25 @@ function parseHHmm(time: string) {
 function toBlockWindows(
   windows: { name: PrayerWindow; start: number; end: number }[]
 ): PrayerBlockWindow[] {
-  return windows.map((w) => {
+  const out: PrayerBlockWindow[] = [];
+  for (const w of windows) {
     // DateComponents has no hour 24; clamp a midnight end to 23:59.
     const end = Math.min(w.end, 1439);
-    return {
+    // DeviceActivity rejects intervals shorter than 15 minutes; skip any window
+    // clipped below that (e.g. one clamped at midnight) so startMonitoring can't
+    // throw and silently drop the entire schedule.
+    if (end - w.start < 15) {
+      continue;
+    }
+    out.push({
       endHour: Math.floor(end / 60),
       endMinute: end % 60,
       name: w.name,
       startHour: Math.floor(w.start / 60),
       startMinute: w.start % 60,
-    };
-  });
+    });
+  }
+  return out;
 }
 
 function computeWindows(windows: PrayerWindow[], timings: Timings) {
@@ -94,6 +102,7 @@ export function usePrayerShield() {
   const liveSelection = useQuery(api.lib.shieldSelection.getMine);
   const [cachedSelection, setCachedSelection] =
     useState<NonNullable<ShieldSelection> | null>(null);
+  const [cacheLoaded, setCacheLoaded] = useState(false);
   // `undefined` = still loading → fall back to the last cached server value so
   // the shield can re-schedule after a cold start while offline. A loaded
   // `null` means there genuinely is no selection, so don't use the stale cache.
@@ -101,6 +110,9 @@ export function usePrayerShield() {
     liveSelection === undefined
       ? (cachedSelection ?? undefined)
       : (liveSelection ?? undefined);
+  // Still resolving both sources — acting now would clear a live schedule before
+  // we know the real selection, so callers must wait.
+  const resolving = liveSelection === undefined && !cacheLoaded;
   const { todayPrayerTimes } = usePrayerTimes();
   const appStateRef = useRef(AppState.currentState);
   const lastScheduleKey = useRef<string>("");
@@ -109,7 +121,8 @@ export function usePrayerShield() {
   useEffect(() => {
     loadCachedShieldSelection<NonNullable<ShieldSelection>>()
       .then(setCachedSelection)
-      .catch(() => null);
+      .catch(() => null)
+      .finally(() => setCacheLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -121,6 +134,11 @@ export function usePrayerShield() {
   const sync = useCallback(() => {
     if (Platform.OS !== "ios" && Platform.OS !== "android") {
       setActiveWindow(null);
+      return;
+    }
+    // Don't touch the shield until we actually know the selection — clearing it
+    // mid-load would wipe an active schedule on every cold start.
+    if (resolving) {
       return;
     }
     if (!selection?.enabled || selection.windows.length === 0) {
@@ -199,7 +217,7 @@ export function usePrayerShield() {
         stopMonitoring();
       }
     }
-  }, [selection, todayPrayerTimes]);
+  }, [resolving, selection, todayPrayerTimes]);
 
   useEffect(() => {
     registerPrayerShieldTask().catch(() => null);
