@@ -23,6 +23,10 @@ import {
   registerPrayerShieldTask,
 } from "@/lib/prayer-shield-task";
 import { lockBoundsMinutes } from "@/lib/prayer-window-config";
+import {
+  cacheShieldSelection,
+  loadCachedShieldSelection,
+} from "@/lib/shield-selection-offline";
 import { usePrayerTimes } from "./usePrayerTimes";
 
 interface Timings {
@@ -82,12 +86,37 @@ function computeWindows(windows: PrayerWindow[], timings: Timings) {
   return out.sort((a, b) => a.start - b.start);
 }
 
+type ShieldSelection = ReturnType<
+  typeof useQuery<typeof api.lib.shieldSelection.getMine>
+>;
+
 export function usePrayerShield() {
-  const selection = useQuery(api.lib.shieldSelection.getMine);
+  const liveSelection = useQuery(api.lib.shieldSelection.getMine);
+  const [cachedSelection, setCachedSelection] =
+    useState<NonNullable<ShieldSelection> | null>(null);
+  // `undefined` = still loading → fall back to the last cached server value so
+  // the shield can re-schedule after a cold start while offline. A loaded
+  // `null` means there genuinely is no selection, so don't use the stale cache.
+  const selection =
+    liveSelection === undefined
+      ? (cachedSelection ?? undefined)
+      : (liveSelection ?? undefined);
   const { todayPrayerTimes } = usePrayerTimes();
   const appStateRef = useRef(AppState.currentState);
   const lastScheduleKey = useRef<string>("");
   const [activeWindow, setActiveWindow] = useState<PrayerWindow | null>(null);
+
+  useEffect(() => {
+    loadCachedShieldSelection<NonNullable<ShieldSelection>>()
+      .then(setCachedSelection)
+      .catch(() => null);
+  }, []);
+
+  useEffect(() => {
+    if (liveSelection) {
+      cacheShieldSelection(liveSelection).catch(() => null);
+    }
+  }, [liveSelection]);
 
   const sync = useCallback(() => {
     if (Platform.OS !== "ios" && Platform.OS !== "android") {
