@@ -14,6 +14,8 @@ interface Props {
   type?: "website" | "article";
   canonical?: string;
   includeFaqJsonLd?: boolean;
+  htmlClass?: string;
+  bodyClass?: string;
 }
 
 const {
@@ -25,6 +27,8 @@ const {
   type = "website",
   canonical,
   includeFaqJsonLd = false,
+  htmlClass = "",
+  bodyClass = "",
 } = Astro.props;
 
 const siteUrl = appConfig.seo.siteUrl;
@@ -96,7 +100,7 @@ const faqLd = {
 ---
 
 <!doctype html>
-<html lang={appConfig.seo.language}>
+<html lang={appConfig.seo.language} class={htmlClass}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -155,13 +159,6 @@ const faqLd = {
     <meta name="twitter:image" content={ogImageUrl} />
     <meta name="twitter:image:alt" content={imageAlt} />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;1,400&family=Inter:wght@400;500;600;700&display=swap"
-    />
-
     <script
       type="application/ld+json"
       set:html={JSON.stringify(organizationLd).replace(/<\/script/gi, "<\\/script")}
@@ -183,7 +180,7 @@ const faqLd = {
       )
     }
   </head>
-  <body class="bg-white text-[color:var(--color-fg)]">
+  <body class:list={["text-[color:var(--color-fg)]", bodyClass]}>
     <AnnounceBar />
     <main>
       <slot />
