@@ -43,6 +43,11 @@ import {
   setBlockedApps,
   startMonitoring,
 } from "@/lib/app-blocker";
+import { enqueueMutation } from "@/lib/offline-queue";
+import {
+  UPSERT_ANDROID_KIND,
+  UPSERT_IOS_KIND,
+} from "@/lib/shield-selection-offline";
 
 type ThemeColors = ReturnType<typeof useTheme>["colors"];
 const SHOW_UNLOCK_PREVIEW = __DEV__;
@@ -140,10 +145,12 @@ export default function Locked() {
       } else {
         clearAllBlocks();
       }
-      await upsertIos({
+      const args = {
         iosSelectionData: selectionData,
         iosItemCount: items.length,
-      });
+      };
+      enqueueMutation(UPSERT_IOS_KIND, args).catch(() => undefined);
+      await upsertIos(args);
     },
     [upsertIos]
   );
@@ -197,11 +204,13 @@ export default function Locked() {
                   if (res.remaining === 0) {
                     setIosSelectionLocal("");
                   }
+                  const args = {
+                    iosItemCount: res.remaining,
+                    iosSelectionData: nextSelectionData,
+                  };
+                  enqueueMutation(UPSERT_IOS_KIND, args).catch(() => undefined);
                   try {
-                    await upsertIos({
-                      iosItemCount: res.remaining,
-                      iosSelectionData: nextSelectionData,
-                    });
+                    await upsertIos(args);
                   } catch {
                     // backend sync best-effort
                   }
@@ -260,8 +269,10 @@ export default function Locked() {
         return next;
       });
       setBlockedApps(snapshot);
+      const args = { androidPackageNames: snapshot };
+      enqueueMutation(UPSERT_ANDROID_KIND, args).catch(() => undefined);
       try {
-        await upsertAndroid({ androidPackageNames: snapshot });
+        await upsertAndroid(args);
       } catch {
         // best-effort; last-write-wins resolves later taps
       }
