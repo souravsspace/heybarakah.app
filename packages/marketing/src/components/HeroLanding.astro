@@ -1,0 +1,87 @@
+---
+import { appConfig } from "../app-config";
+---
+
+<section class="hero" data-od-id="hero">
+  <div class="hero-mesh" aria-hidden="true">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <radialGradient id="hD" cx="14%" cy="-4%" r="70%"><stop offset="0" stop-color="#FAF7F0" stop-opacity=".95"/><stop offset=".55" stop-color="#FAF7F0" stop-opacity=".32"/><stop offset="1" stop-color="#FAF7F0" stop-opacity="0"/></radialGradient>
+        <radialGradient id="hTR" cx="100%" cy="-8%" r="62%"><stop offset="0" stop-color="#29603E" stop-opacity=".15"/><stop offset=".5" stop-color="#29603E" stop-opacity=".05"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+        <radialGradient id="hBL" cx="0%" cy="108%" r="60%"><stop offset="0" stop-color="#29603E" stop-opacity=".13"/><stop offset=".5" stop-color="#29603E" stop-opacity=".04"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+      </defs>
+      <rect width="1440" height="900" fill="#F8FAF8"/>
+      <rect width="1440" height="900" fill="url(#hD)"/>
+      <rect width="1440" height="900" fill="url(#hTR)"/>
+      <rect width="1440" height="900" fill="url(#hBL)"/>
+    </svg>
+  </div>
+  <div class="hero-watermark" aria-hidden="true">ب</div>
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow reveal">Prayer lock for Muslims</span>
+      <p class="hero-bismillah reveal d1" lang="ar" dir="rtl">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+      <h1 class="reveal d1">Your phone,<br />on <span class="it">prayer time.</span></h1>
+      <p class="hero-sub reveal d2">Barakah quietly locks distractions during salah. Five times a day, your phone steps aside so you can show up — not scroll.</p>
+      <div class="hero-actions reveal d3">
+        <a class="btn btn-primary" href={appConfig.pricing.checkoutUrl}>Reserve lifetime <span class="ar" aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost" href="#waitlist">Join waitlist</a>
+      </div>
+      <div class="hero-trust reveal d4">
+        <strong>Secure checkout by Polar</strong>
+        <span class="dot"></span>
+        <span>Launch email only</span>
+        <span class="dot"></span>
+        <span>Private prayer settings</span>
+      </div>
+      <div class="hero-intention reveal d4">
+        <span class="intention-seal" lang="ar" dir="rtl">نِيَّة</span>
+        <span>
+          <b>Early access should feel like an amanah.</b>
+          <small>Reserve the founding price now; get first launch access when Barakah opens.</small>
+        </span>
+      </div>
+    </div>
+
+    <div class="device-stage reveal d2">
+      <div class="device">
+        <div class="screen lock-screen-mock">
+          <div class="statusbar" aria-hidden="true">
+            <span>6:08</span>
+            <span class="sb-right">
+              <svg viewBox="0 0 24 14" fill="none"><path d="M1 6.5c4-4 8-4 12 0s8 4 11 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              <span>94%</span>
+            </span>
+          </div>
+          <div class="lock">
+            <div class="lock-halo"></div>
+            <div class="mihrab-glow" aria-hidden="true"></div>
+            <div class="prayer-seal" aria-hidden="true">
+              <span lang="ar" dir="rtl">الله</span>
+            </div>
+            <div class="qibla-rosette" aria-hidden="true">
+              <span lang="ar" dir="rtl">قِبْلَة</span>
+            </div>
+            <div class="lock-body">
+              <div class="lock-eyebrow">Maghrib window</div>
+              <p class="lock-ar" lang="ar" dir="rtl">حَيَّ عَلَى الصَّلَاةِ</p>
+              <div class="lock-return">Apps are resting</div>
+              <div class="lock-count">14:32 until unlock</div>
+              <div class="app-lock-row" aria-label="Locked apps">
+                <span>IG</span><span>YT</span><span>TT</span><span>PS</span>
+              </div>
+            </div>
+            <div class="lock-foot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M7 8h10M6 13h12"/><path d="M8 21h8"/></svg>
+              Qur'an, calls, qibla stay open
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="device-caption reveal d4">
+        <span class="dc-dot"></span>
+        <span class="dc-txt"><b>Maghrib is in.</b> Social, video and games are held — calls and Qur'an stay open.</span>
+      </div>
+    </div>
+  </div>
+</section>

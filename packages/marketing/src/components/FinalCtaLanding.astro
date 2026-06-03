@@ -1,0 +1,42 @@
+---
+import { appConfig } from "../app-config";
+import WaitlistForm from "./WaitlistForm";
+
+const { pricing } = appConfig;
+---
+
+<section class="final" id="waitlist" data-od-id="waitlist">
+  <div class="final-halo" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="ornament on-green reveal" aria-hidden="true"
+      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"
+        ><rect x="5" y="5" width="14" height="14"></rect><rect
+          x="5"
+          y="5"
+          width="14"
+          height="14"
+          transform="rotate(45 12 12)"></rect></svg
+      ></span
+    >
+    <p class="final-bism reveal">Bismillah ir-Rahman ir-Raheem.</p>
+    <h2 class="reveal d1">Show up; <span class="it">not scroll.</span></h2>
+    <p class="reveal d2">
+      Join the waitlist for free, or reserve founding lifetime access today if you already know you
+      want Barakah when it launches.
+    </p>
+    <div class="reveal d3">
+      <WaitlistForm client:visible />
+    </div>
+    <div class="launch-notes reveal d3" aria-label="Launch notes">
+      <span>iPhone and Android launch list</span>
+      <span>One launch email</span>
+      <span>Prayer settings stay private</span>
+    </div>
+    <p class="final-or reveal d3">
+      Ready now? <a href={pricing.checkoutUrl}
+        >Reserve founding lifetime access for {pricing.lifetimePrice}</a
+      >
+    </p>
+    <p class="final-fine reveal d3">No spam. One email at launch. Your address stays with us.</p>
+  </div>
+</section>

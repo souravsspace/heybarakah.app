@@ -16,6 +16,7 @@ import type {
   IOSBlockedItem,
   IOSPermissions,
   PermissionStatus,
+  PrayerBlockWindow,
   RelockResult,
   RemoveBlockedItemResult,
   TemporaryUnlockResult,
@@ -34,6 +35,7 @@ export type {
   IOSPermissions,
   PermissionStatus,
   PluginConfig,
+  PrayerBlockWindow,
   RelockResult,
   RemoveBlockedItemResult,
   ShieldConfig,
@@ -186,6 +188,28 @@ export function clearAllBlocks(): void {
     return;
   }
   NativeModule.clearAllBlocks();
+}
+
+/**
+ * Schedules daily-recurring DeviceActivity windows so the shield engages and
+ * lifts automatically at each prayer time — even when the app is closed. Call
+ * `setBlockConfiguration` first to store the tokens; this only manages the
+ * schedule. Outside every window the shield is cleared so apps stay usable.
+ */
+export function scheduleBlockWindows(windows: PrayerBlockWindow[]): void {
+  if (Platform.OS !== "ios") {
+    return;
+  }
+  NativeModule.scheduleBlockWindows(windows);
+}
+
+/** Stops all prayer-window monitoring and clears the shield (keeps the stored
+ *  token configuration so windows can be re-scheduled later). */
+export function clearScheduledWindows(): void {
+  if (Platform.OS !== "ios") {
+    return;
+  }
+  NativeModule.clearScheduledWindows();
 }
 
 export async function removeBlockedItem(

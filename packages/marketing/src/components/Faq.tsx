@@ -1,66 +1,67 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { appConfig } from "../app-config";
 import { faqItems as items } from "../lib/faq-data";
-import { ChevronDown } from "../lib/icons";
 
 export default function Faq() {
-  const [open, setOpen] = useState<number | null>(0);
+  const [open, setOpen] = useState<number | null>(null);
+  const innerRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   return (
-    <section
-      className="relative border-[color:var(--color-border)] border-b bg-white"
-      id="faq"
-    >
-      <div className="mx-auto max-w-3xl px-6 py-28 md:py-32">
-        <div className="text-center">
-          <p className="t-eyebrow text-[color:var(--color-primary)]">
-            Common questions
-          </p>
-          <h2 className="serif mt-4 font-bold text-5xl text-[color:var(--color-fg)] leading-[1.1] md:text-7xl">
-            Quiet answers.
-          </h2>
+    <section className="sec qo-band" id="faq" data-od-id="faq">
+      <div className="wrap faq-grid">
+        <div>
+          <div className="faq-aside">
+            <span className="eyebrow">FAQ</span>
+            <div className="fa-card" style={{ marginTop: "22px" }}>
+              <h3 className="serif">Still wondering?</h3>
+              <p>
+                The short answers are here. Everything is opt-in, offline-first, and yours to
+                control.
+              </p>
+              <a className="btn btn-primary btn-sm" href={`mailto:${appConfig.contact.email}`}>
+                Email us
+              </a>
+            </div>
+          </div>
         </div>
-
-        <div className="mt-14 overflow-hidden rounded-[4px] border border-[color:var(--color-border)]">
-          {items.map((item, i) => {
+        <div className="faq-list" id="faqList">
+          {items.map((f, i) => {
             const isOpen = open === i;
-            const triggerId = `faq-trigger-${i}`;
-            const panelId = `faq-panel-${i}`;
             return (
-              <div
-                className={
-                  i === 0 ? "" : "border-[color:var(--color-border)] border-t"
-                }
-                key={item.q}
-              >
+              <div className={isOpen ? "faq-item open" : "faq-item"} key={f.q}>
                 <button
-                  aria-controls={panelId}
                   aria-expanded={isOpen}
-                  className="flex w-full items-center justify-between gap-6 bg-white px-6 py-5 text-left transition-colors hover:bg-[color:var(--color-surface-soft)]"
-                  id={triggerId}
+                  className="faq-q"
                   onClick={() => setOpen(isOpen ? null : i)}
                   type="button"
                 >
-                  <span className="font-medium text-[color:var(--color-fg)] text-base leading-6">
-                    {item.q}
+                  <span>{f.q}</span>
+                  <span aria-hidden="true" className="faq-ic">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
                   </span>
-                  <ChevronDown
-                    className={`shrink-0 text-[color:var(--color-fg-muted)] transition-transform duration-200 ${
-                      isOpen ? "rotate-180" : ""
-                    }`}
-                    size={18}
-                  />
                 </button>
                 <div
-                  aria-labelledby={triggerId}
-                  className="grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out"
-                  id={panelId}
-                  role="region"
-                  style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                  className="faq-a"
+                  style={{
+                    maxHeight: isOpen ? `${innerRefs.current[i]?.scrollHeight ?? 0}px` : "0px",
+                  }}
                 >
-                  <div className="min-h-0">
-                    <p className="px-6 pb-6 text-[color:var(--color-fg-muted)] text-sm leading-6">
-                      {item.a}
-                    </p>
+                  <div
+                    className="faq-a-inner"
+                    ref={(el) => {
+                      innerRefs.current[i] = el;
+                    }}
+                  >
+                    {f.a}
                   </div>
                 </div>
               </div>

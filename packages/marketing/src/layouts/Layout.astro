@@ -14,6 +14,8 @@ interface Props {
   type?: "website" | "article";
   canonical?: string;
   includeFaqJsonLd?: boolean;
+  htmlClass?: string;
+  bodyClass?: string;
 }
 
 const {
@@ -25,12 +27,16 @@ const {
   type = "website",
   canonical,
   includeFaqJsonLd = false,
+  htmlClass = "",
+  bodyClass = "",
 } = Astro.props;
 
 const siteUrl = appConfig.seo.siteUrl;
 const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteUrl).toString();
 const ogImageUrl = new URL(image ?? appConfig.seo.ogImage, siteUrl).toString();
-const robotsContent = noindex ? "noindex,nofollow" : "index,follow";
+const robotsContent = noindex
+  ? "noindex,nofollow"
+  : "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1";
 
 const organizationLd = {
   "@context": "https://schema.org",
@@ -41,6 +47,13 @@ const organizationLd = {
   logo: new URL("/barakah-app-icon.png", siteUrl).toString(),
   email: appConfig.contact.email,
   description: appConfig.brand.description,
+  sameAs: [appConfig.social.twitter],
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    email: appConfig.contact.email,
+    availableLanguage: ["English"],
+  },
 };
 
 const websiteLd = {
@@ -61,6 +74,14 @@ const softwareLd = {
   url: siteUrl,
   image: ogImageUrl,
   inLanguage: appConfig.seo.language,
+  featureList: [
+    "Prayer lock at all five salah windows (Fajr, Dhuhr, Asr, Maghrib, Isha)",
+    "Choose which apps go quiet during prayer",
+    "Calls, Qur'an, maps and emergency tools stay open",
+    "Adhan, qibla and prayer times included",
+    "Shafi'i and Hanafi Asr calculation with per-prayer overrides",
+    "Works offline; prayer settings stay on-device",
+  ],
   audience: {
     "@type": "PeopleAudience",
     audienceType: "Muslims observing the five daily prayers",
@@ -96,7 +117,7 @@ const faqLd = {
 ---
 
 <!doctype html>
-<html lang={appConfig.seo.language}>
+<html lang={appConfig.seo.language} class={htmlClass}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -115,6 +136,21 @@ const faqLd = {
     <meta name="apple-mobile-web-app-title" content={appConfig.brand.shortName} />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <link
+      rel="preload"
+      href="/fonts/Inter-VariableFont_opsz_wght.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/LibreBaskerville-Bold.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
 
     <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" type="image/png" href="/barakah-app-icon.png" />
@@ -155,13 +191,6 @@ const faqLd = {
     <meta name="twitter:image" content={ogImageUrl} />
     <meta name="twitter:image:alt" content={imageAlt} />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;1,400&family=Inter:wght@400;500;600;700&display=swap"
-    />
-
     <script
       type="application/ld+json"
       set:html={JSON.stringify(organizationLd).replace(/<\/script/gi, "<\\/script")}
@@ -183,7 +212,7 @@ const faqLd = {
       )
     }
   </head>
-  <body class="bg-white text-[color:var(--color-fg)]">
+  <body class:list={["text-[color:var(--color-fg)]", bodyClass]}>
     <AnnounceBar />
     <main>
       <slot />

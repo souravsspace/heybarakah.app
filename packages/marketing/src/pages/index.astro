@@ -1,24 +1,139 @@
 ---
-import AskScholar from "../components/AskScholar.astro";
-import Checklist from "../components/Checklist.astro";
+import Akhira from "../components/Akhira.astro";
+import AppShowcase from "../components/AppShowcase.astro";
+import EveryMuslim from "../components/EveryMuslim.astro";
 import Faq from "../components/Faq";
-import FinalCta from "../components/FinalCta.astro";
-import Hero from "../components/Hero.astro";
-import PricingCompare from "../components/PricingCompare.astro";
-import Testimonial from "../components/Testimonial.astro";
+import FinalCtaLanding from "../components/FinalCtaLanding.astro";
+import FoundingAmanah from "../components/FoundingAmanah.astro";
+import HeroLanding from "../components/HeroLanding.astro";
+import HowItWorks from "../components/HowItWorks.astro";
+import Nav from "../components/Nav.astro";
+import Pit from "../components/PrayerDay.astro";
+import PricingLanding from "../components/PricingLanding.astro";
+import QuietOpen from "../components/QuietOpen.astro";
+import SalahDetail from "../components/SalahDetail.astro";
+import TestimonialLanding from "../components/TestimonialLanding.astro";
+import Windows from "../components/Windows.astro";
 import Layout from "../layouts/Layout.astro";
+import "../styles/landing.css";
 ---
 
 <Layout
-  title="Barakah — Your phone, on prayer time."
-  description="A quiet prayer-lock app for Muslims. Barakah closes the apps you choose during Fajr, Dhuhr, Asr, Maghrib, and Isha so you show up — not scroll."
+  title="Barakah — Prayer Lock App for Muslims"
+  description="Barakah is a prayer-lock app for Muslims — it quietly closes the apps you choose during Fajr, Dhuhr, Asr, Maghrib & Isha so you show up, not scroll."
+  htmlClass="no-js"
   includeFaqJsonLd
 >
-  <Hero />
-  <Checklist />
-  <Testimonial />
-  <AskScholar />
-  <PricingCompare />
+  <Nav />
+  <a id="top"></a>
+  <HeroLanding />
+  <FoundingAmanah />
+  <Windows />
+  <Pit />
+  <HowItWorks />
+  <QuietOpen />
+  <SalahDetail />
+  <AppShowcase />
+  <TestimonialLanding />
+  <EveryMuslim />
+  <Akhira />
+  <PricingLanding />
   <Faq client:visible />
-  <FinalCta />
+  <FinalCtaLanding />
 </Layout>
+
+<script>
+  import { animate, inView } from "motion";
+
+  /* ---- nav scrolled state ---- */
+  const nav = document.getElementById("nav");
+  const onScroll = () => {
+    nav?.classList.toggle("scrolled", window.scrollY > 12);
+  };
+  onScroll();
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  /* ---- tasbih taps ---- */
+  const bindTasbih = (buttonId: string, countId: string) => {
+    const btn = document.getElementById(buttonId);
+    const out = document.getElementById(countId);
+    if (!(btn && out)) return;
+    btn.addEventListener("click", () => {
+      const next = Number(out.textContent) + 1;
+      out.textContent = String(next > 99 ? 1 : next);
+      btn.animate(
+        [{ transform: "scale(1)" }, { transform: "scale(0.94)" }, { transform: "scale(1)" }],
+        { duration: 220, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }
+      );
+    });
+  };
+  bindTasbih("tasbihTap", "dhikrCount");
+  bindTasbih("miniTasbih", "miniTasbihCount");
+
+  /* ---- motion-driven reveals + akhira bars ---- */
+  const root = document.documentElement;
+  const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  root.classList.remove("no-js");
+  const EASE = [0.16, 1, 0.3, 1] as const;
+
+  const delayFor = (el: Element) =>
+    el.classList.contains("d4")
+      ? 0.32
+      : el.classList.contains("d3")
+        ? 0.24
+        : el.classList.contains("d2")
+          ? 0.16
+          : el.classList.contains("d1")
+            ? 0.08
+            : 0;
+
+  for (const el of document.querySelectorAll<HTMLElement>(".reveal")) {
+    if (RM) {
+      el.classList.add("in");
+      continue;
+    }
+    inView(
+      el,
+      () => {
+        if (el.classList.contains("in")) return;
+        el.classList.add("in");
+        animate(el, { opacity: [0, 1], y: [16, 0] }, { duration: 0.6, delay: delayFor(el), ease: EASE });
+      },
+      { amount: 0.15 }
+    );
+  }
+
+  const chart = document.getElementById("akhiraChart");
+  if (chart) {
+    const bars = Array.from(chart.querySelectorAll<HTMLElement>(".ak-bar"));
+    if (RM) {
+      for (const b of bars) {
+        b.style.height = `${b.dataset.h}px`;
+      }
+    } else {
+      for (const b of bars) {
+        b.style.height = "0px";
+        const l = b.querySelector<HTMLElement>(".ak-logo");
+        if (l) l.style.opacity = "0";
+      }
+      let played = false;
+      inView(
+        chart,
+        () => {
+          if (played) return;
+          played = true;
+          bars.forEach((b, i) => {
+            animate(
+              b,
+              { height: ["0px", `${b.dataset.h}px`] },
+              { duration: 0.7, delay: 0.22 + i * 0.11, ease: EASE }
+            );
+            const logo = b.querySelector<HTMLElement>(".ak-logo");
+            if (logo) animate(logo, { opacity: [0, 1] }, { duration: 0.45, delay: 0.36 + i * 0.11 });
+          });
+        },
+        { amount: 0.4 }
+      );
+    }
+  }
+</script>

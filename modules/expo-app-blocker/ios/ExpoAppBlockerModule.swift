@@ -16,6 +16,8 @@ public class ExpoAppBlockerModule: Module {
   private let blockConfigStorageKey = "appBlocker.blockConfiguration.v1"
   private let temporaryUnlockKey = "appBlocker.temporaryUnlock.v1"
   private let unlockActivityName = "appBlocker.temporaryUnlock"
+  private let prayerActivityPrefix = "appBlocker.prayer."
+  private let prayerWindowsKey = "appBlocker.prayerWindows.v1"
   private let pendingUnlockKey = "appBlocker.pendingUnlock.v1"
   private let minimumTemporaryUnlockMinutes = 1
   private var didLoadPersistedConfig = false
@@ -198,6 +200,25 @@ public class ExpoAppBlockerModule: Module {
         self.userDefaults.removeObject(forKey: self.blockConfigStorageKey)
         self.sharedDefaults?.removeObject(forKey: self.blockConfigStorageKey)
         self.sharedDefaults?.removeObject(forKey: self.temporaryUnlockKey)
+        self.cancelPrayerWindowActivities()
+      }
+    }
+
+    Function("scheduleBlockWindows") { (windows: [[String: Any]]) in
+      self.stateQueue.async {
+        self.ensureLoadedPersistedConfig()
+        self.scheduleBlockWindowsInternal(windows)
+      }
+    }
+
+    Function("clearScheduledWindows") {
+      self.stateQueue.async {
+        self.cancelPrayerWindowActivities()
+        DispatchQueue.main.async {
+          self.store.shield.applications = nil
+          self.store.shield.applicationCategories = nil
+          self.store.shield.webDomains = nil
+        }
       }
     }
 
@@ -585,6 +606,90 @@ public class ExpoAppBlockerModule: Module {
   }
 
   // MARK: - Activity Scheduling
+
+  private func scheduleBlockWindowsInternal(_ windows: [[String: Any]]) {
+    scheduleLock.lock()
+    defer { scheduleLock.unlock() }
+
+    cancelPrayerWindowActivitiesLocked()
+
+    let calendar = Calendar.current
+    let now = Date()
+    let nowMinutes = (calendar.component(.hour, from: now) * 60)
+      + calendar.component(.minute, from: now)
+    var insideAnyWindow = false
+    var persistedWindows: [[String: Int]] = []
+    var parsed: [(name: String, start: DateComponents, end: DateComponents)] = []
+
+    for window in windows {
+      guard
+        let name = window["name"] as? String,
+        let startHour = window["startHour"] as? Int,
+        let startMinute = window["startMinute"] as? Int,
+        let endHour = window["endHour"] as? Int,
+        let endMinute = window["endMinute"] as? Int
+      else { continue }
+
+      let startTotal = startHour * 60 + startMinute
+      let endTotal = endHour * 60 + endMinute
+      if nowMinutes >= startTotal && nowMinutes < endTotal {
+        insideAnyWindow = true
+      }
+      persistedWindows.append(["start": startTotal, "end": endTotal])
+      parsed.append((
+        name: name,
+        start: DateComponents(hour: startHour, minute: startMinute),
+        end: DateComponents(hour: endHour, minute: endMinute)
+      ))
+    }
+
+    // Persist the windows BEFORE monitoring starts so the monitor extension can
+    // always tell whether a temporary-unlock expiry lands inside a prayer window
+    // (reapply) or outside it (stay cleared).
+    sharedDefaults?.set(persistedWindows, forKey: prayerWindowsKey)
+
+    for window in parsed {
+      let schedule = DeviceActivitySchedule(
+        intervalStart: window.start,
+        intervalEnd: window.end,
+        repeats: true
+      )
+      let activityName = DeviceActivityName(prayerActivityPrefix + window.name)
+      do {
+        try activityCenter.startMonitoring(activityName, during: schedule)
+      } catch {
+        print("[AppBlocker] scheduleBlockWindows failed for \(window.name): \(error.localizedDescription)")
+      }
+    }
+
+    // Starting monitoring inside an active interval fires intervalDidStart
+    // immediately, applying the shield. Outside every window, clear any stale
+    // shield from a previous immediate-apply (the token config stays persisted
+    // so the next window can re-apply it).
+    if !insideAnyWindow {
+      DispatchQueue.main.async {
+        self.store.shield.applications = nil
+        self.store.shield.applicationCategories = nil
+        self.store.shield.webDomains = nil
+      }
+    }
+  }
+
+  private func cancelPrayerWindowActivities() {
+    scheduleLock.lock()
+    defer { scheduleLock.unlock() }
+    cancelPrayerWindowActivitiesLocked()
+  }
+
+  private func cancelPrayerWindowActivitiesLocked() {
+    let active = activityCenter.activities.filter {
+      $0.rawValue.hasPrefix(prayerActivityPrefix)
+    }
+    if !active.isEmpty {
+      activityCenter.stopMonitoring(active)
+    }
+    sharedDefaults?.removeObject(forKey: prayerWindowsKey)
+  }
 
   private func scheduleRelockActivity(expirationDate: Date) throws {
     scheduleLock.lock()

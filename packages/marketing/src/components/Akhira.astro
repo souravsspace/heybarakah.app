@@ -1,0 +1,45 @@
+---
+import { appConfig } from "../app-config";
+---
+
+<section class="akhira sec" id="worth" data-od-id="worth">
+  <div class="wrap">
+    <div class="akhira-head reveal">
+      <span class="ornament" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="5" width="14" height="14"/><rect x="5" y="5" width="14" height="14" transform="rotate(45 12 12)"/></svg></span>
+      <span class="eyebrow center">What it's worth</span>
+      <h2>What's your <span class="it">akhira</span> worth?</h2>
+      <p>Barakah is cheaper than Netflix, Prime and your delivery habit — and you pay for it once.</p>
+    </div>
+
+    <div class="akhira-chart reveal d1" id="akhiraChart">
+      <div class="ak-col">
+        <div class="ak-bar-wrap"><div class="ak-bar peach" data-h="170" style="--ak-h:170px"><span class="ak-logo"><img src="/uber-eats-logo.png" alt="Uber Eats"  loading="lazy" decoding="async" /></span></div></div>
+        <div class="ak-meta"><div class="ak-name">Uber Eats</div><div class="ak-price">$9.99/mo</div></div>
+      </div>
+      <div class="ak-col">
+        <div class="ak-bar-wrap"><div class="ak-bar peach" data-h="264" style="--ak-h:264px"><span class="ak-logo"><img src="/netflix-logo.avif" alt="Netflix"  loading="lazy" decoding="async" /></span></div></div>
+        <div class="ak-meta"><div class="ak-name">Netflix</div><div class="ak-price">$15.49/mo</div></div>
+      </div>
+      <div class="ak-col">
+        <div class="ak-bar-wrap"><div class="ak-bar peach" data-h="170" style="--ak-h:170px"><span class="ak-logo"><img src="/doordash-logo.png" alt="DoorDash"  loading="lazy" decoding="async" /></span></div></div>
+        <div class="ak-meta"><div class="ak-name">DoorDash</div><div class="ak-price">$9.99/mo</div></div>
+      </div>
+      <div class="ak-col">
+        <div class="ak-bar-wrap"><div class="ak-bar peach" data-h="256" style="--ak-h:256px"><span class="ak-logo"><img src="/amazon-prime-logo.png" alt="Amazon Prime"  loading="lazy" decoding="async" /></span></div></div>
+        <div class="ak-meta"><div class="ak-name">Prime</div><div class="ak-price">$14.99/mo</div></div>
+      </div>
+      <div class="ak-col barakah">
+        <div class="ak-bar-wrap"><div class="ak-bar sage" data-h="57" style="--ak-h:57px"><span class="ak-logo"><img src="/barakah-app-icon.png" alt="Barakah"  loading="lazy" decoding="async" /></span></div></div>
+        <div class="ak-meta"><div class="ak-name">Barakah</div><div class="ak-price">$3.33/mo*</div></div>
+      </div>
+    </div>
+
+    <div class="akhira-foot reveal d2">
+      <span class="akhira-trial">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        Free trial included
+      </span>
+      <p class="akhira-note">*<b>{appConfig.pricing.lifetimePrice} once</b> — about $3.33 a month across your first year, then nothing. A limited-time launch price for lifetime access. Everyone else keeps billing you, every month, for good.</p>
+    </div>
+  </div>
+</section>

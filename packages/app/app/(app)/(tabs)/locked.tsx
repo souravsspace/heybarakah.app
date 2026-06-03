@@ -43,6 +43,12 @@ import {
   setBlockedApps,
   startMonitoring,
 } from "@/lib/app-blocker";
+import { enqueueMutation } from "@/lib/offline-queue";
+import {
+  UPSERT_ANDROID_KIND,
+  UPSERT_IOS_KIND,
+} from "@/lib/shield-selection-offline";
+import { endAllLockActivities, startLockActivity } from "@/lib/widgets-native";
 
 type ThemeColors = ReturnType<typeof useTheme>["colors"];
 const SHOW_UNLOCK_PREVIEW = __DEV__;
@@ -140,10 +146,12 @@ export default function Locked() {
       } else {
         clearAllBlocks();
       }
-      await upsertIos({
+      const args = {
         iosSelectionData: selectionData,
         iosItemCount: items.length,
-      });
+      };
+      await enqueueMutation(UPSERT_IOS_KIND, args);
+      await upsertIos(args);
     },
     [upsertIos]
   );
@@ -197,11 +205,13 @@ export default function Locked() {
                   if (res.remaining === 0) {
                     setIosSelectionLocal("");
                   }
+                  const args = {
+                    iosItemCount: res.remaining,
+                    iosSelectionData: nextSelectionData,
+                  };
                   try {
-                    await upsertIos({
-                      iosItemCount: res.remaining,
-                      iosSelectionData: nextSelectionData,
-                    });
+                    await enqueueMutation(UPSERT_IOS_KIND, args);
+                    await upsertIos(args);
                   } catch {
                     // backend sync best-effort
                   }
@@ -260,8 +270,10 @@ export default function Locked() {
         return next;
       });
       setBlockedApps(snapshot);
+      const args = { androidPackageNames: snapshot };
       try {
-        await upsertAndroid({ androidPackageNames: snapshot });
+        await enqueueMutation(UPSERT_ANDROID_KIND, args);
+        await upsertAndroid(args);
       } catch {
         // best-effort; last-write-wins resolves later taps
       }
@@ -1008,6 +1020,24 @@ function DevPanel({
     }
   }, [androidPackages, iosItems]);
 
+  // Mocks a 20-minute Asr quiet window so the lock-screen Live Activity and
+  // Dynamic Island can be checked without waiting for a real prayer.
+  const startLA = useCallback(() => {
+    Haptics.selectionAsync().catch(() => undefined);
+    const now = new Date();
+    const end = new Date(now.getTime() + 20 * 60 * 1000);
+    startLockActivity({
+      name: "asr",
+      startISO: now.toISOString(),
+      endISO: end.toISOString(),
+    }).catch((e: unknown) => Alert.alert("Live Activity failed", String(e)));
+  }, []);
+
+  const stopLA = useCallback(() => {
+    Haptics.selectionAsync().catch(() => undefined);
+    endAllLockActivities().catch(() => undefined);
+  }, []);
+
   return (
     <View
       style={{
@@ -1050,6 +1080,54 @@ function DevPanel({
           Activate shield now
         </Text>
       </Pressable>
+      {Platform.OS === "ios" ? (
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Pressable
+            accessibilityLabel="Start Live Activity (dev)"
+            accessibilityRole="button"
+            onPress={startLA}
+            style={({ pressed }) => ({
+              alignItems: "center",
+              borderColor: colors.border,
+              borderRadius: 14,
+              borderWidth: 1,
+              flex: 1,
+              opacity: pressed ? 0.6 : 1,
+              paddingVertical: 12,
+            })}
+          >
+            <Text
+              style={{ color: colors.ink, fontSize: 13, fontWeight: "600" }}
+            >
+              Start Live Activity
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel="Stop Live Activity (dev)"
+            accessibilityRole="button"
+            onPress={stopLA}
+            style={({ pressed }) => ({
+              alignItems: "center",
+              borderColor: colors.border,
+              borderRadius: 14,
+              borderWidth: 1,
+              flex: 1,
+              opacity: pressed ? 0.6 : 1,
+              paddingVertical: 12,
+            })}
+          >
+            <Text
+              style={{
+                color: colors.inkMuted,
+                fontSize: 13,
+                fontWeight: "600",
+              }}
+            >
+              Stop Live Activity
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
       <Pressable
         accessibilityLabel="Preview unlock screen"
         accessibilityRole="button"

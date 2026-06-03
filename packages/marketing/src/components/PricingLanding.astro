@@ -1,0 +1,66 @@
+---
+import { appConfig } from "../app-config";
+---
+
+<section class="sec" id="pricing" data-od-id="pricing" aria-label="Pricing">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <span class="eyebrow center">Pricing</span>
+      <h2>One payment. <span class="it">Then never again.</span></h2>
+      <p>The core lock, adhan, qibla and prayer times are free. Lifetime early access unlocks everything and supports the work — no subscription, no renewal.</p>
+    </div>
+    <div class="price-grid">
+      <div class="plan reveal">
+        <div class="plan-mesh" aria-hidden="true">
+          <svg viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice"><defs><radialGradient id="plM" cx="90%" cy="105%" r="80%"><stop offset="0" stop-color="#29603E" stop-opacity=".55"/><stop offset=".5" stop-color="#29603E" stop-opacity=".18"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient><radialGradient id="plM2" cx="10%" cy="0%" r="60%"><stop offset="0" stop-color="#DDE8E1" stop-opacity=".14"/><stop offset="1" stop-color="#DDE8E1" stop-opacity="0"/></radialGradient></defs><rect width="600" height="600" fill="#0A0A0A"/><rect width="600" height="600" fill="url(#plM)"/><rect width="600" height="600" fill="url(#plM2)"/></svg>
+        </div>
+        <div class="plan-inner">
+          <span class="plan-badge">Early access — lifetime</span>
+          <h3 class="plan-name">Barakah, for good.</h3>
+          <p class="plan-tag">One-time payment · founding launch access</p>
+          <div class="plan-price">
+            <span class="pp-now">{appConfig.pricing.lifetimePrice}</span>
+            <span class="pp-was">{appConfig.pricing.originalPrice}</span>
+          </div>
+          <p class="plan-once">Pay once. Get the launch email. Keep the founding price for life.</p>
+          <ul class="plan-feats">
+            <li><span class="pf-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Prayer lock at all five salah windows</li>
+            <li><span class="pf-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Reciter packs for the adhan</li>
+            <li><span class="pf-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Jumu'ah and Ramadan focus modes</li>
+            <li><span class="pf-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Every future update, included</li>
+          </ul>
+          <div class="plan-pledges" aria-label="Early access trust notes">
+            <span>Secure checkout by Polar</span>
+            <span>Launch email included</span>
+            <span>No renewal</span>
+          </div>
+          <a class="btn btn-light" href={appConfig.pricing.checkoutUrl}>Get lifetime access</a>
+          <p class="plan-fine">iOS &amp; Android are launching soon. Buying now reserves founding lifetime access; joining the waitlist is free.</p>
+        </div>
+      </div>
+
+      <div class="compare reveal d1">
+        <div class="compare-head">
+          <span class="eyebrow">In perspective</span>
+          <h3 class="serif">Less than two months of what you already pay for.</h3>
+        </div>
+        <div class="cmp-card">
+          <span class="cmp-logo"><img src="/netflix-logo.avif" alt="Netflix"  loading="lazy" decoding="async" /></span>
+          <div class="cmp-body">
+            <p class="cmp-desc">A standard Netflix subscription is <b>$19.99 / month</b>. Barakah lifetime costs less than <b>two months</b> of it.</p>
+            <div class="cmp-bar"><span class="seg-b" style="width:33%"></span><span class="seg-c" style="width:67%"></span></div>
+            <div class="cmp-legend"><span class="lg"><span class="sw" style="background:var(--sage)"></span>Barakah, once</span><span class="lg"><span class="sw" style="background:var(--peach)"></span>2 months of Netflix</span></div>
+          </div>
+        </div>
+        <div class="cmp-card">
+          <span class="cmp-logo"><img src="/uber-eats-logo.png" alt="Uber Eats"  loading="lazy" decoding="async" /></span>
+          <div class="cmp-body">
+            <p class="cmp-desc">The average US food-delivery order is <b>$27.30</b>. Barakah lifetime costs less than <b>1.5 takeout orders</b>.</p>
+            <div class="cmp-bar"><span class="seg-b" style="width:49%"></span><span class="seg-c" style="width:51%"></span></div>
+            <div class="cmp-legend"><span class="lg"><span class="sw" style="background:var(--sage)"></span>Barakah, once</span><span class="lg"><span class="sw" style="background:var(--peach)"></span>1.5 takeout orders</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -5,14 +5,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import {
   clearAllBlocks,
+  clearScheduledWindows,
   getBlockConfiguration,
-  isTemporarilyUnlocked,
-  relockApps,
-  setBlockConfiguration,
+  type PrayerBlockWindow,
+  scheduleBlockWindows,
   setBlockedApps,
   startMonitoring,
   stopMonitoring,
-  temporaryUnlock,
 } from "@/lib/app-blocker";
 import {
   cancelShieldNotifications,
@@ -24,6 +23,10 @@ import {
   registerPrayerShieldTask,
 } from "@/lib/prayer-shield-task";
 import { lockBoundsMinutes } from "@/lib/prayer-window-config";
+import {
+  cacheShieldSelection,
+  loadCachedShieldSelection,
+} from "@/lib/shield-selection-offline";
 import { usePrayerTimes } from "./usePrayerTimes";
 
 interface Timings {
@@ -51,6 +54,30 @@ function parseHHmm(time: string) {
   return h * 60 + m;
 }
 
+function toBlockWindows(
+  windows: { name: PrayerWindow; start: number; end: number }[]
+): PrayerBlockWindow[] {
+  const out: PrayerBlockWindow[] = [];
+  for (const w of windows) {
+    // DateComponents has no hour 24; clamp a midnight end to 23:59.
+    const end = Math.min(w.end, 1439);
+    // DeviceActivity rejects intervals shorter than 15 minutes; skip any window
+    // clipped below that (e.g. one clamped at midnight) so startMonitoring can't
+    // throw and silently drop the entire schedule.
+    if (end - w.start < 15) {
+      continue;
+    }
+    out.push({
+      endHour: Math.floor(end / 60),
+      endMinute: end % 60,
+      name: w.name,
+      startHour: Math.floor(w.start / 60),
+      startMinute: w.start % 60,
+    });
+  }
+  return out;
+}
+
 function computeWindows(windows: PrayerWindow[], timings: Timings) {
   const out: { name: PrayerWindow; start: number; end: number }[] = [];
   for (const name of windows) {
@@ -67,22 +94,60 @@ function computeWindows(windows: PrayerWindow[], timings: Timings) {
   return out.sort((a, b) => a.start - b.start);
 }
 
+type ShieldSelection = ReturnType<
+  typeof useQuery<typeof api.lib.shieldSelection.getMine>
+>;
+
 export function usePrayerShield() {
-  const selection = useQuery(api.lib.shieldSelection.getMine);
+  const liveSelection = useQuery(api.lib.shieldSelection.getMine);
+  const [cachedSelection, setCachedSelection] =
+    useState<NonNullable<ShieldSelection> | null>(null);
+  const [cacheLoaded, setCacheLoaded] = useState(false);
+  // `undefined` = still loading → fall back to the last cached server value so
+  // the shield can re-schedule after a cold start while offline. A loaded
+  // `null` means there genuinely is no selection, so don't use the stale cache.
+  const selection =
+    liveSelection === undefined
+      ? (cachedSelection ?? undefined)
+      : (liveSelection ?? undefined);
+  // Still resolving both sources — acting now would clear a live schedule before
+  // we know the real selection, so callers must wait.
+  const resolving = liveSelection === undefined && !cacheLoaded;
   const { todayPrayerTimes } = usePrayerTimes();
   const appStateRef = useRef(AppState.currentState);
   const lastScheduleKey = useRef<string>("");
   const [activeWindow, setActiveWindow] = useState<PrayerWindow | null>(null);
+
+  useEffect(() => {
+    loadCachedShieldSelection<NonNullable<ShieldSelection>>()
+      .then(setCachedSelection)
+      .catch(() => null)
+      .finally(() => setCacheLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    if (liveSelection) {
+      cacheShieldSelection(liveSelection).catch(() => null);
+    }
+  }, [liveSelection]);
 
   const sync = useCallback(() => {
     if (Platform.OS !== "ios" && Platform.OS !== "android") {
       setActiveWindow(null);
       return;
     }
+    // Don't touch the shield until we actually know the selection — clearing it
+    // mid-load would wipe an active schedule on every cold start.
+    if (resolving) {
+      return;
+    }
     if (!selection?.enabled || selection.windows.length === 0) {
       setActiveWindow(null);
       try {
         clearAllBlocks();
+        if (Platform.OS === "ios") {
+          clearScheduledWindows();
+        }
         if (Platform.OS === "android") {
           stopMonitoring();
         }
@@ -100,10 +165,26 @@ export function usePrayerShield() {
     }
 
     const times = todayPrayerTimes.timings as Timings;
-    // Re-scheduling cancels + re-issues every shield notification id. Skip it
-    // unless the windows/times actually changed, so the 30s active-app tick
-    // doesn't churn the iOS 64-notification quota.
-    const scheduleKey = JSON.stringify({ windows: selection.windows, times });
+    const windows = computeWindows(selection.windows, times);
+    if (windows.length === 0) {
+      setActiveWindow(null);
+      return;
+    }
+
+    // Re-scheduling cancels + re-issues every notification id and re-registers
+    // the OS DeviceActivity windows. Skip it unless the windows/times actually
+    // changed, so the 30s active-app tick doesn't churn the iOS quota. The iOS
+    // token count is part of the key so picking apps when none were selected
+    // before (windows unchanged) still triggers the DeviceActivity registration.
+    const iosItemCount =
+      Platform.OS === "ios"
+        ? (getBlockConfiguration()?.blockedItems?.length ?? 0)
+        : 0;
+    const scheduleKey = JSON.stringify({
+      iosItemCount,
+      times,
+      windows: selection.windows,
+    });
     if (scheduleKey !== lastScheduleKey.current) {
       lastScheduleKey.current = scheduleKey;
       scheduleShieldNotifications({
@@ -113,15 +194,13 @@ export function usePrayerShield() {
       persistShieldSchedule({ windows: selection.windows, times }).catch(
         () => null
       );
-    }
-
-    const windows = computeWindows(
-      selection.windows,
-      todayPrayerTimes.timings as Timings
-    );
-    if (windows.length === 0) {
-      setActiveWindow(null);
-      return;
+      // iOS: hand the windows to DeviceActivity so the shield engages/lifts at
+      // each salah even when the app is closed (the foreground tick alone can't
+      // flip the shield in the background). Tokens were already stored by the
+      // picker via setBlockConfiguration; we only manage the schedule here.
+      if (Platform.OS === "ios" && iosItemCount > 0) {
+        scheduleBlockWindows(toBlockWindows(windows));
+      }
     }
 
     const now = new Date();
@@ -129,42 +208,23 @@ export function usePrayerShield() {
     const inside = windows.find((w) => nowMin >= w.start && nowMin < w.end);
     setActiveWindow(inside ? inside.name : null);
 
-    if (Platform.OS === "ios") {
-      const cfg = getBlockConfiguration();
-      const items = cfg?.blockedItems ?? [];
-      if (items.length === 0) {
+    // iOS shield activation is driven entirely by the DeviceActivity schedule
+    // above; nothing to toggle per-tick. Android has no equivalent OS scheduler,
+    // so keep driving its foreground service from the window state.
+    if (Platform.OS === "android") {
+      const packages = selection.androidPackageNames ?? [];
+      if (packages.length === 0) {
         return;
       }
       if (inside) {
-        if (isTemporarilyUnlocked()) {
-          relockApps();
-        }
-        setBlockConfiguration({ blockedItems: items, isActive: true });
-        return;
+        setBlockedApps(packages);
+        startMonitoring();
+      } else {
+        setBlockedApps([]);
+        stopMonitoring();
       }
-      const future = windows.filter((w) => w.start > nowMin);
-      const nextStart = future.length > 0 ? future[0].start : null;
-      const unlockMinutes =
-        nextStart === null
-          ? 24 * 60 - nowMin
-          : Math.max(1, nextStart - nowMin - 1);
-      setBlockConfiguration({ blockedItems: items, isActive: true });
-      temporaryUnlock(unlockMinutes);
-      return;
     }
-
-    const packages = selection.androidPackageNames ?? [];
-    if (packages.length === 0) {
-      return;
-    }
-    if (inside) {
-      setBlockedApps(packages);
-      startMonitoring();
-    } else {
-      setBlockedApps([]);
-      stopMonitoring();
-    }
-  }, [selection, todayPrayerTimes]);
+  }, [resolving, selection, todayPrayerTimes]);
 
   useEffect(() => {
     registerPrayerShieldTask().catch(() => null);

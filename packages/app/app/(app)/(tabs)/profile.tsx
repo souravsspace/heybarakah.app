@@ -23,7 +23,6 @@ import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { authClient } from "@/lib/auth-client";
 import { logOutRevenueCat } from "@/lib/revenuecat";
 import { useSubscription } from "@/lib/subscription";
-import { endAllLockActivities, startLockActivity } from "@/lib/widgets-native";
 
 const SPLIT_RE = /\s+/;
 const NON_ALPHANUM_RE = /[^a-z0-9]/g;
@@ -135,24 +134,6 @@ export default function Profile() {
   const openSettings = () => {
     Haptics.selectionAsync().catch(() => undefined);
     Linking.openSettings().catch(() => undefined);
-  };
-
-  // DEV-only: manually start/stop the lock-screen Live Activity to test it
-  // without waiting for a real prayer window. Mocks a 20-minute Asr window.
-  const devStartLiveActivity = () => {
-    Haptics.selectionAsync().catch(() => undefined);
-    const now = new Date();
-    const end = new Date(now.getTime() + 20 * 60 * 1000);
-    startLockActivity({
-      name: "asr",
-      startISO: now.toISOString(),
-      endISO: end.toISOString(),
-    }).catch((e: unknown) => Alert.alert("Live Activity failed", String(e)));
-  };
-
-  const devStopLiveActivity = () => {
-    Haptics.selectionAsync().catch(() => undefined);
-    endAllLockActivities().catch(() => undefined);
   };
 
   const confirmDelete = () => {
@@ -302,26 +283,6 @@ export default function Profile() {
             />
           </Card>
         </Section>
-
-        {__DEV__ && (
-          <Section colors={colors} delay={270} title="Developer">
-            <Card colors={colors} surface={cardSurface}>
-              <Row
-                colors={colors}
-                onPress={devStartLiveActivity}
-                sf="play.circle.fill"
-                title="Start Live Activity"
-              />
-              <Divider colors={colors} />
-              <Row
-                colors={colors}
-                onPress={devStopLiveActivity}
-                sf="stop.circle.fill"
-                title="Stop Live Activity"
-              />
-            </Card>
-          </Section>
-        )}
 
         <Section colors={colors} delay={280} title="Account Actions">
           <Card colors={colors} surface={cardSurface}>
