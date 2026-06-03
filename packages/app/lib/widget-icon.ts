@@ -10,21 +10,9 @@ const WIDGET_APP_GROUP = "group.com.souravsspace.Barakah.expowidgets";
 const ICON_FILENAME = "barakah-mark-cream.png";
 
 let cachedUri: string | null = null;
+let inFlight: Promise<string | null> | null = null;
 
-/**
- * Copies the cream Barakah mark into the widget extension's shared app-group
- * container and returns its `file://` uri. The Live Activity is rendered by the
- * widget extension process, which can't read the main app bundle, so the shared
- * container is the only place it can load the mark from via `Image`'s `uiImage`.
- * Returns null when the container is unavailable; callers fall back to the moon.
- */
-export async function ensureWidgetIconUri(): Promise<string | null> {
-  if (Platform.OS !== "ios") {
-    return null;
-  }
-  if (cachedUri) {
-    return cachedUri;
-  }
+async function stageWidgetIcon(): Promise<string | null> {
   const container = Paths.appleSharedContainers?.[WIDGET_APP_GROUP];
   if (!container) {
     return null;
@@ -40,4 +28,28 @@ export async function ensureWidgetIconUri(): Promise<string | null> {
   }
   cachedUri = dest.uri;
   return cachedUri;
+}
+
+/**
+ * Copies the cream Barakah mark into the widget extension's shared app-group
+ * container and returns its `file://` uri. The Live Activity is rendered by the
+ * widget extension process, which can't read the main app bundle, so the shared
+ * container is the only place it can load the mark from via `Image`'s `uiImage`.
+ * Returns null when the container is unavailable; callers fall back to the moon.
+ * Concurrent callers share one in-flight staging so the asset isn't copied twice.
+ */
+export function ensureWidgetIconUri(): Promise<string | null> {
+  if (Platform.OS !== "ios") {
+    return Promise.resolve(null);
+  }
+  if (cachedUri) {
+    return Promise.resolve(cachedUri);
+  }
+  if (inFlight) {
+    return inFlight;
+  }
+  inFlight = stageWidgetIcon().finally(() => {
+    inFlight = null;
+  });
+  return inFlight;
 }
