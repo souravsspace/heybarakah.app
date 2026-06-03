@@ -29,5 +29,12 @@
       }
     }
   },
-  "submit": {}
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "apple@souravsspace.dev",
+        "appleTeamId": "CG5WX63737"
+      }
+    }
+  }
 }
