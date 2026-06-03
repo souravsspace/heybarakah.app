@@ -1,15 +1,11 @@
-import { HStack, Image, Spacer, Text, VStack, ZStack } from "@expo/ui/swift-ui";
+import { HStack, Image, Spacer, Text, VStack } from "@expo/ui/swift-ui";
 import {
   aspectRatio,
   background,
-  clipShape,
   font,
   foregroundStyle,
   frame,
-  glassEffect,
   kerning,
-  monospacedDigit,
-  opacity,
   padding,
   resizable,
 } from "@expo/ui/swift-ui/modifiers";
@@ -42,68 +38,56 @@ function LockActivityLayout(
   // with no closure or imports, so module-scope refs would be undefined inside
   // the widget JS runtime and the render would throw.
   const CREAM = "#f5ebdb";
+  const CREAM_DIM = "#d8cbb3";
   const WHITE = "#ffffff";
-  const GREEN = "#29603E";
-  const GREEN_DEEP = "#1f4a2f";
+  const GREEN = "#29603e";
   const CATALOG = {
-    fajr: { title: "Fajr", arabic: "الفجر" },
-    dhuhr: { title: "Dhuhr", arabic: "الظهر" },
-    asr: { title: "Asr", arabic: "العصر" },
-    maghrib: { title: "Maghrib", arabic: "المغرب" },
-    isha: { title: "Isha", arabic: "العشاء" },
+    fajr: { title: "Fajr" },
+    dhuhr: { title: "Dhuhr" },
+    asr: { title: "Asr" },
+    maghrib: { title: "Maghrib" },
+    isha: { title: "Isha" },
   };
 
   const prayer = CATALOG[props.prayerName] ?? CATALOG.fajr;
   const end = new Date(props.endEpoch);
 
-  const span = { lower: new Date(props.startEpoch), upper: end };
+  // The Barakah mark is a tall glyph (~0.62 w/h). Sized per surface; the moon
+  // is the fallback when the mark uri isn't staged yet.
+  const markIcon = (w: number, h: number, moonSize: number) =>
+    props.iconUri ? (
+      <Image
+        modifiers={[
+          resizable(),
+          aspectRatio({ contentMode: "fit" }),
+          frame({ width: w, height: h }),
+        ]}
+        uiImage={props.iconUri}
+      />
+    ) : (
+      <Image color={CREAM} size={moonSize} systemName="moon.stars.fill" />
+    );
 
   return {
-    // Lock-screen banner. Solid green is the base so the surface never renders
-    // transparent (wallpaper bleed) on iOS < 26; the Liquid Glass tint layers on
-    // top where supported for the premium translucent look.
+    // Lock-screen banner. Solid mosque green per the Barakah brand (no glass:
+    // SwiftUI's glassEffect renders clear/transparent on the ActivityKit
+    // lock-screen surface, which read as a blank banner).
     banner: (
       <HStack
         modifiers={[
-          padding({ horizontal: 16, vertical: 13 }),
+          padding({ horizontal: 16, vertical: 14 }),
           frame({ maxWidth: Number.POSITIVE_INFINITY }),
           background(GREEN),
-          clipShape("roundedRectangle", 26),
-          glassEffect({
-            glass: { variant: "regular", tint: GREEN },
-            shape: "roundedRectangle",
-            cornerRadius: 26,
-          }),
         ]}
-        spacing={14}
+        spacing={13}
       >
-        <ZStack
-          modifiers={[
-            frame({ width: 40, height: 40 }),
-            background(GREEN_DEEP),
-            clipShape("circle"),
-          ]}
-        >
-          {props.iconUri ? (
-            <Image
-              modifiers={[
-                resizable(),
-                aspectRatio({ contentMode: "fit" }),
-                frame({ width: 15, height: 23 }),
-              ]}
-              uiImage={props.iconUri}
-            />
-          ) : (
-            <Image color={CREAM} size={19} systemName="moon.stars.fill" />
-          )}
-        </ZStack>
+        {markIcon(15, 24, 20)}
         <VStack alignment="leading" spacing={2}>
           <Text
             modifiers={[
               font({ size: 9, weight: "bold" }),
               kerning(2),
-              foregroundStyle(CREAM),
-              opacity(0.85),
+              foregroundStyle(CREAM_DIM),
             ]}
           >
             QUIET NOW
@@ -118,81 +102,34 @@ function LockActivityLayout(
           </Text>
         </VStack>
         <Spacer />
-        <VStack alignment="trailing" spacing={0}>
-          <Text
-            countsDown={true}
-            modifiers={[
-              font({ size: 23, weight: "medium" }),
-              monospacedDigit(),
-              foregroundStyle(WHITE),
-            ]}
-            timerInterval={span}
-          />
-          <Text
-            modifiers={[
-              font({ size: 9, weight: "medium" }),
-              kerning(1.2),
-              foregroundStyle(CREAM),
-              opacity(0.7),
-            ]}
-          >
-            LEFT
-          </Text>
-        </VStack>
+        <Text
+          date={end}
+          dateStyle="timer"
+          modifiers={[
+            font({ size: 22, weight: "medium" }),
+            foregroundStyle(WHITE),
+          ]}
+        />
       </HStack>
     ),
     // Compact island: clamp the timer width so the countdown can't reserve the
     // wide fixed slot that was pushing the wifi / cellular status icons off.
-    compactLeading: props.iconUri ? (
-      <Image
-        modifiers={[
-          resizable(),
-          aspectRatio({ contentMode: "fit" }),
-          frame({ width: 11, height: 17 }),
-        ]}
-        uiImage={props.iconUri}
-      />
-    ) : (
-      <Image color={CREAM} size={15} systemName="moon.stars.fill" />
-    ),
+    compactLeading: markIcon(11, 17, 15),
     compactTrailing: (
       <Text
-        countsDown={true}
+        date={end}
+        dateStyle="timer"
         modifiers={[
           font({ size: 13, weight: "medium" }),
-          monospacedDigit(),
           foregroundStyle(CREAM),
-          frame({ width: 46, alignment: "trailing" }),
+          frame({ width: 44, alignment: "trailing" }),
         ]}
-        timerInterval={span}
       />
     ),
-    minimal: props.iconUri ? (
-      <Image
-        modifiers={[
-          resizable(),
-          aspectRatio({ contentMode: "fit" }),
-          frame({ width: 11, height: 17 }),
-        ]}
-        uiImage={props.iconUri}
-      />
-    ) : (
-      <Image color={CREAM} size={15} systemName="moon.stars.fill" />
-    ),
+    minimal: markIcon(11, 17, 15),
     expandedLeading: (
       <HStack spacing={8}>
-        {props.iconUri ? (
-          <Image
-            modifiers={[
-              resizable(),
-              aspectRatio({ contentMode: "fit" }),
-              frame({ width: 13, height: 20 }),
-            ]}
-            uiImage={props.iconUri}
-          />
-        ) : (
-          <Image color={CREAM} size={18} systemName="moon.stars.fill" />
-        )}
+        {markIcon(13, 20, 18)}
         <Text
           modifiers={[
             font({ size: 17, weight: "semibold", design: "serif" }),
@@ -205,14 +142,13 @@ function LockActivityLayout(
     ),
     expandedTrailing: (
       <Text
-        countsDown={true}
+        date={end}
+        dateStyle="timer"
         modifiers={[
           font({ size: 17, weight: "medium" }),
-          monospacedDigit(),
           foregroundStyle(CREAM),
           frame({ alignment: "trailing" }),
         ]}
-        timerInterval={span}
       />
     ),
     expandedCenter: (
@@ -220,8 +156,7 @@ function LockActivityLayout(
         modifiers={[
           font({ size: 9, weight: "bold" }),
           kerning(2),
-          foregroundStyle(CREAM),
-          opacity(0.8),
+          foregroundStyle(CREAM_DIM),
         ]}
       >
         QUIET NOW
