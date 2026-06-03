@@ -619,6 +619,7 @@ public class ExpoAppBlockerModule: Module {
       + calendar.component(.minute, from: now)
     var insideAnyWindow = false
     var persistedWindows: [[String: Int]] = []
+    var parsed: [(name: String, start: DateComponents, end: DateComponents)] = []
 
     for window in windows {
       guard
@@ -635,24 +636,31 @@ public class ExpoAppBlockerModule: Module {
         insideAnyWindow = true
       }
       persistedWindows.append(["start": startTotal, "end": endTotal])
+      parsed.append((
+        name: name,
+        start: DateComponents(hour: startHour, minute: startMinute),
+        end: DateComponents(hour: endHour, minute: endMinute)
+      ))
+    }
 
+    // Persist the windows BEFORE monitoring starts so the monitor extension can
+    // always tell whether a temporary-unlock expiry lands inside a prayer window
+    // (reapply) or outside it (stay cleared).
+    sharedDefaults?.set(persistedWindows, forKey: prayerWindowsKey)
+
+    for window in parsed {
       let schedule = DeviceActivitySchedule(
-        intervalStart: DateComponents(hour: startHour, minute: startMinute),
-        intervalEnd: DateComponents(hour: endHour, minute: endMinute),
+        intervalStart: window.start,
+        intervalEnd: window.end,
         repeats: true
       )
-      let activityName = DeviceActivityName(prayerActivityPrefix + name)
+      let activityName = DeviceActivityName(prayerActivityPrefix + window.name)
       do {
         try activityCenter.startMonitoring(activityName, during: schedule)
       } catch {
-        print("[AppBlocker] scheduleBlockWindows failed for \(name): \(error.localizedDescription)")
+        print("[AppBlocker] scheduleBlockWindows failed for \(window.name): \(error.localizedDescription)")
       }
     }
-
-    // Persist the windows so the monitor extension can tell whether a
-    // temporary-unlock expiry lands inside a prayer window (reapply) or outside
-    // it (stay cleared).
-    sharedDefaults?.set(persistedWindows, forKey: prayerWindowsKey)
 
     // Starting monitoring inside an active interval fires intervalDidStart
     // immediately, applying the shield. Outside every window, clear any stale
