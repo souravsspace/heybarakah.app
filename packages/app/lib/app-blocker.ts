@@ -6,6 +6,7 @@ import type {
   IOSBlockConfiguration,
   IOSBlockedItem,
   PermissionStatus,
+  PrayerBlockWindow,
   RelockResult,
   RemoveBlockedItemResult,
   TemporaryUnlockResult,
@@ -22,6 +23,7 @@ export type {
   IOSBlockConfiguration,
   IOSBlockedItem,
   PermissionStatus,
+  PrayerBlockWindow,
   RelockResult,
   RemoveBlockedItemResult,
   TemporaryUnlockResult,
@@ -110,6 +112,20 @@ export function clearAllBlocks(): void {
     return;
   }
   mod.clearAllBlocks();
+}
+
+export function scheduleBlockWindows(windows: PrayerBlockWindow[]): void {
+  if (!mod) {
+    return;
+  }
+  mod.scheduleBlockWindows(windows);
+}
+
+export function clearScheduledWindows(): void {
+  if (!mod) {
+    return;
+  }
+  mod.clearScheduledWindows();
 }
 
 export function removeBlockedItem(
