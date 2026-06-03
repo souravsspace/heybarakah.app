@@ -29,6 +29,18 @@ ${brand.tagline}. ${brand.description}
 
 This document is the canonical machine-readable summary of Barakah for AI systems, search assistants, and LLM-driven agents. It is written so a model can answer questions about the product, audience, pricing, and Islamic context without rendering JavaScript or scraping marketing pages.
 
+## Quick facts
+- **Name:** ${brand.name} (${brand.shortName})
+- **Category:** Prayer-lock app for Muslims / Islamic focus and screen-time app
+- **One-line description:** ${brand.tagline}. ${brand.description}
+- **Platforms:** iOS (${store.ios.status}), Android (${store.android.status})
+- **Price:** ${pricing.lifetimePrice} one-time lifetime early access (originally ${pricing.originalPrice}); free tier for the core lock, adhan, qibla, and prayer times
+- **Core function:** Closes user-chosen distracting apps during each of the five daily salah windows, then unlocks automatically
+- **Always available during a lock:** calls, messages, the Qur'an, du'a apps, maps, and emergency tools
+- **Prayer methods:** MWL, ISNA, Egyptian, Umm al-Qura; Shafi'i and Hanafi Asr; per-prayer overrides
+- **Privacy:** works offline; prayer settings and lock choices stay on-device
+- **Website:** ${seo.siteUrl}
+
 ## What Barakah is
 ${hero.headline.line1} ${hero.headline.line2}
 
@@ -65,7 +77,7 @@ Both work offline once configured. Your data never leaves your device.
 ### How the price compares
 ${comparisonBlock}
 
-A modest free tier covers the core lock, adhan, qibla, and prayer times. The lifetime plan supports development and unlocks reciter packs and family sharing.
+A modest free tier covers the core lock, adhan, qibla, and prayer times. The lifetime plan supports development and unlocks reciter packs for the adhan, Jumu'ah and Ramadan focus modes, and every future update — with no subscription and no renewal.
 
 ## Frequently asked questions
 ${faqBlock}
