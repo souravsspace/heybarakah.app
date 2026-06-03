@@ -23,6 +23,7 @@ import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { authClient } from "@/lib/auth-client";
 import { logOutRevenueCat } from "@/lib/revenuecat";
 import { useSubscription } from "@/lib/subscription";
+import { ensureWidgetIconUri } from "@/lib/widget-icon";
 import { endAllLockActivities, startLockActivity } from "@/lib/widgets-native";
 
 const SPLIT_RE = /\s+/;
@@ -139,14 +140,16 @@ export default function Profile() {
 
   // DEV-only: manually start/stop the lock-screen Live Activity to test it
   // without waiting for a real prayer window. Mocks a 20-minute Asr window.
-  const devStartLiveActivity = () => {
+  const devStartLiveActivity = async () => {
     Haptics.selectionAsync().catch(() => undefined);
     const now = new Date();
     const end = new Date(now.getTime() + 20 * 60 * 1000);
+    const icon = (await ensureWidgetIconUri().catch(() => null)) ?? undefined;
     startLockActivity({
       name: "asr",
       startISO: now.toISOString(),
       endISO: end.toISOString(),
+      iconUri: icon,
     }).catch((e: unknown) => Alert.alert("Live Activity failed", String(e)));
   };
 
