@@ -1,11 +1,14 @@
-import { HStack, Image, Spacer, Text, VStack } from "@expo/ui/swift-ui";
+import { HStack, Image, Spacer, Text, VStack, ZStack } from "@expo/ui/swift-ui";
 import {
   background,
+  clipShape,
   font,
   foregroundStyle,
   frame,
+  glassEffect,
   kerning,
   monospacedDigit,
+  opacity,
   padding,
 } from "@expo/ui/swift-ui/modifiers";
 import {
@@ -33,6 +36,7 @@ function LockActivityLayout(
   const CREAM = "#f5ebdb";
   const WHITE = "#ffffff";
   const GREEN = "#29603E";
+  const GREEN_DEEP = "#1f4a2f";
   const CATALOG = {
     fajr: { title: "Fajr", arabic: "الفجر" },
     dhuhr: { title: "Dhuhr", arabic: "الظهر" },
@@ -44,68 +48,108 @@ function LockActivityLayout(
   const prayer = CATALOG[props.prayerName] ?? CATALOG.fajr;
   const end = new Date(props.endEpoch);
 
+  const span = { lower: new Date(props.startEpoch), upper: end };
+
   return {
+    // Lock-screen banner. Solid green is the base so the surface never renders
+    // transparent (wallpaper bleed) on iOS < 26; the Liquid Glass tint layers on
+    // top where supported for the premium translucent look.
     banner: (
       <HStack
         modifiers={[
-          padding({ horizontal: 16, vertical: 14 }),
+          padding({ horizontal: 16, vertical: 13 }),
           frame({ maxWidth: Number.POSITIVE_INFINITY }),
           background(GREEN),
+          clipShape("roundedRectangle", 26),
+          glassEffect({
+            glass: { variant: "regular", tint: GREEN },
+            shape: "roundedRectangle",
+            cornerRadius: 26,
+          }),
         ]}
-        spacing={12}
+        spacing={14}
       >
-        <Image color={CREAM} size={18} systemName="moon.stars.fill" />
-        <VStack alignment="leading" spacing={1}>
+        <ZStack
+          modifiers={[
+            frame({ width: 40, height: 40 }),
+            background(GREEN_DEEP),
+            clipShape("circle"),
+          ]}
+        >
+          <Image color={CREAM} size={19} systemName="moon.stars.fill" />
+        </ZStack>
+        <VStack alignment="leading" spacing={2}>
           <Text
             modifiers={[
-              font({ size: 8, weight: "bold" }),
-              kerning(1.8),
+              font({ size: 9, weight: "bold" }),
+              kerning(2),
               foregroundStyle(CREAM),
+              opacity(0.85),
             ]}
           >
             QUIET NOW
           </Text>
-          <Text modifiers={[font({ size: 16 }), foregroundStyle(WHITE)]}>
+          <Text
+            modifiers={[
+              font({ size: 20, weight: "semibold", design: "serif" }),
+              foregroundStyle(WHITE),
+            ]}
+          >
             {prayer.title}
           </Text>
         </VStack>
         <Spacer />
-        <Text
-          countsDown={true}
-          modifiers={[
-            font({ size: 16 }),
-            monospacedDigit(),
-            foregroundStyle(WHITE),
-          ]}
-          timerInterval={{ lower: new Date(props.startEpoch), upper: end }}
-        />
+        <VStack alignment="trailing" spacing={0}>
+          <Text
+            countsDown={true}
+            modifiers={[
+              font({ size: 23, weight: "medium" }),
+              monospacedDigit(),
+              foregroundStyle(WHITE),
+            ]}
+            timerInterval={span}
+          />
+          <Text
+            modifiers={[
+              font({ size: 9, weight: "medium" }),
+              kerning(1.2),
+              foregroundStyle(CREAM),
+              opacity(0.7),
+            ]}
+          >
+            LEFT
+          </Text>
+        </VStack>
       </HStack>
     ),
+    // Compact island: clamp the timer width so the countdown can't reserve the
+    // wide fixed slot that was pushing the wifi / cellular status icons off.
     compactLeading: (
-      <Image color={CREAM} size={14} systemName="moon.stars.fill" />
+      <Image color={CREAM} size={15} systemName="moon.stars.fill" />
     ),
     compactTrailing: (
       <Text
         countsDown={true}
         modifiers={[
-          font({ size: 11 }),
+          font({ size: 13, weight: "medium" }),
           monospacedDigit(),
           foregroundStyle(CREAM),
+          frame({ width: 46, alignment: "trailing" }),
         ]}
-        timerInterval={{ lower: new Date(props.startEpoch), upper: end }}
+        timerInterval={span}
       />
     ),
-    minimal: <Image color={CREAM} size={14} systemName="moon.stars.fill" />,
+    minimal: <Image color={CREAM} size={15} systemName="moon.stars.fill" />,
     expandedLeading: (
-      <Image color={CREAM} size={20} systemName="moon.stars.fill" />
-    ),
-    expandedCenter: (
-      <HStack spacing={6}>
-        <Text modifiers={[font({ size: 15 }), foregroundStyle(WHITE)]}>
+      <HStack spacing={8}>
+        <Image color={CREAM} size={18} systemName="moon.stars.fill" />
+        <Text
+          modifiers={[
+            font({ size: 17, weight: "semibold", design: "serif" }),
+            foregroundStyle(WHITE),
+          ]}
+        >
           {prayer.title}
-        </Text>
-        <Text modifiers={[font({ size: 13 }), foregroundStyle(CREAM)]}>
-          {prayer.arabic}
         </Text>
       </HStack>
     ),
@@ -113,12 +157,25 @@ function LockActivityLayout(
       <Text
         countsDown={true}
         modifiers={[
-          font({ size: 15 }),
+          font({ size: 17, weight: "medium" }),
           monospacedDigit(),
           foregroundStyle(CREAM),
+          frame({ alignment: "trailing" }),
         ]}
-        timerInterval={{ lower: new Date(props.startEpoch), upper: end }}
+        timerInterval={span}
       />
+    ),
+    expandedCenter: (
+      <Text
+        modifiers={[
+          font({ size: 9, weight: "bold" }),
+          kerning(2),
+          foregroundStyle(CREAM),
+          opacity(0.8),
+        ]}
+      >
+        QUIET NOW
+      </Text>
     ),
   };
 }
