@@ -113,6 +113,7 @@ export async function reloadTimelines(): Promise<void> {
 
 export function startLockActivity(args: {
   endISO: string;
+  iconUri?: string;
   name: PrayerName;
   startISO: string;
 }): Promise<string> {
