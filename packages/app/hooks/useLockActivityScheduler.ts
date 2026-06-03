@@ -4,7 +4,6 @@ import { AppState } from "react-native";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { dateKey, PRAYER_ORDER, pad2 } from "@/lib/date-utils";
 import { lockBoundsMinutes } from "@/lib/prayer-window-config";
-import { ensureWidgetIconUri } from "@/lib/widget-icon";
 import {
   endAllLockActivities,
   endLockActivity,
@@ -67,7 +66,6 @@ export function useLockActivityScheduler(): void {
   const currentKey = useRef<string | null>(null);
   const inFlight = useRef(false);
   const bootstrapped = useRef(false);
-  const iconUri = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,11 +85,6 @@ export function useLockActivityScheduler(): void {
     async function tickBody(): Promise<void> {
       if (!bootstrapped.current) {
         bootstrapped.current = true;
-        try {
-          iconUri.current = (await ensureWidgetIconUri()) ?? undefined;
-        } catch {
-          // fall back to the SF Symbol moon when the mark can't be staged
-        }
         try {
           await endAllLockActivities();
         } catch {
@@ -135,7 +128,6 @@ export function useLockActivityScheduler(): void {
           name: active.name,
           startISO: localISO(active.start),
           endISO: localISO(active.end),
-          iconUri: iconUri.current,
         });
         if (!cancelled) {
           currentActivityId.current = id;
