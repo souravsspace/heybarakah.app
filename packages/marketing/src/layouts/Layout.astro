@@ -34,7 +34,9 @@ const {
 const siteUrl = appConfig.seo.siteUrl;
 const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteUrl).toString();
 const ogImageUrl = new URL(image ?? appConfig.seo.ogImage, siteUrl).toString();
-const robotsContent = noindex ? "noindex,nofollow" : "index,follow";
+const robotsContent = noindex
+  ? "noindex,nofollow"
+  : "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1";
 
 const organizationLd = {
   "@context": "https://schema.org",
@@ -45,6 +47,13 @@ const organizationLd = {
   logo: new URL("/barakah-app-icon.png", siteUrl).toString(),
   email: appConfig.contact.email,
   description: appConfig.brand.description,
+  sameAs: [appConfig.social.twitter],
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    email: appConfig.contact.email,
+    availableLanguage: ["English"],
+  },
 };
 
 const websiteLd = {
@@ -65,6 +74,14 @@ const softwareLd = {
   url: siteUrl,
   image: ogImageUrl,
   inLanguage: appConfig.seo.language,
+  featureList: [
+    "Prayer lock at all five salah windows (Fajr, Dhuhr, Asr, Maghrib, Isha)",
+    "Choose which apps go quiet during prayer",
+    "Calls, Qur'an, maps and emergency tools stay open",
+    "Adhan, qibla and prayer times included",
+    "Shafi'i and Hanafi Asr calculation with per-prayer overrides",
+    "Works offline; prayer settings stay on-device",
+  ],
   audience: {
     "@type": "PeopleAudience",
     audienceType: "Muslims observing the five daily prayers",
