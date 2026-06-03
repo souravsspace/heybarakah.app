@@ -1,5 +1,6 @@
 import { HStack, Image, Spacer, Text, VStack, ZStack } from "@expo/ui/swift-ui";
 import {
+  aspectRatio,
   background,
   clipShape,
   font,
@@ -10,6 +11,7 @@ import {
   monospacedDigit,
   opacity,
   padding,
+  resizable,
 } from "@expo/ui/swift-ui/modifiers";
 import {
   createLiveActivity,
@@ -20,6 +22,12 @@ import type { PrayerName } from "@/lib/widgets-native";
 
 export interface LockActivityProps {
   endEpoch: number;
+  /**
+   * `file://` uri of the cream Barakah mark in the widget app-group container.
+   * Empty string falls back to the SF Symbol moon (the extension can't load the
+   * mark before the app has copied it into the shared container).
+   */
+  iconUri: string;
   prayerName: PrayerName;
   startEpoch: number;
 }
@@ -76,7 +84,18 @@ function LockActivityLayout(
             clipShape("circle"),
           ]}
         >
-          <Image color={CREAM} size={19} systemName="moon.stars.fill" />
+          {props.iconUri ? (
+            <Image
+              modifiers={[
+                resizable(),
+                aspectRatio({ contentMode: "fit" }),
+                frame({ width: 15, height: 23 }),
+              ]}
+              uiImage={props.iconUri}
+            />
+          ) : (
+            <Image color={CREAM} size={19} systemName="moon.stars.fill" />
+          )}
         </ZStack>
         <VStack alignment="leading" spacing={2}>
           <Text
@@ -124,7 +143,16 @@ function LockActivityLayout(
     ),
     // Compact island: clamp the timer width so the countdown can't reserve the
     // wide fixed slot that was pushing the wifi / cellular status icons off.
-    compactLeading: (
+    compactLeading: props.iconUri ? (
+      <Image
+        modifiers={[
+          resizable(),
+          aspectRatio({ contentMode: "fit" }),
+          frame({ width: 11, height: 17 }),
+        ]}
+        uiImage={props.iconUri}
+      />
+    ) : (
       <Image color={CREAM} size={15} systemName="moon.stars.fill" />
     ),
     compactTrailing: (
@@ -139,10 +167,32 @@ function LockActivityLayout(
         timerInterval={span}
       />
     ),
-    minimal: <Image color={CREAM} size={15} systemName="moon.stars.fill" />,
+    minimal: props.iconUri ? (
+      <Image
+        modifiers={[
+          resizable(),
+          aspectRatio({ contentMode: "fit" }),
+          frame({ width: 11, height: 17 }),
+        ]}
+        uiImage={props.iconUri}
+      />
+    ) : (
+      <Image color={CREAM} size={15} systemName="moon.stars.fill" />
+    ),
     expandedLeading: (
       <HStack spacing={8}>
-        <Image color={CREAM} size={18} systemName="moon.stars.fill" />
+        {props.iconUri ? (
+          <Image
+            modifiers={[
+              resizable(),
+              aspectRatio({ contentMode: "fit" }),
+              frame({ width: 13, height: 20 }),
+            ]}
+            uiImage={props.iconUri}
+          />
+        ) : (
+          <Image color={CREAM} size={18} systemName="moon.stars.fill" />
+        )}
         <Text
           modifiers={[
             font({ size: 17, weight: "semibold", design: "serif" }),
@@ -195,6 +245,7 @@ const activities = new Map<string, LiveActivity<LockActivityProps>>();
 
 export function startLockActivityInstance(args: {
   endISO: string;
+  iconUri?: string;
   name: PrayerName;
   startISO: string;
 }): string {
@@ -203,6 +254,7 @@ export function startLockActivityInstance(args: {
     prayerName: args.name,
     startEpoch: Date.parse(args.startISO),
     endEpoch: Date.parse(args.endISO),
+    iconUri: args.iconUri ?? "",
   });
   activities.set(id, activity);
   return id;
