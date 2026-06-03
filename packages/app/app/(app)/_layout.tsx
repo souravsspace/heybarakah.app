@@ -7,6 +7,7 @@ import { useUser } from "@/contexts/user-context";
 import { useWidgetInteractions } from "@/hooks/use-widget-interactions";
 import { useDailyAyahNotification } from "@/hooks/useDailyAyahNotification";
 import { useLockActivityScheduler } from "@/hooks/useLockActivityScheduler";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { usePrayerShield } from "@/hooks/usePrayerShield";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
 import {
@@ -20,6 +21,7 @@ function AuthedShell() {
   useWidgetSync();
   useLockActivityScheduler();
   useWidgetInteractions();
+  useOfflineSync();
 
   const { activeWindow } = usePrayerShield();
   const router = useRouter();
