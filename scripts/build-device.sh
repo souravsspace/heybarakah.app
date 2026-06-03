@@ -34,7 +34,7 @@ if [[ -z "$UDID" ]]; then
   UDID="$(xcrun xctrace list devices 2>/dev/null \
     | awk '/^== Devices ==/{d=1;next} /^== /{d=0} d' \
     | grep -v "MacBook\|Mac mini\|iMac\|Mac Studio\|Mac Pro" \
-    | grep -oE '[0-9A-F]{8}-[0-9A-F]{16}|[0-9a-f]{8}-[0-9a-f]{16}' \
+    | grep -oiE '[0-9A-F]{8}-[0-9A-F]{16}' \
     | head -n1 || true)"
 fi
 
