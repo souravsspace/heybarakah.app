@@ -55,6 +55,24 @@ export interface IOSBlockConfiguration {
   };
 }
 
+/**
+ * A daily recurring window during which the shield should be active. Used by
+ * `scheduleBlockWindows` to drive iOS DeviceActivity monitoring so the shield
+ * engages at prayer time even when the app is closed.
+ */
+export interface PrayerBlockWindow {
+  /** Local end hour (0-23). */
+  endHour: number;
+  /** Local end minute (0-59). */
+  endMinute: number;
+  /** Stable identifier for the window (e.g. "fajr"). */
+  name: string;
+  /** Local start hour (0-23). */
+  startHour: number;
+  /** Local start minute (0-59). */
+  startMinute: number;
+}
+
 export interface TemporaryUnlockResult {
   expiresAt: number;
   unlocked: boolean;
