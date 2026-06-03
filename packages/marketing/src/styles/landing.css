@@ -6,12 +6,14 @@
 
 @font-face {
   font-family: "Libre Baskerville";
-  src: url("/fonts/LibreBaskerville-Bold.ttf") format("truetype");
+  src: url("/fonts/LibreBaskerville-Bold.woff2") format("woff2"),
+       url("/fonts/LibreBaskerville-Bold.ttf") format("truetype");
   font-weight: 700; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: "Inter";
-  src: url("/fonts/Inter-VariableFont_opsz_wght.ttf") format("truetype");
+  src: url("/fonts/Inter-VariableFont_opsz_wght.woff2") format("woff2"),
+       url("/fonts/Inter-VariableFont_opsz_wght.ttf") format("truetype");
   font-weight: 100 900; font-style: normal; font-display: swap;
 }
 
