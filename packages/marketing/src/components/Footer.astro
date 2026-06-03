@@ -1,50 +1,260 @@
 ---
 import { appConfig } from "../app-config";
 
-const { brand, footer } = appConfig;
-const groups = footer.groups;
+const { brand, contact, social } = appConfig;
 const year = new Date().getFullYear();
 ---
-<footer class="bg-white">
-  <div class="mx-auto max-w-6xl px-6 pt-20 pb-12">
-    <div class="flex flex-col items-start gap-14 md:flex-row md:items-start md:justify-center md:gap-24">
-      <div>
-        <a href="/" aria-label={brand.name} class="inline-block">
-          <span class="serif text-[2rem] leading-none font-bold tracking-tight text-[color:var(--color-fg)]">{brand.name}</span>
-        </a>
-        <p class="mt-5 max-w-[220px] text-xs leading-5 text-[color:var(--color-fg-muted)]">
-          {footer.blurb}
-        </p>
-      </div>
 
-      <div class="grid grid-cols-2 gap-x-16 gap-y-10">
-      {groups.map((g) => (
-        <div>
-          <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-[color:var(--color-fg)]">{g.title}</p>
-          <ul class="mt-5 space-y-3.5">
-            {g.links.map((l) => (
-              <li>
-                <a
-                  href={l.href}
-                  class:list={[
-                    "text-xs leading-5 text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-primary)]",
-                    l.emphasis && "font-bold underline underline-offset-4 text-[color:var(--color-primary)] hover:text-[color:var(--color-primary)]",
-                  ]}
-                >
-                  {l.label}
-                </a>
-              </li>
-            ))}
-          </ul>
+<footer class="footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="#top" aria-label={`${brand.shortName} home`}>
+          <span class="brand-mark">
+            <svg viewBox="0 0 301 488" aria-hidden="true"
+              ><path
+                d="M20.16 485.23c-.29-1.98-.81-8.28-1.17-13.92-2.34-39.11 9.59-69 39.26-97.78 21.24-20.58 42.41-33.69 95.87-59.18 20.8-9.89 36.33-18.02 47.97-25.05 5.86-3.59 7.03-4.03 7.4-3 1.17 3 2.34 21.61 2.34 36.33.07 43.51-10.18 81.23-31.27 115.72-7.03 11.43-14.43 20.87-24.98 31.71-9.96 10.33-20.87 19.85-19.78 17.36 8.86-20.87 16.04-50.68 18.68-77.2 1.25-12.89.66-43.65-.95-45.19-.51-.59-35.38 14.79-49.22 21.68-27.61 13.77-44.9 26.22-57.79 41.75-13.55 16.26-21.24 32.67-24.39 52z"
+              ></path><path
+                d="M.31 424.44C-2.55 369.14 14.3 325.49 52.82 288.21c25.05-24.24 49.22-39.04 108.25-66.28 24.1-11.13 33.76-15.97 46.22-23.14 32.96-18.82 54.42-37.13 69.29-59.03 9.16-13.48 15.97-29.22 17.87-41.6 1.03-6.81 1.17-7.32 2.05-7.32 1.83 0 4.03 22.41 3.44 34.79-1.9 39.7-16.7 71.12-47.39 101.15-21.09 20.65-50.9 38.45-103.93 62.18-42.77 19.12-67.68 33.18-90.16 50.9-9.59 7.62-23.73 21.83-30.1 30.32-11.79 15.75-21.02 36.04-25.49 56.1l-1.98 9.16z"
+              ></path><path
+                d="M132.14 209.99c-.59-1.61-2.56-13.26-3.66-21.75-1.61-11.87-2.27-39.26-1.17-50.98 1.1-11.87 3.15-23.51 5.93-34.35 6.59-25.71 22.12-54.86 41.31-77.64C182.31 16.11 198.65 0 200.26 0h1.54l-1.32 6.45c-4.03 20-3.37 41.75 1.9 64.97 2.56 11.13 4.61 17.94 11.06 36.62 5.71 16.48 12.23 37.79 11.72 38.31-1.1 1.1-18.75-13.7-24.02-20.14-4.61-5.64-10.84-15.38-14.06-22.05-1.46-2.93-2.64-4.54-3.44-4.54-1.17 0-1.32 1.1-1.32 12.3 0 18.6 2.12 37.94 6.52 59.69 2.34 11.57 2.64 10.55-4.25 14.79-10.62 6.37-52 24.98-52.44 23.58z"
+              ></path></svg
+            >
+          </span>
+          <span class="brand-name">{brand.shortName}</span>
+        </a>
+        <p class="foot-blurb">
+          A quiet prayer-lock companion for Muslims. Five times a day, your phone steps aside so
+          salah comes first.
+        </p>
+        <p class="foot-dua" lang="ar" dir="rtl">رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ</p>
+        <div class="foot-social">
+          <a href={social.twitter} aria-label="Twitter / X"
+            ><svg viewBox="0 0 24 24" fill="currentColor"
+              ><path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+              ></path></svg
+            ></a
+          >
+          <a href={`mailto:${contact.email}`} aria-label="Email"
+            ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+              ><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"
+              ></path></svg
+            ></a
+          >
         </div>
-      ))}
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#prayer-day">Prayer day</a></li>
+          <li><a href="#amanah">Amanah pledge</a></li>
+          <li><a href="#features">What it locks</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#faq">FAQs</a></li>
+          <li><a href="#waitlist">Join waitlist</a></li>
+          <li><a href={`mailto:${contact.email}`}>Email us</a></li>
+          <li><a href={social.twitter}>Twitter / X</a></li>
+        </ul>
       </div>
     </div>
-  </div>
-
-  <div class="border-t border-[color:var(--color-border)]">
-    <div class="mx-auto max-w-6xl px-6 py-5 text-center text-xs font-bold text-[color:var(--color-fg-muted)]">
-      Copyright © {year}. {brand.legalName}
+    <div class="foot-bottom">
+      <p>© {year} {brand.name}. All rights reserved.</p>
+      <p class="fb-bism">Built for the ummah, in shāʾ Allah.</p>
     </div>
   </div>
 </footer>
+
+<style>
+  .footer {
+    background:
+      linear-gradient(
+        30deg,
+        rgba(244, 233, 191, 0.05) 12%,
+        transparent 12.5%,
+        transparent 87%,
+        rgba(244, 233, 191, 0.05) 87.5%,
+        rgba(244, 233, 191, 0.05)
+      ),
+      linear-gradient(
+        150deg,
+        rgba(244, 233, 191, 0.05) 12%,
+        transparent 12.5%,
+        transparent 87%,
+        rgba(244, 233, 191, 0.05) 87.5%,
+        rgba(244, 233, 191, 0.05)
+      ),
+      linear-gradient(180deg, #1b3f29, #08160e);
+    background-size:
+      58px 100px,
+      58px 100px,
+      auto;
+    color: #fff;
+    padding: clamp(52px, 7vw, 78px) 0 32px;
+    border-top: 1px solid rgba(244, 233, 191, 0.16);
+    position: relative;
+    overflow: hidden;
+  }
+  .footer::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(244, 233, 191, 0.48), transparent);
+  }
+  .footer .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 64px);
+    position: relative;
+    z-index: 1;
+  }
+  .foot-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.4fr) repeat(2, minmax(150px, 0.55fr));
+    gap: clamp(28px, 6vw, 72px);
+    align-items: start;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+  .foot-brand .brand {
+    margin-bottom: 18px;
+  }
+  .brand-mark {
+    width: 31px;
+    height: 31px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    padding: 5px;
+    background: rgba(244, 233, 191, 0.1);
+    color: #f4e9bf;
+  }
+  .brand-mark svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+    display: block;
+  }
+  .brand-name {
+    font-family: "Libre Baskerville", "Iowan Old Style", Georgia, "Times New Roman", serif;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: #fff;
+  }
+  .foot-blurb {
+    color: rgba(255, 255, 255, 0.64);
+    font-size: 15px;
+    line-height: 1.65;
+    max-width: 390px;
+  }
+  .foot-dua {
+    width: fit-content;
+    margin: 22px 0 0;
+    padding: 11px 15px;
+    color: #f4e9bf;
+    font-family: "Times New Roman", serif;
+    font-size: 20px;
+    line-height: 1.45;
+    border: 1px solid rgba(244, 233, 191, 0.18);
+    border-radius: 16px 16px 8px 8px;
+    background: rgba(255, 255, 255, 0.035);
+  }
+  .foot-social {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .foot-social a {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(244, 233, 191, 0.18);
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.58);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .foot-social a:hover {
+    color: #f4e9bf;
+    border-color: rgba(244, 233, 191, 0.42);
+    background: rgba(244, 233, 191, 0.06);
+  }
+  .foot-social svg {
+    width: 17px;
+    height: 17px;
+    display: block;
+  }
+  .foot-col h4 {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(244, 233, 191, 0.68);
+    margin: 0 0 18px;
+  }
+  .foot-col ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+  }
+  .foot-col a {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 14.5px;
+    transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .foot-col a:hover {
+    color: #f4e9bf;
+  }
+  .foot-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: clamp(36px, 5vw, 56px);
+    padding-top: 24px;
+    border-top: 1px solid rgba(244, 233, 191, 0.14);
+  }
+  .foot-bottom p {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.42);
+    margin: 0;
+  }
+  .foot-bottom .fb-bism {
+    font-family: "Libre Baskerville", "Iowan Old Style", Georgia, "Times New Roman", serif;
+    font-style: normal;
+    color: rgba(244, 233, 191, 0.62);
+  }
+  @media (max-width: 860px) {
+    .foot-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .foot-brand {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (max-width: 560px) {
+    .foot-grid {
+      grid-template-columns: 1fr;
+    }
+    .foot-bottom {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .foot-dua {
+      width: 100%;
+    }
+  }
+</style>
