@@ -1,5 +1,6 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -81,16 +82,18 @@ export default function PersonalDetails() {
     try {
       const manipulated = await manipulateToWebp(asset.uri);
       const uploadUrl = await generateUploadUrl();
-      const blob = await (await fetch(manipulated.uri)).blob();
-      const res = await fetch(uploadUrl, {
-        method: "POST",
+      // RN/Hermes can't build a network Blob from a file:// ArrayBuffer
+      // ("Creating blobs from 'ArrayBuffer' ... are not supported"), so POST the
+      // file bytes directly off disk instead of going through fetch().blob().
+      const res = await FileSystem.uploadAsync(uploadUrl, manipulated.uri, {
+        httpMethod: "POST",
+        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
         headers: { "Content-Type": manipulated.mime },
-        body: blob,
       });
-      if (!res.ok) {
+      if (res.status < 200 || res.status >= 300) {
         throw new Error(`Upload failed: ${res.status}`);
       }
-      const { storageId } = (await res.json()) as { storageId: string };
+      const { storageId } = JSON.parse(res.body) as { storageId: string };
       await setAvatar({ storageId: storageId as never });
       setImageChanged(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
