@@ -69,16 +69,16 @@ export function useWeekLogs(startDate: string): WeekLogs {
 export function useLogPrayer() {
   const mutate = useMutation(api.lib.prayerLogs.logPrayer);
   return useCallback(
-    (args: {
+    async (args: {
       date: string;
       prayer: LoggablePrayerName;
       status: PrayerStatus;
       prayedAt?: number;
     }) => {
-      // Persist a backstop so the log survives an app kill before sync; the
-      // mutation is idempotent (last write per date+prayer), so the replay
-      // re-applying it is harmless.
-      enqueueMutation(LOG_PRAYER_KIND, args).catch(() => undefined);
+      // Persist a backstop (awaited, so it can't be lost to an app kill before
+      // AsyncStorage writes) so the log survives offline; the mutation is
+      // idempotent (last write per date+prayer), so a replay is harmless.
+      await enqueueMutation(LOG_PRAYER_KIND, args);
       return mutate(args);
     },
     [mutate]
@@ -88,8 +88,8 @@ export function useLogPrayer() {
 export function useClearPrayer() {
   const mutate = useMutation(api.lib.prayerLogs.clearPrayer);
   return useCallback(
-    (args: { date: string; prayer: LoggablePrayerName }) => {
-      enqueueMutation(CLEAR_PRAYER_KIND, args).catch(() => undefined);
+    async (args: { date: string; prayer: LoggablePrayerName }) => {
+      await enqueueMutation(CLEAR_PRAYER_KIND, args);
       return mutate(args);
     },
     [mutate]

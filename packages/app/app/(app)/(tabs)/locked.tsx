@@ -149,7 +149,7 @@ export default function Locked() {
         iosSelectionData: selectionData,
         iosItemCount: items.length,
       };
-      enqueueMutation(UPSERT_IOS_KIND, args).catch(() => undefined);
+      await enqueueMutation(UPSERT_IOS_KIND, args);
       await upsertIos(args);
     },
     [upsertIos]
@@ -208,8 +208,8 @@ export default function Locked() {
                     iosItemCount: res.remaining,
                     iosSelectionData: nextSelectionData,
                   };
-                  enqueueMutation(UPSERT_IOS_KIND, args).catch(() => undefined);
                   try {
+                    await enqueueMutation(UPSERT_IOS_KIND, args);
                     await upsertIos(args);
                   } catch {
                     // backend sync best-effort
@@ -270,8 +270,8 @@ export default function Locked() {
       });
       setBlockedApps(snapshot);
       const args = { androidPackageNames: snapshot };
-      enqueueMutation(UPSERT_ANDROID_KIND, args).catch(() => undefined);
       try {
+        await enqueueMutation(UPSERT_ANDROID_KIND, args);
         await upsertAndroid(args);
       } catch {
         // best-effort; last-write-wins resolves later taps
