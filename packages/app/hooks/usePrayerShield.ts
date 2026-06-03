@@ -173,8 +173,18 @@ export function usePrayerShield() {
 
     // Re-scheduling cancels + re-issues every notification id and re-registers
     // the OS DeviceActivity windows. Skip it unless the windows/times actually
-    // changed, so the 30s active-app tick doesn't churn the iOS quota.
-    const scheduleKey = JSON.stringify({ windows: selection.windows, times });
+    // changed, so the 30s active-app tick doesn't churn the iOS quota. The iOS
+    // token count is part of the key so picking apps when none were selected
+    // before (windows unchanged) still triggers the DeviceActivity registration.
+    const iosItemCount =
+      Platform.OS === "ios"
+        ? (getBlockConfiguration()?.blockedItems?.length ?? 0)
+        : 0;
+    const scheduleKey = JSON.stringify({
+      iosItemCount,
+      times,
+      windows: selection.windows,
+    });
     if (scheduleKey !== lastScheduleKey.current) {
       lastScheduleKey.current = scheduleKey;
       scheduleShieldNotifications({
@@ -188,11 +198,8 @@ export function usePrayerShield() {
       // each salah even when the app is closed (the foreground tick alone can't
       // flip the shield in the background). Tokens were already stored by the
       // picker via setBlockConfiguration; we only manage the schedule here.
-      if (Platform.OS === "ios") {
-        const items = getBlockConfiguration()?.blockedItems ?? [];
-        if (items.length > 0) {
-          scheduleBlockWindows(toBlockWindows(windows));
-        }
+      if (Platform.OS === "ios" && iosItemCount > 0) {
+        scheduleBlockWindows(toBlockWindows(windows));
       }
     }
 
