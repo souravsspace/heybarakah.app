@@ -5,14 +5,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import {
   clearAllBlocks,
+  clearScheduledWindows,
   getBlockConfiguration,
-  isTemporarilyUnlocked,
-  relockApps,
-  setBlockConfiguration,
+  type PrayerBlockWindow,
+  scheduleBlockWindows,
   setBlockedApps,
   startMonitoring,
   stopMonitoring,
-  temporaryUnlock,
 } from "@/lib/app-blocker";
 import {
   cancelShieldNotifications,
@@ -51,6 +50,22 @@ function parseHHmm(time: string) {
   return h * 60 + m;
 }
 
+function toBlockWindows(
+  windows: { name: PrayerWindow; start: number; end: number }[]
+): PrayerBlockWindow[] {
+  return windows.map((w) => {
+    // DateComponents has no hour 24; clamp a midnight end to 23:59.
+    const end = Math.min(w.end, 1439);
+    return {
+      endHour: Math.floor(end / 60),
+      endMinute: end % 60,
+      name: w.name,
+      startHour: Math.floor(w.start / 60),
+      startMinute: w.start % 60,
+    };
+  });
+}
+
 function computeWindows(windows: PrayerWindow[], timings: Timings) {
   const out: { name: PrayerWindow; start: number; end: number }[] = [];
   for (const name of windows) {
@@ -83,6 +98,9 @@ export function usePrayerShield() {
       setActiveWindow(null);
       try {
         clearAllBlocks();
+        if (Platform.OS === "ios") {
+          clearScheduledWindows();
+        }
         if (Platform.OS === "android") {
           stopMonitoring();
         }
@@ -100,9 +118,15 @@ export function usePrayerShield() {
     }
 
     const times = todayPrayerTimes.timings as Timings;
-    // Re-scheduling cancels + re-issues every shield notification id. Skip it
-    // unless the windows/times actually changed, so the 30s active-app tick
-    // doesn't churn the iOS 64-notification quota.
+    const windows = computeWindows(selection.windows, times);
+    if (windows.length === 0) {
+      setActiveWindow(null);
+      return;
+    }
+
+    // Re-scheduling cancels + re-issues every notification id and re-registers
+    // the OS DeviceActivity windows. Skip it unless the windows/times actually
+    // changed, so the 30s active-app tick doesn't churn the iOS quota.
     const scheduleKey = JSON.stringify({ windows: selection.windows, times });
     if (scheduleKey !== lastScheduleKey.current) {
       lastScheduleKey.current = scheduleKey;
@@ -113,15 +137,16 @@ export function usePrayerShield() {
       persistShieldSchedule({ windows: selection.windows, times }).catch(
         () => null
       );
-    }
-
-    const windows = computeWindows(
-      selection.windows,
-      todayPrayerTimes.timings as Timings
-    );
-    if (windows.length === 0) {
-      setActiveWindow(null);
-      return;
+      // iOS: hand the windows to DeviceActivity so the shield engages/lifts at
+      // each salah even when the app is closed (the foreground tick alone can't
+      // flip the shield in the background). Tokens were already stored by the
+      // picker via setBlockConfiguration; we only manage the schedule here.
+      if (Platform.OS === "ios") {
+        const items = getBlockConfiguration()?.blockedItems ?? [];
+        if (items.length > 0) {
+          scheduleBlockWindows(toBlockWindows(windows));
+        }
+      }
     }
 
     const now = new Date();
@@ -129,40 +154,21 @@ export function usePrayerShield() {
     const inside = windows.find((w) => nowMin >= w.start && nowMin < w.end);
     setActiveWindow(inside ? inside.name : null);
 
-    if (Platform.OS === "ios") {
-      const cfg = getBlockConfiguration();
-      const items = cfg?.blockedItems ?? [];
-      if (items.length === 0) {
+    // iOS shield activation is driven entirely by the DeviceActivity schedule
+    // above; nothing to toggle per-tick. Android has no equivalent OS scheduler,
+    // so keep driving its foreground service from the window state.
+    if (Platform.OS === "android") {
+      const packages = selection.androidPackageNames ?? [];
+      if (packages.length === 0) {
         return;
       }
       if (inside) {
-        if (isTemporarilyUnlocked()) {
-          relockApps();
-        }
-        setBlockConfiguration({ blockedItems: items, isActive: true });
-        return;
+        setBlockedApps(packages);
+        startMonitoring();
+      } else {
+        setBlockedApps([]);
+        stopMonitoring();
       }
-      const future = windows.filter((w) => w.start > nowMin);
-      const nextStart = future.length > 0 ? future[0].start : null;
-      const unlockMinutes =
-        nextStart === null
-          ? 24 * 60 - nowMin
-          : Math.max(1, nextStart - nowMin - 1);
-      setBlockConfiguration({ blockedItems: items, isActive: true });
-      temporaryUnlock(unlockMinutes);
-      return;
-    }
-
-    const packages = selection.androidPackageNames ?? [];
-    if (packages.length === 0) {
-      return;
-    }
-    if (inside) {
-      setBlockedApps(packages);
-      startMonitoring();
-    } else {
-      setBlockedApps([]);
-      stopMonitoring();
     }
   }, [selection, todayPrayerTimes]);
 
