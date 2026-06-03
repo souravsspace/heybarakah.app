@@ -17,6 +17,7 @@ public class ExpoAppBlockerModule: Module {
   private let temporaryUnlockKey = "appBlocker.temporaryUnlock.v1"
   private let unlockActivityName = "appBlocker.temporaryUnlock"
   private let prayerActivityPrefix = "appBlocker.prayer."
+  private let prayerWindowsKey = "appBlocker.prayerWindows.v1"
   private let pendingUnlockKey = "appBlocker.pendingUnlock.v1"
   private let minimumTemporaryUnlockMinutes = 1
   private var didLoadPersistedConfig = false
@@ -199,6 +200,7 @@ public class ExpoAppBlockerModule: Module {
         self.userDefaults.removeObject(forKey: self.blockConfigStorageKey)
         self.sharedDefaults?.removeObject(forKey: self.blockConfigStorageKey)
         self.sharedDefaults?.removeObject(forKey: self.temporaryUnlockKey)
+        self.cancelPrayerWindowActivities()
       }
     }
 
@@ -616,6 +618,7 @@ public class ExpoAppBlockerModule: Module {
     let nowMinutes = (calendar.component(.hour, from: now) * 60)
       + calendar.component(.minute, from: now)
     var insideAnyWindow = false
+    var persistedWindows: [[String: Int]] = []
 
     for window in windows {
       guard
@@ -631,6 +634,7 @@ public class ExpoAppBlockerModule: Module {
       if nowMinutes >= startTotal && nowMinutes < endTotal {
         insideAnyWindow = true
       }
+      persistedWindows.append(["start": startTotal, "end": endTotal])
 
       let schedule = DeviceActivitySchedule(
         intervalStart: DateComponents(hour: startHour, minute: startMinute),
@@ -644,6 +648,11 @@ public class ExpoAppBlockerModule: Module {
         print("[AppBlocker] scheduleBlockWindows failed for \(name): \(error.localizedDescription)")
       }
     }
+
+    // Persist the windows so the monitor extension can tell whether a
+    // temporary-unlock expiry lands inside a prayer window (reapply) or outside
+    // it (stay cleared).
+    sharedDefaults?.set(persistedWindows, forKey: prayerWindowsKey)
 
     // Starting monitoring inside an active interval fires intervalDidStart
     // immediately, applying the shield. Outside every window, clear any stale
@@ -671,6 +680,7 @@ public class ExpoAppBlockerModule: Module {
     if !active.isEmpty {
       activityCenter.stopMonitoring(active)
     }
+    sharedDefaults?.removeObject(forKey: prayerWindowsKey)
   }
 
   private func scheduleRelockActivity(expirationDate: Date) throws {
