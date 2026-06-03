@@ -91,10 +91,14 @@ export function useOfflineReplay(handlers: Record<string, MutationHandler>) {
         try {
           // Pends while offline; resolves when the server commits.
           await handler(op.args);
-        } catch {
+        } catch (err) {
           // A rejection is a server/validation error (network drops pend, not
           // reject), so retrying can never succeed — drop it to avoid a queue
-          // that is permanently stuck behind one poison op.
+          // that is permanently stuck behind one poison op. Surface it in dev
+          // so a mismatched enqueue payload doesn't vanish silently.
+          if (__DEV__) {
+            console.warn(`[offline-queue] dropping op "${op.kind}":`, err);
+          }
         }
         await removeMutation(op.id);
       }
