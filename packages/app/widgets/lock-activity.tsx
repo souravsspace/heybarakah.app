@@ -1,10 +1,12 @@
 import { HStack, Image, Spacer, Text, VStack } from "@expo/ui/swift-ui";
 import {
+  background,
   font,
   foregroundStyle,
   frame,
   kerning,
   monospacedDigit,
+  padding,
 } from "@expo/ui/swift-ui/modifiers";
 import {
   createLiveActivity,
@@ -30,6 +32,7 @@ function LockActivityLayout(
   // the widget JS runtime and the render would throw.
   const CREAM = "#f5ebdb";
   const WHITE = "#ffffff";
+  const GREEN = "#29603E";
   const CATALOG = {
     fajr: { title: "Fajr", arabic: "الفجر" },
     dhuhr: { title: "Dhuhr", arabic: "الظهر" },
@@ -44,7 +47,11 @@ function LockActivityLayout(
   return {
     banner: (
       <HStack
-        modifiers={[frame({ maxWidth: Number.POSITIVE_INFINITY })]}
+        modifiers={[
+          padding({ horizontal: 16, vertical: 14 }),
+          frame({ maxWidth: Number.POSITIVE_INFINITY }),
+          background(GREEN),
+        ]}
         spacing={12}
       >
         <Image color={CREAM} size={18} systemName="moon.stars.fill" />
@@ -93,34 +100,25 @@ function LockActivityLayout(
       <Image color={CREAM} size={20} systemName="moon.stars.fill" />
     ),
     expandedCenter: (
-      <VStack alignment="leading" spacing={2}>
-        <HStack spacing={8}>
-          <Text modifiers={[font({ size: 18 }), foregroundStyle(WHITE)]}>
-            {prayer.title}
-          </Text>
-          <Text modifiers={[font({ size: 14 }), foregroundStyle(CREAM)]}>
-            {prayer.arabic}
-          </Text>
-        </HStack>
-      </VStack>
+      <HStack spacing={6}>
+        <Text modifiers={[font({ size: 15 }), foregroundStyle(WHITE)]}>
+          {prayer.title}
+        </Text>
+        <Text modifiers={[font({ size: 13 }), foregroundStyle(CREAM)]}>
+          {prayer.arabic}
+        </Text>
+      </HStack>
     ),
     expandedTrailing: (
-      <VStack alignment="trailing" spacing={2}>
-        <Text
-          modifiers={[
-            font({ size: 8, weight: "bold" }),
-            kerning(1.6),
-            foregroundStyle(CREAM),
-          ]}
-        >
-          IN
-        </Text>
-        <Text
-          date={end}
-          dateStyle="timer"
-          modifiers={[font({ size: 20 }), foregroundStyle(WHITE)]}
-        />
-      </VStack>
+      <Text
+        countsDown={true}
+        modifiers={[
+          font({ size: 15 }),
+          monospacedDigit(),
+          foregroundStyle(CREAM),
+        ]}
+        timerInterval={{ lower: new Date(props.startEpoch), upper: end }}
+      />
     ),
   };
 }
