@@ -9,6 +9,7 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
   private let appGroupIdentifier = "group.com.souravsspace.Barakah.shield"
   private let temporaryUnlockKey = "appBlocker.temporaryUnlock.v1"
   private let blockConfigStorageKey = "appBlocker.blockConfiguration.v1"
+  private let prayerActivityPrefix = "appBlocker.prayer."
 
   private let store = ManagedSettingsStore()
   private var sharedDefaults: UserDefaults?
@@ -20,12 +21,30 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
 
   override func intervalDidEnd(for activity: DeviceActivityName) {
     super.intervalDidEnd(for: activity)
+    // Prayer window over → lift the shield so apps are usable until the next
+    // salah. The token config stays persisted for the next window start.
+    if activity.rawValue.hasPrefix(prayerActivityPrefix) {
+      clearShields()
+      return
+    }
+    // Temporary-unlock relock path: the earned unlock has expired.
     sharedDefaults?.removeObject(forKey: temporaryUnlockKey)
     reapplyBlockConfiguration()
   }
 
   override func intervalDidStart(for activity: DeviceActivityName) {
     super.intervalDidStart(for: activity)
+    // Prayer window started → engage the shield from the stored selection, even
+    // if the app is closed.
+    if activity.rawValue.hasPrefix(prayerActivityPrefix) {
+      reapplyBlockConfiguration()
+    }
+  }
+
+  private func clearShields() {
+    store.shield.applications = nil
+    store.shield.applicationCategories = nil
+    store.shield.webDomains = nil
   }
 
   private func reapplyBlockConfiguration() {
