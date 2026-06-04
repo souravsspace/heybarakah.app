@@ -1,12 +1,12 @@
 # Graph Report - heybarakah_app  (2026-06-04)
 
 ## Corpus Check
-- 320 files · ~175,501 words
+- 320 files · ~175,565 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1123 nodes · 1280 edges · 65 communities detected
-- Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 140 edges (avg confidence: 0.8)
+- 1122 nodes · 1278 edges · 65 communities detected
+- Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 139 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -47,7 +47,7 @@
 - [[_COMMUNITY_Community 36|Community 36]]
 - [[_COMMUNITY_Community 37|Community 37]]
 - [[_COMMUNITY_Community 38|Community 38]]
-- [[_COMMUNITY_Community 40|Community 40]]
+- [[_COMMUNITY_Community 39|Community 39]]
 - [[_COMMUNITY_Community 41|Community 41]]
 - [[_COMMUNITY_Community 43|Community 43]]
 - [[_COMMUNITY_Community 44|Community 44]]
@@ -108,108 +108,108 @@
 ## Communities
 
 ### Community 0 - "Community 0"
+Cohesion: 0.05
+Nodes (40): cancelDailyAyahNotification(), forbiddenRanges(), isInRanges(), loadStored(), parseHHmm(), pickRandomMinute(), saveStored(), scheduleDailyAyahNotification() (+32 more)
+
+### Community 1 - "Community 1"
 Cohesion: 0.06
 Nodes (31): handleClose(), enumerateDates(), isInSacredMonth(), addDays(), bool(), buildDateMap(), buildOnTimeDateMap(), codesOfTier() (+23 more)
 
-### Community 1 - "Community 1"
+### Community 2 - "Community 2"
 Cohesion: 0.05
 Nodes (15): applyHighLatitudeRule(), applyPolarCircleResolution(), applyTune(), calculateAdhanJsPrayerDays(), formatHijriDate(), getAdhanJsCalculationParameters(), isAdhanJsSupportedMethod(), pad2() (+7 more)
 
-### Community 2 - "Community 2"
+### Community 3 - "Community 3"
 Cohesion: 0.1
 Nodes (10): Equatable, BlockConfig, BlockedItemInfo, BlockedItemRendering, ExpoAppBlockerModule, ScheduleInfo, async(), Identifiable (+2 more)
 
-### Community 3 - "Community 3"
+### Community 4 - "Community 4"
 Cohesion: 0.07
 Nodes (20): BlockedAppsContentView, BlockedAppsView, BlockedAppsViewModel, BlockedItemType, app, category, webDomain, FamilyActivityPickerView (+12 more)
 
-### Community 4 - "Community 4"
-Cohesion: 0.07
-Nodes (21): getInstalledApps(), getPermissionStatus(), presentFamilyActivityPicker(), relockApps(), removeBlockedItem(), requestPermissions(), setBlockConfiguration(), temporaryUnlock() (+13 more)
-
 ### Community 5 - "Community 5"
-Cohesion: 0.09
-Nodes (23): dateKey(), fmtRangeTime(), pad2(), useDhikr(), activePrayerNow(), fmt12(), fmtRangeTime(), formatDateLine() (+15 more)
+Cohesion: 0.07
+Nodes (22): getInstalledApps(), getPermissionStatus(), presentFamilyActivityPicker(), relockApps(), removeBlockedItem(), requestPermissions(), setBlockConfiguration(), temporaryUnlock() (+14 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.05
 Nodes (37): API Package, Cloudflare Worker, API Deploy Workflow, API Development Workflow, Android Emulator, Authenticated User Snapshot Flow, BarakahWidgets Extension, create-expo-app (+29 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.1
-Nodes (26): cancelDailyAyahNotification(), forbiddenRanges(), isInRanges(), loadStored(), parseHHmm(), pickRandomMinute(), saveStored(), scheduleDailyAyahNotification() (+18 more)
-
-### Community 8 - "Community 8"
 Cohesion: 0.08
 Nodes (14): DiscountPaywall(), Index(), LockPreview(), LoggingOut(), Promise(), SubscriptionProvider(), useSubscription(), readMirror() (+6 more)
 
-### Community 9 - "Community 9"
+### Community 8 - "Community 8"
 Cohesion: 0.13
 Nodes (11): clampS(), getSlot(), ImageSlot, load(), save(), setSlot(), toDataUrl(), temporaryUnlock() (+3 more)
 
-### Community 10 - "Community 10"
+### Community 9 - "Community 9"
 Cohesion: 0.08
 Nodes (2): AppBlockerPrefs, configureAndroid()
 
-### Community 11 - "Community 11"
+### Community 10 - "Community 10"
 Cohesion: 0.13
 Nodes (19): buildAlAdhanQuery(), createAlAdhanCalendarUrl(), fetchAlAdhanCalendarByCoordinates(), fetchAlAdhanTimingsByCoordinates(), normalizeAlAdhanCalendarResponse(), normalizeAlAdhanDay(), parseAlAdhanDateToDateKey(), parseResponseJson() (+11 more)
 
-### Community 12 - "Community 12"
+### Community 11 - "Community 11"
 Cohesion: 0.09
 Nodes (2): getPermissionStatus(), requestPermissions()
+
+### Community 12 - "Community 12"
+Cohesion: 0.1
+Nodes (11): AchievementCard(), tierAccent(), AnimatedSplash(), SettingsLayout(), ParallaxScrollView(), ThemeProvider(), useTheme(), ThemedText() (+3 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.16
 Nodes (8): DeviceActivityMonitor, AppBlockerDeviceActivityMonitor, MonitorBlockConfig, MonitorBlockedItemInfo, MonitorBlockedItemType, app, category, webDomain
 
 ### Community 14 - "Community 14"
-Cohesion: 0.1
-Nodes (11): AchievementCard(), tierAccent(), AnimatedSplash(), SettingsLayout(), ParallaxScrollView(), ThemeProvider(), useTheme(), ThemedText() (+3 more)
-
-### Community 15 - "Community 15"
 Cohesion: 0.14
 Nodes (7): AppDelegate, ReactNativeDelegate, ExpoAppDelegate, ExpoReactNativeFactoryDelegate, url(), ShieldActionDelegate, ShieldActionExtension
 
-### Community 16 - "Community 16"
+### Community 15 - "Community 15"
 Cohesion: 0.12
 Nodes (18): Contact Information, https://heybarakah.app, Allow AI Search Crawlers so Barakah Can Be Cited, AI Search Crawlers, anthropic-ai, Applebot-Extended, Barakah robots.txt, CCBot (+10 more)
 
+### Community 16 - "Community 16"
+Cohesion: 0.24
+Nodes (10): confirmDelete(), go(), handleLogout(), openMail(), openSettings(), openUrl(), manage(), openFamilyHelp() (+2 more)
+
 ### Community 17 - "Community 17"
-Cohesion: 0.22
-Nodes (11): confirmDelete(), go(), handleLogout(), openMail(), openSettings(), openUrl(), performLogout(), manage() (+3 more)
-
-### Community 18 - "Community 18"
-Cohesion: 0.21
-Nodes (11): log(), createResetPlan(), isProductionDeployment(), listComponents(), listTables(), main(), parseConvexComponentNames(), parseConvexDataTables() (+3 more)
-
-### Community 19 - "Community 19"
 Cohesion: 0.18
 Nodes (7): addFromGps(), allow(), skip(), getCurrentLocation(), requestLocationPermission(), requestNotificationPermission(), reverseGeocodeLocation()
 
-### Community 20 - "Community 20"
+### Community 18 - "Community 18"
 Cohesion: 0.24
 Nodes (12): configureRevenueCatAnonymous(), getApiKey(), getCustomerInfo(), getOfferings(), hasRevenueCatApiKey(), isRevenueCatSupported(), linkRevenueCatToUser(), logOutRevenueCat() (+4 more)
 
-### Community 21 - "Community 21"
+### Community 19 - "Community 19"
 Cohesion: 0.13
 Nodes (1): AppBlockerService
 
-### Community 22 - "Community 22"
+### Community 20 - "Community 20"
 Cohesion: 0.15
 Nodes (14): Barakah App, Prayer Times, Adhan, Qibla, and Core Prayer Lock, Family Sharing, Free Plan, All Future Updates, Lifetime Early Access Plan, $39.99 USD One-Time Price, iOS and Android Coming Soon (+6 more)
 
-### Community 23 - "Community 23"
+### Community 21 - "Community 21"
 Cohesion: 0.28
 Nodes (11): AppScaffold(), AreaChart(), DhikrScreen(), HomeScreen(), LockedScreen(), PermissionRow(), PrayerMatrix(), PrayerRow() (+3 more)
 
-### Community 24 - "Community 24"
+### Community 22 - "Community 22"
+Cohesion: 0.39
+Nodes (9): activePrayerNow(), fmt12(), fmtRangeTime(), formatDateLine(), formatHijri(), pad(), todayKey(), useCountdown() (+1 more)
+
+### Community 23 - "Community 23"
 Cohesion: 0.17
 Nodes (1): OverlayManager
 
-### Community 25 - "Community 25"
+### Community 24 - "Community 24"
 Cohesion: 0.22
 Nodes (7): buildOTPVerificationEmail(), requireEnv(), sendEmail(), sendOTPVerification(), formatCode(), renderVerifyOtpEmail(), VerifyOtpEmail()
+
+### Community 25 - "Community 25"
+Cohesion: 0.33
+Nodes (10): createResetPlan(), isProductionDeployment(), listComponents(), listTables(), main(), parseConvexComponentNames(), parseConvexDataTables(), parseResetDbArgs() (+2 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.31
@@ -252,12 +252,12 @@ Cohesion: 0.6
 Nodes (5): booleanField(), parseRevenueCatEntitlementPayload(), parseRevenueCatPeriodType(), parseRevenueCatStore(), stringField()
 
 ### Community 38 - "Community 38"
-Cohesion: 0.33
-Nodes (1): MainActivity
-
-### Community 40 - "Community 40"
 Cohesion: 0.4
 Nodes (3): formatMoney(), purchaseEmail(), renderPurchaseEmail()
+
+### Community 39 - "Community 39"
+Cohesion: 0.33
+Nodes (1): MainActivity
 
 ### Community 41 - "Community 41"
 Cohesion: 0.6
@@ -370,17 +370,17 @@ Nodes (1): ExpoAppBlockerConfig
 ## Knowledge Gaps
 - **62 isolated node(s):** `app`, `category`, `webDomain`, `StreakWidgetProvider`, `SalahArcWidgetProvider` (+57 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 10`** (26 nodes): `AppBlockerPrefs`, `.getBlockedPackages()`, `.getNotificationText()`, `.getNotificationTitle()`, `.getOverlayBackgroundColor()`, `.getOverlayFloat()`, `.getOverlayIconBottomMargin()`, `.getOverlayIconSize()`, `.getOverlayPadding()`, `.getOverlayShowSpinner()`, `.getOverlaySpinnerColor()`, `.getOverlaySpinnerSize()`, `.getOverlaySpinnerTopMargin()`, `.getOverlayText()`, `.getOverlayTextColor()`, `.getOverlayTextFontSize()`, `.getOverlayTitle()`, `.getOverlayTitleBold()`, `.getOverlayTitleBottomMargin()`, `.getOverlayTitleColor()`, `.getOverlayTitleFontSize()`, `.putNullableFloat()`, `.setAndroidConfig()`, `.setBlockedPackages()`, `configureAndroid()`, `AppBlockerPrefs.kt`
+- **Thin community `Community 9`** (26 nodes): `AppBlockerPrefs`, `.getBlockedPackages()`, `.getNotificationText()`, `.getNotificationTitle()`, `.getOverlayBackgroundColor()`, `.getOverlayFloat()`, `.getOverlayIconBottomMargin()`, `.getOverlayIconSize()`, `.getOverlayPadding()`, `.getOverlayShowSpinner()`, `.getOverlaySpinnerColor()`, `.getOverlaySpinnerSize()`, `.getOverlaySpinnerTopMargin()`, `.getOverlayText()`, `.getOverlayTextColor()`, `.getOverlayTextFontSize()`, `.getOverlayTitle()`, `.getOverlayTitleBold()`, `.getOverlayTitleBottomMargin()`, `.getOverlayTitleColor()`, `.getOverlayTitleFontSize()`, `.putNullableFloat()`, `.setAndroidConfig()`, `.setBlockedPackages()`, `configureAndroid()`, `AppBlockerPrefs.kt`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 12`** (23 nodes): `addPendingUnlockListener()`, `BlockedAppsNativeList()`, `checkAndClearPendingUnlock()`, `clearAllBlocks()`, `clearScheduledWindows()`, `FamilyActivityPickerView()`, `getBlockConfiguration()`, `getBlockedApps()`, `getInstalledApps()`, `getPermissionStatus()`, `getRemainingUnlockTime()`, `isAppBlocked()`, `isTemporarilyUnlocked()`, `openOverlaySettings()`, `openUsageStatsSettings()`, `presentFamilyActivityPicker()`, `relockApps()`, `removeBlockedItem()`, `requestPermissions()`, `scheduleBlockWindows()`, `setBlockConfiguration()`, `setBlockedApps()`, `index.ts`
+- **Thin community `Community 11`** (23 nodes): `addPendingUnlockListener()`, `BlockedAppsNativeList()`, `checkAndClearPendingUnlock()`, `clearAllBlocks()`, `clearScheduledWindows()`, `FamilyActivityPickerView()`, `getBlockConfiguration()`, `getBlockedApps()`, `getInstalledApps()`, `getPermissionStatus()`, `getRemainingUnlockTime()`, `isAppBlocked()`, `isTemporarilyUnlocked()`, `openOverlaySettings()`, `openUsageStatsSettings()`, `presentFamilyActivityPicker()`, `relockApps()`, `removeBlockedItem()`, `requestPermissions()`, `scheduleBlockWindows()`, `setBlockConfiguration()`, `setBlockedApps()`, `index.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 21`** (15 nodes): `AppBlockerService`, `.buildNotification()`, `.createChannelsIfNeeded()`, `.getAppScheme()`, `.getCurrentForegroundPackage()`, `.handleForegroundChange()`, `.onBind()`, `.onCreate()`, `.onDestroy()`, `.onStartCommand()`, `.showBlockedNotification()`, `run()`, `start()`, `stop()`, `AppBlockerService.kt`
+- **Thin community `Community 19`** (15 nodes): `AppBlockerService`, `.buildNotification()`, `.createChannelsIfNeeded()`, `.getAppScheme()`, `.getCurrentForegroundPackage()`, `.handleForegroundChange()`, `.onBind()`, `.onCreate()`, `.onDestroy()`, `.onStartCommand()`, `.showBlockedNotification()`, `run()`, `start()`, `stop()`, `AppBlockerService.kt`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 24`** (12 nodes): `OverlayManager.kt`, `OverlayManager`, `.bringAppToFront()`, `.buildLayoutParams()`, `.buildOverlayView()`, `.getAppScheme()`, `.hide()`, `.navigateToApp()`, `.parseColorOrDefault()`, `.parseColorOrNull()`, `.resolveAppName()`, `.show()`
+- **Thin community `Community 23`** (12 nodes): `OverlayManager.kt`, `OverlayManager`, `.bringAppToFront()`, `.buildLayoutParams()`, `.buildOverlayView()`, `.getAppScheme()`, `.hide()`, `.navigateToApp()`, `.parseColorOrDefault()`, `.parseColorOrNull()`, `.resolveAppName()`, `.show()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 32`** (8 nodes): `ShieldConfigurationExtension.swift`, `ShieldConfigurationExtension.swift`, `ShieldConfigurationDataSource`, `ShieldConfigurationExtension`, `.configuration()`, `.getBlockedAppCount()`, `.isTemporarilyUnlocked()`, `.makeConfig()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 38`** (6 nodes): `MainActivity`, `.createReactActivityDelegate()`, `.getMainComponentName()`, `.invokeDefaultOnBackPressed()`, `.onCreate()`, `MainActivity.kt`
+- **Thin community `Community 39`** (6 nodes): `MainActivity`, `.createReactActivityDelegate()`, `.getMainComponentName()`, `.invokeDefaultOnBackPressed()`, `.onCreate()`, `MainActivity.kt`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 46`** (4 nodes): `locked.tsx`, `locked.tsx`, `capitalize()`, `fmt12()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -432,17 +432,17 @@ Nodes (1): ExpoAppBlockerConfig
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `dateSeed()` connect `Community 7` to `Community 3`?**
-  _High betweenness centrality (0.070) - this node is a cross-community bridge._
-- **Why does `resolve()` connect `Community 4` to `Community 9`, `Community 2`, `Community 3`?**
-  _High betweenness centrality (0.067) - this node is a cross-community bridge._
-- **Why does `scheduleDailyAyahNotification()` connect `Community 7` to `Community 5`?**
-  _High betweenness centrality (0.050) - this node is a cross-community bridge._
+- **Why does `dateSeed()` connect `Community 0` to `Community 4`?**
+  _High betweenness centrality (0.072) - this node is a cross-community bridge._
+- **Why does `resolve()` connect `Community 5` to `Community 8`, `Community 3`, `Community 4`?**
+  _High betweenness centrality (0.063) - this node is a cross-community bridge._
 - **Are the 14 inferred relationships involving `resolve()` (e.g. with `getPermissionStatus()` and `requestPermissions()`) actually correct?**
   _`resolve()` has 14 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `app`, `category`, `webDomain` to the rest of the system?**
   _62 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
+  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
+- **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
