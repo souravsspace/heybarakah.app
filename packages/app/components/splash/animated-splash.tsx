@@ -6,6 +6,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
+  withRepeat,
   withSequence,
   withTiming,
 } from "react-native-reanimated";
@@ -42,7 +43,7 @@ const STROKE_DARK = "#F5EBDB";
 const UNDERLINE_LIGHT = "#29603E";
 const UNDERLINE_DARK = "#F5EBDB";
 
-export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
+export function AnimatedSplash({ onFinish }: { onFinish?: () => void }) {
   const meshOpacity = useSharedValue(0);
   const markOpacity = useSharedValue(0);
   const markTranslateY = useSharedValue(8);
@@ -57,6 +58,48 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
   useEffect(() => {
     const easeOutCubic = Easing.out(Easing.cubic);
     const easeOutQuad = Easing.out(Easing.quad);
+
+    markTranslateY.value = withDelay(
+      MARK_DELAY,
+      withTiming(0, { duration: MARK_IN, easing: easeOutCubic })
+    );
+
+    // Loader mode (no onFinish): play the entrance, then hold with a calm
+    // breath and never exit, so the splash doubles as the app-wide loading
+    // state instead of a separate component.
+    if (!onFinish) {
+      meshOpacity.value = withTiming(1, {
+        duration: MESH_IN,
+        easing: easeOutCubic,
+      });
+      markOpacity.value = withDelay(
+        MARK_DELAY,
+        withSequence(
+          withTiming(1, { duration: MARK_IN, easing: easeOutQuad }),
+          withRepeat(
+            withSequence(
+              withTiming(0.68, { duration: 1400, easing: easeOutQuad }),
+              withTiming(1, { duration: 1400, easing: easeOutQuad })
+            ),
+            -1,
+            false
+          )
+        )
+      );
+      underlineWidth.value = withDelay(
+        UNDERLINE_DELAY,
+        withTiming(UNDERLINE_MAX_WIDTH, {
+          duration: UNDERLINE_IN,
+          easing: easeOutCubic,
+        })
+      );
+      underlineOpacity.value = withDelay(
+        UNDERLINE_DELAY,
+        withTiming(1, { duration: UNDERLINE_IN, easing: easeOutQuad })
+      );
+      return;
+    }
+
     const easeInCubic = Easing.in(Easing.cubic);
 
     const meshHold = EXIT_AT - MESH_IN;
@@ -71,10 +114,6 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
       )
     );
 
-    markTranslateY.value = withDelay(
-      MARK_DELAY,
-      withTiming(0, { duration: MARK_IN, easing: easeOutCubic })
-    );
     markOpacity.value = withDelay(
       MARK_DELAY,
       withSequence(
