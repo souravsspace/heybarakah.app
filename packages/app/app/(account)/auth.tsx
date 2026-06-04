@@ -1,4 +1,6 @@
+import { api } from "@barakah/core/convex/_generated/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "convex/react";
 import { selectionAsync } from "expo-haptics";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,6 +19,10 @@ import { Headline } from "@/components/onboarding/headline";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { LINKS } from "@/constants/links";
+import {
+  POST_PURCHASE_ENTRY,
+  POST_PURCHASE_FLOW,
+} from "@/constants/onboarding-config";
 import { useUser } from "@/contexts/user-context";
 import {
   type AuthProvider,
@@ -57,6 +63,7 @@ export default function Auth() {
     claimMockSubscription,
   } = useSubscription();
   const purchaseCompletedAt = state.purchaseCompletedAt;
+  const profile = useQuery(api.lib.users.getMyProfile);
   const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(
     null
   );
@@ -103,7 +110,12 @@ export default function Auth() {
   }, [syncWaitState]);
 
   useEffect(() => {
-    if (!user || isSubscriptionLoading || handlingRef.current) {
+    if (
+      !user ||
+      isSubscriptionLoading ||
+      profile === undefined ||
+      handlingRef.current
+    ) {
       return;
     }
 
@@ -137,6 +149,15 @@ export default function Auth() {
         if (activeSubscription) {
           if (mode === "signup") {
             router.replace("/success" as never);
+            return;
+          }
+          // Signed in with an active sub but no in-app profile yet (e.g. paid on
+          // the web): run the post-purchase setup before entering the app.
+          if (profile === null) {
+            router.replace({
+              pathname: POST_PURCHASE_ENTRY,
+              params: { flow: POST_PURCHASE_FLOW },
+            } as never);
             return;
           }
           if (!state.completedAt) {
@@ -176,6 +197,7 @@ export default function Auth() {
   }, [
     user,
     isSubscriptionLoading,
+    profile,
     mode,
     activeSubscription,
     revenueCatReady,
