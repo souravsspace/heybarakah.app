@@ -12,12 +12,12 @@ import {
   Text,
   View,
 } from "react-native";
-import { AuthLoading } from "@/components/auth-loading";
 import { BodyText } from "@/components/onboarding/body-text";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
+import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { LINKS } from "@/constants/links";
 import {
   POST_PURCHASE_ENTRY,
@@ -253,7 +253,7 @@ export default function Auth() {
   const isVerifyingAuth = params.verifying === "1";
 
   if (isUserLoading || isOAuthLoading || isVerifyingAuth || user) {
-    return <AuthLoading />;
+    return <AnimatedSplash />;
   }
 
   const headline = mode === "signup" ? "Create your account" : "Welcome back.";
