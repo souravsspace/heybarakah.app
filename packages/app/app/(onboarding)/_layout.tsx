@@ -4,8 +4,8 @@ import { useNavigationState } from "expo-router/react-navigation";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AuthLoading } from "@/components/auth-loading";
 import { ProgressBar } from "@/components/onboarding/progress-bar";
+import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { POST_PURCHASE_FLOW } from "@/constants/onboarding-config";
 import { useUser } from "@/contexts/user-context";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
@@ -27,7 +27,7 @@ export default function OnboardingLayout() {
   const [gestureToWelcome, setGestureToWelcome] = useState(false);
 
   if (isLoading || isSubscriptionLoading) {
-    return <AuthLoading />;
+    return <AnimatedSplash />;
   }
   const isPaywallRoute = currentPath?.startsWith("/(onboarding)/paywall");
   // A web buyer signing in for the first time is subscribed but still needs the
