@@ -1,3 +1,5 @@
+import { api } from "@barakah/core/convex/_generated/api";
+import { useMutation } from "convex/react";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { TextInput, View } from "react-native";
@@ -9,16 +11,42 @@ import { Button } from "@/components/ui/button";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 
 export default function Name() {
-  const { dispatch } = useOnboardingState();
+  const { state, dispatch } = useOnboardingState();
+  const upsertProfile = useMutation(api.lib.users.upsertProfile);
   const router = useRouter();
   const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function finish() {
-    dispatch({
-      type: "SET_FIELD",
-      payload: { name: value.trim() || undefined },
-    });
-    dispatch({ type: "COMPLETE" });
+  async function finish() {
+    if (saving) {
+      return;
+    }
+    setSaving(true);
+    const name = value.trim() || undefined;
+    const completedAt = new Date().toISOString();
+    try {
+      // Persist the whole onboarding profile to Convex now and wait for it, so
+      // the setup is saved server-side and never shown again on later sign-ins.
+      await upsertProfile({
+        name,
+        gender: state.gender,
+        madhab: state.madhab,
+        consistency: state.consistency,
+        struggle: state.struggle,
+        goal: state.goal,
+        calcMethod: state.calcMethod,
+        strictness: state.strictness,
+        locationGranted: state.locationGranted,
+        notifGranted: state.notifGranted,
+        prayersToLock: state.prayersToLock,
+        completedAt,
+      });
+      dispatch({ type: "RESET" });
+    } catch {
+      // Save failed (e.g. offline): keep it locally so home.tsx retries upsert.
+      dispatch({ type: "SET_FIELD", payload: { name } });
+      dispatch({ type: "COMPLETE" });
+    }
     router.replace("/home");
   }
 
@@ -26,8 +54,8 @@ export default function Name() {
     <ScreenShell
       footer={
         <Button
-          disabled={value.trim().length === 0}
-          label="ENTER BARAKAH"
+          disabled={value.trim().length === 0 || saving}
+          label={saving ? "Saving…" : "ENTER BARAKAH"}
           onPress={finish}
         />
       }

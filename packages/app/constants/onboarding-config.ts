@@ -28,6 +28,21 @@ export const ONBOARDING_ROUTES = [
 
 export type OnboardingRoute = (typeof ONBOARDING_ROUTES)[number];
 
+// Setup subset shown to a user who already paid on the web and is signing in
+// for the first time: prayer config + permissions, then `/name`. Skips the
+// marketing, quiz, and paywall screens since access is already owned.
+export const POST_PURCHASE_ROUTES = [
+  "/(onboarding)/config/calc-method",
+  "/(onboarding)/config/prayers",
+  "/(onboarding)/config/strictness",
+  "/(onboarding)/notify-framing",
+  "/(onboarding)/permissions",
+] as const satisfies readonly OnboardingRoute[];
+
+export const POST_PURCHASE_ENTRY = POST_PURCHASE_ROUTES[0];
+
+export const POST_PURCHASE_FLOW = "post-purchase";
+
 export const QUIZ_OPTIONS = {
   gender: [
     { value: "male", label: "Male" },

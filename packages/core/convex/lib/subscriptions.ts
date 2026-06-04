@@ -39,13 +39,78 @@ export const getMySubscription = query({
       )
       .order("desc")
       .first();
-    if (!row) {
+    if (row) {
+      if (row.expiresAt && Date.parse(row.expiresAt) <= Date.now()) {
+        return null;
+      }
+      return row;
+    }
+
+    // Fallback: a Polar purchase made on the web (anonymous checkout) is keyed
+    // only by customerEmail and has no authUserId. Recognize it for the signed-in
+    // user by their verified email so they are not locked out before the row is
+    // claimed. `claimPolarByEmail` persists the link separately.
+    const email = user.email?.toLowerCase().trim();
+    if (!email) {
       return null;
     }
-    if (row.expiresAt && Date.parse(row.expiresAt) <= Date.now()) {
+    const byEmail = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_customerEmail", (q) => q.eq("customerEmail", email))
+      .take(20);
+    const polarRow = byEmail.find(
+      (candidate) =>
+        candidate.source === "polar" &&
+        candidate.status === "active" &&
+        !candidate.authUserId
+    );
+    if (!polarRow) {
       return null;
     }
-    return row;
+    if (polarRow.expiresAt && Date.parse(polarRow.expiresAt) <= Date.now()) {
+      return null;
+    }
+    return polarRow;
+  },
+});
+
+export const claimPolarByEmail = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return { linked: false };
+    }
+    const email = user.email?.toLowerCase().trim();
+    if (!email) {
+      return { linked: false };
+    }
+
+    const now = new Date().toISOString();
+    let linked = false;
+
+    const subs = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_customerEmail", (q) => q.eq("customerEmail", email))
+      .take(20);
+    for (const sub of subs) {
+      if (sub.source === "polar" && !sub.authUserId) {
+        await ctx.db.patch(sub._id, { authUserId: user._id, updatedAt: now });
+        linked = true;
+      }
+    }
+
+    const orders = await ctx.db
+      .query("polarOrders")
+      .withIndex("by_customerEmail", (q) => q.eq("customerEmail", email))
+      .take(20);
+    for (const order of orders) {
+      if (!order.authUserId) {
+        await ctx.db.patch(order._id, { authUserId: user._id });
+      }
+    }
+
+    return { linked };
   },
 });
 

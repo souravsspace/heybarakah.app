@@ -1,7 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { Redirect, Stack, usePathname, useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
-import { AuthLoading } from "@/components/auth-loading";
+import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { DhikrProvider } from "@/contexts/dhikr-context";
 import { useUser } from "@/contexts/user-context";
 import { useWidgetInteractions } from "@/hooks/use-widget-interactions";
@@ -120,7 +120,7 @@ export default function AppLayout() {
   const { activeSubscription, isSubscriptionLoading } = useSubscription();
 
   if (isLoading || isSubscriptionLoading) {
-    return <AuthLoading />;
+    return <AnimatedSplash />;
   }
   if (!user) {
     return <Redirect href={"/(onboarding)/welcome" as never} />;

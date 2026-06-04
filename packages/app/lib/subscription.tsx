@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
@@ -64,11 +65,28 @@ export function SubscriptionProvider({
   const claimMockMutation = useMutation(
     api.lib.subscriptions.claimMockSubscription
   );
+  const claimPolarByEmail = useMutation(
+    api.lib.subscriptions.claimPolarByEmail
+  );
 
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
   const [offeringsLoading, setOfferingsLoading] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [revenueCatReady, setRevenueCatReady] = useState(false);
+
+  // Link a web Polar purchase (anonymous checkout, keyed by email) to this
+  // account once the user is known, so the link persists beyond the read-time
+  // email fallback in getMySubscription.
+  const claimedForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!userId || claimedForRef.current === userId) {
+      return;
+    }
+    claimedForRef.current = userId;
+    claimPolarByEmail({}).catch(() => {
+      claimedForRef.current = null;
+    });
+  }, [userId, claimPolarByEmail]);
 
   const syncCustomerInfo = useCallback(
     async (info: CustomerInfo) => {
