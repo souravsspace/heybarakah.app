@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
+import { useGlobalSearchParams, useRouter, useSegments } from "expo-router";
 import { useMemo } from "react";
 import {
   ONBOARDING_ROUTES,
@@ -10,7 +10,7 @@ import {
 export function useOnboardingNav() {
   const router = useRouter();
   const segments = useSegments();
-  const params = useLocalSearchParams<{ flow?: string }>();
+  const params = useGlobalSearchParams<{ flow?: string }>();
   const isPostPurchase = params.flow === POST_PURCHASE_FLOW;
   const routes: readonly OnboardingRoute[] = isPostPurchase
     ? POST_PURCHASE_ROUTES

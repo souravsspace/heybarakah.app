@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Redirect, Stack, useLocalSearchParams } from "expo-router";
+import { Redirect, Stack, useGlobalSearchParams } from "expo-router";
 import { useNavigationState } from "expo-router/react-navigation";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
@@ -15,7 +15,9 @@ export default function OnboardingLayout() {
   const { progress, back, index, currentPath } = useOnboardingNav();
   const { user, isLoading } = useUser();
   const { activeSubscription, isSubscriptionLoading } = useSubscription();
-  const params = useLocalSearchParams<{ flow?: string }>();
+  // Global (not local) params: a layout otherwise won't see the child route's
+  // `flow` query param, which would bounce a subscribed web buyer to /home.
+  const params = useGlobalSearchParams<{ flow?: string }>();
   const isPostPurchase = params.flow === POST_PURCHASE_FLOW;
 
   const focusedName = useNavigationState((state) => {
