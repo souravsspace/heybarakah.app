@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { authClient } from "@/lib/auth-client";
 import { logOutRevenueCat } from "@/lib/revenuecat";
@@ -35,17 +34,7 @@ export default function LoggingOut() {
     };
   }, [dispatch, router]);
 
-  return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View
-        className="flex-1 items-center justify-center px-md"
-        style={{ gap: 14 }}
-      >
-        <ActivityIndicator color="#29603E" size="large" />
-        <Text className="font-sans text-body-sm text-tertiary">
-          Logging out…
-        </Text>
-      </View>
-    </SafeAreaView>
-  );
+  // AnimatedSplash (loader mode) renders in a full-screen Modal, which blocks
+  // the tab bar, back gesture, and any navigation while signing out.
+  return <AnimatedSplash caption="Logging out…" />;
 }
