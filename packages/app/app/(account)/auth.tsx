@@ -151,9 +151,10 @@ export default function Auth() {
             router.replace("/success" as never);
             return;
           }
-          // Signed in with an active sub but onboarding not completed in Convex
-          // (e.g. paid on the web): run the setup once before entering the app.
-          if (!(profile?.completedAt || state.completedAt)) {
+          // Signed in with an active sub but no in-app profile yet (e.g. paid on
+          // the web): run the setup once before entering the app. An existing
+          // `users` row means onboarding is already done.
+          if (profile === null && !state.completedAt) {
             router.replace({
               pathname: POST_PURCHASE_ENTRY,
               params: { flow: POST_PURCHASE_FLOW },
