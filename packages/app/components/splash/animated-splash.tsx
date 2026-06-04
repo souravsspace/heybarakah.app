@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Modal, StyleSheet, useColorScheme, View } from "react-native";
+import { Modal, StyleSheet, Text, useColorScheme, View } from "react-native";
 import Animated, {
   Easing,
   runOnJS,
@@ -43,7 +43,13 @@ const STROKE_DARK = "#F5EBDB";
 const UNDERLINE_LIGHT = "#29603E";
 const UNDERLINE_DARK = "#F5EBDB";
 
-export function AnimatedSplash({ onFinish }: { onFinish?: () => void }) {
+export function AnimatedSplash({
+  onFinish,
+  caption,
+}: {
+  onFinish?: () => void;
+  caption?: string;
+}) {
   const meshOpacity = useSharedValue(0);
   const markOpacity = useSharedValue(0);
   const markTranslateY = useSharedValue(8);
@@ -216,6 +222,9 @@ export function AnimatedSplash({ onFinish }: { onFinish?: () => void }) {
             underlineStyle,
           ]}
         />
+        {caption ? (
+          <Text style={[styles.caption, { color: stroke }]}>{caption}</Text>
+        ) : null}
       </View>
     </Animated.View>
   );
@@ -242,6 +251,12 @@ const styles = StyleSheet.create({
   stack: {
     alignItems: "center",
     justifyContent: "center",
+  },
+  caption: {
+    marginTop: 18,
+    fontSize: 13,
+    letterSpacing: 0.3,
+    opacity: 0.6,
   },
   underline: {
     height: 1,
