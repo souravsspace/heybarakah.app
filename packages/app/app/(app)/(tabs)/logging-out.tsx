@@ -4,6 +4,7 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { authClient } from "@/lib/auth-client";
+import { logOutRevenueCat } from "@/lib/revenuecat";
 
 export default function LoggingOut() {
   const router = useRouter();
@@ -13,6 +14,11 @@ export default function LoggingOut() {
   useEffect(() => {
     mounted.current = true;
     (async () => {
+      try {
+        await logOutRevenueCat();
+      } catch {
+        // ignore
+      }
       try {
         await authClient.signOut();
       } catch {
