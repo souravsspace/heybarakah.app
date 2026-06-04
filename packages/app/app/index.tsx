@@ -31,9 +31,10 @@ export default function Index() {
   if (profile === undefined) {
     return <AnimatedSplash />;
   }
-  // Subscribed (e.g. paid on the web) but no in-app profile yet: collect prayer
-  // config, permissions, and name before entering the app.
-  if (profile === null && !state.completedAt) {
+  // Subscribed (e.g. paid on the web) but onboarding not completed in Convex:
+  // collect prayer config, permissions, and name once. The local completedAt
+  // bridges the brief window before the freshly-saved profile reaches the cache.
+  if (!(profile?.completedAt || state.completedAt)) {
     return (
       <Redirect
         href={
