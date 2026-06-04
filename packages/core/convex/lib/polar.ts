@@ -15,6 +15,32 @@ import { httpAction, internalMutation } from "../_generated/server";
 import { requireEnv } from "./env";
 import { sendEmail } from "./resend";
 
+// Convex's default runtime has no Node `Buffer`, but the Polar SDK's
+// `validateEvent` base64-encodes the webhook secret via `Buffer.from(...)`.
+// Without this, signature verification throws `ReferenceError: Buffer is not
+// defined`, which surfaces to Polar as a 400. Provide a minimal base64/utf-8
+// polyfill so verification runs in the default runtime.
+const globalScope = globalThis as { Buffer?: unknown };
+if (typeof globalScope.Buffer === "undefined") {
+  globalScope.Buffer = {
+    from(input: string) {
+      const bytes = new TextEncoder().encode(input);
+      return {
+        toString(encoding?: string) {
+          if (encoding !== "base64") {
+            return input;
+          }
+          let binary = "";
+          for (const byte of bytes) {
+            binary += String.fromCharCode(byte);
+          }
+          return btoa(binary);
+        },
+      };
+    },
+  };
+}
+
 export const recordPaidOrder = internalMutation({
   args: {
     authUserId: v.optional(v.string()),
