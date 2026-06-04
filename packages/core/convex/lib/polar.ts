@@ -252,7 +252,9 @@ export const webhook = httpAction(async (ctx, request) => {
     totalAmount: order.totalAmount,
     currency: order.currency,
     invoiceNumber: order.invoiceNumber ?? undefined,
-    raw: order as unknown,
+    // Store the original webhook JSON, not the SDK-parsed object: the SDK
+    // transforms date strings into JS `Date`s, which Convex cannot store.
+    raw: JSON.parse(body) as unknown,
   });
 
   if (recorded.alreadyConfirmed) {
