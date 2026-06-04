@@ -1,5 +1,10 @@
 import { useEffect } from "react";
-import { AccessibilityInfo, useColorScheme, View } from "react-native";
+import {
+  AccessibilityInfo,
+  StyleSheet,
+  useColorScheme,
+  View,
+} from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -8,143 +13,112 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import Svg, { Circle, Path } from "react-native-svg";
-import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
+import Svg, { Path } from "react-native-svg";
+import { SplashMesh } from "@/components/meshes";
+import {
+  BARAKAH_GLYPH_PATHS,
+  BARAKAH_GLYPH_VIEWBOX,
+} from "@/components/onboarding/illustrations/barakah-mark";
 
-const LOADER_SIZE = 130;
-const CENTER = LOADER_SIZE / 2;
-const RING_RADIUS = 58;
-const ARC_PATH = "M65 7 A58 58 0 0 1 115.23 36";
-const LIGHT_MARK = "#29603E";
-const DARK_MARK = "#F5EBDB";
-const quintEasing =
-  "quint" in Easing
-    ? (Easing as typeof Easing & { quint: (t: number) => number }).quint
-    : Easing.poly(5);
+const STROKE_LIGHT = "#29603E";
+const STROKE_DARK = "#F5EBDB";
+const GLYPH_HEIGHT = 150;
+const GLYPH_WIDTH =
+  GLYPH_HEIGHT * (BARAKAH_GLYPH_VIEWBOX.width / BARAKAH_GLYPH_VIEWBOX.height);
+const UNDERLINE_WIDTH = 84;
+const BREATH_MS = 1500;
 
+// Resting frame of the boot splash, looped as the app-wide loading state: the
+// SplashMesh halo, the calligraphic brand glyph drawn in strokes, and a hairline
+// underline, with a calm breath. Reused everywhere AuthLoading is rendered.
 export function AuthLoading() {
-  const scheme = useColorScheme();
-  const markColor = scheme === "dark" ? DARK_MARK : LIGHT_MARK;
-  const markScale = useSharedValue(1);
-  const markOpacity = useSharedValue(1);
-  const arcRotation = useSharedValue(0);
+  const isDark = useColorScheme() === "dark";
+  const stroke = isDark ? STROKE_DARK : STROKE_LIGHT;
+  const breath = useSharedValue(1);
 
   useEffect(() => {
     let mounted = true;
-
-    AccessibilityInfo.isReduceMotionEnabled().then((isReduceMotionEnabled) => {
-      if (!(mounted && !isReduceMotionEnabled)) {
+    AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
+      if (!(mounted && !reduceMotion)) {
         return;
       }
-
-      markScale.value = withRepeat(
+      breath.value = withRepeat(
         withSequence(
-          withTiming(0.965, {
-            duration: 1700,
-            easing: Easing.out(quintEasing),
+          withTiming(0.62, {
+            duration: BREATH_MS,
+            easing: Easing.out(Easing.quad),
           }),
           withTiming(1, {
-            duration: 1700,
-            easing: Easing.out(quintEasing),
+            duration: BREATH_MS,
+            easing: Easing.out(Easing.quad),
           })
         ),
-        -1,
-        false
-      );
-      markOpacity.value = withRepeat(
-        withSequence(
-          withTiming(0.85, {
-            duration: 1700,
-            easing: Easing.out(quintEasing),
-          }),
-          withTiming(1, {
-            duration: 1700,
-            easing: Easing.out(quintEasing),
-          })
-        ),
-        -1,
-        false
-      );
-      arcRotation.value = withRepeat(
-        withTiming(360, {
-          duration: 2400,
-          easing: Easing.linear,
-        }),
         -1,
         false
       );
     });
-
     return () => {
       mounted = false;
-      markScale.value = 1;
-      markOpacity.value = 1;
-      arcRotation.value = 0;
+      breath.value = 1;
     };
-  }, [arcRotation, markOpacity, markScale]);
+  }, [breath]);
 
-  const markStyle = useAnimatedStyle(() => ({
-    opacity: markOpacity.value,
-    transform: [{ scale: markScale.value }],
-  }));
-
-  const arcStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${arcRotation.value}deg` }],
+  const breathStyle = useAnimatedStyle(() => ({
+    opacity: breath.value,
+    transform: [{ scale: 0.985 + breath.value * 0.015 }],
   }));
 
   return (
     <View
       accessibilityLabel="Loading"
       accessibilityRole="progressbar"
-      className="flex-1 items-center justify-center bg-surface"
+      style={styles.fill}
     >
-      <View
-        style={{
-          alignItems: "center",
-          height: LOADER_SIZE,
-          justifyContent: "center",
-          width: LOADER_SIZE,
-        }}
-      >
-        <Svg
-          height={LOADER_SIZE}
-          style={{ position: "absolute" }}
-          width={LOADER_SIZE}
-        >
-          <Circle
-            cx={CENTER}
-            cy={CENTER}
+      <View style={StyleSheet.absoluteFill}>
+        <SplashMesh dark={isDark} />
+      </View>
+      <View style={styles.center}>
+        <Animated.View style={[styles.stack, breathStyle]}>
+          <Svg
             fill="none"
-            r={RING_RADIUS}
-            stroke={markColor}
-            strokeOpacity={0.18}
-            strokeWidth={1.5}
-          />
-        </Svg>
-        <Animated.View
-          style={[
-            {
-              height: LOADER_SIZE,
-              position: "absolute",
-              width: LOADER_SIZE,
-            },
-            arcStyle,
-          ]}
-        >
-          <Svg height={LOADER_SIZE} width={LOADER_SIZE}>
-            <Path
-              d={ARC_PATH}
-              fill="none"
-              stroke={markColor}
-              strokeLinecap="round"
-              strokeWidth={1.5}
-            />
+            height={GLYPH_HEIGHT}
+            viewBox={`0 0 ${BARAKAH_GLYPH_VIEWBOX.width} ${BARAKAH_GLYPH_VIEWBOX.height}`}
+            width={GLYPH_WIDTH}
+          >
+            {BARAKAH_GLYPH_PATHS.map((d) => (
+              <Path
+                d={d}
+                key={d}
+                stroke={stroke}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={4}
+              />
+            ))}
           </Svg>
-        </Animated.View>
-        <Animated.View style={markStyle}>
-          <BarakahMark color={markColor} size={60} />
+          <View
+            style={[
+              styles.underline,
+              { backgroundColor: stroke, width: UNDERLINE_WIDTH },
+            ]}
+          />
         </Animated.View>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+  center: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stack: { alignItems: "center", justifyContent: "center" },
+  underline: { height: 1, marginTop: 22, borderRadius: 1 },
+});
