@@ -7,6 +7,12 @@
     "icon": "./assets/images/icon.png",
     "scheme": "barakah",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/0cc15480-24aa-452a-a6e6-b4e125043f31"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.souravsspace.Barakah",
