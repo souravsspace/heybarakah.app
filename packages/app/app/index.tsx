@@ -31,10 +31,12 @@ export default function Index() {
   if (profile === undefined) {
     return <AnimatedSplash />;
   }
-  // Subscribed (e.g. paid on the web) but onboarding not completed in Convex:
-  // collect prayer config, permissions, and name once. The local completedAt
-  // bridges the brief window before the freshly-saved profile reaches the cache.
-  if (!(profile?.completedAt || state.completedAt)) {
+  // Subscribed (e.g. paid on the web) but no in-app profile yet: collect prayer
+  // config, permissions, and name once. A `users` row is only ever created at
+  // `/name` completion or later settings/avatar edits (both reachable only after
+  // home), so an existing row means onboarding is already done. The local
+  // completedAt bridges the window before the freshly-saved row reaches the cache.
+  if (profile === null && !state.completedAt) {
     return (
       <Redirect
         href={
