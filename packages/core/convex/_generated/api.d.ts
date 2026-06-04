@@ -10,6 +10,7 @@
 
 import type * as http from "../http.js";
 import type * as lib_achievements from "../lib/achievements.js";
+import type * as lib_appConfig from "../lib/appConfig.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_dhikr from "../lib/dhikr.js";
 import type * as lib_env from "../lib/env.js";
@@ -33,6 +34,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/achievements": typeof lib_achievements;
+  "lib/appConfig": typeof lib_appConfig;
   "lib/auth": typeof lib_auth;
   "lib/dhikr": typeof lib_dhikr;
   "lib/env": typeof lib_env;
