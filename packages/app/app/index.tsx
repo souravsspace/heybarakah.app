@@ -1,7 +1,7 @@
 import { api } from "@barakah/core/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { Redirect } from "expo-router";
-import { AuthLoading } from "@/components/auth-loading";
+import { AnimatedSplash } from "@/components/splash/animated-splash";
 import {
   POST_PURCHASE_ENTRY,
   POST_PURCHASE_FLOW,
@@ -17,7 +17,7 @@ export default function Index() {
   const profile = useQuery(api.lib.users.getMyProfile);
 
   if (isLoading || isSubscriptionLoading || !state.hydrated) {
-    return <AuthLoading />;
+    return <AnimatedSplash />;
   }
   if (!user) {
     if (state.purchaseCompletedAt) {
@@ -29,7 +29,7 @@ export default function Index() {
     return <Redirect href="/no-active-sub" />;
   }
   if (profile === undefined) {
-    return <AuthLoading />;
+    return <AnimatedSplash />;
   }
   // Subscribed (e.g. paid on the web) but no in-app profile yet: collect prayer
   // config, permissions, and name before entering the app.
