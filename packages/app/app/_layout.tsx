@@ -17,6 +17,7 @@ import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { ThemeProvider as BarakahThemeProvider } from "@/contexts/theme-context";
 import { UserProvider } from "@/contexts/user-context";
 import { OnboardingProvider } from "@/hooks/use-onboarding-state";
+import { useOtaUpdates } from "@/hooks/use-ota-updates";
 import { authClient } from "@/lib/auth-client";
 import { SubscriptionProvider } from "@/lib/subscription";
 import { registerWidgets } from "@/lib/widgets-native";
@@ -37,6 +38,8 @@ export default function RootLayout() {
     "LibreBaskerville-Bold": require("../assets/fonts/LibreBaskerville-Bold.ttf"),
   });
   const [splashDone, setSplashDone] = useState(false);
+
+  useOtaUpdates();
 
   useEffect(() => {
     if (fontsLoaded) {
