@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { StyleSheet, useColorScheme, View } from "react-native";
+import { Modal, StyleSheet, useColorScheme, View } from "react-native";
 import Animated, {
   Easing,
   runOnJS,
@@ -169,7 +169,7 @@ export function AnimatedSplash({ onFinish }: { onFinish?: () => void }) {
     opacity: underlineOpacity.value,
   }));
 
-  return (
+  const splash = (
     <Animated.View
       pointerEvents="none"
       style={[StyleSheet.absoluteFill, styles.container]}
@@ -218,6 +218,18 @@ export function AnimatedSplash({ onFinish }: { onFinish?: () => void }) {
         />
       </View>
     </Animated.View>
+  );
+
+  // Boot mode renders inline at the app root (over the whole Stack). Loader mode
+  // renders in a Modal so it fully covers any parent chrome (e.g. the account
+  // layout's header/back button), keeping the loading state a clean full screen.
+  if (onFinish) {
+    return splash;
+  }
+  return (
+    <Modal animationType="none" statusBarTranslucent transparent visible>
+      {splash}
+    </Modal>
   );
 }
 
