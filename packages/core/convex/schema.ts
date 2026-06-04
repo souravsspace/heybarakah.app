@@ -195,4 +195,9 @@ export default defineSchema({
     qadaPrayerLogs: v.number(),
     updatedAt: v.number(),
   }).index("by_user", ["authUserId"]),
+  appConfig: defineTable({
+    minSupportedVersion: v.string(),
+    iosStoreUrl: v.string(),
+    updatedAt: v.number(),
+  }),
 });
