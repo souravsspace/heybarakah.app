@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { AchievementPopupProvider } from "@/components/achievement-popup-provider";
+import { ForceUpdateGate } from "@/components/force-update-gate";
 import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { ThemeProvider as BarakahThemeProvider } from "@/contexts/theme-context";
 import { UserProvider } from "@/contexts/user-context";
@@ -97,6 +98,7 @@ export default function RootLayout() {
                     {splashDone ? null : (
                       <AnimatedSplash onFinish={handleSplashFinish} />
                     )}
+                    <ForceUpdateGate />
                   </AchievementPopupProvider>
                 </BarakahThemeProvider>
               </OnboardingProvider>
