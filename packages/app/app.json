@@ -160,6 +160,7 @@
         }
       ],
       "./plugins/with-app-groups",
+      "./plugins/with-extension-build-number",
       "expo-font",
       "expo-image",
       "expo-secure-store",
