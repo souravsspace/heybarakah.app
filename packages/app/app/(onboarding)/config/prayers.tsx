@@ -1,25 +1,54 @@
-import { View } from "react-native";
+import type { Ionicons } from "@expo/vector-icons";
+import { Pressable, Text, View } from "react-native";
 import { BodyText } from "@/components/onboarding/body-text";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
+import { PrayerSelectRow } from "@/components/onboarding/prayer-select-row";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
-import { ToggleRow } from "@/components/onboarding/toggle-row";
 import { Button } from "@/components/ui/button";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 
 const PRAYERS = [
-  { key: "fajr", label: "Fajr", hint: "Before sunrise" },
-  { key: "dhuhr", label: "Dhuhr", hint: "After zenith" },
-  { key: "asr", label: "Asr", hint: "Late afternoon" },
-  { key: "maghrib", label: "Maghrib", hint: "Just after sunset" },
-  { key: "isha", label: "Isha", hint: "Night" },
-] as const;
+  { key: "fajr", label: "Fajr", hint: "Before sunrise", icon: "moon" },
+  { key: "dhuhr", label: "Dhuhr", hint: "After zenith", icon: "sunny" },
+  {
+    key: "asr",
+    label: "Asr",
+    hint: "Late afternoon",
+    icon: "partly-sunny",
+  },
+  {
+    key: "maghrib",
+    label: "Maghrib",
+    hint: "Just after sunset",
+    icon: "partly-sunny-outline",
+  },
+  { key: "isha", label: "Isha", hint: "Night", icon: "moon-outline" },
+] as const satisfies readonly {
+  hint: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  key: "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
+  label: string;
+}[];
 
 export default function PrayersToLock() {
   const { state, dispatch } = useOnboardingState();
   const { next } = useOnboardingNav();
   const anyOn = Object.values(state.prayersToLock).some(Boolean);
+  const selectedCount = PRAYERS.filter(
+    (p) => state.prayersToLock[p.key]
+  ).length;
+  const allSelected = selectedCount === PRAYERS.length;
+
+  function toggleAll() {
+    const target = !allSelected;
+    for (const prayer of PRAYERS) {
+      if (state.prayersToLock[prayer.key] !== target) {
+        dispatch({ type: "TOGGLE_PRAYER", key: prayer.key });
+      }
+    }
+  }
 
   return (
     <ScreenShell
@@ -35,14 +64,33 @@ export default function PrayersToLock() {
           </BodyText>
         </View>
         <View className="mt-sm gap-sm">
-          {PRAYERS.map((p) => (
-            <ToggleRow
-              hint={p.hint}
-              key={p.key}
-              label={p.label}
-              onToggle={() => dispatch({ type: "TOGGLE_PRAYER", key: p.key })}
-              value={state.prayersToLock[p.key]}
-            />
+          <View className="flex-row items-center justify-between">
+            <Text
+              className="font-sans text-body-sm text-tertiary"
+              style={{ fontVariant: ["tabular-nums"] }}
+            >
+              {selectedCount} of {PRAYERS.length} selected
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={toggleAll}
+              style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
+            >
+              <Text className="font-sans text-label-sm text-primary">
+                {allSelected ? "Clear all" : "Select all"}
+              </Text>
+            </Pressable>
+          </View>
+          {PRAYERS.map((p, index) => (
+            <FadeSlideIn delay={index * 60} key={p.key}>
+              <PrayerSelectRow
+                hint={p.hint}
+                icon={p.icon}
+                label={p.label}
+                onPress={() => dispatch({ type: "TOGGLE_PRAYER", key: p.key })}
+                selected={state.prayersToLock[p.key]}
+              />
+            </FadeSlideIn>
           ))}
         </View>
       </FadeSlideIn>
