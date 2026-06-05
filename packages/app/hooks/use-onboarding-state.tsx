@@ -30,6 +30,7 @@ export interface OnboardingState {
   madhab?: "hanafi" | "shafii" | "maliki" | "hanbali" | "none";
   name?: string;
   notifGranted?: boolean;
+  paywallReachedAt?: string;
   plan?: Plan;
   prayersToLock: {
     fajr: boolean;
