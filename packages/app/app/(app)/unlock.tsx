@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { UnlockMesh } from "@/components/meshes";
@@ -16,6 +16,11 @@ import { useLogPrayer, useWeekLogs } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { temporaryUnlock } from "@/lib/app-blocker";
 import { activePrayerNow, dateKey } from "@/lib/date-utils";
+import {
+  LOCK_DURATION_MIN,
+  lockBoundsMinutes,
+} from "@/lib/prayer-window-config";
+import { endAllLockActivities } from "@/lib/widgets-native";
 
 type PrayerName = LoggablePrayerName;
 
@@ -74,7 +79,7 @@ export default function Unlock() {
     [location?.timezone, todayPrayerTimes, today, tomorrowFajr]
   );
 
-  const close = () => {
+  const close = useCallback(() => {
     if (router.canDismiss?.()) {
       router.dismiss();
       return;
@@ -84,6 +89,44 @@ export default function Unlock() {
       return;
     }
     router.replace("/(app)/(tabs)/locked");
+  }, [router]);
+
+  // Minutes left in the current prayer's lock window — how long to lift the
+  // shield for so the next prayer re-shields normally.
+  const remainingLockMin = useMemo(() => {
+    if (!(activePrayer && todayPrayerTimes)) {
+      return LOCK_DURATION_MIN;
+    }
+    const raw = (todayPrayerTimes.timings as Record<string, string>)[
+      activePrayer
+    ];
+    const [h, m] = (raw ?? "").split(":").map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) {
+      return LOCK_DURATION_MIN;
+    }
+    const { end } = lockBoundsMinutes(activePrayer, h * 60 + m);
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    return Math.max(1, end - nowMin);
+  }, [activePrayer, todayPrayerTimes]);
+
+  // Tear down everything tied to this prayer window: lockscreen / Dynamic Island
+  // Live Activity, and the app shield (until the window ends).
+  const liftShield = useCallback(async () => {
+    await endAllLockActivities().catch(() => undefined);
+    await temporaryUnlock(remainingLockMin).catch(() => undefined);
+  }, [remainingLockMin]);
+
+  // Already prayed this window: nothing to gate, so don't sit on the screen.
+  useEffect(() => {
+    if (activePrayerLogged) {
+      close();
+    }
+  }, [activePrayerLogged, close]);
+
+  const onContinueQuiet = async () => {
+    await liftShield();
+    close();
   };
 
   const onUnlockFiveMin = async () => {
@@ -114,6 +157,7 @@ export default function Unlock() {
         status: classifyNow(activePrayer),
         prayedAt: Date.now(),
       });
+      await liftShield();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
         () => undefined
       );
@@ -307,7 +351,7 @@ export default function Unlock() {
 
           <Pressable
             accessibilityRole="button"
-            onPress={close}
+            onPress={onContinueQuiet}
             style={({ pressed }) => ({
               opacity: pressed ? 0.65 : 1,
               width: "100%",
