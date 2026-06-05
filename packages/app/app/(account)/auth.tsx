@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { BodyText } from "@/components/onboarding/body-text";
+import { DevResetOnboarding } from "@/components/onboarding/dev-reset-onboarding";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
@@ -355,6 +356,7 @@ export default function Auth() {
             </Text>
             .
           </Text>
+          <DevResetOnboarding />
         </View>
       </FadeSlideIn>
     </ScreenShell>
