@@ -13,7 +13,6 @@ const reactDomPath = dirname(require.resolve("react-dom"));
 
 config.watchFolders = [workspaceRoot];
 
-config.resolver.disableHierarchicalLookup = true;
 config.resolver.nodeModulesPaths = [
   join(workspaceRoot, "node_modules"),
   join(projectRoot, "node_modules"),
