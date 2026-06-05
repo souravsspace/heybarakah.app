@@ -1,6 +1,7 @@
 import type { PrayerDay } from "@barakah/core/prayer";
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
+import { useWeekLogs } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { dateKey, PRAYER_ORDER, pad2 } from "@/lib/date-utils";
 import { lockBoundsMinutes } from "@/lib/prayer-window-config";
@@ -62,6 +63,17 @@ function findActiveLock(
 
 export function useLockActivityScheduler(): void {
   const { prayerTimes } = usePrayerTimes();
+  const today = dateKey();
+  const week = useWeekLogs(today);
+  const weekRef = useRef(week);
+  weekRef.current = week;
+  // Changes whenever a prayer is logged/cleared today, so the effect re-runs and
+  // tears down a Live Activity the moment its prayer is marked prayed.
+  const loggedKey = week.rows
+    .filter((row) => row.date === today)
+    .map((row) => row.prayer)
+    .sort()
+    .join(",");
   const currentActivityId = useRef<string | null>(null);
   const currentKey = useRef<string | null>(null);
   const inFlight = useRef(false);
@@ -98,7 +110,11 @@ export function useLockActivityScheduler(): void {
         return;
       }
       const active = findActiveLock(day, now);
-      if (!active) {
+      // Already prayed this window -> no Live Activity. End any running one.
+      const activeLogged = active
+        ? Boolean(weekRef.current.getStatus(dayKey, active.name))
+        : false;
+      if (!active || activeLogged) {
         if (currentActivityId.current) {
           const id = currentActivityId.current;
           currentActivityId.current = null;
@@ -150,5 +166,5 @@ export function useLockActivityScheduler(): void {
       clearInterval(interval);
       sub.remove();
     };
-  }, [prayerTimes]);
+  }, [prayerTimes, loggedKey]);
 }
