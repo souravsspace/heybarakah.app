@@ -53,6 +53,7 @@
     "expo-symbols": "~56.0.5",
     "expo-system-ui": "~56.0.5",
     "expo-task-manager": "~56.0.16",
+    "expo-updates": "~56.0.17",
     "expo-web-browser": "~56.0.5",
     "expo-widgets": "~56.0.16",
     "fs-extra": "^11.3.5",

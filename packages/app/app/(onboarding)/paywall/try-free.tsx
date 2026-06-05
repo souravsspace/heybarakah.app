@@ -1,10 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect } from "react";
 import { Image, Text, View } from "react-native";
+import { DevResetOnboarding } from "@/components/onboarding/dev-reset-onboarding";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
+import { useOnboardingState } from "@/hooks/use-onboarding-state";
 
 const FEATURES = [
   {
@@ -27,9 +30,27 @@ const FEATURES = [
 
 export default function TryFree() {
   const { next } = useOnboardingNav();
+  const { state, dispatch } = useOnboardingState();
+
+  // Stamp once when the user first reaches the paywall. On a later cold start
+  // this lets the root gate resume them here instead of restarting onboarding.
+  useEffect(() => {
+    if (!state.paywallReachedAt) {
+      dispatch({
+        type: "SET_FIELD",
+        payload: { paywallReachedAt: new Date().toISOString() },
+      });
+    }
+  }, [state.paywallReachedAt, dispatch]);
+
   return (
     <ScreenShell
-      footer={<Button label="Continue for FREE" onPress={next} />}
+      footer={
+        <View>
+          <Button label="Continue for FREE" onPress={next} />
+          <DevResetOnboarding />
+        </View>
+      }
       scroll={false}
     >
       <FadeSlideIn className="flex-1">

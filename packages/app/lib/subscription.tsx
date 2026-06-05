@@ -141,15 +141,12 @@ export function SubscriptionProvider({
           return;
         }
         setRevenueCatReady(true);
-        if (userId) {
-          const info = await getCustomerInfo();
-          if (info && !cancelled) {
-            await syncCustomerInfo(info);
-          }
-        }
         if (cancelled) {
           return;
         }
+        // refresh() already fetches offerings + customer info and syncs the
+        // entitlement; no separate getCustomerInfo/sync here (was a duplicate
+        // round-trip + entitlement write on every login).
         await refresh();
       } catch {
         // Configuration failure leaves provider in query-only mode.
@@ -158,7 +155,7 @@ export function SubscriptionProvider({
     return () => {
       cancelled = true;
     };
-  }, [userId, refresh, syncCustomerInfo]);
+  }, [userId, refresh]);
 
   useEffect(() => {
     if (!(revenueCatReady && isRevenueCatSupported())) {

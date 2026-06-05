@@ -69,7 +69,6 @@ export default function TabsLayout() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger hidden name="name" />
       <NativeTabs.Trigger hidden name="success" />
-      <NativeTabs.Trigger hidden name="logging-out" />
     </NativeTabs>
   );
 }

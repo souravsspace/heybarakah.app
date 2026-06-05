@@ -7,12 +7,15 @@ import {
   clearAllBlocks,
   clearScheduledWindows,
   getBlockConfiguration,
+  isTemporarilyUnlocked,
   type PrayerBlockWindow,
   scheduleBlockWindows,
   setBlockedApps,
   startMonitoring,
   stopMonitoring,
+  temporaryUnlock,
 } from "@/lib/app-blocker";
+import { dateKey } from "@/lib/date-utils";
 import {
   cancelShieldNotifications,
   scheduleShieldNotifications,
@@ -27,6 +30,7 @@ import {
   cacheShieldSelection,
   loadCachedShieldSelection,
 } from "@/lib/shield-selection-offline";
+import { useWeekLogs } from "./usePrayerLogs";
 import { usePrayerTimes } from "./usePrayerTimes";
 
 interface Timings {
@@ -114,6 +118,17 @@ export function usePrayerShield() {
   // we know the real selection, so callers must wait.
   const resolving = liveSelection === undefined && !cacheLoaded;
   const { todayPrayerTimes } = usePrayerTimes();
+  const today = dateKey();
+  const week = useWeekLogs(today);
+  const weekRef = useRef(week);
+  weekRef.current = week;
+  // Changes whenever a prayer is logged/cleared today, so `sync` re-runs and
+  // lifts the shield the moment the current window's prayer is marked prayed.
+  const loggedKey = week.rows
+    .filter((row) => row.date === today)
+    .map((row) => row.prayer)
+    .sort()
+    .join(",");
   const appStateRef = useRef(AppState.currentState);
   const lastScheduleKey = useRef<string>("");
   const [activeWindow, setActiveWindow] = useState<PrayerWindow | null>(null);
@@ -206,17 +221,35 @@ export function usePrayerShield() {
     const now = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes();
     const inside = windows.find((w) => nowMin >= w.start && nowMin < w.end);
-    setActiveWindow(inside ? inside.name : null);
+    // A window whose prayer is already logged today is not "active": the shield
+    // and the unlock-screen auto-push (driven off activeWindow) both stand down.
+    const insideLogged = inside
+      ? Boolean(weekRef.current.getStatus(today, inside.name))
+      : false;
+    const effective = inside && !insideLogged ? inside : null;
+    setActiveWindow(effective ? effective.name : null);
 
-    // iOS shield activation is driven entirely by the DeviceActivity schedule
-    // above; nothing to toggle per-tick. Android has no equivalent OS scheduler,
-    // so keep driving its foreground service from the window state.
+    // iOS shield engages at the DeviceActivity interval start regardless of log
+    // state, so once the current window's prayer is logged we must actively lift
+    // it for the rest of the window. temporaryUnlock holds until the window end,
+    // when DeviceActivity unshields anyway; the guard stops the 30s tick respamming.
+    if (
+      Platform.OS === "ios" &&
+      inside &&
+      insideLogged &&
+      !isTemporarilyUnlocked()
+    ) {
+      temporaryUnlock(Math.max(1, inside.end - nowMin)).catch(() => null);
+    }
+
+    // Android has no equivalent OS scheduler, so keep driving its foreground
+    // service from the effective (not-yet-prayed) window state.
     if (Platform.OS === "android") {
       const packages = selection.androidPackageNames ?? [];
       if (packages.length === 0) {
         return;
       }
-      if (inside) {
+      if (effective) {
         setBlockedApps(packages);
         startMonitoring();
       } else {
@@ -224,7 +257,7 @@ export function usePrayerShield() {
         stopMonitoring();
       }
     }
-  }, [resolving, selection, todayPrayerTimes]);
+  }, [resolving, selection, todayPrayerTimes, loggedKey, today]);
 
   useEffect(() => {
     registerPrayerShieldTask().catch(() => null);

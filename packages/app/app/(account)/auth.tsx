@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { BodyText } from "@/components/onboarding/body-text";
+import { DevResetOnboarding } from "@/components/onboarding/dev-reset-onboarding";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
@@ -151,9 +152,10 @@ export default function Auth() {
             router.replace("/success" as never);
             return;
           }
-          // Signed in with an active sub but onboarding not completed in Convex
-          // (e.g. paid on the web): run the setup once before entering the app.
-          if (!(profile?.completedAt || state.completedAt)) {
+          // Signed in with an active sub but no in-app profile yet (e.g. paid on
+          // the web): run the setup once before entering the app. An existing
+          // `users` row means onboarding is already done.
+          if (profile === null && !state.completedAt) {
             router.replace({
               pathname: POST_PURCHASE_ENTRY,
               params: { flow: POST_PURCHASE_FLOW },
@@ -354,6 +356,7 @@ export default function Auth() {
             </Text>
             .
           </Text>
+          <DevResetOnboarding />
         </View>
       </FadeSlideIn>
     </ScreenShell>
