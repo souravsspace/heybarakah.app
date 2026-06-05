@@ -29,9 +29,11 @@ function createAuth(ctx: GenericCtx<DataModel>) {
       siteUrl,
       nativeAppUrl,
       "https://appleid.apple.com",
-      // Expo Go dev URLs. Harmless in production — no real client uses exp://.
-      "exp://**",
-      "exp://*",
+      // Expo Go dev URLs. Opt-in only — set ALLOW_EXPO_ORIGINS=true on dev
+      // deployments. Defaults to deny so production never trusts exp://.
+      ...(process.env.ALLOW_EXPO_ORIGINS === "true"
+        ? ["exp://**", "exp://*"]
+        : []),
     ],
     user: {
       deleteUser: { enabled: true },
