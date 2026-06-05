@@ -24,6 +24,9 @@ const GROUPS = [
 /** Inject the union of GROUPS into one entitlements plist on disk. */
 function patchEntitlementsFile(filePath) {
   if (!fs.existsSync(filePath)) {
+    // A missing file means the target folder name drifted (e.g. expo-widgets
+    // renamed its extension); the app group would silently be lost. Warn loudly.
+    console.warn(`[with-app-groups] entitlements file not found: ${filePath}`);
     return;
   }
   let xml = fs.readFileSync(filePath, "utf8");
