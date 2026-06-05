@@ -104,6 +104,31 @@ export const recordPaidOrder = internalMutation({
       );
     }
 
+    // Idempotency guard: a webhook retry must not insert a second subscription
+    // row for the same order. Convex serializes per-document, not globally, so
+    // the three-way lookup below can race two concurrent retries past every
+    // null check; keying on the order id closes that window.
+    const byOrderId = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_polarOrderId", (q) =>
+        q.eq("polarOrderId", args.polarOrderId)
+      )
+      .first();
+    if (byOrderId) {
+      await ctx.db.patch(byOrderId._id, {
+        authUserId: args.authUserId ?? byOrderId.authUserId,
+        status: "active",
+        productId: "lifetime",
+        source: "polar",
+        polarCustomerId: args.polarCustomerId,
+        polarProductId: args.productId,
+        polarOrderId: args.polarOrderId,
+        activatedAt: now,
+        updatedAt: now,
+      });
+      return { subId: byOrderId._id, orderId, alreadyConfirmed };
+    }
+
     const byAuthUserId = args.authUserId
       ? await ctx.db
           .query("subscriptions")
