@@ -1,7 +1,7 @@
 {
   "name": "barakah",
   "main": "expo-router/entry",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "scripts": {
     "start": "expo start",
     "lint": "expo lint",
