@@ -66,6 +66,21 @@ async function removeMutation(id: string): Promise<void> {
 }
 
 /**
+ * Clear the queue and its in-memory mirror. Call on logout so a signed-out
+ * user's unsynced ops are never replayed under the next user's session — the
+ * queue carries no user binding, so a stale `memo` would drain onto whoever
+ * mounts `useOfflineReplay` next.
+ */
+export async function resetOfflineQueue(): Promise<void> {
+  memo = null;
+  try {
+    await AsyncStorage.removeItem(QUEUE_KEY);
+  } catch {
+    // best-effort; memo is already cleared so a stale read can't bleed through
+  }
+}
+
+/**
  * Drains the persisted mutation queue on mount and whenever the app returns to
  * the foreground. Each handler resolves only once Convex confirms the write, so
  * while offline the loop simply waits — and resumes draining on reconnect.
