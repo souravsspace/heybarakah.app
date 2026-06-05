@@ -258,17 +258,14 @@ export default function Locked() {
   const toggleAndroid = useCallback(
     async (pkg: string) => {
       Haptics.selectionAsync().catch(() => undefined);
-      let snapshot: string[] = [];
-      setPendingAndroid((prev) => {
-        const next = new Set(prev);
-        if (next.has(pkg)) {
-          next.delete(pkg);
-        } else {
-          next.add(pkg);
-        }
-        snapshot = [...next];
-        return next;
-      });
+      const next = new Set(pendingAndroid);
+      if (next.has(pkg)) {
+        next.delete(pkg);
+      } else {
+        next.add(pkg);
+      }
+      const snapshot = [...next];
+      setPendingAndroid(next);
       setBlockedApps(snapshot);
       const args = { androidPackageNames: snapshot };
       try {
@@ -278,7 +275,7 @@ export default function Locked() {
         // best-effort; last-write-wins resolves later taps
       }
     },
-    [upsertAndroid]
+    [pendingAndroid, upsertAndroid]
   );
 
   const onSocialTap = useCallback(
