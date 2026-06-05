@@ -218,7 +218,13 @@ export function SubscriptionProvider({
     }
     const info = await restorePurchases();
     if (info) {
-      await syncCustomerInfo(info);
+      try {
+        await syncCustomerInfo(info);
+      } catch {
+        // Entitlement is already confirmed below; the customer-info listener
+        // retries the Convex sync. Don't let a sync hiccup report "nothing to
+        // restore" for a purchase RevenueCat just confirmed.
+      }
       return Boolean(info.entitlements.active[ENTITLEMENT_ID]);
     }
     return Boolean(activeSubscription);
