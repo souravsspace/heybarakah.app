@@ -203,7 +203,9 @@ export const getStreak = query({
       .withIndex("by_user_date_prayer", (q) =>
         q.eq("authUserId", user._id).gte("date", startDate).lte("date", today)
       )
-      .collect();
+      // Bounded by the lookback window: at most 5 prayers/day. Cap the read so a
+      // power user can't blow the per-query document budget on this live query.
+      .take(STREAK_MAX_LOOKBACK * 5 + 10);
     const byDate = new Map<string, Set<string>>();
     for (const log of logs) {
       if (!STREAK_COUNTABLE_STATUSES.has(log.status)) {
