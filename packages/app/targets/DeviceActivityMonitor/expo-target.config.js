@@ -7,7 +7,7 @@ module.exports = (config) => {
   return {
     type: "device-activity-monitor",
     name: "DeviceActivityMonitor",
-    deploymentTarget: "16.0",
+    deploymentTarget: "16.4",
     bundleIdentifier: ".DeviceActivityMonitor",
     frameworks: ["DeviceActivity", "ManagedSettings", "FamilyControls"],
     entitlements: {
