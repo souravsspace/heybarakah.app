@@ -10,22 +10,43 @@ import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 
 const PRAYERS = [
-  { key: "fajr", label: "Fajr", hint: "Before sunrise", icon: "moon" },
-  { key: "dhuhr", label: "Dhuhr", hint: "After zenith", icon: "sunny" },
+  {
+    key: "fajr",
+    label: "Fajr",
+    arabic: "فجر",
+    hint: "Before sunrise",
+    icon: "moon",
+  },
+  {
+    key: "dhuhr",
+    label: "Dhuhr",
+    arabic: "ظهر",
+    hint: "After zenith",
+    icon: "sunny",
+  },
   {
     key: "asr",
     label: "Asr",
+    arabic: "عصر",
     hint: "Late afternoon",
     icon: "partly-sunny",
   },
   {
     key: "maghrib",
     label: "Maghrib",
+    arabic: "مغرب",
     hint: "Just after sunset",
     icon: "partly-sunny-outline",
   },
-  { key: "isha", label: "Isha", hint: "Night", icon: "moon-outline" },
+  {
+    key: "isha",
+    label: "Isha",
+    arabic: "عشاء",
+    hint: "Night",
+    icon: "moon-outline",
+  },
 ] as const satisfies readonly {
+  arabic: string;
   hint: string;
   icon: keyof typeof Ionicons.glyphMap;
   key: "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
@@ -84,6 +105,7 @@ export default function PrayersToLock() {
           {PRAYERS.map((p, index) => (
             <FadeSlideIn delay={index * 60} key={p.key}>
               <PrayerSelectRow
+                arabic={p.arabic}
                 hint={p.hint}
                 icon={p.icon}
                 label={p.label}
