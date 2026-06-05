@@ -96,6 +96,13 @@ function AuthedShell() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="achievements" />
       <Stack.Screen
+        name="logging-out"
+        options={{
+          animation: "fade",
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
         name="dhikr-record"
         options={{
           presentation: "modal",
