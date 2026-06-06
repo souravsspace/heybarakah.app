@@ -140,9 +140,12 @@ export default function Profile() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
       () => undefined
     );
+    const note = isPremium
+      ? " Your subscription is billed by Apple and is not cancelled by deleting your account — manage or cancel it in Settings › Apple ID › Subscriptions."
+      : "";
     Alert.alert(
       "Delete account",
-      "This permanently removes your account and data. This cannot be undone.",
+      `This permanently removes your account and data. This cannot be undone.${note}`,
       [
         { text: "Cancel", style: "cancel" },
         {
