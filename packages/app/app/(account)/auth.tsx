@@ -259,8 +259,11 @@ export default function Auth() {
   // dismissed Apple sheet or Google browser always recovers to a usable screen.
   // Full splash is reserved for real transitions: initial load, post-OTP
   // verification, or an already-signed-in user about to be routed.
+  // Caption only on the actual login transition (verifying or a known user) —
+  // not the plain initial query load, where nobody is signing in yet.
+  const isLoggingIn = isVerifyingAuth || Boolean(user);
   if (isUserLoading || isVerifyingAuth || user) {
-    return <AnimatedSplash />;
+    return <AnimatedSplash caption={isLoggingIn ? "Logging in…" : undefined} />;
   }
 
   const headline = mode === "signup" ? "Create your account" : "Welcome back.";
