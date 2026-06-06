@@ -88,19 +88,29 @@ export const deleteMyAccount = mutation({
         .withIndex("by_authUserId", (q) => q.eq("authUserId", authUserId))
         .collect()
     );
-    await deleteAll(
-      await ctx.db
-        .query("subscriptions")
-        .withIndex("by_authUserId", (q) => q.eq("authUserId", authUserId))
-        .collect()
-    );
-    if (email) {
-      await deleteAll(
+    // A claimed Polar sub carries both authUserId and customerEmail, so the two
+    // index lookups can return the same row. Dedupe by _id before deleting —
+    // deleting an already-removed document throws and aborts the whole mutation.
+    const subIds = new Set<Id<"subscriptions">>(
+      (
         await ctx.db
           .query("subscriptions")
-          .withIndex("by_customerEmail", (q) => q.eq("customerEmail", email))
+          .withIndex("by_authUserId", (q) => q.eq("authUserId", authUserId))
           .collect()
-      );
+      ).map((row) => row._id)
+    );
+    if (email) {
+      for (const row of await ctx.db
+        .query("subscriptions")
+        .withIndex("by_customerEmail", (q) => q.eq("customerEmail", email))
+        .collect()) {
+        subIds.add(row._id);
+      }
+    }
+    for (const id of subIds) {
+      await ctx.db.delete(id);
+    }
+    if (email) {
       await deleteAll(
         await ctx.db
           .query("polarOrders")
