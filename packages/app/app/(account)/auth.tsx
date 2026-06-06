@@ -221,9 +221,19 @@ export default function Auth() {
 
   async function pick(provider: AuthProvider) {
     selectionAsync().catch(() => undefined);
-    setPendingProvider(provider);
     fillDefaultsIfWelcome(provider);
 
+    // Email leaves this screen for the OTP flow; don't put it into a loading
+    // state (that would splash the screen behind the pushed route).
+    if (provider === "email") {
+      router.push({
+        pathname: "/(account)/email-otp",
+        params: { mode },
+      });
+      return;
+    }
+
+    setPendingProvider(provider);
     if (provider === "google") {
       const didStart = await oAuthGoogle.signIn();
       if (!didStart) {
@@ -231,17 +241,10 @@ export default function Auth() {
       }
       return;
     }
-    if (provider === "apple") {
-      const didStart = await oAuthApple.signIn();
-      if (!didStart) {
-        setPendingProvider(null);
-      }
-      return;
+    const didStart = await oAuthApple.signIn();
+    if (!didStart) {
+      setPendingProvider(null);
     }
-    router.push({
-      pathname: "/(account)/email-otp",
-      params: { mode },
-    });
   }
 
   const loadingProvider =
@@ -251,7 +254,12 @@ export default function Auth() {
   const isOAuthLoading = loadingProvider !== null;
   const isVerifyingAuth = params.verifying === "1";
 
-  if (isUserLoading || isOAuthLoading || isVerifyingAuth || user) {
+  // OAuth in flight keeps the buttons visible with a per-button spinner (see
+  // `loadingProvider`/`disabled` below) instead of a full-screen splash, so a
+  // dismissed Apple sheet or Google browser always recovers to a usable screen.
+  // Full splash is reserved for real transitions: initial load, post-OTP
+  // verification, or an already-signed-in user about to be routed.
+  if (isUserLoading || isVerifyingAuth || user) {
     return <AnimatedSplash />;
   }
 
