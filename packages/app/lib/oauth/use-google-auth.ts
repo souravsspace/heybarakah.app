@@ -29,6 +29,16 @@ export function useGoogleAuth() {
         );
         return false;
       }
+      // Google uses the web redirect flow: `signIn.social` resolves with
+      // `{ redirect: true }` whether the in-app browser completed or was
+      // dismissed — the session cookie is only written on success. Confirm a
+      // real session so a cancelled browser doesn't leave the screen stuck.
+      const session = await authClient.getSession({
+        query: { disableCookieCache: true },
+      });
+      if (!session?.data) {
+        return false;
+      }
       return true;
     } catch (error) {
       console.error("[google-oauth] threw:", error);

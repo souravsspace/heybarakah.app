@@ -6,7 +6,6 @@ import { betterAuth } from "better-auth";
 import { emailOTP } from "better-auth/plugins";
 import { components } from "../_generated/api";
 import type { DataModel } from "../_generated/dataModel";
-import { query } from "../_generated/server";
 import authConfig from "../auth.config";
 import { requireEnv } from "./env";
 import { sendOTPVerification } from "./resend";
@@ -85,8 +84,3 @@ function createAuth(ctx: GenericCtx<DataModel>) {
 }
 
 export { createAuth };
-
-export const getCurrentUser = query({
-  args: {},
-  handler: async (ctx) => await authComponent.safeGetAuthUser(ctx),
-});

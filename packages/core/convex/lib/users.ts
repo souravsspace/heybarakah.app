@@ -8,7 +8,12 @@ import type { Id, TableNames } from "../_generated/dataModel";
 import { internalMutation, mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
-export const getMyProfile = query({
+// Account = auth user + in-app profile resolved in a single auth pass. The
+// login gate and every screen read this through one shared subscription instead
+// of each re-resolving the Better Auth user. The avatar signed URL is split out
+// to `getMyAvatarUrl` so this gate-critical query never pays a storage round
+// trip; `profile` is the raw `users` row (or null before onboarding).
+export const getMyAccount = query({
   args: {},
   handler: async (ctx) => {
     const user = await authComponent.safeGetAuthUser(ctx);
@@ -19,13 +24,22 @@ export const getMyProfile = query({
       .query("users")
       .withIndex("by_authUserId", (q) => q.eq("authUserId", user._id))
       .unique();
-    if (!profile) {
+    return { user, profile };
+  },
+});
+
+export const getMyAvatarUrl = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
       return null;
     }
-    const imageUrl = profile.image
-      ? await ctx.storage.getUrl(profile.image)
-      : null;
-    return { ...profile, imageUrl };
+    const profile = await ctx.db
+      .query("users")
+      .withIndex("by_authUserId", (q) => q.eq("authUserId", user._id))
+      .unique();
+    return profile?.image ? await ctx.storage.getUrl(profile.image) : null;
   },
 });
 

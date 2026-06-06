@@ -3,10 +3,15 @@ import { useQuery } from "convex/react";
 import type React from "react";
 import { createContext, useContext, useMemo } from "react";
 
-type User = NonNullable<typeof api.lib.auth.getCurrentUser._returnType>;
+type Account = NonNullable<typeof api.lib.users.getMyAccount._returnType>;
+type User = Account["user"];
+type Profile = Account["profile"];
 
 interface UserContextType {
   isLoading: boolean;
+  // `undefined` while the account query is in flight, then the `users` row or
+  // `null` once resolved — consumers gate on `undefined` for loading.
+  profile: Profile | undefined;
   user: User | null;
 }
 
@@ -21,14 +26,15 @@ export function useUser() {
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const queryResult = useQuery(api.lib.auth.getCurrentUser);
+  const account = useQuery(api.lib.users.getMyAccount);
 
   const value = useMemo<UserContextType>(
     () => ({
-      user: queryResult ?? null,
-      isLoading: queryResult === undefined,
+      user: account?.user ?? null,
+      profile: account === undefined ? undefined : (account?.profile ?? null),
+      isLoading: account === undefined,
     }),
-    [queryResult]
+    [account]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

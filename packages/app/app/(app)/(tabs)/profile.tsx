@@ -43,8 +43,8 @@ const PLAN_VALUE_LABEL: Record<string, string> = {
 
 export default function Profile() {
   const router = useRouter();
-  const { user } = useUser();
-  const profile = useQuery(api.lib.users.getMyProfile);
+  const { user, profile } = useUser();
+  const imageUrl = useQuery(api.lib.users.getMyAvatarUrl);
   const deleteAccount = useMutation(api.lib.users.deleteMyAccount);
   const { activeSubscription } = useSubscription();
   const { colors, scheme } = useTheme();
@@ -207,7 +207,7 @@ export default function Profile() {
             colors={colors}
             email={email}
             handle={handle}
-            imageUrl={profile?.imageUrl ?? null}
+            imageUrl={imageUrl ?? null}
             initials={initials}
             isPremium={isPremium}
             name={name}
