@@ -113,6 +113,12 @@ export const runEvaluate = internalMutation({
         .take(ACHIEVEMENTS.length + 10),
     ]);
 
+    // Skip if the profile is gone — a delete-account purge can race with a
+    // scheduled evaluate and would otherwise re-insert rows for a deleted user.
+    if (!profile) {
+      return;
+    }
+
     const alreadyUnlocked = new Set<AchievementCode>(
       existing.map((row) => row.code as AchievementCode)
     );
