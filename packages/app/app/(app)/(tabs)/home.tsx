@@ -5,7 +5,7 @@ import {
   type PrayerStatus,
 } from "@barakah/core/prayer";
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -147,8 +147,7 @@ function useCountdown(target: Date | null) {
 
 export default function Home() {
   const { state, dispatch } = useOnboardingState();
-  const { user } = useUser();
-  const profile = useQuery(api.lib.users.getMyProfile);
+  const { user, profile } = useUser();
   const upsertProfile = useMutation(api.lib.users.upsertProfile);
   const uploadedRef = useRef(false);
   const { colors, scheme } = useTheme();
