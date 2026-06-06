@@ -68,6 +68,7 @@ export default function Plans() {
     claimMockSubscription,
     isPurchasing,
     refresh,
+    restore,
   } = useSubscription();
   const [showAll, setShowAll] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,6 +84,22 @@ export default function Plans() {
 
   function setPlan(id: PlanId) {
     dispatch({ type: "SET_FIELD", payload: { plan: id } });
+  }
+
+  async function onRestore() {
+    try {
+      const ok = await restore();
+      if (ok) {
+        router.replace("/home");
+        return;
+      }
+      Alert.alert(
+        "Nothing to restore",
+        "We could not find an active subscription for this account."
+      );
+    } catch {
+      Alert.alert("Could not restore", "Check your connection and try again.");
+    }
   }
 
   async function tryRealPurchase(): Promise<boolean> {
@@ -174,11 +191,10 @@ export default function Plans() {
             </Text>
           ) : null}
           <Button label={CTA_LABELS[selected]} onPress={start} />
-          {showAll ? (
-            <Text className="text-center font-sans text-body-sm text-tertiary">
-              {FOOTER_CAPTIONS[selected]}
-            </Text>
-          ) : (
+          <Text className="text-center font-sans text-body-sm text-tertiary">
+            {FOOTER_CAPTIONS[selected]}
+          </Text>
+          {showAll ? null : (
             <Pressable
               className="items-center py-sm"
               onPress={() => setShowAll(true)}
@@ -191,6 +207,11 @@ export default function Plans() {
               </Text>
             </Pressable>
           )}
+          <Pressable className="items-center py-[6px]" onPress={onRestore}>
+            <Text className="font-sans text-caption text-tertiary">
+              Restore purchases
+            </Text>
+          </Pressable>
         </View>
       }
       scroll={false}
@@ -215,7 +236,15 @@ export default function Plans() {
               onPress={() => Linking.openURL(LINKS.terms)}
             >
               <Text className="font-sans text-caption text-tertiary">
-                T&Cs · Privacy
+                Terms
+              </Text>
+            </Pressable>
+            <Pressable
+              className="rounded-full bg-neutral-soft px-sm py-[5px]"
+              onPress={() => Linking.openURL(LINKS.privacy)}
+            >
+              <Text className="font-sans text-caption text-tertiary">
+                Privacy
               </Text>
             </Pressable>
             <Pressable
