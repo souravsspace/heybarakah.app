@@ -1,6 +1,4 @@
-import { api } from "@barakah/core/convex/_generated/api";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "convex/react";
 import { selectionAsync } from "expo-haptics";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -54,7 +52,7 @@ export default function Auth() {
   const params = useLocalSearchParams<{ mode?: string; verifying?: string }>();
   const oAuthGoogle = useGoogleAuth();
   const oAuthApple = useAppleAuth();
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading, profile } = useUser();
   const {
     activeSubscription,
     isSubscriptionLoading,
@@ -64,7 +62,6 @@ export default function Auth() {
     claimMockSubscription,
   } = useSubscription();
   const purchaseCompletedAt = state.purchaseCompletedAt;
-  const profile = useQuery(api.lib.users.getMyProfile);
   const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(
     null
   );
