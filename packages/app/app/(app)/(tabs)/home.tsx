@@ -211,6 +211,8 @@ export default function Home() {
     isStale,
     refreshing,
     isOnline,
+    error,
+    refresh,
   } = usePrayerTimes();
   const active = useMemo(
     () => activePrayerNow(todayPrayerTimes),
@@ -522,6 +524,43 @@ export default function Home() {
               >
                 {`In ${countdown.h}h ${pad2(countdown.m)}m ${pad2(countdown.s)}s`}
               </Text>
+            ) : null}
+
+            {error &&
+            !(loading || refreshing || nextPrayer || activeUnlogged) ? (
+              <View style={{ marginTop: 4, gap: 8 }}>
+                <Text style={{ fontSize: 13, color: colors.inkMuted }}>
+                  {isOnline
+                    ? "Couldn't load prayer times."
+                    : "You're offline. Prayer times couldn't load."}
+                </Text>
+                <Pressable
+                  accessibilityLabel="Retry loading prayer times"
+                  accessibilityRole="button"
+                  onPress={() => {
+                    refresh().catch(() => undefined);
+                  }}
+                  style={({ pressed }) => ({
+                    alignSelf: "flex-start",
+                    paddingHorizontal: 18,
+                    paddingVertical: 10,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    opacity: pressed ? 0.6 : 1,
+                  })}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: colors.ink,
+                    }}
+                  >
+                    Try again
+                  </Text>
+                </Pressable>
+              </View>
             ) : null}
 
             {activeUnlogged ? (
