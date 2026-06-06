@@ -72,6 +72,7 @@ export default function Plans() {
   } = useSubscription();
   const [showAll, setShowAll] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const selected: PlanId = state.plan ?? "yearly";
 
   const visible = PLANS.filter((p) => showAll || p.id !== "family");
@@ -87,10 +88,18 @@ export default function Plans() {
   }
 
   async function onRestore() {
+    if (isRestoring) {
+      return;
+    }
+    setIsRestoring(true);
     try {
       const ok = await restore();
       if (ok) {
-        router.replace("/home");
+        if (user) {
+          router.replace("/home");
+        } else {
+          goTo("/(account)/auth?mode=signup");
+        }
         return;
       }
       Alert.alert(
@@ -99,6 +108,8 @@ export default function Plans() {
       );
     } catch {
       Alert.alert("Could not restore", "Check your connection and try again.");
+    } finally {
+      setIsRestoring(false);
     }
   }
 
@@ -207,9 +218,14 @@ export default function Plans() {
               </Text>
             </Pressable>
           )}
-          <Pressable className="items-center py-[6px]" onPress={onRestore}>
+          <Pressable
+            className="items-center py-[6px]"
+            disabled={isRestoring}
+            onPress={onRestore}
+            style={{ opacity: isRestoring ? 0.4 : 1 }}
+          >
             <Text className="font-sans text-caption text-tertiary">
-              Restore purchases
+              {isRestoring ? "Restoring…" : "Restore purchases"}
             </Text>
           </Pressable>
         </View>
