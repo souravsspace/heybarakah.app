@@ -13,6 +13,7 @@ import { PLANS } from "@/constants/onboarding-config";
 import { useUser } from "@/contexts/user-context";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import { findPackageForPlan } from "@/lib/revenuecat";
 import { useSubscription } from "@/lib/subscription";
 
 type Plan = (typeof PLANS)[number];
@@ -76,6 +77,43 @@ export default function Plans() {
   const selected: PlanId = state.plan ?? "yearly";
 
   const visible = PLANS.filter((p) => showAll || p.id !== "family");
+
+  // Swap the hardcoded price token for the live store price so the displayed
+  // amount matches what Apple charges. Text/format stays identical; only the
+  // number changes, and only once offerings have loaded.
+  const liveYearly = findPackageForPlan(offerings, "yearly")?.product
+    .priceString;
+  const liveMonthly = findPackageForPlan(offerings, "monthly")?.product
+    .priceString;
+  const liveFamily = findPackageForPlan(offerings, "family")?.product
+    .priceString;
+  const swap = (text: string, token: string, live?: string) =>
+    live ? text.replaceAll(token, live) : text;
+  const ctaLabel: Record<PlanId, string> = {
+    yearly: CTA_LABELS.yearly,
+    monthly: swap(CTA_LABELS.monthly, "$7.99", liveMonthly),
+    family: CTA_LABELS.family,
+  };
+  const footerCaption: Record<PlanId, string> = {
+    yearly: swap(FOOTER_CAPTIONS.yearly, "$39.99", liveYearly),
+    monthly: swap(FOOTER_CAPTIONS.monthly, "$7.99", liveMonthly),
+    family: swap(FOOTER_CAPTIONS.family, "$59.88", liveFamily),
+  };
+  const planCopy: Record<PlanId, (typeof PLAN_COPY)[PlanId]> = {
+    yearly: {
+      ...PLAN_COPY.yearly,
+      leftSub: swap(PLAN_COPY.yearly.leftSub, "$39.99", liveYearly),
+    },
+    monthly: {
+      ...PLAN_COPY.monthly,
+      leftSub: swap(PLAN_COPY.monthly.leftSub, "$7.99", liveMonthly),
+      rightLabel: swap(PLAN_COPY.monthly.rightLabel, "$7.99", liveMonthly),
+    },
+    family: {
+      ...PLAN_COPY.family,
+      leftSub: swap(PLAN_COPY.family.leftSub, "$59.88", liveFamily),
+    },
+  };
 
   useEffect(() => {
     if (revenueCatReady && !offerings && !offeringsLoading) {
@@ -201,9 +239,9 @@ export default function Plans() {
               {`RC ${revenueCatReady ? "ready" : "off"} · offerings ${offerings?.availablePackages.length ?? 0} · user ${user ? "yes" : "no"}${offeringsLoading ? " · loading" : ""}`}
             </Text>
           ) : null}
-          <Button label={CTA_LABELS[selected]} onPress={start} />
+          <Button label={ctaLabel[selected]} onPress={start} />
           <Text className="text-center font-sans text-body-sm text-tertiary">
-            {FOOTER_CAPTIONS[selected]}
+            {footerCaption[selected]}
           </Text>
           {showAll ? null : (
             <Pressable
@@ -287,6 +325,7 @@ export default function Plans() {
         <View style={{ marginTop: showAll ? 18 : 16, gap: 22 }}>
           {visible.map((plan) => (
             <PlanOption
+              copy={planCopy[plan.id]}
               isSelected={selected === plan.id}
               key={plan.id}
               onPress={() => setPlan(plan.id)}
@@ -303,13 +342,13 @@ function PlanOption({
   plan,
   isSelected,
   onPress,
+  copy,
 }: {
   plan: Plan;
   isSelected: boolean;
   onPress: () => void;
+  copy: (typeof PLAN_COPY)[PlanId];
 }) {
-  const copy = PLAN_COPY[plan.id];
-
   return (
     <Pressable onPress={onPress} style={{ position: "relative" }}>
       <PlanBadge id={plan.id} />
