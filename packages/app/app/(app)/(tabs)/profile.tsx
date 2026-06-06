@@ -126,7 +126,18 @@ export default function Profile() {
       // Purge Convex app data first while the session is still valid, then
       // remove the auth record. Routing to the blocking screen runs sign-out.
       await deleteAccount({});
-      await authClient.deleteUser().catch(() => undefined);
+      let authRemoved = true;
+      try {
+        await authClient.deleteUser();
+      } catch {
+        authRemoved = false;
+      }
+      if (!authRemoved) {
+        Alert.alert(
+          "Account partially deleted",
+          "Your data was removed but your login could not be fully deleted. Email support@heybarakah.app to finish."
+        );
+      }
       router.replace("/logging-out" as never);
     } catch {
       Alert.alert(
@@ -140,9 +151,14 @@ export default function Profile() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
       () => undefined
     );
-    const note = isPremium
-      ? " Your subscription is billed by Apple and is not cancelled by deleting your account — manage or cancel it in Settings › Apple ID › Subscriptions."
-      : "";
+    let note = "";
+    if (activeSubscription?.source === "revenuecat") {
+      note =
+        " Your subscription is billed by Apple and is not cancelled by deleting your account — manage or cancel it in Settings › Apple ID › Subscriptions.";
+    } else if (activeSubscription?.source === "polar") {
+      note =
+        " Your subscription was purchased on the web and is not cancelled by deleting your account — manage it from your original purchase receipt.";
+    }
     Alert.alert(
       "Delete account",
       `This permanently removes your account and data. This cannot be undone.${note}`,
