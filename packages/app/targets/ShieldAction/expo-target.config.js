@@ -1,3 +1,4 @@
+"use strict";
 /** @type {import('@bacons/apple-targets/app.plugin').ConfigFunction} */
 module.exports = (config) => {
   const appGroup =
@@ -7,7 +8,7 @@ module.exports = (config) => {
   return {
     type: "shield-action",
     name: "ShieldAction",
-    deploymentTarget: "16.4",
+    deploymentTarget: "16.0",
     bundleIdentifier: ".ShieldAction",
     frameworks: ["ManagedSettings", "ManagedSettingsUI"],
     entitlements: {
