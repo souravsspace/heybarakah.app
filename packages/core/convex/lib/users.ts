@@ -4,7 +4,7 @@ import {
   validateProfileInput,
 } from "../../src/users/validators";
 import { internal } from "../_generated/api";
-import type { Id } from "../_generated/dataModel";
+import type { Doc, Id, TableNames } from "../_generated/dataModel";
 import { mutation, query } from "../_generated/server";
 import { authComponent } from "./auth";
 
@@ -55,6 +55,107 @@ export const upsertProfile = mutation({
       authUserId: user._id,
     });
     return resultId;
+  },
+});
+
+export const deleteMyAccount = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new Error("Not authenticated");
+    }
+    const authUserId = user._id;
+    const email = user.email ?? null;
+
+    const profile = await ctx.db
+      .query("users")
+      .withIndex("by_authUserId", (q) => q.eq("authUserId", authUserId))
+      .unique();
+    if (profile?.image) {
+      await ctx.storage.delete(profile.image);
+    }
+
+    const deleteAll = async <T extends TableNames>(rows: Doc<T>[]) => {
+      for (const row of rows) {
+        await ctx.db.delete(row._id);
+      }
+    };
+
+    await deleteAll(
+      await ctx.db
+        .query("users")
+        .withIndex("by_authUserId", (q) => q.eq("authUserId", authUserId))
+        .collect()
+    );
+    await deleteAll(
+      await ctx.db
+        .query("subscriptions")
+        .withIndex("by_authUserId", (q) => q.eq("authUserId", authUserId))
+        .collect()
+    );
+    if (email) {
+      await deleteAll(
+        await ctx.db
+          .query("subscriptions")
+          .withIndex("by_customerEmail", (q) => q.eq("customerEmail", email))
+          .collect()
+      );
+      await deleteAll(
+        await ctx.db
+          .query("polarOrders")
+          .withIndex("by_customerEmail", (q) => q.eq("customerEmail", email))
+          .collect()
+      );
+    }
+    await deleteAll(
+      await ctx.db
+        .query("prayerLogs")
+        .withIndex("by_user_updated", (q) => q.eq("authUserId", authUserId))
+        .collect()
+    );
+    await deleteAll(
+      await ctx.db
+        .query("shieldSelection")
+        .withIndex("by_user", (q) => q.eq("authUserId", authUserId))
+        .collect()
+    );
+    await deleteAll(
+      await ctx.db
+        .query("dhikrDaily")
+        .withIndex("by_user_date", (q) => q.eq("authUserId", authUserId))
+        .collect()
+    );
+    await deleteAll(
+      await ctx.db
+        .query("dhikrAggregate")
+        .withIndex("by_user", (q) => q.eq("authUserId", authUserId))
+        .collect()
+    );
+    await deleteAll(
+      await ctx.db
+        .query("userLocations")
+        .withIndex("by_user", (q) => q.eq("authUserId", authUserId))
+        .collect()
+    );
+    await deleteAll(
+      await ctx.db
+        .query("userAchievements")
+        .withIndex("by_user", (q) => q.eq("authUserId", authUserId))
+        .collect()
+    );
+    await deleteAll(
+      await ctx.db
+        .query("userAchievementCounters")
+        .withIndex("by_user", (q) => q.eq("authUserId", authUserId))
+        .collect()
+    );
+    await deleteAll(
+      await ctx.db
+        .query("prayerTimeCaches")
+        .withIndex("by_userId", (q) => q.eq("userId", authUserId))
+        .collect()
+    );
   },
 });
 
