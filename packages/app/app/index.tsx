@@ -1,5 +1,3 @@
-import { api } from "@barakah/core/convex/_generated/api";
-import { useQuery } from "convex/react";
 import { Redirect } from "expo-router";
 import { useEffect, useRef } from "react";
 import { AnimatedSplash } from "@/components/splash/animated-splash";
@@ -12,10 +10,9 @@ import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { useSubscription } from "@/lib/subscription";
 
 export default function Index() {
-  const { user, isLoading } = useUser();
+  const { user, isLoading, profile } = useUser();
   const { activeSubscription, isSubscriptionLoading } = useSubscription();
   const { state, dispatch } = useOnboardingState();
-  const profile = useQuery(api.lib.users.getMyProfile);
 
   const ready = !(isLoading || isSubscriptionLoading) && state.hydrated;
   // A signed-out user with no paywall/purchase marker either never started or
