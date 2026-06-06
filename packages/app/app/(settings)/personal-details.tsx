@@ -22,6 +22,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
+import { useUser } from "@/contexts/user-context";
 
 const SPLIT_RE = /\s+/;
 const MAX_DIMENSION = 512;
@@ -30,7 +31,8 @@ const COMPRESS_QUALITY = 0.85;
 export default function PersonalDetails() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
-  const profile = useQuery(api.lib.users.getMyProfile);
+  const { profile } = useUser();
+  const imageUrl = useQuery(api.lib.users.getMyAvatarUrl) ?? null;
   const upsertProfile = useMutation(api.lib.users.upsertProfile);
   const generateUploadUrl = useMutation(api.lib.users.generateAvatarUploadUrl);
   const setAvatar = useMutation(api.lib.users.setAvatar);
@@ -49,7 +51,6 @@ export default function PersonalDetails() {
 
   const nameDirty = hydrated && name.trim() !== (profile?.name ?? "");
   const dirty = nameDirty || imageChanged;
-  const imageUrl = profile?.imageUrl ?? null;
 
   const parts = name.trim().split(SPLIT_RE).filter(Boolean);
   const initials =
