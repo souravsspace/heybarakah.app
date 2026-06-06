@@ -9,7 +9,7 @@ import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Linking, Pressable, Text, View } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -211,6 +211,8 @@ export default function Home() {
     isStale,
     refreshing,
     isOnline,
+    error,
+    refresh,
   } = usePrayerTimes();
   const active = useMemo(
     () => activePrayerNow(todayPrayerTimes),
@@ -522,6 +524,56 @@ export default function Home() {
               >
                 {`In ${countdown.h}h ${pad2(countdown.m)}m ${pad2(countdown.s)}s`}
               </Text>
+            ) : null}
+
+            {error &&
+            !(loading || refreshing || nextPrayer || activeUnlogged) ? (
+              <View style={{ marginTop: 4, gap: 8 }}>
+                <Text style={{ fontSize: 13, color: colors.inkMuted }}>
+                  {location
+                    ? isOnline
+                      ? "Couldn't load prayer times."
+                      : "You're offline. Prayer times couldn't load."
+                    : "Location unavailable. Enable it to see prayer times."}
+                </Text>
+                <Pressable
+                  accessibilityLabel={
+                    location
+                      ? "Retry loading prayer times"
+                      : "Open location settings"
+                  }
+                  accessibilityRole="button"
+                  disabled={refreshing}
+                  onPress={() => {
+                    // refresh() no-ops without a resolved location, so when the
+                    // failure is location itself, send the user to Settings.
+                    if (location) {
+                      refresh().catch(() => undefined);
+                    } else {
+                      Linking.openSettings().catch(() => undefined);
+                    }
+                  }}
+                  style={({ pressed }) => ({
+                    alignSelf: "flex-start",
+                    paddingHorizontal: 18,
+                    paddingVertical: 10,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    opacity: refreshing ? 0.4 : pressed ? 0.6 : 1,
+                  })}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: colors.ink,
+                    }}
+                  >
+                    {location ? "Try again" : "Open settings"}
+                  </Text>
+                </Pressable>
+              </View>
             ) : null}
 
             {activeUnlogged ? (

@@ -313,15 +313,26 @@ export const applyRevenueCatEntitlement = internalMutation({
     expiresAt: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // Look for a Polar-owned subscription among the user's active rows directly,
+    // so RC sync can't overwrite it just because it fell outside a take(20) on
+    // the unfiltered index when a user has many historical rows.
+    const activeRows = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_authUserId_status", (q) =>
+        q.eq("authUserId", args.authUserId).eq("status", "active")
+      )
+      .take(10);
+    const activePolarRow = activeRows.find((row) =>
+      shouldSkipRcSync(row.source)
+    );
+    if (activePolarRow) {
+      return activePolarRow;
+    }
+
     const existing = await ctx.db
       .query("subscriptions")
       .withIndex("by_authUserId", (q) => q.eq("authUserId", args.authUserId))
       .take(20);
-
-    const polarRow = existing.find((row) => shouldSkipRcSync(row.source));
-    if (polarRow && polarRow.status === "active") {
-      return polarRow;
-    }
 
     const rcRow = existing.find((row) => row.source === "revenuecat");
     const now = new Date().toISOString();

@@ -13,6 +13,7 @@ import { PLANS } from "@/constants/onboarding-config";
 import { useUser } from "@/contexts/user-context";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import { findPackageForPlan } from "@/lib/revenuecat";
 import { useSubscription } from "@/lib/subscription";
 
 type Plan = (typeof PLANS)[number];
@@ -68,12 +69,51 @@ export default function Plans() {
     claimMockSubscription,
     isPurchasing,
     refresh,
+    restore,
   } = useSubscription();
   const [showAll, setShowAll] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const selected: PlanId = state.plan ?? "yearly";
 
   const visible = PLANS.filter((p) => showAll || p.id !== "family");
+
+  // Swap the hardcoded price token for the live store price so the displayed
+  // amount matches what Apple charges. Text/format stays identical; only the
+  // number changes, and only once offerings have loaded.
+  const liveYearly = findPackageForPlan(offerings, "yearly")?.product
+    .priceString;
+  const liveMonthly = findPackageForPlan(offerings, "monthly")?.product
+    .priceString;
+  const liveFamily = findPackageForPlan(offerings, "family")?.product
+    .priceString;
+  const swap = (text: string, token: string, live?: string) =>
+    live ? text.replaceAll(token, live) : text;
+  const ctaLabel: Record<PlanId, string> = {
+    yearly: CTA_LABELS.yearly,
+    monthly: swap(CTA_LABELS.monthly, "$7.99", liveMonthly),
+    family: CTA_LABELS.family,
+  };
+  const footerCaption: Record<PlanId, string> = {
+    yearly: swap(FOOTER_CAPTIONS.yearly, "$39.99", liveYearly),
+    monthly: swap(FOOTER_CAPTIONS.monthly, "$7.99", liveMonthly),
+    family: swap(FOOTER_CAPTIONS.family, "$59.88", liveFamily),
+  };
+  const planCopy: Record<PlanId, (typeof PLAN_COPY)[PlanId]> = {
+    yearly: {
+      ...PLAN_COPY.yearly,
+      leftSub: swap(PLAN_COPY.yearly.leftSub, "$39.99", liveYearly),
+    },
+    monthly: {
+      ...PLAN_COPY.monthly,
+      leftSub: swap(PLAN_COPY.monthly.leftSub, "$7.99", liveMonthly),
+      rightLabel: swap(PLAN_COPY.monthly.rightLabel, "$7.99", liveMonthly),
+    },
+    family: {
+      ...PLAN_COPY.family,
+      leftSub: swap(PLAN_COPY.family.leftSub, "$59.88", liveFamily),
+    },
+  };
 
   useEffect(() => {
     if (revenueCatReady && !offerings && !offeringsLoading) {
@@ -83,6 +123,32 @@ export default function Plans() {
 
   function setPlan(id: PlanId) {
     dispatch({ type: "SET_FIELD", payload: { plan: id } });
+  }
+
+  async function onRestore() {
+    if (isRestoring) {
+      return;
+    }
+    setIsRestoring(true);
+    try {
+      const ok = await restore();
+      if (ok) {
+        if (user) {
+          router.replace("/home");
+        } else {
+          goTo("/(account)/auth?mode=signup");
+        }
+        return;
+      }
+      Alert.alert(
+        "Nothing to restore",
+        "We could not find an active subscription for this account."
+      );
+    } catch {
+      Alert.alert("Could not restore", "Check your connection and try again.");
+    } finally {
+      setIsRestoring(false);
+    }
   }
 
   async function tryRealPurchase(): Promise<boolean> {
@@ -173,12 +239,11 @@ export default function Plans() {
               {`RC ${revenueCatReady ? "ready" : "off"} · offerings ${offerings?.availablePackages.length ?? 0} · user ${user ? "yes" : "no"}${offeringsLoading ? " · loading" : ""}`}
             </Text>
           ) : null}
-          <Button label={CTA_LABELS[selected]} onPress={start} />
-          {showAll ? (
-            <Text className="text-center font-sans text-body-sm text-tertiary">
-              {FOOTER_CAPTIONS[selected]}
-            </Text>
-          ) : (
+          <Button label={ctaLabel[selected]} onPress={start} />
+          <Text className="text-center font-sans text-body-sm text-tertiary">
+            {footerCaption[selected]}
+          </Text>
+          {showAll ? null : (
             <Pressable
               className="items-center py-sm"
               onPress={() => setShowAll(true)}
@@ -191,6 +256,16 @@ export default function Plans() {
               </Text>
             </Pressable>
           )}
+          <Pressable
+            className="items-center py-[6px]"
+            disabled={isRestoring}
+            onPress={onRestore}
+            style={{ opacity: isRestoring ? 0.4 : 1 }}
+          >
+            <Text className="font-sans text-caption text-tertiary">
+              {isRestoring ? "Restoring…" : "Restore purchases"}
+            </Text>
+          </Pressable>
         </View>
       }
       scroll={false}
@@ -215,7 +290,15 @@ export default function Plans() {
               onPress={() => Linking.openURL(LINKS.terms)}
             >
               <Text className="font-sans text-caption text-tertiary">
-                T&Cs · Privacy
+                Terms
+              </Text>
+            </Pressable>
+            <Pressable
+              className="rounded-full bg-neutral-soft px-sm py-[5px]"
+              onPress={() => Linking.openURL(LINKS.privacy)}
+            >
+              <Text className="font-sans text-caption text-tertiary">
+                Privacy
               </Text>
             </Pressable>
             <Pressable
@@ -242,6 +325,7 @@ export default function Plans() {
         <View style={{ marginTop: showAll ? 18 : 16, gap: 22 }}>
           {visible.map((plan) => (
             <PlanOption
+              copy={planCopy[plan.id]}
               isSelected={selected === plan.id}
               key={plan.id}
               onPress={() => setPlan(plan.id)}
@@ -258,13 +342,13 @@ function PlanOption({
   plan,
   isSelected,
   onPress,
+  copy,
 }: {
   plan: Plan;
   isSelected: boolean;
   onPress: () => void;
+  copy: (typeof PLAN_COPY)[PlanId];
 }) {
-  const copy = PLAN_COPY[plan.id];
-
   return (
     <Pressable onPress={onPress} style={{ position: "relative" }}>
       <PlanBadge id={plan.id} />

@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { authClient } from "@/lib/auth-client";
+import { resetOfflineQueue } from "@/lib/offline-queue";
 import { logOutRevenueCat } from "@/lib/revenuecat";
 
 export default function LoggingOut() {
@@ -23,6 +24,7 @@ export default function LoggingOut() {
       } catch {
         // ignore
       }
+      await resetOfflineQueue();
       if (!mounted.current) {
         return;
       }

@@ -59,7 +59,9 @@ export const listMine = query({
     const locations = await ctx.db
       .query("userLocations")
       .withIndex("by_user", (q) => q.eq("authUserId", user._id))
-      .collect();
+      // Writes cap at MAX_LOCATIONS; +1 bounds the read without silently
+      // truncating if a corrupt state ever exceeds the limit.
+      .take(MAX_LOCATIONS + 1);
     const profile = await getProfile(ctx, user._id);
     return {
       locations: locations.sort((a, b) => a.createdAt - b.createdAt),

@@ -42,9 +42,11 @@ export async function configureRevenueCatAnonymous(): Promise<boolean> {
   if (!apiKey) {
     return false;
   }
-  await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
-  Purchases.configure({ apiKey });
+  // Claim synchronously before any await so a concurrent configure/link call
+  // can't observe null and call Purchases.configure() twice (the SDK throws).
   configuredFor = ANONYMOUS;
+  Purchases.configure({ apiKey });
+  await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
   return true;
 }
 
@@ -59,9 +61,10 @@ export async function linkRevenueCatToUser(
     return false;
   }
   if (configuredFor === null) {
-    await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
-    Purchases.configure({ apiKey, appUserID: authUserId });
+    // Claim synchronously before any await to win the configure race.
     configuredFor = authUserId;
+    Purchases.configure({ apiKey, appUserID: authUserId });
+    await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
     return true;
   }
   if (configuredFor === authUserId) {

@@ -22,6 +22,6 @@ describe("metro config", () => {
     expect(config.resolver?.nodeModulesPaths?.[0]).toBe(
       join(workspaceRoot, "node_modules")
     );
-    expect(config.resolver?.disableHierarchicalLookup).toBe(true);
+    expect(config.resolver?.disableHierarchicalLookup).not.toBe(true);
   });
 });

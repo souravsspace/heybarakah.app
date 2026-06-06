@@ -145,7 +145,15 @@ export function useLockActivityScheduler(): void {
           startISO: localISO(active.start),
           endISO: localISO(active.end),
         });
-        if (!cancelled) {
+        if (cancelled) {
+          // Effect was torn down while we awaited start; end the orphan now so
+          // it doesn't accumulate against the ActivityKit limit.
+          try {
+            await endLockActivity(id);
+          } catch {
+            // ignore
+          }
+        } else {
           currentActivityId.current = id;
           currentKey.current = key;
         }

@@ -124,7 +124,7 @@ export const PLANS = [
     name: "Family",
     price: "$59.88",
     cadence: "year",
-    perMonth: "$4.99 / mo · up to 5 members",
+    perMonth: "$4.99 / mo · up to 6 members",
     badge: null,
     recommended: false,
   },

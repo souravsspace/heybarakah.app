@@ -7,7 +7,7 @@ module.exports = (config) => {
   return {
     type: "shield-action",
     name: "ShieldAction",
-    deploymentTarget: "16.0",
+    deploymentTarget: "16.4",
     bundleIdentifier: ".ShieldAction",
     frameworks: ["ManagedSettings", "ManagedSettingsUI"],
     entitlements: {

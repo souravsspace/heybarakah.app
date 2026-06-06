@@ -213,8 +213,14 @@ export function usePrayerShield() {
       // each salah even when the app is closed (the foreground tick alone can't
       // flip the shield in the background). Tokens were already stored by the
       // picker via setBlockConfiguration; we only manage the schedule here.
-      if (Platform.OS === "ios" && iosItemCount > 0) {
-        scheduleBlockWindows(toBlockWindows(windows));
+      if (Platform.OS === "ios") {
+        if (iosItemCount > 0) {
+          scheduleBlockWindows(toBlockWindows(windows));
+        } else {
+          // User cleared all blocked apps: tear down the stale OS schedule so a
+          // later re-add isn't shadowed by a leftover DeviceActivity interval.
+          clearScheduledWindows();
+        }
       }
     }
 
