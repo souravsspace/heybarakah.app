@@ -103,6 +103,12 @@
           }
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Barakah uses your location to calculate accurate prayer times for your city."
+        }
+      ],
       "expo-background-task",
       [
         "expo-native-fonts",
