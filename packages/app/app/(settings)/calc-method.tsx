@@ -1,5 +1,5 @@
 import { api } from "@barakah/core/convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -8,6 +8,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
+import { useUser } from "@/contexts/user-context";
 
 type Method =
   | "isna"
@@ -53,7 +54,7 @@ const MADHAB_OPTIONS: { key: Madhab; label: string; note: string }[] = [
 export default function CalcMethod() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
-  const profile = useQuery(api.lib.users.getMyProfile);
+  const { profile } = useUser();
   const upsertProfile = useMutation(api.lib.users.upsertProfile);
   const [saving, setSaving] = useState<Method | null>(null);
   const [savingMadhab, setSavingMadhab] = useState<Madhab | null>(null);
