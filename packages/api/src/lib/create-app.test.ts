@@ -49,10 +49,20 @@ describe("createApp", () => {
     const res = await app.request(
       "/ping",
       { headers: { Origin: "barakah://" } },
-      env
+      { ...env, ALLOW_EXPO_ORIGINS: undefined }
     );
     expect(res.headers.get("access-control-allow-origin")).not.toBe(
       "barakah://"
     );
+  });
+
+  it("allows native expo origins when ALLOW_EXPO_ORIGINS is enabled", async () => {
+    const app = appWithPing();
+    const res = await app.request(
+      "/ping",
+      { headers: { Origin: "barakah://" } },
+      { ...env, ALLOW_EXPO_ORIGINS: "true" }
+    );
+    expect(res.headers.get("access-control-allow-origin")).toBe("barakah://");
   });
 });
