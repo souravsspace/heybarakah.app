@@ -3,6 +3,7 @@
   "globalDependencies": [".env.local"],
   "tasks": {
     "typecheck": { "dependsOn": ["^build"] },
+    "test": { "dependsOn": ["^build"], "outputs": [] },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"],
