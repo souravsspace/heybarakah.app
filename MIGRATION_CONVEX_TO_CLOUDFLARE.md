@@ -178,12 +178,12 @@ bun turbo typecheck    # all packages
 
 ## 3. Database layer — D1 + Drizzle
 
-- [ ] `src/db/schema.ts` — translate all 11 app tables (§Appendix A) with matching indexes; JSON cols (`raw`, `comparison`, `timings`) → TEXT JSON. Reuse core validators for field shapes (`@barakah/core/users`, `/shieldSelection`, `/subscriptions`).
-- [ ] `src/db/index.ts` — `createDatabase(d1)` drizzle factory.
-- [ ] `src/lib/json-columns.ts` — typed parse/stringify helpers + `json-columns.test.ts`.
-- [ ] `bun x drizzle-kit generate` → initial migration; apply to local D1.
-- [ ] `schema.test.ts` — assert table/index names + round-trip insert/select on miniflare D1.
-- [ ] Port `scripts/db` seed/clear + `reset-db.test.ts`.
+- [x] `src/db/schema.ts` — translate all **12** app tables (§Appendix A) with matching indexes; JSON cols (`raw`, `comparison`, `timings`, `prayersToLock`, arrays) → TEXT `mode:"json"`. Field-shape unions mirror core validators (`$type` annotations; runtime validation stays in routes). _(every table gets a uuid `id` PK + `authUserId` text; `image`/`activePrayerLocationId` are now plain text — R2 key / FK)_
+- [x] `src/db/index.ts` — `createDatabase(d1)` drizzle factory (+ `Database` type).
+- [x] `src/lib/json-columns.ts` — safe parse/stringify helpers + `json-columns.test.ts`.
+- [x] `bun x drizzle-kit generate` → initial migration `0000_swift_mojo.sql` (12 tables, 25 indexes). _(apply to **real** D1 deferred to §9 — needs `wrangler login` + created DB; tests apply it to miniflare)_
+- [x] `schema.test.ts` — asserts 12 tables + key index names + round-trips user/shield(json)/prayerLog(enum) on miniflare D1 (migration applied in `beforeAll`).
+- [x] Port `scripts/db` seed/clear + test → `scripts/reset-db.ts` (clears all 12 tables via `wrangler d1 execute`, `--remote` flag) + `reset-db.test.ts`. _(Convex JSONL-reset reimagined for D1)_
 
 ## 4. Auth — `better-auth-cloudflare`
 
