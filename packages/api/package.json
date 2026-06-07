@@ -1,0 +1,45 @@
+{
+  "name": "@barakah/api",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply",
+    "deploy": "wrangler deploy",
+    "cf:typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@barakah/core": "workspace:*",
+    "@barakah/mails": "workspace:*",
+    "@better-auth/drizzle-adapter": "^1.6.14",
+    "@better-auth/expo": "catalog:",
+    "@hono/zod-openapi": "^1.4.0",
+    "@polar-sh/sdk": "^0.47.1",
+    "@scalar/hono-api-reference": "^0.10.20",
+    "better-auth": "catalog:",
+    "better-auth-cloudflare": "^0.3.0",
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.8.3",
+    "hono": "^4.12.23",
+    "resend": "^6.12.2",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@barakah/tsconfig": "workspace:*",
+    "@cloudflare/vitest-pool-workers": "^0.16.13",
+    "@cloudflare/workers-types": "^4.20260607.1",
+    "@types/bun": "catalog:",
+    "drizzle-kit": "^0.31.10",
+    "vitest": "^4.1.8",
+    "wrangler": "^4.98.0"
+  },
+  "peerDependencies": {
+    "typescript": "catalog:"
+  }
+}
