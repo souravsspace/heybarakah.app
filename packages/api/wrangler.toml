@@ -41,12 +41,12 @@ BETTER_AUTH_URL = "https://barakah-api-dev.workers.dev"
 [[env.development.d1_databases]]
 binding = "DB"
 database_name = "barakah-db-dev"
-database_id = "<d1-database-id-dev>"
+database_id = "c7a44a07-17d3-4f3d-8a23-65aca16940e7"
 migrations_dir = "src/db/migrations"
 
 [[env.development.kv_namespaces]]
 binding = "KV"
-id = "<kv-namespace-id-dev>"
+id = "a6ccf241f1954ba5a7f53b52217c34f4"
 
 [[env.development.r2_buckets]]
 binding = "R2"
