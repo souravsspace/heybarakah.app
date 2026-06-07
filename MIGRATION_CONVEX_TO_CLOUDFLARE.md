@@ -167,14 +167,14 @@ bun turbo typecheck    # all packages
 
 ## 2. Core app harness (port from texly layout)
 
-- [ ] `src/env.ts` — Zod env schema; read from `c.env` Workers bindings (no global singleton).
-- [ ] `src/lib/create-router.ts` — `OpenAPIHono<AppBindings>` + `defaultHook`.
-- [ ] `src/lib/create-app.ts` — CORS (Expo `exp://`/`barakah://`/`file://`, app + marketing origins, `*.workers.dev`; gate by `ALLOW_EXPO_ORIGINS`), logger, notFound, onError, auth middleware mount.
-- [ ] `src/lib/configure-open-api.ts` — `/doc` + Scalar `/docs`.
-- [ ] `src/middlewares/*` — logger, auth-session resolver (`c.set("user", …)`), KV rate-limit.
-- [ ] `src/stoker/*` — vendor http-status-codes/phrases, openapi helpers/schemas, error/notFound.
-- [ ] `src/types/app-type.ts` — `AppBindings { Bindings:{DB,KV,R2,…}; Variables:{logger,user,auth} }`, `AppRouterHandler`.
-- [ ] Tests: `create-app.test.ts` (CORS + 401 unauth), `env.test.ts`, middleware tests.
+- [x] `src/env.ts` — Zod env schema; read from `c.env` Workers bindings (no global singleton). _(diverged from texly's dotenv/process.env singleton per Execution Rule 7; added `parseEnv` + `isTruthyFlag`)_
+- [x] `src/lib/create-router.ts` — `OpenAPIHono<AppBindings>` + `defaultHook`.
+- [x] `src/lib/create-app.ts` — CORS (Expo `exp://`/`barakah://`/`file://`, app + marketing origins, `*.workers.dev`; gate by `ALLOW_EXPO_ORIGINS`), logger, notFound, onError. _(auth middleware mount deferred to §4 — needs `createAuth`)_
+- [x] `src/lib/configure-open-api.ts` — `/doc` + Scalar `/docs`. _(`Scalar()` plugin; bearer securityScheme)_
+- [~] `src/middlewares/*` — logger ✓, KV rate-limit ✓. **auth-session resolver (`c.set("user", …)`) deferred to §4** (needs auth).
+- [x] `src/stoker/*` — http-status-codes/phrases (verbatim) + `not-found`/`on-error` + `default-hook`/`jsonContent(+Required)`/`createMessageObjectSchema`. _(zod4-correct minimal subset; texly's vendored copy was zod3-broken — `one-of`/`create-error-schema`/param schemas deferred until a route needs them)_
+- [x] `src/types/app-type.ts` — `AppBindings { Bindings:{DB,KV,R2,…env vars}; Variables:{logger} }`, `AppRouterHandler`. _(`user`/`auth` Variables added in §4)_
+- [x] Tests: `create-app.test.ts` (CORS allow/deny + 404 shape), `env.test.ts`, logger + rate-limit tests. **13 passing** on `@cloudflare/vitest-pool-workers` v4 (`cloudflareTest()` plugin — `defineWorkersConfig` removed in 0.16.x). _(401-unauth test lands in §4)_
 
 ## 3. Database layer — D1 + Drizzle
 
