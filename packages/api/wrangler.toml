@@ -1,0 +1,53 @@
+name = "barakah-api"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+# Non-secret config. Secrets (Appendix B) go via `wrangler secret` / `.dev.vars`.
+[vars]
+SITE_URL = "https://heybarakah.app"
+NATIVE_APP_URL = "barakah://"
+BETTER_AUTH_URL = "https://api.heybarakah.app"
+
+# D1 — create with: wrangler d1 create barakah-db
+[[d1_databases]]
+binding = "DB"
+database_name = "barakah-db"
+database_id = "<d1-database-id>"
+migrations_dir = "src/db/migrations"
+
+# KV — create with: wrangler kv namespace create KV
+[[kv_namespaces]]
+binding = "KV"
+id = "<kv-namespace-id>"
+
+# R2 — create with: wrangler r2 bucket create barakah-avatars
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "barakah-avatars"
+
+# Staging / parallel-verification environment (see §9).
+[env.development]
+name = "barakah-api-dev"
+
+[env.development.vars]
+SITE_URL = "https://heybarakah.app"
+NATIVE_APP_URL = "barakah://"
+BETTER_AUTH_URL = "https://barakah-api-dev.workers.dev"
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "barakah-db-dev"
+database_id = "<d1-database-id-dev>"
+migrations_dir = "src/db/migrations"
+
+[[env.development.kv_namespaces]]
+binding = "KV"
+id = "<kv-namespace-id-dev>"
+
+[[env.development.r2_buckets]]
+binding = "R2"
+bucket_name = "barakah-avatars-dev"
