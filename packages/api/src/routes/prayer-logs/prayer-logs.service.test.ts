@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { createDatabase } from "@/db";
 import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
-import { userAchievementCounters, users } from "@/db/schema";
+import { prayerLogs, userAchievementCounters, users } from "@/db/schema";
 
 import {
   clearPrayer,
@@ -76,6 +76,38 @@ describe("prayer-logs service", () => {
 
     const week = await getMyWeek(db, user, DATE);
     expect(week.length).toBe(5);
+  });
+
+  it("writes are atomic — db.batch rolls back every statement on failure", async () => {
+    const db = createDatabase(env.DB);
+    const user = "atomic-user";
+    await seedProfile(db, user);
+
+    // A PK collision inside the batch must abort the whole batch, leaving
+    // neither row behind — the guarantee logPrayer's log+counter write relies on.
+    const id = crypto.randomUUID();
+    const now = Date.now();
+    const first = db.insert(prayerLogs).values({
+      id,
+      authUserId: user,
+      date: DATE,
+      prayer: "isha",
+      status: "on_time",
+      updatedAt: now,
+    });
+    const collision = db.insert(prayerLogs).values({
+      id,
+      authUserId: user,
+      date: DATE,
+      prayer: "fajr",
+      status: "on_time",
+      updatedAt: now,
+    });
+
+    await expect(db.batch([first, collision])).rejects.toThrow();
+
+    const week = await getMyWeek(db, user, DATE);
+    expect(week.length).toBe(0);
   });
 
   it("clearPrayer removes the log and decrements counters", async () => {
