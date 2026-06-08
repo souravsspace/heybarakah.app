@@ -5,7 +5,12 @@ import { createDatabase } from "@/db";
 import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
 import { dhikrAggregate, userAchievements, users } from "@/db/schema";
 
-import { runEvaluate } from "./achievements.service";
+import {
+  listForMe,
+  listUnseen,
+  markSeen,
+  runEvaluate,
+} from "./achievements.service";
 
 async function applyMigration() {
   const statements = migration0000
@@ -60,5 +65,40 @@ describe("achievements runEvaluate", () => {
       today: "2026-06-08",
     });
     expect(second).toEqual([]);
+  });
+});
+
+describe("achievements listForMe / listUnseen / markSeen", () => {
+  it("listForMe returns all achievements locked for no user", async () => {
+    const db = createDatabase(env.DB);
+    const list = await listForMe(db, null);
+    expect(list.unlockedCount).toBe(0);
+    expect(list.totalCount).toBe(list.items.length);
+    expect(list.items.every((i) => i.unlockedAt === null)).toBe(true);
+  });
+
+  it("listForMe reflects unlocked rows; listUnseen + markSeen flow", async () => {
+    const db = createDatabase(env.DB);
+    const user = "list-user";
+    const now = Date.now();
+    await db
+      .insert(users)
+      .values({ authUserId: user, completedAt: new Date(now).toISOString() });
+    await db
+      .insert(dhikrAggregate)
+      .values({ authUserId: user, total: 1, updatedAt: now });
+    await runEvaluate(db, { authUserId: user, today: "2026-06-08" });
+
+    const list = await listForMe(db, user);
+    expect(list.unlockedCount).toBeGreaterThan(0);
+    const firstSteps = list.items.find((i) => i.code === "first_steps");
+    expect(firstSteps?.unlockedAt).not.toBeNull();
+
+    const unseen = await listUnseen(db, user);
+    expect(unseen.map((u) => u.code)).toContain("first_steps");
+
+    await markSeen(db, user, ["first_steps"]);
+    const unseenAfter = await listUnseen(db, user);
+    expect(unseenAfter.map((u) => u.code)).not.toContain("first_steps");
   });
 });
