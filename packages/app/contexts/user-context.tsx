@@ -1,20 +1,29 @@
-import { api as convexApi } from "@barakah/core/convex/_generated/api";
 import { useQuery as useRqQuery } from "@tanstack/react-query";
-import { useQuery } from "convex/react";
 import type React from "react";
 import { createContext, useContext, useMemo } from "react";
 import { api } from "@/lib/api-client";
-import { USE_CF_API } from "@/lib/cf-flag";
 
-type Account = NonNullable<typeof convexApi.lib.users.getMyAccount._returnType>;
-type User = Account["user"];
-type Profile = Account["profile"];
+interface User {
+  _id: string;
+  email?: string;
+  id: string;
+  name?: string;
+}
+
+interface Profile {
+  calcMethod?: string | null;
+  locationGranted?: boolean | null;
+  madhab?: string | null;
+  name?: string | null;
+  notifGranted?: boolean | null;
+  [key: string]: unknown;
+}
 
 interface UserContextType {
   isLoading: boolean;
   // `undefined` while the account query is in flight, then the `users` row or
   // `null` once resolved — consumers gate on `undefined` for loading.
-  profile: Profile | undefined;
+  profile: Profile | null | undefined;
   user: User | null;
 }
 
@@ -28,21 +37,6 @@ export function useUser() {
   return ctx;
 }
 
-function UserProviderConvex({ children }: { children: React.ReactNode }) {
-  const account = useQuery(convexApi.lib.users.getMyAccount);
-
-  const value = useMemo<UserContextType>(
-    () => ({
-      user: account?.user ?? null,
-      profile: account === undefined ? undefined : (account?.profile ?? null),
-      isLoading: account === undefined,
-    }),
-    [account]
-  );
-
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
-}
-
 interface CfAccount {
   profile: Profile | null;
   user: (User & { id: string }) | null;
@@ -50,7 +44,7 @@ interface CfAccount {
 
 const ACCOUNT_QUERY_KEY = ["cf", "me"] as const;
 
-function UserProviderCf({ children }: { children: React.ReactNode }) {
+export function UserProvider({ children }: { children: React.ReactNode }) {
   const query = useRqQuery({
     queryKey: ACCOUNT_QUERY_KEY,
     queryFn: async (): Promise<CfAccount | null> => {
@@ -79,6 +73,3 @@ function UserProviderCf({ children }: { children: React.ReactNode }) {
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
-
-/** Selected at module load by the cutover flag (§10). */
-export const UserProvider = USE_CF_API ? UserProviderCf : UserProviderConvex;
