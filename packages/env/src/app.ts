@@ -15,6 +15,13 @@ export const env = createEnv({
     EXPO_PUBLIC_CONVEX_SITE_URL: z.url(),
     EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: z.string().optional(),
     EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: z.string().optional(),
+    // Cloudflare API base (Hono) + cutover flag (§10). When the flag is off the
+    // app stays on Convex; both URLs coexist until the flip is proven.
+    EXPO_PUBLIC_API_URL: z.url().optional(),
+    EXPO_PUBLIC_USE_CF_API: z
+      .string()
+      .optional()
+      .transform((value) => value === "true" || value === "1"),
   },
 
   /**
@@ -28,6 +35,8 @@ export const env = createEnv({
       process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
     EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY:
       process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY,
+    EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
+    EXPO_PUBLIC_USE_CF_API: process.env.EXPO_PUBLIC_USE_CF_API,
   },
 
   /**
