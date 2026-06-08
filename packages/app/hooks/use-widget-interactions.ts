@@ -1,9 +1,35 @@
-import { api } from "@barakah/core/convex/_generated/api";
+import { api as convexApi } from "@barakah/core/convex/_generated/api";
 import { useMutation } from "convex/react";
 import type { EventSubscription } from "expo-modules-core";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Platform } from "react-native";
+import { api } from "@/lib/api-client";
+import { USE_CF_API } from "@/lib/cf-flag";
 import { dateKey } from "@/lib/date-utils";
+
+type IncrementFn = (date: string, by: number) => Promise<unknown>;
+
+function useDhikrIncrementConvex(): IncrementFn {
+  const increment = useMutation(convexApi.lib.dhikr.increment);
+  return useCallback(
+    (date: string, by: number) => increment({ date, by }),
+    [increment]
+  );
+}
+
+function useDhikrIncrementCf(): IncrementFn {
+  return useCallback(async (date: string, by: number) => {
+    const res = await api.api.v1.dhikr.increment.$post({ json: { date, by } });
+    if (!res.ok) {
+      throw new Error("Failed to increment dhikr");
+    }
+    return await res.json();
+  }, []);
+}
+
+const useDhikrIncrement = USE_CF_API
+  ? useDhikrIncrementCf
+  : useDhikrIncrementConvex;
 
 /**
  * Handles taps on interactive widgets. The Dhikr widget's increment button
@@ -15,7 +41,7 @@ import { dateKey } from "@/lib/date-utils";
  * handled; background/cold-start behavior must be verified on a device.
  */
 export function useWidgetInteractions(): void {
-  const increment = useMutation(api.lib.dhikr.increment);
+  const increment = useDhikrIncrement();
 
   useEffect(() => {
     if (Platform.OS !== "ios") {
@@ -39,7 +65,7 @@ export function useWidgetInteractions(): void {
           console.log(`[widgets] interaction target=${event.target}`);
         }
         if (event.target === DHIKR_INCREMENT_TARGET) {
-          increment({ date: dateKey(), by: 1 }).catch(() => {
+          increment(dateKey(), 1).catch(() => {
             // Offline or unauthenticated — the next sync reconciles the count.
           });
         }
