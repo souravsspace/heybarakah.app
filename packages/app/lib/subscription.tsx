@@ -1,7 +1,4 @@
-import { api as convexApi } from "@barakah/core/convex/_generated/api";
 import { useQueryClient, useQuery as useRqQuery } from "@tanstack/react-query";
-import { useAction, useMutation, useQuery } from "convex/react";
-import type { FunctionReturnType } from "convex/server";
 import {
   createContext,
   useCallback,
@@ -15,7 +12,6 @@ import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
 import Purchases from "react-native-purchases";
 import { useUser } from "@/contexts/user-context";
 import { api } from "@/lib/api-client";
-import { USE_CF_API } from "@/lib/cf-flag";
 import {
   configureRevenueCatAnonymous,
   ENTITLEMENT_ID,
@@ -37,9 +33,7 @@ export type PurchaseOutcome =
   | { ok: false; cancelled: true }
   | { ok: false; cancelled: false; reason: string };
 
-type ActiveSubscription = FunctionReturnType<
-  typeof convexApi.lib.subscriptions.getMySubscription
->;
+type ActiveSubscription = Record<string, unknown> | null;
 
 type RcSyncInput = ReturnType<typeof mapCustomerInfoToSync>;
 
@@ -55,40 +49,9 @@ interface SubscriptionBackend {
   sync(input: RcSyncInput): Promise<void>;
 }
 
-function useSubscriptionBackendConvex(): SubscriptionBackend {
-  const activeSubscription = useQuery(
-    convexApi.lib.subscriptions.getMySubscription
-  );
-  const syncAction = useAction(
-    convexApi.lib.subscriptions.syncRevenueCatEntitlement
-  );
-  const claimMockMutation = useMutation(
-    convexApi.lib.subscriptions.claimMockSubscription
-  );
-  const claimPolarMutation = useMutation(
-    convexApi.lib.subscriptions.claimPolarByEmail
-  );
-
-  return useMemo(
-    () => ({
-      activeSubscription,
-      sync: async (input: RcSyncInput) => {
-        await syncAction({ ...input });
-      },
-      claimMock: async (productId: ProductId) => {
-        await claimMockMutation({ productId });
-      },
-      claimPolar: async () => {
-        await claimPolarMutation({});
-      },
-    }),
-    [activeSubscription, syncAction, claimMockMutation, claimPolarMutation]
-  );
-}
-
 const SUBSCRIPTION_QUERY_KEY = ["cf", "subscription"] as const;
 
-function useSubscriptionBackendCf(): SubscriptionBackend {
+function useSubscriptionBackend(): SubscriptionBackend {
   const queryClient = useQueryClient();
   const query = useRqQuery({
     queryKey: SUBSCRIPTION_QUERY_KEY,
@@ -136,10 +99,6 @@ function useSubscriptionBackendCf(): SubscriptionBackend {
     };
   }, [query.data, query.isPending, queryClient]);
 }
-
-const useSubscriptionBackend = USE_CF_API
-  ? useSubscriptionBackendCf
-  : useSubscriptionBackendConvex;
 
 interface Ctx {
   activeSubscription: ActiveSubscription | undefined;
