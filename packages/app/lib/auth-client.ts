@@ -1,14 +1,10 @@
-import { env } from "@barakah/env/app";
 import { expoClient } from "@better-auth/expo/client";
-import {
-  convexClient,
-  crossDomainClient,
-} from "@convex-dev/better-auth/client/plugins";
 import { emailOTPClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
+import { API_BASE_URL } from "@/lib/cf-flag";
 
 function resolveExpoScheme(): string {
   const raw = Constants.expoConfig?.scheme;
@@ -20,19 +16,22 @@ function resolveExpoScheme(): string {
 }
 
 export const authClient = createAuthClient({
-  baseURL: env.EXPO_PUBLIC_CONVEX_SITE_URL,
+  baseURL: API_BASE_URL,
   plugins: [
-    convexClient(),
     emailOTPClient(),
-    Platform.OS === "web"
-      ? crossDomainClient()
-      : expoClient({
-          scheme: resolveExpoScheme(),
-          storagePrefix: resolveExpoScheme(),
-          storage: SecureStore,
-          webBrowserOptions: {
-            preferEphemeralSession: true,
-          },
-        }),
+    // Web rides the credentialed session cookie (CORS) directly, so it needs no
+    // client plugin. Native uses the Expo client to store + replay Set-Cookie.
+    ...(Platform.OS === "web"
+      ? []
+      : [
+          expoClient({
+            scheme: resolveExpoScheme(),
+            storagePrefix: resolveExpoScheme(),
+            storage: SecureStore,
+            webBrowserOptions: {
+              preferEphemeralSession: true,
+            },
+          }),
+        ]),
   ],
 });
