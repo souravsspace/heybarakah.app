@@ -1,8 +1,10 @@
-import { api } from "@barakah/core/convex/_generated/api";
+import { api as convexApi } from "@barakah/core/convex/_generated/api";
 import type { PrayerWindow } from "@barakah/core/shieldSelection";
+import { useQuery as useRqQuery } from "@tanstack/react-query";
 import { useQuery } from "convex/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
+import { api } from "@/lib/api-client";
 import {
   clearAllBlocks,
   clearScheduledWindows,
@@ -15,6 +17,7 @@ import {
   stopMonitoring,
   temporaryUnlock,
 } from "@/lib/app-blocker";
+import { USE_CF_API } from "@/lib/cf-flag";
 import { dateKey } from "@/lib/date-utils";
 import {
   cancelShieldNotifications,
@@ -99,11 +102,35 @@ function computeWindows(windows: PrayerWindow[], timings: Timings) {
 }
 
 type ShieldSelection = ReturnType<
-  typeof useQuery<typeof api.lib.shieldSelection.getMine>
+  typeof useQuery<typeof convexApi.lib.shieldSelection.getMine>
 >;
 
+function useShieldSelectionConvex(): ShieldSelection {
+  return useQuery(convexApi.lib.shieldSelection.getMine);
+}
+
+function useShieldSelectionCf(): ShieldSelection {
+  const query = useRqQuery({
+    queryKey: ["cf", "shield"],
+    queryFn: async () => {
+      const res = await api.api.v1.shield.$get();
+      if (!res.ok) {
+        throw new Error("Failed to load shield selection");
+      }
+      return await res.json();
+    },
+  });
+  return (
+    query.isPending ? undefined : (query.data ?? null)
+  ) as ShieldSelection;
+}
+
+const useShieldSelection = USE_CF_API
+  ? useShieldSelectionCf
+  : useShieldSelectionConvex;
+
 export function usePrayerShield() {
-  const liveSelection = useQuery(api.lib.shieldSelection.getMine);
+  const liveSelection = useShieldSelection();
   const [cachedSelection, setCachedSelection] =
     useState<NonNullable<ShieldSelection> | null>(null);
   const [cacheLoaded, setCacheLoaded] = useState(false);
