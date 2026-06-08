@@ -1,5 +1,6 @@
 import type { AchievementCode } from "@barakah/core/achievements";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 
 import type { Database } from "@/db";
 import { prayerLogs, userAchievementCounters } from "@/db/schema";
@@ -53,43 +54,44 @@ function prayerCounterDelta(log: CounterLog) {
   };
 }
 
-async function applyPrayerCounterDelta(
+type CounterDelta = ReturnType<typeof prayerCounterDelta>;
+
+async function counterExists(
   db: Database,
-  authUserId: string,
-  delta: ReturnType<typeof prayerCounterDelta>
-): Promise<void> {
-  const now = Date.now();
-  const [existing] = await db
-    .select()
+  authUserId: string
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: userAchievementCounters.id })
     .from(userAchievementCounters)
     .where(eq(userAchievementCounters.authUserId, authUserId))
     .limit(1);
-  if (existing) {
-    await db
-      .update(userAchievementCounters)
+  return Boolean(row);
+}
+
+// Build (do not execute) the counter write so it can be batched atomically with
+// the prayer-log write. On an existing row the increment is a SQL `max(0, …)`
+// expression — applied at write time, so it stays correct without re-reading.
+function buildCounterWrite(
+  db: Database,
+  authUserId: string,
+  delta: CounterDelta,
+  exists: boolean
+) {
+  const now = Date.now();
+  if (exists) {
+    const c = userAchievementCounters;
+    return db
+      .update(c)
       .set({
-        countablePrayerLogs: Math.max(
-          0,
-          existing.countablePrayerLogs + delta.countablePrayerLogs
-        ),
-        fajrOnTimePrayerLogs: Math.max(
-          0,
-          existing.fajrOnTimePrayerLogs + delta.fajrOnTimePrayerLogs
-        ),
-        onTimePrayerLogs: Math.max(
-          0,
-          existing.onTimePrayerLogs + delta.onTimePrayerLogs
-        ),
-        qadaPrayerLogs: Math.max(
-          0,
-          existing.qadaPrayerLogs + delta.qadaPrayerLogs
-        ),
+        countablePrayerLogs: sql`max(0, ${c.countablePrayerLogs} + ${delta.countablePrayerLogs})`,
+        fajrOnTimePrayerLogs: sql`max(0, ${c.fajrOnTimePrayerLogs} + ${delta.fajrOnTimePrayerLogs})`,
+        onTimePrayerLogs: sql`max(0, ${c.onTimePrayerLogs} + ${delta.onTimePrayerLogs})`,
+        qadaPrayerLogs: sql`max(0, ${c.qadaPrayerLogs} + ${delta.qadaPrayerLogs})`,
         updatedAt: now,
       })
-      .where(eq(userAchievementCounters.authUserId, authUserId));
-    return;
+      .where(eq(c.authUserId, authUserId));
   }
-  await db.insert(userAchievementCounters).values({
+  return db.insert(userAchievementCounters).values({
     authUserId,
     countablePrayerLogs: Math.max(0, delta.countablePrayerLogs),
     fajrOnTimePrayerLogs: Math.max(0, delta.fajrOnTimePrayerLogs),
@@ -228,23 +230,28 @@ export async function logPrayer(
 ): Promise<LogPrayerResult> {
   const now = Date.now();
   const existing = await findLog(db, authUserId, args.date, args.prayer);
+  const exists = await counterExists(db, authUserId);
+
+  let logWrite: BatchItem<"sqlite">;
+  let delta: CounterDelta;
   if (existing) {
     const previous = prayerCounterDelta(existing);
     const next = prayerCounterDelta(args);
-    await db
-      .update(prayerLogs)
-      .set({ status: args.status, prayedAt: args.prayedAt, updatedAt: now })
-      .where(eq(prayerLogs.id, existing.id));
-    await applyPrayerCounterDelta(db, authUserId, {
+    delta = {
       countablePrayerLogs:
         next.countablePrayerLogs - previous.countablePrayerLogs,
       fajrOnTimePrayerLogs:
         next.fajrOnTimePrayerLogs - previous.fajrOnTimePrayerLogs,
       onTimePrayerLogs: next.onTimePrayerLogs - previous.onTimePrayerLogs,
       qadaPrayerLogs: next.qadaPrayerLogs - previous.qadaPrayerLogs,
-    });
+    };
+    logWrite = db
+      .update(prayerLogs)
+      .set({ status: args.status, prayedAt: args.prayedAt, updatedAt: now })
+      .where(eq(prayerLogs.id, existing.id));
   } else {
-    await db.insert(prayerLogs).values({
+    delta = prayerCounterDelta(args);
+    logWrite = db.insert(prayerLogs).values({
       authUserId,
       date: args.date,
       prayer: args.prayer,
@@ -252,8 +259,10 @@ export async function logPrayer(
       prayedAt: args.prayedAt,
       updatedAt: now,
     });
-    await applyPrayerCounterDelta(db, authUserId, prayerCounterDelta(args));
   }
+
+  // Log + counter must land together or not at all (D1 has no interactive txn).
+  await db.batch([logWrite, buildCounterWrite(db, authUserId, delta, exists)]);
 
   // §8: return derived state so the client avoids extra round-trips.
   const unlocked = await runEvaluate(db, {
@@ -274,12 +283,16 @@ export async function clearPrayer(
   if (!existing) {
     return;
   }
-  await db.delete(prayerLogs).where(eq(prayerLogs.id, existing.id));
+  const exists = await counterExists(db, authUserId);
   const previous = prayerCounterDelta(existing);
-  await applyPrayerCounterDelta(db, authUserId, {
+  const delta: CounterDelta = {
     countablePrayerLogs: -previous.countablePrayerLogs,
     fajrOnTimePrayerLogs: -previous.fajrOnTimePrayerLogs,
     onTimePrayerLogs: -previous.onTimePrayerLogs,
     qadaPrayerLogs: -previous.qadaPrayerLogs,
-  });
+  };
+  await db.batch([
+    db.delete(prayerLogs).where(eq(prayerLogs.id, existing.id)),
+    buildCounterWrite(db, authUserId, delta, exists),
+  ]);
 }
