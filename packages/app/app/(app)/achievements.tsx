@@ -2,9 +2,8 @@ import type {
   Achievement,
   AchievementCategory,
 } from "@barakah/core/achievements";
-import { api } from "@barakah/core/convex/_generated/api";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "convex/react";
+import { useQuery as useRqQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
@@ -15,6 +14,7 @@ import { AchievementCard } from "@/components/achievement-card";
 import { AchievementDialog } from "@/components/achievement-dialog";
 import { AchievementsMesh } from "@/components/meshes";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
+import { api } from "@/lib/api-client";
 
 type Row = Achievement & {
   progress: { current: number; target: number; unit: string } | null;
@@ -150,7 +150,20 @@ export default function AchievementsScreen() {
   const { colors, scheme } = useTheme();
   const isDark = scheme === "dark";
   const insets = useSafeAreaInsets();
-  const data = useQuery(api.lib.achievements.listForMe, {});
+  const { data } = useRqQuery({
+    queryKey: ["cf", "achievements"],
+    queryFn: async () => {
+      const res = await api.api.v1.achievements.$get();
+      if (!res.ok) {
+        throw new Error("Failed to load achievements");
+      }
+      return (await res.json()) as unknown as {
+        items: Row[];
+        totalCount: number;
+        unlockedCount: number;
+      };
+    },
+  });
   const [selected, setSelected] = useState<Row | null>(null);
 
   const rows = useMemo<Row[]>(() => data?.items ?? [], [data?.items]);
