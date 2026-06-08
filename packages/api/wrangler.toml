@@ -6,6 +6,11 @@ compatibility_flags = ["nodejs_compat"]
 [observability]
 enabled = true
 
+# Cron — every 5 min: sweep the durable email queue (delivery + retry) and evict
+# expired prayer-time cache rows. Entry point: scheduled() in src/index.ts.
+[triggers]
+crons = ["*/5 * * * *"]
+
 # Non-secret config. Secrets (Appendix B) go via `wrangler secret` / `.dev.vars`.
 [vars]
 SITE_URL = "https://heybarakah.app"
