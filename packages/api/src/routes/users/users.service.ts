@@ -1,8 +1,7 @@
 import { validateProfileInput } from "@barakah/core/users";
-import type { R2Bucket } from "@cloudflare/workers-types";
+import type { R2Bucket, R2ObjectBody } from "@cloudflare/workers-types";
 import { eq, or } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
-
 import type { Database } from "@/db";
 import {
   account,
@@ -20,6 +19,7 @@ import {
   userLocations,
   users,
 } from "@/db/schema";
+import { avatarKey, getAvatar, putAvatar } from "@/lib/r2";
 import { runEvaluate } from "@/routes/achievements/achievements.service";
 import { UNPROCESSABLE_ENTITY } from "@/stoker/http-status-codes";
 
@@ -77,6 +77,55 @@ export async function upsertProfile(
   // Onboarding completion can unlock first_steps (matches Convex upsertProfile).
   await runEvaluate(db, { authUserId });
   return (await getProfile(db, authUserId)) as ProfileRow;
+}
+
+/**
+ * Validate + store an avatar blob in R2 (worker-proxied upload — no presigned
+ * URL; see migration §6) and point the profile row at its key. The key is
+ * deterministic per user, so re-upload overwrites in place. Replaces Convex
+ * `generateAvatarUploadUrl` + `setAvatar`.
+ */
+export async function setAvatar(
+  db: Database,
+  r2: R2Bucket,
+  authUserId: string,
+  body: ArrayBuffer,
+  contentType: string | null
+): Promise<string> {
+  const key = avatarKey(authUserId);
+  try {
+    await putAvatar(r2, key, body, contentType);
+  } catch (error) {
+    throw new HTTPException(UNPROCESSABLE_ENTITY, {
+      message: error instanceof Error ? error.message : "Invalid avatar",
+    });
+  }
+
+  const existing = await getProfile(db, authUserId);
+  if (existing) {
+    await db
+      .update(users)
+      .set({ image: key })
+      .where(eq(users.authUserId, authUserId));
+  } else {
+    await db
+      .insert(users)
+      .values({ id: crypto.randomUUID(), authUserId, image: key });
+  }
+  return key;
+}
+
+/** Fetch the user's avatar blob from R2, or null if they have none. */
+export async function getAvatarObject(
+  db: Database,
+  r2: R2Bucket,
+  authUserId: string
+): Promise<R2ObjectBody | null> {
+  const profile = await getProfile(db, authUserId);
+  if (!profile?.image) {
+    return null;
+  }
+  return getAvatar(r2, profile.image);
 }
 
 /**
