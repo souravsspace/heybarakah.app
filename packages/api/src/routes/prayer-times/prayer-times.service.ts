@@ -14,7 +14,7 @@ import {
   slicePrayerDays,
 } from "@barakah/core/prayer";
 import type { KVNamespace } from "@cloudflare/workers-types";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, lt } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 
 import type { Database } from "@/db";
@@ -315,4 +315,23 @@ export async function refreshPrayerTimes(
     createdAt: now,
     updatedAt: now,
   });
+}
+
+/**
+ * Delete durable cache rows past their TTL (the `by_expiry` index). Driven by a
+ * Workers cron (§9); KV hot blobs expire on their own TTL. Returns the count.
+ */
+export async function purgeExpiredPrayerCaches(
+  db: Database,
+  now: number = Date.now()
+): Promise<number> {
+  const expired = await db
+    .select({ id: prayerTimeCaches.id })
+    .from(prayerTimeCaches)
+    .where(lt(prayerTimeCaches.expiresAt, now));
+  if (expired.length === 0) {
+    return 0;
+  }
+  await db.delete(prayerTimeCaches).where(lt(prayerTimeCaches.expiresAt, now));
+  return expired.length;
 }
