@@ -1,4 +1,5 @@
 import { eq, type SQL } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 
 import type { Database } from "@/db";
 import { polarOrders, subscriptions } from "@/db/schema";
@@ -38,9 +39,10 @@ export async function recordPaidOrder(
     .limit(1);
 
   let alreadyConfirmed = false;
+  let orderWrite: BatchItem<"sqlite">;
   if (existingOrder) {
     alreadyConfirmed = Boolean(existingOrder.confirmedEmailAt);
-    await db
+    orderWrite = db
       .update(polarOrders)
       .set({
         authUserId: args.authUserId ?? existingOrder.authUserId,
@@ -56,7 +58,7 @@ export async function recordPaidOrder(
       })
       .where(eq(polarOrders.id, existingOrder.id));
   } else {
-    await db.insert(polarOrders).values({
+    orderWrite = db.insert(polarOrders).values({
       id: crypto.randomUUID(),
       authUserId: args.authUserId ?? null,
       polarOrderId: args.polarOrderId,
@@ -73,15 +75,38 @@ export async function recordPaidOrder(
     });
   }
 
-  await upsertPolarSubscription(db, args, now);
+  // Order + subscription activation must be atomic (D1 has no interactive txn).
+  // Reads happen first; the writes are built (not run) and batched together.
+  const existing = await resolveExistingPolarSub(db, args);
+  const subWrite = buildPolarSubscriptionWrite(db, args, now, existing);
+  await db.batch([orderWrite, subWrite]);
   return { alreadyConfirmed };
 }
 
-async function upsertPolarSubscription(
+// Resolve the target subscription in precedence order; keying on the order id
+// first closes the concurrent-retry window (mirrors the convex guard).
+async function resolveExistingPolarSub(db: Database, args: PaidOrderInput) {
+  return (
+    (await findSub(db, eq(subscriptions.polarOrderId, args.polarOrderId))) ??
+    (args.authUserId
+      ? await findSub(db, eq(subscriptions.authUserId, args.authUserId))
+      : null) ??
+    (args.polarCustomerId
+      ? await findSub(
+          db,
+          eq(subscriptions.polarCustomerId, args.polarCustomerId)
+        )
+      : null) ??
+    (await findSub(db, eq(subscriptions.customerEmail, args.customerEmail)))
+  );
+}
+
+function buildPolarSubscriptionWrite(
   db: Database,
   args: PaidOrderInput,
-  now: string
-): Promise<void> {
+  now: string,
+  existing: Awaited<ReturnType<typeof resolveExistingPolarSub>>
+) {
   const activation = {
     status: "active" as const,
     productId: "lifetime" as const,
@@ -93,33 +118,17 @@ async function upsertPolarSubscription(
     updatedAt: now,
   };
 
-  // Resolve the target row in precedence order; keying on the order id first
-  // closes the concurrent-retry window (mirrors the convex guard).
-  const existing =
-    (await findSub(db, eq(subscriptions.polarOrderId, args.polarOrderId))) ??
-    (args.authUserId
-      ? await findSub(db, eq(subscriptions.authUserId, args.authUserId))
-      : null) ??
-    (args.polarCustomerId
-      ? await findSub(
-          db,
-          eq(subscriptions.polarCustomerId, args.polarCustomerId)
-        )
-      : null) ??
-    (await findSub(db, eq(subscriptions.customerEmail, args.customerEmail)));
-
   if (existing) {
-    await db
+    return db
       .update(subscriptions)
       .set({
         authUserId: args.authUserId ?? existing.authUserId,
         ...activation,
       })
       .where(eq(subscriptions.id, existing.id));
-    return;
   }
 
-  await db.insert(subscriptions).values({
+  return db.insert(subscriptions).values({
     id: crypto.randomUUID(),
     authUserId: args.authUserId ?? null,
     customerEmail: args.customerEmail,
