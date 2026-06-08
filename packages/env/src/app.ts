@@ -15,10 +15,6 @@ export const env = createEnv({
     EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: z.string().optional(),
     // Cloudflare Hono API base. Required — the app talks only to this backend.
     EXPO_PUBLIC_API_URL: z.url(),
-    EXPO_PUBLIC_USE_CF_API: z
-      .string()
-      .optional()
-      .transform((value) => value === "true" || value === "1"),
   },
 
   /**
@@ -31,7 +27,6 @@ export const env = createEnv({
     EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY:
       process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY,
     EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
-    EXPO_PUBLIC_USE_CF_API: process.env.EXPO_PUBLIC_USE_CF_API,
   },
 
   /**
