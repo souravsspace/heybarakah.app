@@ -1,5 +1,4 @@
-import { api } from "@barakah/core/convex/_generated/api";
-import { useMutation } from "convex/react";
+import { useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -9,6 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
+import { api } from "@/lib/api-client";
 
 type Method =
   | "isna"
@@ -55,7 +55,7 @@ export default function CalcMethod() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
   const { profile } = useUser();
-  const upsertProfile = useMutation(api.lib.users.upsertProfile);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState<Method | null>(null);
   const [savingMadhab, setSavingMadhab] = useState<Madhab | null>(null);
 
@@ -70,7 +70,8 @@ export default function CalcMethod() {
     setSaving(m);
     Haptics.selectionAsync().catch(() => undefined);
     try {
-      await upsertProfile({ calcMethod: m });
+      await api.api.v1.me.profile.$post({ json: { calcMethod: m } });
+      await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
     } finally {
       setSaving(null);
     }
@@ -83,7 +84,8 @@ export default function CalcMethod() {
     setSavingMadhab(m);
     Haptics.selectionAsync().catch(() => undefined);
     try {
-      await upsertProfile({ madhab: m });
+      await api.api.v1.me.profile.$post({ json: { madhab: m } });
+      await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
     } finally {
       setSavingMadhab(null);
     }
