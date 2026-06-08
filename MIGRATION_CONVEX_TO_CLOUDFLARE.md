@@ -8,9 +8,14 @@ Status legend: `[ ]` todo · `[x]` done · `[~]` in progress
 > live** (D1/KV/R2 ids set, local `db:migrate` clean); **PROD resources still
 > pending**. Added root passthrough scripts (`dev:api`/`test:api`/`build:api`/
 > `db:migrate:api[:dev|:prod]`/`deploy:api`/`reset:db:api`) + split api `db:migrate`
-> into local/dev/prod. graphify graph refreshed. **Next (approved): §8b backend
-> hardening — unbounded-collect guard + `db.batch()` atomicity + `@polar-sh/sdk`
-> workerd smoke.**
+> into local/dev/prod. graphify graph refreshed. **§8b backend hardening DONE:**
+> unbounded-collect guard already satisfied (every list query `.limit()`-bounded);
+> **`db.batch()` atomicity** added to `logPrayer`/`clearPrayer` (log+counter, SQL
+> `max(0,…)` increment), polar `recordPaidOrder` (order+sub), `claimPolarByEmail`
+> (+ PK-collision rollback test); **`@polar-sh/sdk` workerd smoke GREEN**
+> (`deploy --dry-run` = 1.5 MB gzip, well under 3 MB). **164 vitest tests / 40 files
+> green, repo typecheck green.** Remaining B (optional): observability (Sentry/Logpush;
+> wrangler `observability.enabled=true` already on). **Next: §10 app cutover (C).**
 >
 > **Progress (2026-06-09, session 3):** code-review of §5/§6/§8b/§9 done (one fix
 > landed: idempotency skips `/api/auth/*` so replay can't drop Set-Cookie). **§10
@@ -183,7 +188,7 @@ bun turbo typecheck    # all packages
 ## 1. Package scaffold — `packages/api`
 
 - [x] `package.json` (`@barakah/api`, type module). Deps: `hono`, `@hono/zod-openapi`, `@scalar/hono-api-reference`, `drizzle-orm`, `drizzle-zod`, `better-auth` (catalog), `better-auth-cloudflare`, `@better-auth/drizzle-adapter`, `@better-auth/expo` (catalog), `resend`, `@polar-sh/sdk`, `zod` (catalog), `@barakah/core` (workspace, for `src/` reuse), `@barakah/mails` (workspace). Dev: `wrangler`, `drizzle-kit`, `@cloudflare/workers-types`, `@cloudflare/vitest-pool-workers`, `vitest`, `@types/bun` (catalog). _(versions verified via npm+context7; @scalar/hono-api-reference & @polar-sh/sdk aligned to core 0.47.1)_
-- [ ] **Verify core's transitive runtime deps bundle in workerd** — `@barakah/core/src` pulls `adhan`, `disposable-email-domains`, `@polar-sh/sdk`, `resend`. `adhan`/`disposable-email-domains` are pure JS (fine). Test that `@polar-sh/sdk` (may touch node APIs) bundles/runs under workerd; if not, use its webhook-verify primitive directly or Web Crypto. Smoke-test in a worker before relying on it.
+- [x] **Verify core's transitive runtime deps bundle in workerd** — `wrangler deploy --dry-run --env development` builds clean: **gzip 1513 KiB (~1.5 MB)** vs 3 MB paid limit (comfortable). `@polar-sh/sdk` is **type-only** in core (`import type` in `polar/webhook.ts` — erased); the runtime value import is `@polar-sh/sdk/webhooks` (`validateEvent`) in `polar.index.ts`, which loads + runs under workerd (polar.test.ts exercises valid/invalid-sig under vitest-pool-workers). `adhan`/`disposable-email-domains`/`resend` all bundle fine.
 - [x] `wrangler.toml` — name, `compatibility_date`, `compatibility_flags=["nodejs_compat"]`, `main=src/index.ts`, bindings: `[[d1_databases]]`, `[[kv_namespaces]]`, `[[r2_buckets]]`, `[vars]`, `[env.development]`. _(bindings named `DB`/`KV`/`R2` per §2; ids are placeholders pending §9 resource creation)_
 - [x] `tsconfig.json` extends `@barakah/tsconfig`, alias `@/* → ./src/*`. _(extends `api.json`; dropped `baseUrl` — deprecated in TS7)_
 - [x] `drizzle.config.ts` (sqlite, driver `d1-http`, out `./src/db/migrations`).
@@ -314,14 +319,21 @@ dissolves — pushing it would be speculative infra (violates Simplicity-First).
   auth), window ≥60s. Per-user + per-IP. Test 429 path.
 - [x] **Input validation & limits** — Zod on every body/param/query (OpenAPI gives this);
   enforce max body size; reject unknown fields. Test invalid input → 422.
-- [ ] **Unbounded-collect guard** — Convex `.collect()` had unbounded reads (known issue).
-  In D1, bound every list query (date-range for prayerLogs/dhikr, `LIMIT` + cursor
-  pagination for achievements/locations if they can grow). Test large-dataset bound.
+- [x] **Unbounded-collect guard** — every list query is already bounded with `.limit()`
+  (done during §5): `WEEK_PRAYER_LOG_LIMIT`, `STREAK_MAX_LOOKBACK*5+10`, `LIST_PRAYER_LOG_LIMIT`,
+  `EVALUATE_*`, `ACHIEVEMENTS.length+10`, `MAX_LOCATIONS+1`, dhikr per-user caps. Date-range
+  bounds on prayerLogs/dhikr; fixed caps on achievements/locations (small, non-growing sets).
+  No `.collect()`-equivalent unbounded read remains.
 - [x] **Timezone correctness** — prayer times + logs are tz-sensitive; D1 stores ISO
   strings. Centralize date/tz helpers; reuse `@barakah/core/src/prayer` cache-key tz
   logic. Tests across tz boundaries (day rollover).
-- [ ] **Atomicity** — multi-row writes (claim, sync, eval+counter update) use `db.batch()`;
-  test partial-failure rollback.
+- [x] **Atomicity** — multi-row writes use `db.batch()` (D1's only txn primitive — drizzle
+  `db.transaction()` throws on D1). Batched paths: `logPrayer`/`clearPrayer` (log + counter,
+  counter increment via SQL `max(0, col+delta)` expr so the write needs no stale-read value),
+  polar `recordPaidOrder` (order + subscription), `claimPolarByEmail` (sub + order link writes).
+  Partial-failure rollback proven by a PK-collision batch test (neither row persists).
+  *Single-row writes* (`applyRevenueCatEntitlement`, `claimMock`) need no batch.
+  *Achievement eval* stays sequential — it's idempotent + re-runs on every `logPrayer`.
 - [ ] **Observability** — Workers tail logs + structured logger; wire error reporting
   (Sentry or Logpush). Health route pings D1. No secrets in logs.
 - [x] **Error contract** — consistent shape via vendored `stoker` onError/notFound;
