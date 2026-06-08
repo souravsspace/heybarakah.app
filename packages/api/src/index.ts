@@ -5,6 +5,7 @@ import { dhikr } from "@/routes/dhikr/dhikr.index";
 import { healthCheck } from "@/routes/health-check/health-check.index";
 import { prayerLogs } from "@/routes/prayer-logs/prayer-logs.index";
 import { shieldSelection } from "@/routes/shield-selection/shield-selection.index";
+import { userLocations } from "@/routes/user-locations/user-locations.index";
 
 const app = createApp().basePath("/api/v1");
 
@@ -17,6 +18,7 @@ const routers = [
   dhikr,
   prayerLogs,
   shieldSelection,
+  userLocations,
 ] as const;
 for (const router of routers) {
   app.route("/", router);
