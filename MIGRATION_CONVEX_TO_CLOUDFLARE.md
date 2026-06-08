@@ -187,13 +187,25 @@ bun turbo typecheck    # all packages
 
 ## 4. Auth — `better-auth-cloudflare`
 
-- [ ] `src/auth/index.ts` — dual-mode `createAuth(env?, cf?, baseURL?)` (CLI schema-gen + runtime); `withCloudflare({ d1, kv, r2, autoDetectIpAddress, geolocationTracking })`.
-- [ ] Plugins: `anonymous()`, email/password, social **Apple + Google**, **Expo**. Port `convex/lib/auth.ts` `safeGetAuthUser` → session resolver; `trustedOrigins` (Expo scheme + app/marketing domains).
-- [ ] **Anonymous→real account linking must be preserved** — configure `anonymous` plugin `onLinkAccount`/linking so a guest who later signs up keeps the same `authUserId` (all their prayer/dhikr/shield data stays attached). Match current app behavior. Test: anon user creates data → upgrades to email/Apple → data still resolves under same id.
-- [ ] Generate Better Auth tables via `@better-auth/cli generate` (plural) into schema; migrate.
-- [ ] KV rate-limit (window ≥60; custom rules for `/sign-in/email`,`/sign-in/social`).
-- [ ] Mount at `/api/auth/*`.
-- [ ] `auth.test.ts` — anon sign-in→session, session→user, unauth 401, trustedOrigin reject.
+> ⚠️ **Inventory correction (verified 2026-06-08).** The original §0 inventory
+> ("anonymous + email + Apple + Google + Expo") was WRONG. The real surface
+> (`packages/app/lib/auth-client.ts` + `convex/lib/auth.ts` + app screens) is
+> **emailOTP (passwordless) + Apple + Google + Expo + deleteUser** — **no
+> anonymous plugin, no email/password** anywhere. Convex-only `convex()`/
+> `crossDomain()` plugins are dropped (web uses the cookie via CORS credentials).
+> User chose "match the real app". This also shrinks the #1 `authUserId`-continuity
+> risk: there are no anon-only users to relink. Transport for **both** web and
+> Expo is the session **cookie** (the `@better-auth/expo` client stores Set-Cookie
+> and replays it) — not a raw Bearer token.
+
+- [x] `src/auth/send-otp.ts` — Resend SDK OTP send (inline brand email; react-email NOT reused at runtime — Worker pins `jsxImportSource: hono/jsx` + avoids `react-dom/server` bundle bloat). _(+test)_
+- [x] `src/auth/index.ts` — dual-mode `createAuth(env?, cf?, baseURL?)` (CLI schema-gen + runtime); `withCloudflare({ d1, kv, autoDetectIpAddress, geolocationTracking })`. **R2 omitted from withCloudflare** — avatars use our own `lib/r2.ts` (§6), not Better Auth's file API. _(+test)_
+- [x] Plugins: `emailOTP({ sendVerificationOTP })` + `expo()`; social **Apple** (`appBundleIdentifier`) **+ Google**; `emailAndPassword` disabled; `user.deleteUser.enabled`; `trustedOrigins` (site, `barakah://`, `appleid.apple.com`, `exp://` gated by `ALLOW_EXPO_ORIGINS`). Ported from `convex/lib/auth.ts`.
+- [x] ~~Anonymous→real account linking~~ — **N/A**: app never used anonymous auth. Dropped.
+- [x] Generate Better Auth tables via `@better-auth/cli generate` → `src/db/auth-schema.ts` (**singular** `user`/`account`/`session`/`verification`, `usePlural:false` — avoids colliding with the app `users` profile table); wired into `schema` export; migration `0001_legal_solo.sql`. _(`scripts/reset-db` clears them too)_
+- [x] KV rate-limit via `withCloudflare` (window 60; custom rules `/sign-in/email`, `/sign-in/social`).
+- [x] `src/middlewares/auth-session.ts` — per-request `createAuth` → `getSession({headers})` → `c.var.user` (null-safe) + `c.var.auth`; `requireUser` → 401. Mounted in `create-app` with `/api/auth/*` catch-all.
+- [x] `auth.test.ts` — emailOTP send (mocked) → sign-in → cookie session resolves under same id (authUserId continuity); unauth get-session null; `index.test.ts` covers plugin set, social config, trustedOrigin gate, 401.
 
 ## 5. Domain routes — `routes/<domain>/{*.routes,*.handlers,*.index,*.test}.ts`
 
@@ -319,7 +331,8 @@ dissolves — pushing it would be speculative infra (violates Simplicity-First).
   component. Migrating to D1 Better Auth, the backfill **must preserve each user's
   existing `authUserId`** when importing the better-auth `user`/`account`/`session`
   tables Convex → D1 — otherwise every user's prayer logs, streaks, subscriptions,
-  achievements, shield config orphan. Anonymous users especially (no email to re-link).
+  achievements, shield config orphan. (No anonymous users exist — auth is emailOTP +
+  Apple + Google only — so every user has an email/social identity to re-key on.)
   Plan: export Convex better-auth tables, import to D1 keeping ids; verify a sample
   user's full data graph resolves before flag flip. Define the re-auth/session story
   (sessions likely can't carry over → users re-login, but user ids stay).
