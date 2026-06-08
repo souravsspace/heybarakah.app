@@ -25,6 +25,7 @@
     "@scalar/hono-api-reference": "^0.10.20",
     "better-auth": "catalog:",
     "better-auth-cloudflare": "^0.3.0",
+    "disposable-email-domains": "^1.0.62",
     "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.8.3",
     "hono": "^4.12.23",
