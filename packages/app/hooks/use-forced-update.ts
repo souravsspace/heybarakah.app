@@ -1,10 +1,7 @@
-import { api as convexApi } from "@barakah/core/convex/_generated/api";
 import { useQuery as useRqQuery } from "@tanstack/react-query";
-import { useQuery } from "convex/react";
 import { nativeApplicationVersion } from "expo-application";
 
 import { api } from "@/lib/api-client";
-import { USE_CF_API } from "@/lib/cf-flag";
 import { semverLt } from "@/lib/semver";
 
 interface ForcedUpdate {
@@ -33,17 +30,11 @@ function toForcedUpdate(
 }
 
 /**
- * Reactive store-version force-update gate (iOS).
- * Blocks when the installed native version is below `minSupportedVersion`
- * from the backend. The query is live, so flipping the value in the backend
- * blocks every open client without shipping a build.
+ * Store-version force-update gate (iOS). Blocks when the installed native
+ * version is below `minSupportedVersion` from the API; refetched on focus so
+ * flipping the value blocks open clients without shipping a build.
  */
-function useForcedUpdateConvex(): ForcedUpdate {
-  const config = useQuery(convexApi.lib.appConfig.getAppConfig);
-  return toForcedUpdate(config, nativeApplicationVersion ?? "0.0.0");
-}
-
-function useForcedUpdateCf(): ForcedUpdate {
+export function useForcedUpdate(): ForcedUpdate {
   const query = useRqQuery({
     queryKey: ["cf", "app-config"],
     queryFn: async (): Promise<AppConfig | null> => {
@@ -56,7 +47,3 @@ function useForcedUpdateCf(): ForcedUpdate {
   });
   return toForcedUpdate(query.data, nativeApplicationVersion ?? "0.0.0");
 }
-
-export const useForcedUpdate = USE_CF_API
-  ? useForcedUpdateCf
-  : useForcedUpdateConvex;
