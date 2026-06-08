@@ -12,6 +12,7 @@ import { subscriptions } from "@/routes/subscriptions/subscriptions.index";
 import { userLocations } from "@/routes/user-locations/user-locations.index";
 import { usersRouter } from "@/routes/users/users.index";
 import { polarWebhook } from "@/routes/webhooks/polar/polar.index";
+import { resendWebhook } from "@/routes/webhooks/resend/resend.index";
 
 const app = createApp().basePath("/api/v1");
 
@@ -31,6 +32,7 @@ const routers = [
   userLocations,
   usersRouter,
   polarWebhook,
+  resendWebhook,
 ] as const;
 for (const router of routers) {
   app.route("/", router);
