@@ -8,6 +8,13 @@
       "when": 1780860369789,
       "tag": "0000_swift_mojo",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1780907655067,
+      "tag": "0001_legal_solo",
+      "breakpoints": true
     }
   ]
 }
