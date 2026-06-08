@@ -30,7 +30,7 @@ type CalcMethod =
   | "karachi"
   | "custom";
 type Strictness = "adhan-iqama" | "full-window" | "custom";
-interface PrayersToLock {
+export interface PrayersToLock {
   asr: boolean;
   dhuhr: boolean;
   fajr: boolean;
@@ -53,9 +53,9 @@ type RevenueCatPeriodType = "normal" | "trial" | "intro";
 type PrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 type PrayerLogStatus = "early" | "on_time" | "late" | "qada" | "missed";
 
-type PrayerSource = "aladhan" | "adhan-js" | "hybrid";
+export type PrayerSource = "aladhan" | "adhan-js" | "hybrid";
 type PrayerPrimarySource = "aladhan" | "adhan-js";
-interface PrayerTimingDay {
+export interface PrayerTimingDay {
   date: string;
   hijriDate?: string;
   location: { latitude: number; longitude: number };
