@@ -7,10 +7,15 @@ import {
 } from "./reset-db";
 
 describe("reset-db", () => {
-  it("covers all 12 app tables", () => {
-    expect(APP_TABLE_NAMES).toHaveLength(12);
+  it("covers the 12 app tables plus the 4 Better Auth tables", () => {
+    expect(APP_TABLE_NAMES).toHaveLength(16);
     expect(APP_TABLE_NAMES).toContain("users");
     expect(APP_TABLE_NAMES).toContain("appConfig");
+    // Better Auth tables (singular) — cleared too so a dev reset wipes sessions.
+    expect(APP_TABLE_NAMES).toContain("user");
+    expect(APP_TABLE_NAMES).toContain("account");
+    expect(APP_TABLE_NAMES).toContain("session");
+    expect(APP_TABLE_NAMES).toContain("verification");
   });
 
   it("builds a DELETE statement per table", () => {
