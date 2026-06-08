@@ -1,4 +1,5 @@
-import { api } from "@barakah/core/convex/_generated/api";
+import { api as convexApi } from "@barakah/core/convex/_generated/api";
+import { useQueryClient, useQuery as useRqQuery } from "@tanstack/react-query";
 import { useAction, useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import {
@@ -13,6 +14,8 @@ import {
 import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
 import Purchases from "react-native-purchases";
 import { useUser } from "@/contexts/user-context";
+import { api } from "@/lib/api-client";
+import { USE_CF_API } from "@/lib/cf-flag";
 import {
   configureRevenueCatAnonymous,
   ENTITLEMENT_ID,
@@ -35,8 +38,108 @@ export type PurchaseOutcome =
   | { ok: false; cancelled: false; reason: string };
 
 type ActiveSubscription = FunctionReturnType<
-  typeof api.lib.subscriptions.getMySubscription
+  typeof convexApi.lib.subscriptions.getMySubscription
 >;
+
+type RcSyncInput = ReturnType<typeof mapCustomerInfoToSync>;
+
+/**
+ * The backend surface the provider needs, behind the cutover flag. Everything
+ * else in this file (RevenueCat SDK offerings/listeners/purchase) is backend-
+ * agnostic and stays shared, so only these four calls differ across §10.
+ */
+interface SubscriptionBackend {
+  activeSubscription: ActiveSubscription | undefined;
+  claimMock(productId: ProductId): Promise<void>;
+  claimPolar(): Promise<void>;
+  sync(input: RcSyncInput): Promise<void>;
+}
+
+function useSubscriptionBackendConvex(): SubscriptionBackend {
+  const activeSubscription = useQuery(
+    convexApi.lib.subscriptions.getMySubscription
+  );
+  const syncAction = useAction(
+    convexApi.lib.subscriptions.syncRevenueCatEntitlement
+  );
+  const claimMockMutation = useMutation(
+    convexApi.lib.subscriptions.claimMockSubscription
+  );
+  const claimPolarMutation = useMutation(
+    convexApi.lib.subscriptions.claimPolarByEmail
+  );
+
+  return useMemo(
+    () => ({
+      activeSubscription,
+      sync: async (input: RcSyncInput) => {
+        await syncAction({ ...input });
+      },
+      claimMock: async (productId: ProductId) => {
+        await claimMockMutation({ productId });
+      },
+      claimPolar: async () => {
+        await claimPolarMutation({});
+      },
+    }),
+    [activeSubscription, syncAction, claimMockMutation, claimPolarMutation]
+  );
+}
+
+const SUBSCRIPTION_QUERY_KEY = ["cf", "subscription"] as const;
+
+function useSubscriptionBackendCf(): SubscriptionBackend {
+  const queryClient = useQueryClient();
+  const query = useRqQuery({
+    queryKey: SUBSCRIPTION_QUERY_KEY,
+    queryFn: async (): Promise<ActiveSubscription> => {
+      const res = await api.api.v1.subscription.$get();
+      if (!res.ok) {
+        throw new Error("Failed to load subscription");
+      }
+      return (await res.json()) as ActiveSubscription;
+    },
+  });
+
+  return useMemo(() => {
+    const invalidate = () =>
+      queryClient.invalidateQueries({ queryKey: SUBSCRIPTION_QUERY_KEY });
+    return {
+      activeSubscription: query.isPending
+        ? undefined
+        : ((query.data ?? null) as ActiveSubscription),
+      // CF verifies the entitlement server-side via REVENUECAT_SECRET_KEY using
+      // the session user — the client `customerInfo` is not sent.
+      sync: async (_input: RcSyncInput) => {
+        const res = await api.api.v1.subscription.revenuecat.$post();
+        if (!res.ok) {
+          throw new Error("Failed to sync entitlement");
+        }
+        invalidate();
+      },
+      claimMock: async (productId: ProductId) => {
+        const res = await api.api.v1.subscription["claim-mock"].$post({
+          json: { productId },
+        });
+        if (!res.ok) {
+          throw new Error("Failed to claim mock subscription");
+        }
+        invalidate();
+      },
+      claimPolar: async () => {
+        const res = await api.api.v1.subscription["claim-polar"].$post();
+        if (!res.ok) {
+          throw new Error("Failed to claim polar subscription");
+        }
+        invalidate();
+      },
+    };
+  }, [query.data, query.isPending, queryClient]);
+}
+
+const useSubscriptionBackend = USE_CF_API
+  ? useSubscriptionBackendCf
+  : useSubscriptionBackendConvex;
 
 interface Ctx {
   activeSubscription: ActiveSubscription | undefined;
@@ -60,14 +163,8 @@ export function SubscriptionProvider({
 }) {
   const { user } = useUser();
   const userId = user?._id;
-  const activeSubscription = useQuery(api.lib.subscriptions.getMySubscription);
-  const syncAction = useAction(api.lib.subscriptions.syncRevenueCatEntitlement);
-  const claimMockMutation = useMutation(
-    api.lib.subscriptions.claimMockSubscription
-  );
-  const claimPolarByEmail = useMutation(
-    api.lib.subscriptions.claimPolarByEmail
-  );
+  const { activeSubscription, sync, claimMock, claimPolar } =
+    useSubscriptionBackend();
 
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
   const [offeringsLoading, setOfferingsLoading] = useState(false);
@@ -83,19 +180,19 @@ export function SubscriptionProvider({
       return;
     }
     claimedForRef.current = userId;
-    claimPolarByEmail({}).catch(() => {
+    claimPolar().catch(() => {
       claimedForRef.current = null;
     });
-  }, [userId, claimPolarByEmail]);
+  }, [userId, claimPolar]);
 
   const syncCustomerInfo = useCallback(
     async (info: CustomerInfo) => {
       if (!userId) {
         return;
       }
-      await syncAction({ ...mapCustomerInfoToSync(info) });
+      await sync(mapCustomerInfoToSync(info));
     },
-    [syncAction, userId]
+    [sync, userId]
   );
 
   const syncCustomerInfoQuiet = useCallback(
@@ -235,9 +332,9 @@ export function SubscriptionProvider({
       if (!__DEV__) {
         throw new Error("Mock subscription is dev-only");
       }
-      await claimMockMutation({ productId: planId });
+      await claimMock(planId);
     },
-    [claimMockMutation]
+    [claimMock]
   );
 
   const isSubscriptionLoading = activeSubscription === undefined;
