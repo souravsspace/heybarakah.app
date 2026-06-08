@@ -1,9 +1,11 @@
 import {
   ACHIEVEMENTS,
   type AchievementCode,
+  type AchievementEvaluation,
   evaluateAchievements,
+  evaluateAllProgress,
 } from "@barakah/core/achievements";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 
 import type { Database } from "@/db";
 import {
@@ -11,12 +13,14 @@ import {
   dhikrDaily,
   prayerLogs,
   prayerTimeCaches,
+  userAchievementCounters,
   userAchievements,
   users,
 } from "@/db/schema";
 
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_TIMEZONE = "UTC";
+const LIST_PRAYER_LOG_LIMIT = 1000;
 const EVALUATE_PRAYER_LOG_LIMIT = 5000;
 const EVALUATE_DHIKR_DAILY_LIMIT = 10_000;
 
@@ -159,4 +163,179 @@ export async function runEvaluate(
     inserted.push(code);
   }
   return inserted;
+}
+
+async function latestTimezone(
+  db: Database,
+  authUserId: string
+): Promise<string> {
+  const [row] = await db
+    .select({ timezone: prayerTimeCaches.timezone })
+    .from(prayerTimeCaches)
+    .where(eq(prayerTimeCaches.userId, authUserId))
+    .orderBy(desc(prayerTimeCaches.updatedAt))
+    .limit(1);
+  return row?.timezone ?? DEFAULT_TIMEZONE;
+}
+
+function counterProgress(
+  current: number,
+  target: number,
+  unit: string
+): AchievementEvaluation {
+  return {
+    progress: { current: Math.min(current, target), target, unit },
+    unlocked: current >= target,
+  };
+}
+
+type AchievementListItem = (typeof ACHIEVEMENTS)[number] & {
+  unlockedAt: number | null;
+  progress: AchievementEvaluation["progress"] | null;
+};
+
+export interface AchievementList {
+  items: AchievementListItem[];
+  totalCount: number;
+  unlockedCount: number;
+}
+
+/** Ports `listForMe`: every achievement with its unlock state + live progress. */
+export async function listForMe(
+  db: Database,
+  authUserId: string | null
+): Promise<AchievementList> {
+  if (!authUserId) {
+    return {
+      items: ACHIEVEMENTS.map((a) => ({
+        ...a,
+        unlockedAt: null,
+        progress: null,
+      })),
+      unlockedCount: 0,
+      totalCount: ACHIEVEMENTS.length,
+    };
+  }
+
+  const timezone = await latestTimezone(db, authUserId);
+  const dateKey = localToday(timezone);
+  const [rows, logs, counterRows, dhikrTotal, profileRows] = await Promise.all([
+    db
+      .select()
+      .from(userAchievements)
+      .where(eq(userAchievements.authUserId, authUserId))
+      .limit(ACHIEVEMENTS.length + 10),
+    db
+      .select()
+      .from(prayerLogs)
+      .where(eq(prayerLogs.authUserId, authUserId))
+      .orderBy(desc(prayerLogs.updatedAt))
+      .limit(LIST_PRAYER_LOG_LIMIT),
+    db
+      .select()
+      .from(userAchievementCounters)
+      .where(eq(userAchievementCounters.authUserId, authUserId))
+      .limit(1),
+    dhikrTotalForUser(db, authUserId),
+    db.select().from(users).where(eq(users.authUserId, authUserId)).limit(1),
+  ]);
+
+  const profile = profileRows[0];
+  const byCode = new Map(rows.map((r) => [r.code, r]));
+  const alreadyUnlocked = new Set<AchievementCode>(
+    rows.map((r) => r.code as AchievementCode)
+  );
+
+  const evaluations = evaluateAllProgress(
+    {
+      onboardingComplete: Boolean(profile?.completedAt),
+      prayerLogs: logs.map((l) => ({
+        date: l.date,
+        prayer: l.prayer,
+        status: l.status,
+        prayedAt: l.prayedAt ?? undefined,
+        updatedAt: l.updatedAt,
+      })),
+      dhikrTotal,
+      today: dateKey,
+      timezone,
+    },
+    alreadyUnlocked
+  );
+
+  // Counter-backed achievements are lazy-built from prayer-log writes; overlay
+  // them when a counter row exists (matches Convex listForMe behavior).
+  const counters = counterRows[0];
+  if (counters) {
+    evaluations.first_log = { unlocked: counters.countablePrayerLogs > 0 };
+    evaluations.first_on_time = { unlocked: counters.onTimePrayerLogs > 0 };
+    evaluations.fajr_100 = counterProgress(
+      counters.fajrOnTimePrayerLogs,
+      100,
+      "Fajr"
+    );
+    evaluations.qada_first = { unlocked: counters.qadaPrayerLogs > 0 };
+    evaluations.qada_seven = counterProgress(
+      counters.qadaPrayerLogs,
+      7,
+      "qadā"
+    );
+  }
+
+  const items = ACHIEVEMENTS.map((a) => ({
+    ...a,
+    unlockedAt: byCode.get(a.code)?.unlockedAt ?? null,
+    progress: evaluations[a.code]?.progress ?? null,
+  }));
+
+  return {
+    items,
+    unlockedCount: rows.length,
+    totalCount: ACHIEVEMENTS.length,
+  };
+}
+
+/** Ports `listUnseen`: unlocked-but-not-yet-seen achievements, oldest first. */
+export async function listUnseen(db: Database, authUserId: string) {
+  const rows = await db
+    .select()
+    .from(userAchievements)
+    .where(
+      and(
+        eq(userAchievements.authUserId, authUserId),
+        isNull(userAchievements.seenAt)
+      )
+    )
+    .limit(ACHIEVEMENTS.length + 10);
+  const byCode = new Map(ACHIEVEMENTS.map((a) => [a.code, a]));
+  return rows
+    .map((r) => {
+      const def = byCode.get(r.code as AchievementCode);
+      return def ? { ...def, unlockedAt: r.unlockedAt } : null;
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => a.unlockedAt - b.unlockedAt);
+}
+
+/** Ports `markSeen`: stamp seenAt on the given unlocked achievement codes. */
+export async function markSeen(
+  db: Database,
+  authUserId: string,
+  codes: string[]
+): Promise<void> {
+  const now = Date.now();
+  const codeSet = new Set(codes);
+  const rows = await db
+    .select()
+    .from(userAchievements)
+    .where(eq(userAchievements.authUserId, authUserId))
+    .limit(ACHIEVEMENTS.length + 10);
+  for (const row of rows) {
+    if (codeSet.has(row.code) && row.seenAt === null) {
+      await db
+        .update(userAchievements)
+        .set({ seenAt: now })
+        .where(eq(userAchievements.id, row.id));
+    }
+  }
 }
