@@ -24,12 +24,17 @@ DELETE) and `src/` (pure domain logic — prayer math, achievements, validators 
   use-widget-interactions,usePrayerLogs,useOfflineSync,useWidgetSync,usePrayerShield,
   usePrayerTimes}`. Collateral CF-type fixes in `locations`/`calc-method`/`profile`
   screens. App typecheck green; those dirs are convex-free.
-- [ ] **Phase 2 — App screens → CF-only.** `(app)/(tabs)/{home,locked,name,profile}`,
-  `(app)/achievements`, `(settings)/{calc-method,personal-details}`,
-  `components/achievement-popup-provider`. Endpoint map: upsertProfile→`POST /me/profile`;
-  shield→`/shield/{,ios,android}`; avatar GET→`/me/avatar`, **setAvatar→`POST /me/avatar`
-  RAW BYTES (presign dropped)**; delete→`POST /me/delete`; achievements→`/achievements{,/unseen}`
-  + `POST /achievements/seen`.
+- [x] **Phase 2 — App screens → CF-only.** All 8 direct-convex screens/components
+  converted (one per-file commit each), zero convex imports, app typecheck green:
+  `(app)/(tabs)/{home,locked,name,profile}`, `(app)/achievements`,
+  `(settings)/{calc-method,personal-details}`, `components/achievement-popup-provider`.
+  Wired: upsertProfile→`POST /me/profile` (+invalidate `["cf","me"]`); shield
+  getMine/upsertIos/upsertAndroid→`/shield{,/ios,/android}` (react-query `["cf","shield"]`);
+  avatar GET→`/me/avatar` (`["cf","me","avatar"]`), **setAvatar→`POST /me/avatar` RAW BYTES
+  via `FileSystem.uploadAsync` to `${API_BASE_URL}/api/v1/me/avatar` + cookie replay
+  (presign dropped)**; delete→`POST /me/delete`; achievements listForMe/listUnseen/markSeen
+  →`/achievements{,/unseen}`+`POST /achievements/seen`. `z.unknown()` responses cast
+  `as unknown as T`.
 - [ ] **Phase 3 — Auth + root layout → CF.** `lib/auth-client.ts` drop
   `convexClient()`/`crossDomainClient()`, baseURL→`API_BASE_URL`. `app/_layout.tsx`
   drop `ConvexBetterAuthProvider`+`ConvexReactClient`.
