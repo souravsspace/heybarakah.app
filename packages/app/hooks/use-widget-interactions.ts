@@ -1,23 +1,12 @@
-import { api as convexApi } from "@barakah/core/convex/_generated/api";
-import { useMutation } from "convex/react";
 import type { EventSubscription } from "expo-modules-core";
 import { useCallback, useEffect } from "react";
 import { Platform } from "react-native";
 import { api } from "@/lib/api-client";
-import { USE_CF_API } from "@/lib/cf-flag";
 import { dateKey } from "@/lib/date-utils";
 
 type IncrementFn = (date: string, by: number) => Promise<unknown>;
 
-function useDhikrIncrementConvex(): IncrementFn {
-  const increment = useMutation(convexApi.lib.dhikr.increment);
-  return useCallback(
-    (date: string, by: number) => increment({ date, by }),
-    [increment]
-  );
-}
-
-function useDhikrIncrementCf(): IncrementFn {
+function useDhikrIncrement(): IncrementFn {
   return useCallback(async (date: string, by: number) => {
     const res = await api.api.v1.dhikr.increment.$post({ json: { date, by } });
     if (!res.ok) {
@@ -26,10 +15,6 @@ function useDhikrIncrementCf(): IncrementFn {
     return await res.json();
   }, []);
 }
-
-const useDhikrIncrement = USE_CF_API
-  ? useDhikrIncrementCf
-  : useDhikrIncrementConvex;
 
 /**
  * Handles taps on interactive widgets. The Dhikr widget's increment button
