@@ -2,17 +2,22 @@
 
 Status legend: `[ ]` todo · `[x]` done · `[~]` in progress
 
-> **Progress (2026-06-08, session 2):** §1–§7 + §8b core + §9 ops **DONE** on `dev`
-> (unpushed). All 11 §5 domains + both §6 webhooks + lib/{kv-cache,r2,resend}
-> + emailQueue (migration 0002) + scheduled cron (`src/scheduled.ts`) + idempotency
-> & general rate-limit middleware + CI/deploy workflows. **152 vitest tests / 39
-> files green, full repo typecheck green.** Deviations vs original plan: avatar
-> upload is worker-proxied (not presigned); auth is emailOTP+social (no anonymous,
-> §4); confirmation/OTP emails are inline-HTML (react-email not run in workerd).
-> **Open:** create prod CF resources + record ids (needs `wrangler login`); verify
-> `@polar-sh/sdk` bundles under workerd (§1, tests mock it); optional Sentry/Logpush
-> (§8b observability), `db.batch()` atomicity hardening, unbounded-collect audit;
-> §10 app cutover (later). Per Execution Rule 5, run `code-review` on §5/§6 next.
+> **Progress (2026-06-09, session 3):** code-review of §5/§6/§8b/§9 done (one fix
+> landed: idempotency skips `/api/auth/*` so replay can't drop Set-Cookie). **§10
+> cutover started, flag-gated (`USE_CF_API`, default OFF — Convex stays live):**
+> Hono RPC typed client + d.ts build pipeline (tsc-alias) + env flag + React Query
+> provider/managers + **`use-locations` reference dual-path** + tested Convex→D1
+> **backfill transform/runner** (run deferred). **154 vitest tests green, full repo
+> typecheck green.** Remaining §10: ~18 hooks/screens + auth-client (mechanical via
+> the proven pattern), avatar-blob copy, live backfill + flag-flip (need creds).
+> **Earlier (session 2):** §1–§7 + §8b core + §9 ops done. Deviations: avatar upload
+> worker-proxied; auth emailOTP+social (no anonymous); inline-HTML emails; RPC needs
+> a built `.d.ts` (cross-package `@/` alias). **Open review findings (not blocking,
+> documented):** resend webhook fail-open when secret unset; non-constant-time sig
+> compare + no svix-timestamp window; email-queue sweep claim race (overlap → rare
+> double-send); rate-limit KV read-modify-write is soft + per-user budget TODO;
+> `db.batch()` atomicity + unbounded-collect still deferred. **Also open:** create
+> prod CF resources (`wrangler login`); verify `@polar-sh/sdk` under workerd.
 
 ---
 
@@ -324,15 +329,24 @@ dissolves — pushing it would be speculative infra (violates Simplicity-First).
 - [ ] Custom domain/route; finalize CORS origins.
 - [x] Staging (`env.development`) for parallel verification pre-cutover.
 
-## 10. App cutover (LATER — not this pass; core stays until done)
+## 10. App cutover (IN PROGRESS — flag-gated, core stays live until flip)
 
-- [ ] Generate typed client from OpenAPI / Hono RPC; `@barakah/api` client wrapper behind `USE_CF_API` flag.
-- [ ] Wrap reads/writes in React Query per §8 policy.
-- [ ] **Data backfill Convex → D1** — `npx convex export` snapshot → transform → import. **Preserve `authUserId` for every row** (see #1 risk). Order: better-auth tables (ids) → users → all user-keyed tables. `prayerTimeCaches` can be skipped (regenerates).
-- [ ] **Avatar blob migration** — existing avatars live in **Convex file storage**, not just a table. Copy each blob Convex storage → R2, rewrite avatar refs. Don't forget the files.
+- [x] Generate typed client (**Hono RPC** chosen) + `USE_CF_API` flag. `packages/app/lib/api-client.ts` = `hc<AppType>` with auth transport (native Cookie via `@better-auth/expo` `getCookie`, web credentialed). Flag/base in `lib/cf-flag.ts`; `EXPO_PUBLIC_API_URL`/`EXPO_PUBLIC_USE_CF_API` in `@barakah/env/app`. ⚠️ **Deviation:** cross-package RPC needs an alias-free `.d.ts` — `@/`-aliased source can't resolve from the app program. Added `packages/api/tsconfig.build.json` + `tsc-alias` + `build` script emitting `dist/index.d.ts` (`types` field); turbo `^build` runs it before app typecheck. Exported `AppType` from `src/index.ts` (chained `.route()`, not the loop, to keep RPC types). Exported `PrayersToLock`/`PrayerTimingDay`/`PrayerSource` so the `Database` type is nameable in declarations.
+- [~] Wrap reads/writes in React Query per §8 policy. **Done:** `QueryClientProvider` + Expo focus/online managers wired in `_layout`; `lib/query-client.ts`; **`hooks/use-locations.ts` fully dual-pathed as the reference impl** (proves the pattern: `export const useX = USE_CF_API ? useXCf : useXConvex` selected at module load — constant flag, no rules-of-hooks violation; CF rows mapped to the shared shape; branded `Id<>` bridged with `as` casts at the CF boundary; offline mirror shared across both paths). **Remaining (mechanical, same pattern):** `contexts/user-context`, `lib/subscription`, `hooks/{usePrayerLogs,usePrayerTimes,usePrayerShield,useWidgetSync,useOfflineSync,use-widget-interactions,use-forced-update}`, `components/achievement-popup-provider`, `app/(app)/(tabs)/{home,locked,name,profile}`, `app/(app)/achievements`, `app/(settings)/{calc-method,personal-details}`, and the **auth-client** (swap baseURL→CF + drop `convexClient`/`crossDomainClient` plugins when flag on).
+- [x] **Data backfill Convex → D1** — `scripts/backfill/{transform,backfill}.ts` (+ tested transform). Preserves `authUserId`; identity tables first (ids kept), app tables get fresh uuid; object/array→JSON; emits ordered `backfill.sql` for `wrangler d1 execute --file`. **Run deferred** (needs `npx convex export` + prod D1 + `wrangler login`).
+- [ ] **Avatar blob migration** — existing avatars live in **Convex file storage**. Copy each blob Convex storage → R2 (key `avatars/<authUserId>`), rewrite `users.image`. Not yet scripted.
 - [ ] Shadow-read verification vs Convex (sample users' full data graph resolves under preserved ids); auth/session re-auth story (sessions don't carry → users re-login, ids stay).
-- [ ] **Rollback plan** — `USE_CF_API` flag flips back to Convex instantly if cutover regresses; keep Convex writable until backfill+verification signed off. Define the point-of-no-return.
+- [x] **Rollback plan / runbook** — see below. `USE_CF_API` flips back to Convex instantly; Convex stays writable until backfill+verification signed off.
 - [ ] Flip flag, monitor, then retire `packages/core` (separate task, after stability window).
+
+### Cutover runbook (rollback-first)
+
+1. **Pre:** create prod CF resources (§9), set secrets, `d1 migrations apply --remote`, deploy worker. Keep Convex live + writable.
+2. **Backfill:** `npx convex export` (app tables + better-auth component) → `bun run scripts/backfill/backfill.ts <exportDir> <out>` → review `backfill.sql` → `wrangler d1 execute <DB> --remote --file out/backfill.sql`. Then run the (TBD) avatar-blob copy.
+3. **Verify (flag OFF):** point a staging build at `EXPO_PUBLIC_API_URL`, set `EXPO_PUBLIC_USE_CF_API=true` only on that build; shadow-read a sample user's full graph vs Convex under the preserved `authUserId`.
+4. **Flip:** ship `EXPO_PUBLIC_USE_CF_API=true`. Users re-login (sessions don't carry; ids stay). Monitor.
+5. **Rollback (point-of-no-return = first prod CF *write*):** before any CF write, flipping the flag back to Convex is lossless. After CF writes begin, rolling back needs a reverse-backfill — so freeze, verify, then commit. Keep Convex writable through the stability window.
+6. **Retire core:** only after a clean stability window — separate task.
 
 ---
 
