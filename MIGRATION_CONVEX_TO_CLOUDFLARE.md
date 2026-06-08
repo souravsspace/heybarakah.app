@@ -7,7 +7,7 @@ Status legend: `[ ]` todo · `[x]` done · `[~]` in progress
 > cutover started, flag-gated (`USE_CF_API`, default OFF — Convex stays live):**
 > Hono RPC typed client + d.ts build pipeline (tsc-alias) + env flag + React Query
 > provider/managers + **`use-locations` reference dual-path** + tested Convex→D1
-> **backfill transform/runner** (run deferred). **154 vitest tests green, full repo
+> **backfill transform/runner** (run deferred). **163 vitest tests / 40 files green, full repo
 > typecheck green.** Remaining §10: ~18 hooks/screens + auth-client (mechanical via
 > the proven pattern), avatar-blob copy, live backfill + flag-flip (need creds).
 > **Earlier (session 2):** §1–§7 + §8b core + §9 ops done. Deviations: avatar upload
