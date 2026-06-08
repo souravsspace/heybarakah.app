@@ -4,8 +4,10 @@
   "type": "module",
   "private": true,
   "main": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "wrangler dev --env development",
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -38,6 +40,7 @@
     "@cloudflare/workers-types": "^4.20260607.1",
     "@types/bun": "catalog:",
     "drizzle-kit": "^0.31.10",
+    "tsc-alias": "^1.8.10",
     "vitest": "^4.1.8",
     "wrangler": "^4.98.0"
   },
