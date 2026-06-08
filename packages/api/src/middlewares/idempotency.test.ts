@@ -47,4 +47,22 @@ describe("idempotency middleware", () => {
     await app.request(post("k2"), {}, env);
     expect(getCalls()).toBe(2);
   });
+
+  it("never caches auth routes (replay would drop Set-Cookie)", async () => {
+    let calls = 0;
+    const app = createRouter();
+    app.use(idempotency());
+    app.post("/api/auth/sign-in", (c) => {
+      calls++;
+      return c.json({ calls });
+    });
+    const req = () =>
+      new Request("http://localhost/api/auth/sign-in", {
+        method: "POST",
+        headers: { "Idempotency-Key": "same" },
+      });
+    await app.request(req(), {}, env);
+    await app.request(req(), {}, env);
+    expect(calls).toBe(2);
+  });
 });
