@@ -1,0 +1,50 @@
+import { env } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
+
+import { createRouter } from "@/lib/create-router";
+import { idempotency } from "@/middlewares/idempotency";
+
+function buildApp() {
+  let calls = 0;
+  const app = createRouter();
+  app.use(idempotency());
+  app.post("/do", (c) => {
+    calls++;
+    return c.json({ calls });
+  });
+  return { app, getCalls: () => calls };
+}
+
+function post(key?: string) {
+  return new Request("http://localhost/do", {
+    method: "POST",
+    headers: key ? { "Idempotency-Key": key } : {},
+  });
+}
+
+describe("idempotency middleware", () => {
+  it("replays the first response for a repeated key without re-running the handler", async () => {
+    const { app, getCalls } = buildApp();
+    const first = await app.request(post("abc"), {}, env);
+    const second = await app.request(post("abc"), {}, env);
+
+    expect(await first.json()).toEqual({ calls: 1 });
+    expect(await second.json()).toEqual({ calls: 1 });
+    expect(second.headers.get("Idempotent-Replay")).toBe("true");
+    expect(getCalls()).toBe(1);
+  });
+
+  it("runs every time when no key is supplied", async () => {
+    const { app, getCalls } = buildApp();
+    await app.request(post(), {}, env);
+    await app.request(post(), {}, env);
+    expect(getCalls()).toBe(2);
+  });
+
+  it("treats different keys independently", async () => {
+    const { app, getCalls } = buildApp();
+    await app.request(post("k1"), {}, env);
+    await app.request(post("k2"), {}, env);
+    expect(getCalls()).toBe(2);
+  });
+});
