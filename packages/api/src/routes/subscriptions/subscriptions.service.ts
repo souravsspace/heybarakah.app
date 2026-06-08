@@ -5,6 +5,7 @@ import {
   shouldSkipRcSync,
 } from "@barakah/core/subscriptions";
 import { and, desc, eq } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { HTTPException } from "hono/http-exception";
 
 import type { Database } from "@/db";
@@ -81,28 +82,38 @@ export async function claimPolarByEmail(
     .from(subscriptions)
     .where(eq(subscriptions.customerEmail, email))
     .limit(20);
-  for (const sub of subs) {
-    if (sub.source === "polar" && !sub.authUserId) {
-      await db
-        .update(subscriptions)
-        .set({ authUserId: user.id, updatedAt: now })
-        .where(eq(subscriptions.id, sub.id));
-      linked = true;
-    }
-  }
-
   const orders = await db
     .select()
     .from(polarOrders)
     .where(eq(polarOrders.customerEmail, email))
     .limit(20);
+
+  // Linking the subscriptions + their orders to this user must be all-or-nothing.
+  const writes: BatchItem<"sqlite">[] = [];
+  for (const sub of subs) {
+    if (sub.source === "polar" && !sub.authUserId) {
+      writes.push(
+        db
+          .update(subscriptions)
+          .set({ authUserId: user.id, updatedAt: now })
+          .where(eq(subscriptions.id, sub.id))
+      );
+      linked = true;
+    }
+  }
   for (const order of orders) {
     if (!order.authUserId) {
-      await db
-        .update(polarOrders)
-        .set({ authUserId: user.id })
-        .where(eq(polarOrders.id, order.id));
+      writes.push(
+        db
+          .update(polarOrders)
+          .set({ authUserId: user.id })
+          .where(eq(polarOrders.id, order.id))
+      );
     }
+  }
+
+  if (writes.length > 0) {
+    await db.batch(writes as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
   }
 
   return { linked };
