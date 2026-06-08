@@ -1,15 +1,14 @@
-import { api as convexApi } from "@barakah/core/convex/_generated/api";
-import type { Id } from "@barakah/core/convex/_generated/dataModel";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   useMutation as useRqMutation,
   useQuery as useRqQuery,
 } from "@tanstack/react-query";
-import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useUser } from "@/contexts/user-context";
 import { api } from "@/lib/api-client";
-import { USE_CF_API } from "@/lib/cf-flag";
+
+/** Opaque location id (formerly a Convex `Id<"userLocations">`). */
+type Id<_T extends string> = string;
 
 const STORAGE_KEY_PREFIX = "user-locations:v1:";
 
@@ -146,64 +145,6 @@ function useLocationMirror(
   return { mirror, hydrated, activeLocation };
 }
 
-function useLocationsConvex(): UseLocationsResult {
-  const { user } = useUser();
-  const userId = user?._id ?? null;
-  const remote = useQuery(
-    convexApi.lib.userLocations.listMine,
-    userId ? {} : "skip"
-  );
-  const remoteShape: RemoteShape | null = remote
-    ? {
-        locations: remote.locations as SavedLocation[],
-        activeId: remote.activeId as Id<"userLocations"> | null,
-      }
-    : null;
-  const { mirror, hydrated, activeLocation } = useLocationMirror(
-    userId,
-    remoteShape
-  );
-
-  const createRemote = useMutation(convexApi.lib.userLocations.create);
-  const renameRemote = useMutation(convexApi.lib.userLocations.rename);
-  const removeRemote = useMutation(convexApi.lib.userLocations.remove);
-  const setActiveRemote = useMutation(convexApi.lib.userLocations.setActive);
-
-  const create = useCallback(
-    async (input: CreateLocationInput) => await createRemote(input),
-    [createRemote]
-  );
-  const rename = useCallback(
-    async (id: Id<"userLocations">, name: string) => {
-      await renameRemote({ id, name });
-    },
-    [renameRemote]
-  );
-  const remove = useCallback(
-    async (id: Id<"userLocations">) => {
-      await removeRemote({ id });
-    },
-    [removeRemote]
-  );
-  const setActive = useCallback(
-    async (id: Id<"userLocations"> | null) => {
-      await setActiveRemote({ id });
-    },
-    [setActiveRemote]
-  );
-
-  return {
-    locations: mirror.locations,
-    activeId: mirror.activeId,
-    activeLocation,
-    hydrated,
-    create,
-    rename,
-    remove,
-    setActive,
-  };
-}
-
 /** Map a Cloudflare location row to the shared `SavedLocation` shape. */
 function toSavedLocation(row: {
   id: string;
@@ -233,7 +174,7 @@ function toSavedLocation(row: {
 
 const LOCATIONS_QUERY_KEY = ["cf", "locations"] as const;
 
-function useLocationsCf(): UseLocationsResult {
+export function useLocations(): UseLocationsResult {
   const { user } = useUser();
   const userId = user?._id ?? null;
 
@@ -348,10 +289,3 @@ function useLocationsCf(): UseLocationsResult {
     setActive,
   };
 }
-
-/**
- * Selected at module load by the cutover flag (§10). The constant flag means
- * this never violates the rules of hooks — exactly one implementation's hooks
- * run for the app's lifetime.
- */
-export const useLocations = USE_CF_API ? useLocationsCf : useLocationsConvex;
