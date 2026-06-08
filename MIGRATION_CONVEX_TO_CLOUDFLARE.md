@@ -2,6 +2,56 @@
 
 Status legend: `[ ]` todo · `[x]` done · `[~]` in progress
 
+---
+
+## ⭐⭐ ACTIVE PHASE (2026-06-09, session 5) — REMOVE CONVEX FULLY, CF API ONLY
+
+**Decision:** app is **pre-launch (no production users/data)** → no backfill, no
+shadow-read, no rollback flag. End state: app + marketing talk **only** to the CF
+Hono API; Convex is deleted. The earlier flag-gated dual-path (§10) was collapsed
+into a straight CF-only conversion.
+
+**Scope nuance:** `packages/core` is **NOT** deleted. It has `convex/` (backend →
+DELETE) and `src/` (pure domain logic — prayer math, achievements, validators →
+**KEEP**; reused by both app + `packages/api`). The only Convex coupling left in
+`src/` is 4 files importing `convex/values` (`v`/`Infer`) → decouple (Phase 6).
+
+### Removal phases (live status)
+
+- [x] **Phase 1 — App data layer → CF-only.** Stripped Convex branches from the 10
+  hooks/contexts so each uses the hono RPC client directly, zero convex imports:
+  `contexts/user-context`, `lib/subscription`, `hooks/{use-locations,use-forced-update,
+  use-widget-interactions,usePrayerLogs,useOfflineSync,useWidgetSync,usePrayerShield,
+  usePrayerTimes}`. Collateral CF-type fixes in `locations`/`calc-method`/`profile`
+  screens. App typecheck green; those dirs are convex-free.
+- [ ] **Phase 2 — App screens → CF-only.** `(app)/(tabs)/{home,locked,name,profile}`,
+  `(app)/achievements`, `(settings)/{calc-method,personal-details}`,
+  `components/achievement-popup-provider`. Endpoint map: upsertProfile→`POST /me/profile`;
+  shield→`/shield/{,ios,android}`; avatar GET→`/me/avatar`, **setAvatar→`POST /me/avatar`
+  RAW BYTES (presign dropped)**; delete→`POST /me/delete`; achievements→`/achievements{,/unseen}`
+  + `POST /achievements/seen`.
+- [ ] **Phase 3 — Auth + root layout → CF.** `lib/auth-client.ts` drop
+  `convexClient()`/`crossDomainClient()`, baseURL→`API_BASE_URL`. `app/_layout.tsx`
+  drop `ConvexBetterAuthProvider`+`ConvexReactClient`.
+- [ ] **Phase 4 — Remove `USE_CF_API` flag + Convex env vars** (`lib/cf-flag.ts`,
+  `env/app.ts`; make `EXPO_PUBLIC_API_URL` required).
+- [ ] **Phase 5 — Marketing → CF** (`WaitlistForm` + `lib/convex.ts` →
+  `POST /api/v1/marketing/waitlist`; `env/marketing.ts`).
+- [ ] **Phase 6 — Decouple `core/src` from `convex/values`** (4 validator files;
+  delete dead convex `v` exports, keep pure logic; api tests stay green).
+- [ ] **Phase 7 — Delete `core/convex/` backend + convex deps** (3 package.jsons +
+  scripts; blocked by 1,2,5,6).
+- [ ] **Phase 8 — Verify** (turbo typecheck + api 164 tests + grep clean).
+- [ ] **Phase 9 — Deploy CF API.** 🔴 **BLOCKED on user secrets** (Appendix B):
+  `wrangler secret put …`, `db:migrate:dev`, `wrangler deploy --env development`,
+  set `EXPO_PUBLIC_API_URL`. Dev CF resources exist; prod ids still placeholder.
+
+> §1–§10 below are the **build record** (backend is built + hardened: 164 vitest /
+> 40 files green, `db.batch()` atomicity, polar workerd smoke). They remain for
+> reference; the active work is the removal phases above.
+
+---
+
 > **Progress (2026-06-09, session 4):** doc-sync pass — ticked stale §7 boxes
 > (40 test files / **163 green**; coverage is **domain-level** not strict per-file →
 > §7 sibling-file boxes marked `[~]`/`[ ]` honestly). **DEV CF resources confirmed
