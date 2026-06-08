@@ -1,5 +1,4 @@
-import { api } from "@barakah/core/convex/_generated/api";
-import { useMutation } from "convex/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { TextInput, View } from "react-native";
@@ -9,10 +8,11 @@ import { Headline } from "@/components/onboarding/headline";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import { api } from "@/lib/api-client";
 
 export default function Name() {
   const { state, dispatch } = useOnboardingState();
-  const upsertProfile = useMutation(api.lib.users.upsertProfile);
+  const queryClient = useQueryClient();
   const router = useRouter();
   const [value, setValue] = useState("");
   const [saving, setSaving] = useState(false);
@@ -25,22 +25,28 @@ export default function Name() {
     const name = value.trim() || undefined;
     const completedAt = new Date().toISOString();
     try {
-      // Persist the whole onboarding profile to Convex now and wait for it, so
+      // Persist the whole onboarding profile to the API now and wait for it, so
       // the setup is saved server-side and never shown again on later sign-ins.
-      await upsertProfile({
-        name,
-        gender: state.gender,
-        madhab: state.madhab,
-        consistency: state.consistency,
-        struggle: state.struggle,
-        goal: state.goal,
-        calcMethod: state.calcMethod,
-        strictness: state.strictness,
-        locationGranted: state.locationGranted,
-        notifGranted: state.notifGranted,
-        prayersToLock: state.prayersToLock,
-        completedAt,
+      const res = await api.api.v1.me.profile.$post({
+        json: {
+          name,
+          gender: state.gender,
+          madhab: state.madhab,
+          consistency: state.consistency,
+          struggle: state.struggle,
+          goal: state.goal,
+          calcMethod: state.calcMethod,
+          strictness: state.strictness,
+          locationGranted: state.locationGranted,
+          notifGranted: state.notifGranted,
+          prayersToLock: state.prayersToLock,
+          completedAt,
+        },
       });
+      if (!res.ok) {
+        throw new Error("Failed to save profile");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
       dispatch({ type: "RESET" });
     } catch {
       // Save failed (e.g. offline): keep it locally so home.tsx retries upsert.
