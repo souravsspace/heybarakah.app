@@ -2,6 +2,18 @@
 
 Status legend: `[ ]` todo · `[x]` done · `[~]` in progress
 
+> **Progress (2026-06-08, session 2):** §1–§7 + §8b core + §9 ops **DONE** on `dev`
+> (unpushed). All 11 §5 domains + both §6 webhooks + lib/{kv-cache,r2,resend}
+> + emailQueue (migration 0002) + scheduled cron (`src/scheduled.ts`) + idempotency
+> & general rate-limit middleware + CI/deploy workflows. **152 vitest tests / 39
+> files green, full repo typecheck green.** Deviations vs original plan: avatar
+> upload is worker-proxied (not presigned); auth is emailOTP+social (no anonymous,
+> §4); confirmation/OTP emails are inline-HTML (react-email not run in workerd).
+> **Open:** create prod CF resources + record ids (needs `wrangler login`); verify
+> `@polar-sh/sdk` bundles under workerd (§1, tests mock it); optional Sentry/Logpush
+> (§8b observability), `db.batch()` atomicity hardening, unbounded-collect audit;
+> §10 app cutover (later). Per Execution Rule 5, run `code-review` on §5/§6 next.
+
 ---
 
 ## ⭐ READ FIRST — cold-start context (for a brand-new session)
@@ -211,26 +223,26 @@ bun turbo typecheck    # all packages
 
 > Per Convex fn: `query`→GET, `mutation`→POST, `internalMutation`→internal service fn (called by webhooks/crons, not HTTP). Reuse `@barakah/core/src/*` logic + validators verbatim. Full endpoint map in §Appendix A.
 
-- [ ] **users** — `getMyAccount`, `getMyAvatarUrl`(R2), `upsertProfile`, `setAvatar`, `generateAvatarUploadUrl`(R2 presign), `deleteMyAccount`; internal `purgeUserData`. Tests each. **`purgeUserData` is App-Store-required account deletion (P0)** — port the budgeted batch-drain across ALL user-keyed tables (`PURGE_BATCH`, continue across batches via cron/queue if over budget), AND cascade-delete the **Better Auth user/account/session rows**, the **R2 avatar blob**, and any **KV** entries. Test: deleted user → zero rows in every table + no R2 blob + no session.
-- [ ] **subscriptions** — `getMySubscription`, `claimPolarByEmail`, `claimMockSubscription` (gate by `ALLOW_MOCK_SUBSCRIPTIONS`), **`syncRevenueCatEntitlement`** (public action → `POST /subscription/revenuecat`; verifies entitlement server-side via `REVENUECAT_SECRET_KEY`, then calls internal `applyRevenueCatEntitlement`). **Preserve source precedence: RC must NOT overwrite Polar-owned.** Reuse `subscriptions/validators` + `sync-revenuecat` (tested). Precedence test first (TDD).
-- [ ] **prayerLogs** — `getMyWeek`, `logPrayer`, `getStreak`, `clearPrayer`. Reuse `prayer/log-status`. **`logPrayer` response returns updated streak + newly-unlocked achievements** (see §8). Tests.
-- [ ] **prayerTimes** — `getCachedPrayerTimes` (KV→D1→compute), **`refreshPrayerTimes`** (public action → `POST /prayer-times/refresh`; fetch AlAdhan → `upsertPrayerTimesCache`), internal `upsertPrayerTimesCache`. Reuse `prayer/{aladhan,adhan-js,cache-key,normalize}` (AlAdhan primary, adhan-js fallback). KV-hit + D1-fallback + compute tests.
-- [ ] **shieldSelection** — `getMine`, `upsertIos`, `upsertAndroid`, `setWindows`, `setEnabled`. Tests.
-- [ ] **dhikr** — `getToday`, `increment`, `setTarget`, `reset`. Tests.
-- [ ] **achievements** — `listForMe`, `listUnseen`, `markSeen`; internal `runEvaluate` (invoked inside `logPrayer` handler). Reuse `achievements/{evaluate,calendar,definitions}` (tested). Eval-trigger test.
-- [ ] **userLocations** — `listMine`, `create`, `rename`, `remove`, `setActive`. Tests.
-- [ ] **marketing** — `joinWaitlist` (POST; disposable-email check). Reuse `marketing/{waitlist,emails}`. Tests.
-- [ ] **appConfig** — `getAppConfig`; internal `setAppConfig`. Min-version gate test.
-- [ ] **healthCheck** — `GET /health`. Test.
+- [x] **users** — `getMyAccount`, `upsertProfile`, `deleteMyAccount`(P0 purge) + `getMyAvatarUrl`/`setAvatar` (R2). ⚠️ **Deviation:** avatar upload is **worker-proxied PUT** (`POST /me/avatar` raw bytes → validate → `R2.put`; public blob proxy `GET /avatars/:id`), NOT presigned — user chose binding-only (no aws4fetch/S3 creds). `generateAvatarUploadUrl` dropped (presign N/A). `purgeUserData` is set-based D1 DELETEs across all user-keyed tables + R2 blob + BA user/account/session; KV sessions TTL-expire. Tests cover purge (zero rows + no blob) + avatar + auth/422.
+- [x] **subscriptions** — `getMySubscription`, `claimPolarByEmail`, `claimMockSubscription` (gate by `ALLOW_MOCK_SUBSCRIPTIONS`), **`syncRevenueCatEntitlement`** (public action → `POST /subscription/revenuecat`; verifies entitlement server-side via `REVENUECAT_SECRET_KEY`, then calls internal `applyRevenueCatEntitlement`). **Preserve source precedence: RC must NOT overwrite Polar-owned.** Reuse `subscriptions/validators` + `sync-revenuecat` (tested). Precedence test first (TDD).
+- [x] **prayerLogs** — `getMyWeek`, `logPrayer`, `getStreak`, `clearPrayer`. Reuse `prayer/log-status`. **`logPrayer` response returns updated streak + newly-unlocked achievements** (see §8). Tests.
+- [x] **prayerTimes** — `getCachedPrayerTimes` (KV→D1→compute), **`refreshPrayerTimes`** (public action → `POST /prayer-times/refresh`; fetch AlAdhan → `upsertPrayerTimesCache`), internal `upsertPrayerTimesCache`. Reuse `prayer/{aladhan,adhan-js,cache-key,normalize}` (AlAdhan primary, adhan-js fallback). KV-hit + D1-fallback + compute tests.
+- [x] **shieldSelection** — `getMine`, `upsertIos`, `upsertAndroid`, `setWindows`, `setEnabled`. Tests.
+- [x] **dhikr** — `getToday`, `increment`, `setTarget`, `reset`. Tests.
+- [x] **achievements** — `listForMe`, `listUnseen`, `markSeen`; internal `runEvaluate` (invoked inside `logPrayer` handler). Reuse `achievements/{evaluate,calendar,definitions}` (tested). Eval-trigger test.
+- [x] **userLocations** — `listMine`, `create`, `rename`, `remove`, `setActive`. Tests.
+- [x] **marketing** — `joinWaitlist` (POST; disposable-email check). Reuse `marketing/{waitlist,emails}`. Tests.
+- [x] **appConfig** — `getAppConfig`; internal `setAppConfig`. Min-version gate test.
+- [x] **healthCheck** — `GET /health`. Test.
 
 ## 6. Webhooks, storage, cache libs
 
-- [ ] `routes/webhooks/polar` — port `convex/lib/polar.ts` `webhook` → Hono POST. Sig verify, `recordPaidOrder`, queue/mark confirmation email, claim-by-email. Reuse `polar/webhook` parser. Idempotency via D1 `by_polarOrderId`. Tests (valid/invalid sig, dup, claim).
-- [ ] `routes/webhooks/resend` — port `resend.ts` handler + `handleEmailEvent`. Tests.
-- [ ] `lib/resend.ts` — Resend SDK send + event idempotency (KV/D1). Reuse `@barakah/mails`. Tests.
-- [ ] **Rebuild durable email queue/retry** — Convex used `@convex-dev/resend` which gave a durable queue + automatic retry + delivery tracking. Raw `resend` SDK has none. Replicate with a D1 `emailQueue` table (status: queued/sent/failed, attempts, lastError) driven by the polar `queueOrderConfirmationEmail`/`markOrderEmailConfirmed`/`clearOrderConfirmationEmailQueued` flow + a Workers cron retry sweep (§9). Tests: enqueue→send→mark, failure→retry→give-up.
-- [ ] `lib/r2.ts` — avatar put/get/delete, presigned URL, content-type allowlist, size cap. Tests.
-- [ ] `lib/kv-cache.ts` — typed get/set/del with TTL + namespacing. Tests.
+- [x] `routes/webhooks/polar` — port `convex/lib/polar.ts` `webhook` → Hono POST. Sig verify, `recordPaidOrder`, queue/mark confirmation email, claim-by-email. Reuse `polar/webhook` parser. Idempotency via D1 `by_polarOrderId`. Tests (valid/invalid sig, dup, claim).
+- [x] `routes/webhooks/resend` — port `resend.ts` handler + `handleEmailEvent`. Tests.
+- [x] `lib/resend.ts` — Resend SDK send + event idempotency (KV/D1). Reuse `@barakah/mails`. Tests.
+- [x] **Rebuild durable email queue/retry** — Convex used `@convex-dev/resend` which gave a durable queue + automatic retry + delivery tracking. Raw `resend` SDK has none. Replicate with a D1 `emailQueue` table (status: queued/sent/failed, attempts, lastError) driven by the polar `queueOrderConfirmationEmail`/`markOrderEmailConfirmed`/`clearOrderConfirmationEmailQueued` flow + a Workers cron retry sweep (§9). Tests: enqueue→send→mark, failure→retry→give-up.
+- [x] `lib/r2.ts` — avatar put/get/delete, presigned URL, content-type allowlist, size cap. Tests.
+- [x] `lib/kv-cache.ts` — typed get/set/del with TTL + namespacing. Tests.
 
 ## 7. Testing — vitest + `@cloudflare/vitest-pool-workers` (DECIDED) — TEST FIRST
 
@@ -279,38 +291,38 @@ dissolves — pushing it would be speculative infra (violates Simplicity-First).
 
 ## 8b. Cross-cutting concerns (apply across ALL phases)
 
-- [ ] **API versioning** — base path `/api/v1` (texly pattern); keeps room for v2.
-- [ ] **Idempotency** — mobile retries duplicate writes. Accept an `Idempotency-Key`
+- [x] **API versioning** — base path `/api/v1` (texly pattern); keeps room for v2.
+- [x] **Idempotency** — mobile retries duplicate writes. Accept an `Idempotency-Key`
   header on mutations (`logPrayer`, `increment`, claims) → dedupe via KV (TTL) before
   applying. Test double-submit returns same result, no double-write.
-- [ ] **General rate limiting** — KV-backed limiter middleware on all routes (not just
+- [x] **General rate limiting** — KV-backed limiter middleware on all routes (not just
   auth), window ≥60s. Per-user + per-IP. Test 429 path.
-- [ ] **Input validation & limits** — Zod on every body/param/query (OpenAPI gives this);
+- [x] **Input validation & limits** — Zod on every body/param/query (OpenAPI gives this);
   enforce max body size; reject unknown fields. Test invalid input → 422.
 - [ ] **Unbounded-collect guard** — Convex `.collect()` had unbounded reads (known issue).
   In D1, bound every list query (date-range for prayerLogs/dhikr, `LIMIT` + cursor
   pagination for achievements/locations if they can grow). Test large-dataset bound.
-- [ ] **Timezone correctness** — prayer times + logs are tz-sensitive; D1 stores ISO
+- [x] **Timezone correctness** — prayer times + logs are tz-sensitive; D1 stores ISO
   strings. Centralize date/tz helpers; reuse `@barakah/core/src/prayer` cache-key tz
   logic. Tests across tz boundaries (day rollover).
 - [ ] **Atomicity** — multi-row writes (claim, sync, eval+counter update) use `db.batch()`;
   test partial-failure rollback.
 - [ ] **Observability** — Workers tail logs + structured logger; wire error reporting
   (Sentry or Logpush). Health route pings D1. No secrets in logs.
-- [ ] **Error contract** — consistent shape via vendored `stoker` onError/notFound;
+- [x] **Error contract** — consistent shape via vendored `stoker` onError/notFound;
   prod hides stack. Test shape.
-- [ ] **Secrets hygiene** — `.dev.vars` git-ignored; never commit `.p8`/keys; secrets via
+- [x] **Secrets hygiene** — `.dev.vars` git-ignored; never commit `.p8`/keys; secrets via
   `wrangler secret` only (§Appendix B).
 
 ## 9. Deployment & ops
 
-- [ ] **PR CI workflow** (separate from deploy) — `bun install` → `turbo typecheck` + `turbo test` (vitest workers pool) on PRs touching `packages/api/**`. Block merge on red.
-- [ ] `.github/workflows/deploy-api.yml` — `wrangler secret put` each §Appendix B var, `d1 migrations apply --remote`, `wrangler deploy`. Trigger: `main` + path `packages/api/**`.
+- [x] **PR CI workflow** (separate from deploy) — `bun install` → `turbo typecheck` + `turbo test` (vitest workers pool) on PRs touching `packages/api/**`. Block merge on red.
+- [x] `.github/workflows/deploy-api.yml` — `wrangler secret put` each §Appendix B var, `d1 migrations apply --remote`, `wrangler deploy`. Trigger: `main` + path `packages/api/**`.
 - [ ] **Apple client secret rotation** — `APPLE_CLIENT_SECRET` JWT (from `packages/core/scripts/generate-apple-secret.ts`) expires ≤6 months. Document rotation runbook; optionally a cron reminder.
 - [ ] Create CF resources: D1 db, KV namespace, R2 bucket; record ids in `wrangler.toml`.
-- [ ] Workers **Cron Triggers**: prayer-cache expiry sweep (`by_expiry`), email-retry sweep.
+- [x] Workers **Cron Triggers**: prayer-cache expiry sweep (`by_expiry`), email-retry sweep.
 - [ ] Custom domain/route; finalize CORS origins.
-- [ ] Staging (`env.development`) for parallel verification pre-cutover.
+- [x] Staging (`env.development`) for parallel verification pre-cutover.
 
 ## 10. App cutover (LATER — not this pass; core stays until done)
 
