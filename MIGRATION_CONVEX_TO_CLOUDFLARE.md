@@ -35,9 +35,14 @@ DELETE) and `src/` (pure domain logic — prayer math, achievements, validators 
   (presign dropped)**; delete→`POST /me/delete`; achievements listForMe/listUnseen/markSeen
   →`/achievements{,/unseen}`+`POST /achievements/seen`. `z.unknown()` responses cast
   `as unknown as T`.
-- [ ] **Phase 3 — Auth + root layout → CF.** `lib/auth-client.ts` drop
-  `convexClient()`/`crossDomainClient()`, baseURL→`API_BASE_URL`. `app/_layout.tsx`
-  drop `ConvexBetterAuthProvider`+`ConvexReactClient`.
+- [x] **Phase 3 — Auth + root layout → CF.** `lib/auth-client.ts` dropped
+  `convexClient()`/`crossDomainClient()`, baseURL→`API_BASE_URL`; plugins now
+  `emailOTPClient()` + (native-only) `expoClient()` — web rides the credentialed
+  cookie, no plugin. `app/_layout.tsx` dropped `ConvexBetterAuthProvider`+
+  `ConvexReactClient`+convex instance; `UserProvider` now sits directly under
+  `QueryClientProvider`. `EXPO_PUBLIC_API_URL` added to app `.env`+`.env.example`
+  (`env.ts` already declared it). App convex-free except Phase 4 flag/env cleanup.
+  Typecheck green; per-file commits.
 - [ ] **Phase 4 — Remove `USE_CF_API` flag + Convex env vars** (`lib/cf-flag.ts`,
   `env/app.ts`; make `EXPO_PUBLIC_API_URL` required).
 - [ ] **Phase 5 — Marketing → CF** (`WaitlistForm` + `lib/convex.ts` →
