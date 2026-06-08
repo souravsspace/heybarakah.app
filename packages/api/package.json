@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "wrangler d1 migrations apply",
+    "db:migrate": "wrangler d1 migrations apply DB --local --env development",
+    "db:migrate:dev": "wrangler d1 migrations apply DB --remote --env development",
+    "db:migrate:prod": "wrangler d1 migrations apply DB --remote",
     "reset:db": "bun run scripts/reset-db.ts",
     "deploy": "wrangler deploy",
     "cf:typegen": "wrangler types"
