@@ -1,6 +1,5 @@
-import { api } from "@barakah/core/convex/_generated/api";
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery as useRqQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -24,6 +23,7 @@ import { LockedMesh } from "@/components/meshes";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { SOCIAL_APPS, type SocialApp } from "@/constants/social-apps";
 import { useTheme } from "@/contexts/theme-context";
+import { api } from "@/lib/api-client";
 import {
   type AndroidBlockableApp,
   BlockedAppsNativeList,
@@ -106,9 +106,37 @@ export default function Locked() {
   const [pendingAndroid, setPendingAndroid] = useState<Set<string>>(new Set());
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const selection = useQuery(api.lib.shieldSelection.getMine);
-  const upsertIos = useMutation(api.lib.shieldSelection.upsertIos);
-  const upsertAndroid = useMutation(api.lib.shieldSelection.upsertAndroid);
+  const { data: selection } = useRqQuery({
+    queryKey: ["cf", "shield"],
+    queryFn: async () => {
+      const res = await api.api.v1.shield.$get();
+      if (!res.ok) {
+        throw new Error("Failed to load shield selection");
+      }
+      return (await res.json()) as {
+        androidPackageNames: string[] | null;
+        iosSelectionData: string | null;
+      } | null;
+    },
+  });
+  const upsertIos = useCallback(
+    async (args: { iosItemCount: number; iosSelectionData: string }) => {
+      const res = await api.api.v1.shield.ios.$post({ json: args });
+      if (!res.ok) {
+        throw new Error("Failed to save shield selection (iOS)");
+      }
+    },
+    []
+  );
+  const upsertAndroid = useCallback(
+    async (args: { androidPackageNames: string[] }) => {
+      const res = await api.api.v1.shield.android.$post({ json: args });
+      if (!res.ok) {
+        throw new Error("Failed to save shield selection (Android)");
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (Platform.OS === "web") {
