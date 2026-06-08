@@ -25,25 +25,27 @@ const app = createApp().basePath("/api/v1");
 
 configureOpenAPI(app);
 
-// Domain routers — each carries its own path; mounted under /api/v1.
-const routers = [
-  healthCheck,
-  appConfig,
-  achievements,
-  dhikr,
-  marketing,
-  prayerLogs,
-  prayerTimes,
-  shieldSelection,
-  subscriptions,
-  userLocations,
-  usersRouter,
-  polarWebhook,
-  resendWebhook,
-] as const;
-for (const router of routers) {
-  app.route("/", router);
-}
+// Domain routers — each carries its own path; mounted under /api/v1. Chained
+// explicitly (not a loop) so Hono RPC type inference is preserved for the typed
+// client (`hc<AppType>`) the app consumes at cutover (§10).
+const router = app
+  .route("/", healthCheck)
+  .route("/", appConfig)
+  .route("/", achievements)
+  .route("/", dhikr)
+  .route("/", marketing)
+  .route("/", prayerLogs)
+  .route("/", prayerTimes)
+  .route("/", shieldSelection)
+  .route("/", subscriptions)
+  .route("/", userLocations)
+  .route("/", usersRouter)
+  .route("/", polarWebhook)
+  .route("/", resendWebhook);
+
+// Type-only export for the app's Hono RPC client; erased at build (no runtime
+// pull of worker code into the Expo bundle).
+export type AppType = typeof router;
 
 // Export both the fetch handler and the cron entrypoint (§9). The scheduled
 // handler drives the durable email queue + prayer-cache eviction.
