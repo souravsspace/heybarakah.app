@@ -2,10 +2,16 @@ import { cors } from "hono/cors";
 import { isTruthyFlag } from "@/env";
 import { createRouter } from "@/lib/create-router";
 import { authSession } from "@/middlewares/auth-session";
+import { idempotency } from "@/middlewares/idempotency";
 import { logger } from "@/middlewares/logger";
+import { rateLimit } from "@/middlewares/rate-limit";
 import notFound from "@/stoker/middlewares/not-found";
 import onError from "@/stoker/middlewares/on-error";
 import type { AppOpenAPI } from "@/types/app-type";
+
+// Generous per-IP ceiling for general traffic — Better Auth applies its own
+// stricter limit to /sign-in/*. Window clamps to the KV 60s minimum.
+const GENERAL_RATE_LIMIT_MAX = 600;
 
 // Stable web origins (app + marketing). Expo/native schemes are gated separately.
 const WEB_ORIGINS = ["https://heybarakah.app", "https://www.heybarakah.app"];
@@ -51,6 +57,9 @@ function applyMiddleware(app: AppOpenAPI) {
   // Resolve the Better Auth session (sets c.var.auth + c.var.user) for every
   // request, then mount the Better Auth handler at /api/auth/*.
   app.use(authSession());
+  // General KV rate limit (per-IP) + Idempotency-Key replay for retried writes.
+  app.use(rateLimit({ max: GENERAL_RATE_LIMIT_MAX, windowSeconds: 60 }));
+  app.use(idempotency());
   app.on(["GET", "POST"], "/api/auth/*", (c) =>
     c.get("auth").handler(c.req.raw)
   );
