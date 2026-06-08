@@ -11,6 +11,7 @@ import { shieldSelection } from "@/routes/shield-selection/shield-selection.inde
 import { subscriptions } from "@/routes/subscriptions/subscriptions.index";
 import { userLocations } from "@/routes/user-locations/user-locations.index";
 import { usersRouter } from "@/routes/users/users.index";
+import { polarWebhook } from "@/routes/webhooks/polar/polar.index";
 
 const app = createApp().basePath("/api/v1");
 
@@ -29,6 +30,7 @@ const routers = [
   subscriptions,
   userLocations,
   usersRouter,
+  polarWebhook,
 ] as const;
 for (const router of routers) {
   app.route("/", router);
