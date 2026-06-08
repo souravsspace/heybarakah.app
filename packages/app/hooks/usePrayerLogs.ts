@@ -1,10 +1,7 @@
-import { api as convexApi } from "@barakah/core/convex/_generated/api";
 import type { LoggablePrayerName, PrayerStatus } from "@barakah/core/prayer";
 import { useQueryClient, useQuery as useRqQuery } from "@tanstack/react-query";
-import { useMutation, useQuery } from "convex/react";
 import { useCallback, useMemo } from "react";
 import { api } from "@/lib/api-client";
-import { USE_CF_API } from "@/lib/cf-flag";
 import { enqueueMutation } from "@/lib/offline-queue";
 
 /** Mutation kinds replayed by the offline queue (see app/(app)/_layout.tsx). */
@@ -66,13 +63,8 @@ function toPrayerLogRow(row: {
   };
 }
 
-// `undefined` = still loading (matches the Convex `useQuery` contract).
-function useWeekDataConvex(startDate: string): PrayerLogRow[] | undefined {
-  const data = useQuery(convexApi.lib.prayerLogs.getMyWeek, { startDate });
-  return data as unknown as PrayerLogRow[] | undefined;
-}
-
-function useWeekDataCf(startDate: string): PrayerLogRow[] | undefined {
+// `undefined` = still loading (the contract `useWeekLogs` consumers rely on).
+function useWeekData(startDate: string): PrayerLogRow[] | undefined {
   const query = useRqQuery({
     queryKey: [...PRAYER_LOGS_KEY, "week", startDate],
     queryFn: async (): Promise<PrayerLogRow[]> => {
@@ -88,8 +80,6 @@ function useWeekDataCf(startDate: string): PrayerLogRow[] | undefined {
   });
   return query.isPending ? undefined : (query.data ?? []);
 }
-
-const useWeekData = USE_CF_API ? useWeekDataCf : useWeekDataConvex;
 
 export function useWeekLogs(startDate: string): WeekLogs {
   const data = useWeekData(startDate);
@@ -126,12 +116,7 @@ export function useWeekLogs(startDate: string): WeekLogs {
   }, [data]);
 }
 
-function useLogMutateConvex() {
-  const mutate = useMutation(convexApi.lib.prayerLogs.logPrayer);
-  return useCallback((args: LogPrayerArgs) => mutate(args), [mutate]);
-}
-
-function useLogMutateCf() {
+function useLogMutate() {
   const queryClient = useQueryClient();
   return useCallback(
     async (args: LogPrayerArgs) => {
@@ -147,8 +132,6 @@ function useLogMutateCf() {
     [queryClient]
   );
 }
-
-const useLogMutate = USE_CF_API ? useLogMutateCf : useLogMutateConvex;
 
 export function useLogPrayer() {
   const mutate = useLogMutate();
@@ -167,12 +150,7 @@ export function useLogPrayer() {
   );
 }
 
-function useClearMutateConvex() {
-  const mutate = useMutation(convexApi.lib.prayerLogs.clearPrayer);
-  return useCallback((args: ClearPrayerArgs) => mutate(args), [mutate]);
-}
-
-function useClearMutateCf() {
+function useClearMutate() {
   const queryClient = useQueryClient();
   return useCallback(
     async (args: ClearPrayerArgs) => {
@@ -188,8 +166,6 @@ function useClearMutateCf() {
     [queryClient]
   );
 }
-
-const useClearMutate = USE_CF_API ? useClearMutateCf : useClearMutateConvex;
 
 export function useClearPrayer() {
   const mutate = useClearMutate();
