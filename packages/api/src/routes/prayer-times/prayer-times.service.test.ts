@@ -1,12 +1,16 @@
 import { env } from "cloudflare:test";
+import { eq } from "drizzle-orm";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createDatabase } from "@/db";
 import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
 
+import { prayerTimeCaches } from "@/db/schema";
+
 import {
   getCachedPrayerTimes,
   type PrayerRequest,
+  purgeExpiredPrayerCaches,
   refreshPrayerTimes,
 } from "./prayer-times.service";
 
@@ -78,5 +82,57 @@ describe("prayer-times service", () => {
     await expect(
       refreshPrayerTimes(db, env.KV, { ...request, latitude: 200 }, "user-b")
     ).rejects.toMatchObject({ status: 422 });
+  });
+});
+
+describe("purgeExpiredPrayerCaches", () => {
+  function insertRow(cacheKey: string, expiresAt: number) {
+    const db = createDatabase(env.DB);
+    const t = Date.now();
+    return db.insert(prayerTimeCaches).values({
+      id: crypto.randomUUID(),
+      cacheKey,
+      userCacheKey: `anon:${cacheKey}`,
+      latitude: 1,
+      longitude: 1,
+      latitudeRounded: 1,
+      longitudeRounded: 1,
+      timezone: "UTC",
+      method: 2,
+      school: 1,
+      startDate: "2026-01-01",
+      endDate: "2026-01-07",
+      days: 7,
+      source: "adhan-js",
+      primarySource: "adhan-js",
+      timings: [],
+      generatedAt: t,
+      expiresAt,
+      createdAt: t,
+      updatedAt: t,
+    });
+  }
+
+  it("deletes only rows past their TTL", async () => {
+    const db = createDatabase(env.DB);
+    const now = Date.now();
+    await insertRow("expired-key", now - 1000);
+    await insertRow("fresh-key", now + 1_000_000);
+
+    const removed = await purgeExpiredPrayerCaches(db, now);
+    expect(removed).toBeGreaterThanOrEqual(1);
+
+    expect(
+      await db
+        .select()
+        .from(prayerTimeCaches)
+        .where(eq(prayerTimeCaches.cacheKey, "expired-key"))
+    ).toHaveLength(0);
+    expect(
+      await db
+        .select()
+        .from(prayerTimeCaches)
+        .where(eq(prayerTimeCaches.cacheKey, "fresh-key"))
+    ).toHaveLength(1);
   });
 });
