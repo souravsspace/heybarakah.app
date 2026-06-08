@@ -59,8 +59,9 @@ export default function CalcMethod() {
   const [saving, setSaving] = useState<Method | null>(null);
   const [savingMadhab, setSavingMadhab] = useState<Madhab | null>(null);
 
-  const current = profile?.calcMethod ?? "mwl";
-  const currentMadhab: Madhab = profile?.madhab ?? "none";
+  const current = (profile?.calcMethod as Method | undefined) ?? "mwl";
+  const currentMadhab: Madhab =
+    (profile?.madhab as Madhab | undefined) ?? "none";
 
   const pick = async (m: Method) => {
     if (m === current || saving) {
