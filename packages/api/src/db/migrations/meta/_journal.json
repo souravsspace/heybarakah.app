@@ -15,6 +15,13 @@
       "when": 1780907655067,
       "tag": "0001_legal_solo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1780928411317,
+      "tag": "0002_smiling_johnny_blaze",
+      "breakpoints": true
     }
   ]
 }
