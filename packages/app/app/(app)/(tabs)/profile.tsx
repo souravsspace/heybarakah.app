@@ -50,7 +50,7 @@ export default function Profile() {
   const { colors, scheme } = useTheme();
   const isPremium = !!activeSubscription;
   const subscriptionLabel = activeSubscription
-    ? (PLAN_VALUE_LABEL[activeSubscription.productId] ?? "Premium")
+    ? (PLAN_VALUE_LABEL[activeSubscription.productId as string] ?? "Premium")
     : "Free";
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
