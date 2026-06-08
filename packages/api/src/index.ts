@@ -1,3 +1,8 @@
+import type {
+  ExecutionContext,
+  ScheduledController,
+} from "@cloudflare/workers-types";
+
 import { configureOpenAPI } from "@/lib/configure-open-api";
 import { createApp } from "@/lib/create-app";
 import { achievements } from "@/routes/achievements/achievements.index";
@@ -13,6 +18,8 @@ import { userLocations } from "@/routes/user-locations/user-locations.index";
 import { usersRouter } from "@/routes/users/users.index";
 import { polarWebhook } from "@/routes/webhooks/polar/polar.index";
 import { resendWebhook } from "@/routes/webhooks/resend/resend.index";
+import { handleScheduled } from "@/scheduled";
+import type { AppBindings } from "@/types/app-type";
 
 const app = createApp().basePath("/api/v1");
 
@@ -38,4 +45,15 @@ for (const router of routers) {
   app.route("/", router);
 }
 
-export default app;
+// Export both the fetch handler and the cron entrypoint (§9). The scheduled
+// handler drives the durable email queue + prayer-cache eviction.
+export default {
+  fetch: app.fetch,
+  scheduled: (
+    _controller: ScheduledController,
+    env: AppBindings["Bindings"],
+    ctx: ExecutionContext
+  ) => {
+    ctx.waitUntil(handleScheduled(env));
+  },
+};
