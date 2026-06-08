@@ -65,4 +65,12 @@ describe("createApp", () => {
     );
     expect(res.headers.get("access-control-allow-origin")).toBe("barakah://");
   });
+
+  it("mounts the Better Auth handler at /api/auth/*", async () => {
+    const app = appWithPing();
+    // get-session short-circuits to null when unauthenticated (no DB query),
+    // so a non-404 status proves the catch-all auth route is wired.
+    const res = await app.request("/api/auth/get-session", {}, env);
+    expect(res.status).not.toBe(404);
+  });
 });

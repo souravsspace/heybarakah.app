@@ -1,6 +1,7 @@
 import { cors } from "hono/cors";
 import { isTruthyFlag } from "@/env";
 import { createRouter } from "@/lib/create-router";
+import { authSession } from "@/middlewares/auth-session";
 import { logger } from "@/middlewares/logger";
 import notFound from "@/stoker/middlewares/not-found";
 import onError from "@/stoker/middlewares/on-error";
@@ -46,6 +47,12 @@ function applyMiddleware(app: AppOpenAPI) {
       maxAge: 600,
       credentials: true,
     })
+  );
+  // Resolve the Better Auth session (sets c.var.auth + c.var.user) for every
+  // request, then mount the Better Auth handler at /api/auth/*.
+  app.use(authSession());
+  app.on(["GET", "POST"], "/api/auth/*", (c) =>
+    c.get("auth").handler(c.req.raw)
   );
   app.notFound(notFound);
   app.onError(onError);
