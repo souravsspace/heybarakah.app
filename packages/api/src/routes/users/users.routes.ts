@@ -62,6 +62,32 @@ export const deleteMyAccount = createRoute({
   },
 });
 
+export const getMyAvatarUrl = createRoute({
+  method: "get",
+  path: "/me/avatar",
+  tags,
+  responses: {
+    [OK]: jsonContent(
+      z.object({ url: z.string().nullable() }),
+      "Public avatar URL, or null when unset"
+    ),
+  },
+});
+
+// Worker-proxied upload (see §6): the raw image bytes are the request body, so
+// the OpenAPI request schema is intentionally omitted; the handler validates
+// content-type + size via lib/r2.
+export const setAvatar = createRoute({
+  method: "post",
+  path: "/me/avatar",
+  tags,
+  responses: {
+    [OK]: jsonContent(z.object({ key: z.string() }), "Stored avatar R2 key"),
+  },
+});
+
 export type GetMyAccountRoute = typeof getMyAccount;
 export type UpsertProfileRoute = typeof upsertProfile;
 export type DeleteMyAccountRoute = typeof deleteMyAccount;
+export type GetMyAvatarUrlRoute = typeof getMyAvatarUrl;
+export type SetAvatarRoute = typeof setAvatar;
