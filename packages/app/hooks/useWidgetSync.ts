@@ -1,11 +1,8 @@
-import { api as convexApi } from "@barakah/core/convex/_generated/api";
 import { useQuery as useRqQuery } from "@tanstack/react-query";
-import { useQuery } from "convex/react";
 import { useEffect, useMemo, useRef } from "react";
 import { useDhikr } from "@/contexts/dhikr-context";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { api } from "@/lib/api-client";
-import { USE_CF_API } from "@/lib/cf-flag";
 import { pickDailyAyah } from "@/lib/daily-ayah";
 import { dateKey } from "@/lib/date-utils";
 import { buildWidgetSnapshot } from "@/lib/widget-snapshot";
@@ -21,11 +18,7 @@ interface Streak {
   todayDone: number;
 }
 
-function useStreakConvex(today: string): Streak | undefined {
-  return useQuery(convexApi.lib.prayerLogs.getStreak, { today }) ?? undefined;
-}
-
-function useStreakCf(today: string): Streak | undefined {
+function useStreak(today: string): Streak | undefined {
   const query = useRqQuery({
     queryKey: ["cf", "streak", today],
     queryFn: async (): Promise<Streak> => {
@@ -40,8 +33,6 @@ function useStreakCf(today: string): Streak | undefined {
   });
   return query.data;
 }
-
-const useStreak = USE_CF_API ? useStreakCf : useStreakConvex;
 
 function tomorrowKey(): string {
   const d = new Date();
