@@ -43,8 +43,11 @@ DELETE) and `src/` (pure domain logic — prayer math, achievements, validators 
   `QueryClientProvider`. `EXPO_PUBLIC_API_URL` added to app `.env`+`.env.example`
   (`env.ts` already declared it). App convex-free except Phase 4 flag/env cleanup.
   Typecheck green; per-file commits.
-- [ ] **Phase 4 — Remove `USE_CF_API` flag + Convex env vars** (`lib/cf-flag.ts`,
-  `env/app.ts`; make `EXPO_PUBLIC_API_URL` required).
+- [x] **Phase 4 — Remove `USE_CF_API` flag + Convex env vars.** `lib/cf-flag.ts`
+  now exports only `API_BASE_URL` (= `env.EXPO_PUBLIC_API_URL`, no `?? ""`).
+  `env/app.ts` dropped `EXPO_PUBLIC_CONVEX_URL`/`_SITE_URL` + `EXPO_PUBLIC_USE_CF_API`;
+  `EXPO_PUBLIC_API_URL` is required (`z.url()`). App `.env`/`.env.example` cleaned.
+  Grep `USE_CF_API`/`EXPO_PUBLIC_CONVEX` in app+env = CLEAN. Typecheck green.
 - [ ] **Phase 5 — Marketing → CF** (`WaitlistForm` + `lib/convex.ts` →
   `POST /api/v1/marketing/waitlist`; `env/marketing.ts`).
 - [ ] **Phase 6 — Decouple `core/src` from `convex/values`** (4 validator files;
