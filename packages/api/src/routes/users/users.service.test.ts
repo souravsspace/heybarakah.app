@@ -16,7 +16,13 @@ import {
   users,
 } from "@/db/schema";
 
-import { deleteMyAccount, getProfile, upsertProfile } from "./users.service";
+import {
+  deleteMyAccount,
+  getAvatarObject,
+  getProfile,
+  setAvatar,
+  upsertProfile,
+} from "./users.service";
 
 async function applyMigrations() {
   for (const sql of [migration0000, migration0001]) {
@@ -146,5 +152,35 @@ describe("users service — account deletion (P0)", () => {
     expect(await env.R2.get("avatars/delete-me.jpg")).toBeNull();
     // Profile resolves to null.
     expect(await getProfile(db, user)).toBeNull();
+  });
+});
+
+describe("users service — avatar", () => {
+  const PNG = "image/png";
+
+  it("stores the avatar, links it to the profile, and reads it back", async () => {
+    const db = createDatabase(env.DB);
+    const user = "avatar-user";
+    await setAvatar(db, env.R2, user, new Uint8Array(8).buffer, PNG);
+
+    const profile = await getProfile(db, user);
+    expect(profile?.image).toBe("avatars/avatar-user");
+
+    const obj = await getAvatarObject(db, env.R2, user);
+    expect(obj).not.toBeNull();
+    expect(obj?.httpMetadata?.contentType).toBe(PNG);
+  });
+
+  it("rejects a disallowed content type with a 422", async () => {
+    const db = createDatabase(env.DB);
+    await expect(
+      setAvatar(db, env.R2, "bad-type", new Uint8Array(8).buffer, "text/html")
+    ).rejects.toMatchObject({ status: 422 });
+  });
+
+  it("returns null when the user has no avatar", async () => {
+    const db = createDatabase(env.DB);
+    await upsertProfile(db, "no-avatar", { name: "Plain" });
+    expect(await getAvatarObject(db, env.R2, "no-avatar")).toBeNull();
   });
 });
