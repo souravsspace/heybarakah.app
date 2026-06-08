@@ -10,9 +10,11 @@ import type { AppBindings, AuthUser } from "@/types/app-type";
 /**
  * Resolve the Better Auth session for each request and expose it on the
  * context. Builds a per-request auth instance (bound to D1/KV with the correct
- * baseURL + cf geolocation), then reads the session from the request headers —
- * accepting BOTH the Expo Bearer token and the web cookie. `user` is null when
- * unauthenticated, mirroring Convex `safeGetAuthUser` (never throws).
+ * baseURL + cf geolocation), then reads the session from the request headers.
+ * Transport is the session cookie for both clients — the web sends it directly
+ * and the @better-auth/expo client stores the Set-Cookie value and replays it.
+ * `user` is null when unauthenticated, mirroring Convex `safeGetAuthUser`
+ * (never throws).
  */
 export function authSession() {
   return createMiddleware<AppBindings>(async (c, next) => {
