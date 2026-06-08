@@ -1,19 +1,46 @@
 import type { Achievement } from "@barakah/core/achievements";
-import { api } from "@barakah/core/convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
+import {
+  useQueryClient,
+  useMutation as useRqMutation,
+  useQuery as useRqQuery,
+} from "@tanstack/react-query";
 import { router } from "expo-router";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { api } from "@/lib/api-client";
 import { AchievementDialog } from "./achievement-dialog";
 
 type UnseenUnlock = Achievement & { unlockedAt: number };
+
+const UNSEEN_QUERY_KEY = ["cf", "achievements", "unseen"] as const;
 
 export function AchievementPopupProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const unseen = useQuery(api.lib.achievements.listUnseen, {});
-  const markSeen = useMutation(api.lib.achievements.markSeen);
+  const queryClient = useQueryClient();
+  const unseenQuery = useRqQuery({
+    queryKey: UNSEEN_QUERY_KEY,
+    queryFn: async (): Promise<UnseenUnlock[]> => {
+      const res = await api.api.v1.achievements.unseen.$get();
+      if (!res.ok) {
+        throw new Error("Failed to load unseen achievements");
+      }
+      return (await res.json()) as unknown as UnseenUnlock[];
+    },
+  });
+  const unseen = unseenQuery.data;
+  const markSeenMutation = useRqMutation({
+    mutationFn: async (codes: string[]) => {
+      const res = await api.api.v1.achievements.seen.$post({ json: { codes } });
+      if (!res.ok) {
+        throw new Error("Failed to mark achievements seen");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: UNSEEN_QUERY_KEY });
+    },
+  });
   const [queue, setQueue] = useState<UnseenUnlock[]>([]);
   const [active, setActive] = useState<UnseenUnlock | null>(null);
   const dismissedRef = useRef<Set<string>>(new Set());
@@ -62,7 +89,7 @@ export function AchievementPopupProvider({
     const code = active.code;
     dismissedRef.current.add(code);
     setActive(null);
-    markSeen({ codes: [code] }).catch(() => undefined);
+    markSeenMutation.mutateAsync([code]).catch(() => undefined);
   };
 
   const onViewAll = () => {
