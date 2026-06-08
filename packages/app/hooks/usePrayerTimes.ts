@@ -1,4 +1,3 @@
-import { api as convexApi } from "@barakah/core/convex/_generated/api";
 import {
   calculateAdhanJsPrayerDays,
   createPrayerTimesCacheKey,
@@ -8,8 +7,6 @@ import {
   type PrayerTimesSource,
 } from "@barakah/core/prayer";
 import { useQuery as useRqQuery } from "@tanstack/react-query";
-import { useAction, useQuery } from "convex/react";
-import type { FunctionReturnType } from "convex/server";
 import { useNetworkState } from "expo-network";
 import type { InferRequestType } from "hono/client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,7 +26,6 @@ import {
   reverseGeocodeLocation,
 } from "@/hooks/use-permissions";
 import { api } from "@/lib/api-client";
-import { USE_CF_API } from "@/lib/cf-flag";
 import { dateKey } from "@/lib/date-utils";
 
 type CalcMethod =
@@ -133,12 +129,13 @@ function mergeDaysPreferStored(
   });
 }
 
-type CachedPrayerTimes = FunctionReturnType<
-  typeof convexApi.lib.prayerTimes.getCachedPrayerTimes
->;
-type RefreshResult = FunctionReturnType<
-  typeof convexApi.lib.prayerTimes.refreshPrayerTimes
->;
+interface CachedPrayerTimes {
+  cacheKey: string;
+  generatedAt: number;
+  source: PrayerTimesSource;
+  timings: PrayerDay[];
+}
+type RefreshResult = { source: PrayerTimesSource; timings: PrayerDay[] } | null;
 
 interface PrayerTimesRequest {
   city?: string;
@@ -176,16 +173,7 @@ function toPrayerTimesQuery(args: PrayerTimesRequest): PrayerTimesQuery {
   return query as PrayerTimesQuery;
 }
 
-function useCachedPrayerTimesConvex(
-  args: PrayerTimesRequest | null
-): CachedPrayerTimes | undefined {
-  return useQuery(
-    convexApi.lib.prayerTimes.getCachedPrayerTimes,
-    args ?? "skip"
-  );
-}
-
-function useCachedPrayerTimesCf(
+function useCachedPrayerTimes(
   args: PrayerTimesRequest | null
 ): CachedPrayerTimes | undefined {
   const query = useRqQuery({
@@ -195,44 +183,30 @@ function useCachedPrayerTimesCf(
       args ? createPrayerTimesCacheKey(args) : "none",
     ],
     enabled: Boolean(args),
-    queryFn: async (): Promise<CachedPrayerTimes> => {
+    queryFn: async (): Promise<CachedPrayerTimes | null> => {
       const res = await api.api.v1["prayer-times"].$get({
         query: toPrayerTimesQuery(args as PrayerTimesRequest),
       });
       if (!res.ok) {
         throw new Error("Failed to load prayer times");
       }
-      return (await res.json()) as CachedPrayerTimes;
+      return (await res.json()) as unknown as CachedPrayerTimes | null;
     },
   });
-  return query.data;
+  return query.data ?? undefined;
 }
-
-const useCachedPrayerTimes = USE_CF_API
-  ? useCachedPrayerTimesCf
-  : useCachedPrayerTimesConvex;
 
 type RefreshFn = (args: PrayerTimesRequest) => Promise<RefreshResult>;
 
-function useRefreshPrayerTimesConvex(): RefreshFn {
-  return useAction(
-    convexApi.lib.prayerTimes.refreshPrayerTimes
-  ) as unknown as RefreshFn;
-}
-
-function useRefreshPrayerTimesCf(): RefreshFn {
+function useRefreshPrayerTimes(): RefreshFn {
   return useCallback(async (args: PrayerTimesRequest) => {
     const res = await api.api.v1["prayer-times"].refresh.$post({ json: args });
     if (!res.ok) {
       throw new Error("Failed to refresh prayer times");
     }
-    return (await res.json()) as RefreshResult;
+    return (await res.json()) as unknown as RefreshResult;
   }, []);
 }
-
-const useRefreshPrayerTimes = USE_CF_API
-  ? useRefreshPrayerTimesCf
-  : useRefreshPrayerTimesConvex;
 
 export function usePrayerTimes() {
   const { state } = useOnboardingState();
