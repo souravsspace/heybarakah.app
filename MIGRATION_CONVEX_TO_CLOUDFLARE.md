@@ -2,6 +2,16 @@
 
 Status legend: `[ ]` todo · `[x]` done · `[~]` in progress
 
+> **Progress (2026-06-09, session 4):** doc-sync pass — ticked stale §7 boxes
+> (40 test files / **163 green**; coverage is **domain-level** not strict per-file →
+> §7 sibling-file boxes marked `[~]`/`[ ]` honestly). **DEV CF resources confirmed
+> live** (D1/KV/R2 ids set, local `db:migrate` clean); **PROD resources still
+> pending**. Added root passthrough scripts (`dev:api`/`test:api`/`build:api`/
+> `db:migrate:api[:dev|:prod]`/`deploy:api`/`reset:db:api`) + split api `db:migrate`
+> into local/dev/prod. graphify graph refreshed. **Next (approved): §8b backend
+> hardening — unbounded-collect guard + `db.batch()` atomicity + `@polar-sh/sdk`
+> workerd smoke.**
+>
 > **Progress (2026-06-09, session 3):** code-review of §5/§6/§8b/§9 done (one fix
 > landed: idempotency skips `/api/auth/*` so replay can't drop Set-Cookie). **§10
 > cutover started, flag-gated (`USE_CF_API`, default OFF — Convex stays live):**
@@ -255,12 +265,12 @@ bun turbo typecheck    # all packages
 > first, then implement to green, then refactor. A file without a passing
 > colocated test is not done.
 
-- [ ] `vitest.config.ts` with `@cloudflare/vitest-pool-workers`; local D1/KV/R2 bindings; per-test isolated storage; seed/reset helpers (ported `scripts/db`).
-- [ ] Colocated `*.test.ts` for **every** non-`index` source file (routes, handlers, lib, db, middleware, auth) — **written before** the implementation.
-- [ ] Test client = `testClient(createTestApp(router))` (texly pattern) with auth session header.
-- [ ] CI gate: `turbo test` + a check that fails if any non-index `*.ts` lacks a sibling `*.test.ts`.
-- [ ] Start each business-critical domain with its test from core (e.g. port `sync-revenuecat.test.ts`, `polar/webhook.test.ts`, `prayer/*.test.ts` expectations) → drive handler impl.
-- [ ] Pure `src/` logic keeps its existing `bun:test` in `@barakah/core` (don't duplicate).
+- [x] `vitest.config.ts` with `@cloudflare/vitest-pool-workers`; local D1/KV/R2 bindings; per-test isolated storage; seed/reset helpers (ported `scripts/db`).
+- [~] Colocated `*.test.ts` coverage. **Deviation:** coverage is **domain-level**, not strict per-file — each domain has `<domain>.test.ts` (route end-to-end via `testClient`) + `<domain>.service.test.ts` (handler logic); the `*.handlers/*.routes/*.index` files are tested through those, not via their own sibling test. 40 test files / **163 tests green**.
+- [x] Test client = `testClient(createTestApp(router))` (texly pattern) with auth session header.
+- [ ] CI gate: a check that fails if any non-index `*.ts` lacks a sibling `*.test.ts`. **Not done** (would fail today — coverage is domain-level, see above). PR workflow runs `turbo test` but has no sibling-file assertion.
+- [x] Start each business-critical domain with its test from core (e.g. port `sync-revenuecat.test.ts`, `polar/webhook.test.ts`, `prayer/*.test.ts` expectations) → drive handler impl.
+- [x] Pure `src/` logic keeps its existing `bun:test` in `@barakah/core` (don't duplicate).
 
 ## 8. Reactivity — React Query polling, NO Durable Objects in v1 (DECIDED)
 
@@ -292,7 +302,7 @@ dissolves — pushing it would be speculative infra (violates Simplicity-First).
 | cross-device events | Expo push → query-key invalidation |
 
 - [ ] Document this in app client wrapper when cutover happens (§10). Mutations MUST return derived/side-effect state so the client avoids extra round-trips.
-- [ ] **Durable Objects explicitly OUT OF SCOPE for v1.** Revisit only if a concrete live-collaboration feature appears.
+- [x] **Durable Objects explicitly OUT OF SCOPE for v1.** Revisit only if a concrete live-collaboration feature appears.
 
 ## 8b. Cross-cutting concerns (apply across ALL phases)
 
@@ -324,7 +334,7 @@ dissolves — pushing it would be speculative infra (violates Simplicity-First).
 - [x] **PR CI workflow** (separate from deploy) — `bun install` → `turbo typecheck` + `turbo test` (vitest workers pool) on PRs touching `packages/api/**`. Block merge on red.
 - [x] `.github/workflows/deploy-api.yml` — `wrangler secret put` each §Appendix B var, `d1 migrations apply --remote`, `wrangler deploy`. Trigger: `main` + path `packages/api/**`.
 - [ ] **Apple client secret rotation** — `APPLE_CLIENT_SECRET` JWT (from `packages/core/scripts/generate-apple-secret.ts`) expires ≤6 months. Document rotation runbook; optionally a cron reminder.
-- [ ] Create CF resources: D1 db, KV namespace, R2 bucket; record ids in `wrangler.toml`.
+- [~] Create CF resources: D1 db, KV namespace, R2 bucket; record ids in `wrangler.toml`. **DEV done** (`barakah-db-dev` `c7a44a07…`, `barakah-kv-dev` `a6ccf241…`, `barakah-avatars-dev` — ids in `[env.development]`; local `db:migrate` applies clean). **PROD pending** (`barakah-db`/KV/R2 ids still `<placeholder>` — needs creation before cutover).
 - [x] Workers **Cron Triggers**: prayer-cache expiry sweep (`by_expiry`), email-retry sweep.
 - [ ] Custom domain/route; finalize CORS origins.
 - [x] Staging (`env.development`) for parallel verification pre-cutover.
