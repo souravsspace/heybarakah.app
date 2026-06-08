@@ -21,7 +21,9 @@ interface StoredResponse {
 export function idempotency() {
   return createMiddleware<AppBindings>(async (c, next) => {
     const key = c.req.header("Idempotency-Key");
-    if (c.req.method !== "POST" || !key) {
+    // Skip auth: replaying a cached body would drop the Set-Cookie header
+    // (only body + content-type are stored), breaking sign-in on retry.
+    if (c.req.method !== "POST" || !key || c.req.path.includes("/api/auth/")) {
       return next();
     }
 
