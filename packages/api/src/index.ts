@@ -6,6 +6,7 @@ import { dhikr } from "@/routes/dhikr/dhikr.index";
 import { healthCheck } from "@/routes/health-check/health-check.index";
 import { marketing } from "@/routes/marketing/marketing.index";
 import { prayerLogs } from "@/routes/prayer-logs/prayer-logs.index";
+import { prayerTimes } from "@/routes/prayer-times/prayer-times.index";
 import { shieldSelection } from "@/routes/shield-selection/shield-selection.index";
 import { subscriptions } from "@/routes/subscriptions/subscriptions.index";
 import { userLocations } from "@/routes/user-locations/user-locations.index";
@@ -23,6 +24,7 @@ const routers = [
   dhikr,
   marketing,
   prayerLogs,
+  prayerTimes,
   shieldSelection,
   subscriptions,
   userLocations,
