@@ -1,5 +1,4 @@
-import { api } from "@barakah/core/convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
+import { useQueryClient, useQuery as useRqQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -23,6 +22,9 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
+import { api } from "@/lib/api-client";
+import { authClient } from "@/lib/auth-client";
+import { API_BASE_URL } from "@/lib/cf-flag";
 
 const SPLIT_RE = /\s+/;
 const MAX_DIMENSION = 512;
@@ -32,10 +34,17 @@ export default function PersonalDetails() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
   const { profile } = useUser();
-  const imageUrl = useQuery(api.lib.users.getMyAvatarUrl) ?? null;
-  const upsertProfile = useMutation(api.lib.users.upsertProfile);
-  const generateUploadUrl = useMutation(api.lib.users.generateAvatarUploadUrl);
-  const setAvatar = useMutation(api.lib.users.setAvatar);
+  const queryClient = useQueryClient();
+  const { data: imageUrl = null } = useRqQuery({
+    queryKey: ["cf", "me", "avatar"],
+    queryFn: async (): Promise<string | null> => {
+      const res = await api.api.v1.me.avatar.$get();
+      if (!res.ok) {
+        throw new Error("Failed to load avatar");
+      }
+      return (await res.json()).url;
+    },
+  });
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -82,20 +91,34 @@ export default function PersonalDetails() {
     setUploading(true);
     try {
       const manipulated = await manipulateToWebp(asset.uri);
-      const uploadUrl = await generateUploadUrl();
-      // RN/Hermes can't build a network Blob from a file:// ArrayBuffer
-      // ("Creating blobs from 'ArrayBuffer' ... are not supported"), so POST the
-      // file bytes directly off disk instead of going through fetch().blob().
-      const res = await FileSystem.uploadAsync(uploadUrl, manipulated.uri, {
-        httpMethod: "POST",
-        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-        headers: { "Content-Type": manipulated.mime },
-      });
+      // Worker-proxied upload: the raw image bytes are the request body (no
+      // presign). Native replays the @better-auth/expo session cookie; web
+      // sends it via credentials. RN/Hermes can't build a network Blob from a
+      // file:// ArrayBuffer, so POST the file bytes directly off disk.
+      const headers: Record<string, string> = {
+        "Content-Type": manipulated.mime,
+      };
+      if (Platform.OS !== "web") {
+        const cookie = (
+          authClient as { getCookie?: () => string }
+        ).getCookie?.();
+        if (cookie) {
+          headers.Cookie = cookie;
+        }
+      }
+      const res = await FileSystem.uploadAsync(
+        `${API_BASE_URL}/api/v1/me/avatar`,
+        manipulated.uri,
+        {
+          httpMethod: "POST",
+          uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+          headers,
+        }
+      );
       if (res.status < 200 || res.status >= 300) {
         throw new Error(`Upload failed: ${res.status}`);
       }
-      const { storageId } = JSON.parse(res.body) as { storageId: string };
-      await setAvatar({ storageId: storageId as never });
+      await queryClient.invalidateQueries({ queryKey: ["cf", "me", "avatar"] });
       setImageChanged(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
         () => undefined
@@ -118,7 +141,13 @@ export default function PersonalDetails() {
     Haptics.selectionAsync().catch(() => undefined);
     try {
       if (nameDirty) {
-        await upsertProfile({ name: name.trim() || undefined });
+        const res = await api.api.v1.me.profile.$post({
+          json: { name: name.trim() || undefined },
+        });
+        if (!res.ok) {
+          throw new Error("Failed to save profile");
+        }
+        await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
       }
       router.back();
     } catch (err) {
