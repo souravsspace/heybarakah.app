@@ -1,5 +1,6 @@
 import { configureOpenAPI } from "@/lib/configure-open-api";
 import { createApp } from "@/lib/create-app";
+import { achievements } from "@/routes/achievements/achievements.index";
 import { appConfig } from "@/routes/app-config/app-config.index";
 import { dhikr } from "@/routes/dhikr/dhikr.index";
 import { healthCheck } from "@/routes/health-check/health-check.index";
@@ -15,6 +16,7 @@ configureOpenAPI(app);
 const routers = [
   healthCheck,
   appConfig,
+  achievements,
   dhikr,
   prayerLogs,
   shieldSelection,
