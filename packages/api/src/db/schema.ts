@@ -323,6 +323,37 @@ export const appConfig = sqliteTable("appConfig", {
   updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
 });
 
+type EmailQueueStatus = "queued" | "sent" | "failed";
+
+// Durable transactional-email queue. Replaces @convex-dev/resend's built-in
+// queue + retry (the raw Resend SDK has neither). A Workers cron sweeps `queued`
+// rows whose nextAttemptAt is due (§9). `dedupeKey` makes enqueue idempotent so
+// a webhook retry (e.g. a duplicate Polar order) never double-sends.
+export const emailQueue = sqliteTable(
+  "emailQueue",
+  {
+    id: text("id").primaryKey().$defaultFn(uuid),
+    dedupeKey: text("dedupeKey"),
+    to: text("to").notNull(),
+    subject: text("subject").notNull(),
+    html: text("html").notNull(),
+    text: text("text"),
+    status: text("status").notNull().$type<EmailQueueStatus>(),
+    attempts: integer("attempts", { mode: "number" }).notNull(),
+    lastError: text("lastError"),
+    providerId: text("providerId"),
+    nextAttemptAt: integer("nextAttemptAt", { mode: "number" }).notNull(),
+    sentAt: integer("sentAt", { mode: "number" }),
+    createdAt: integer("createdAt", { mode: "number" }).notNull(),
+    updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
+  },
+  (t) => [
+    index("emailQueue_by_dedupeKey").on(t.dedupeKey),
+    index("emailQueue_by_status_next").on(t.status, t.nextAttemptAt),
+    index("emailQueue_by_providerId").on(t.providerId),
+  ]
+);
+
 export const schema = {
   users,
   subscriptions,
@@ -336,6 +367,7 @@ export const schema = {
   userAchievements,
   userAchievementCounters,
   appConfig,
+  emailQueue,
   user,
   account,
   session,
