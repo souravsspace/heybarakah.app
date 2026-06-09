@@ -5,7 +5,8 @@ import { z } from "zod";
 // (auth setup, webhooks), not at app construction.
 export const EnvSchema = z.object({
   // Core
-  BETTER_AUTH_SECRET: z.string().min(1),
+  // HMAC-SHA256 session signing key — must be high-entropy (≥32 chars).
+  BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(),
   SITE_URL: z.string().url(),
   NATIVE_APP_URL: z.string().min(1),

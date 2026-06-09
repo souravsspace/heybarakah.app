@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { isTruthyFlag, parseEnv } from "@/env";
 
+const TEST_SECRET = "test-better-auth-secret-0123456789ab";
 const VALID = {
-  BETTER_AUTH_SECRET: "secret",
+  BETTER_AUTH_SECRET: TEST_SECRET,
   BETTER_AUTH_URL: "https://api.heybarakah.app",
   SITE_URL: "https://heybarakah.app",
   NATIVE_APP_URL: "barakah://",
@@ -15,7 +16,7 @@ const BAD_URL_RE = /BETTER_AUTH_URL/;
 describe("parseEnv", () => {
   it("returns parsed vars when required keys are present", () => {
     const env = parseEnv(VALID);
-    expect(env.BETTER_AUTH_SECRET).toBe("secret");
+    expect(env.BETTER_AUTH_SECRET).toBe(TEST_SECRET);
     expect(env.SITE_URL).toBe("https://heybarakah.app");
   });
 
@@ -28,6 +29,12 @@ describe("parseEnv", () => {
   it("throws listing the missing required key", () => {
     const { BETTER_AUTH_SECRET, ...rest } = VALID;
     expect(() => parseEnv(rest)).toThrowError(MISSING_SECRET_RE);
+  });
+
+  it("rejects a too-short BETTER_AUTH_SECRET", () => {
+    expect(() =>
+      parseEnv({ ...VALID, BETTER_AUTH_SECRET: "short" })
+    ).toThrowError(MISSING_SECRET_RE);
   });
 
   it("rejects a non-url BETTER_AUTH_URL", () => {
