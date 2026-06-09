@@ -93,6 +93,11 @@ export async function enqueueEmail(
     .from(emailQueue)
     .where(eq(emailQueue.dedupeKey, message.dedupeKey as string))
     .limit(1);
+  if (!existing) {
+    throw new Error(
+      `enqueueEmail: dedupeKey conflict but row not found: ${message.dedupeKey}`
+    );
+  }
   return existing.id;
 }
 
@@ -134,9 +139,18 @@ export async function processQueueRow(
   }
 }
 
+// While a row is being delivered, push its nextAttemptAt forward by this lease
+// so an overlapping sweep tick won't pick it up. processQueueRow rewrites
+// nextAttemptAt on completion; if the worker crashes mid-send the row simply
+// becomes due again after the lease (no permanent stuck state, no double-send
+// within the window).
+const SWEEP_LEASE_MS = 60_000;
+
 /**
  * Process all `queued` rows whose `nextAttemptAt` is due. Driven by a Workers
- * cron trigger (§9). Returns the number of rows processed.
+ * cron trigger (§9). Returns the number of rows actually claimed + processed.
+ * Each row is claimed with an atomic conditional update before sending, so two
+ * overlapping sweeps never deliver the same row twice.
  */
 export async function sweepEmailQueue(
   db: Database,
@@ -153,8 +167,26 @@ export async function sweepEmailQueue(
     .orderBy(emailQueue.nextAttemptAt)
     .limit(options.limit ?? 10);
 
+  let processed = 0;
   for (const row of rows) {
+    // Claim atomically: only one sweep can flip a due `queued` row's
+    // nextAttemptAt past `now`; the loser's update matches 0 rows and skips.
+    const claimed = await db
+      .update(emailQueue)
+      .set({ nextAttemptAt: now + SWEEP_LEASE_MS, updatedAt: now })
+      .where(
+        and(
+          eq(emailQueue.id, row.id),
+          eq(emailQueue.status, "queued"),
+          lte(emailQueue.nextAttemptAt, now)
+        )
+      )
+      .returning({ id: emailQueue.id });
+    if (claimed.length === 0) {
+      continue;
+    }
+    processed++;
     await processQueueRow(db, env, row);
   }
-  return rows.length;
+  return processed;
 }
