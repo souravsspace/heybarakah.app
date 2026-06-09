@@ -18,7 +18,10 @@ import type { AppBindings, AuthUser } from "@/types/app-type";
  */
 export function authSession() {
   return createMiddleware<AppBindings>(async (c, next) => {
-    const baseURL = c.env.BETTER_AUTH_URL ?? new URL(c.req.url).origin;
+    // BETTER_AUTH_URL is required (env schema). No request-origin fallback: the
+    // Host header is caller-controlled, and signing sessions against a spoofed
+    // origin would silently break validation / scope sessions wrong.
+    const baseURL = c.env.BETTER_AUTH_URL;
     const cf = (c.req.raw as { cf?: IncomingRequestCfProperties }).cf;
     const auth = createAuth(c.env, cf, baseURL);
     c.set("auth", auth);
