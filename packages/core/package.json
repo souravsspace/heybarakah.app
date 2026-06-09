@@ -20,12 +20,9 @@
   "dependencies": {
     "@barakah/mails": "workspace:*",
     "@better-auth/expo": "catalog:",
-    "@convex-dev/better-auth": "catalog:",
-    "@convex-dev/resend": "^0.2.3",
     "@polar-sh/sdk": "^0.47.1",
     "adhan": "^4.4.3",
     "better-auth": "catalog:",
-    "convex": "catalog:",
     "disposable-email-domains": "^1.0.62",
     "resend": "^6.12.2",
     "zod": "catalog:"
