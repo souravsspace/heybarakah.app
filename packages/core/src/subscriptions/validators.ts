@@ -1,23 +1,18 @@
-import { v } from "convex/values";
+export const PRODUCT_IDS = ["yearly", "monthly", "family", "lifetime"] as const;
 
-export const productId = v.union(
-  v.literal("yearly"),
-  v.literal("monthly"),
-  v.literal("family"),
-  v.literal("lifetime")
-);
+export type ProductId = (typeof PRODUCT_IDS)[number];
 
-export const revenueCatStore = v.union(
-  v.literal("app_store"),
-  v.literal("play_store"),
-  v.literal("stripe"),
-  v.literal("promotional"),
-  v.literal("mac_app_store"),
-  v.literal("amazon")
-);
+export const REVENUE_CAT_STORES = [
+  "app_store",
+  "play_store",
+  "stripe",
+  "promotional",
+  "mac_app_store",
+  "amazon",
+] as const;
 
-export const revenueCatPeriodType = v.union(
-  v.literal("normal"),
-  v.literal("trial"),
-  v.literal("intro")
-);
+export type RevenueCatStore = (typeof REVENUE_CAT_STORES)[number];
+
+export const REVENUE_CAT_PERIOD_TYPES = ["normal", "trial", "intro"] as const;
+
+export type RevenueCatPeriodType = (typeof REVENUE_CAT_PERIOD_TYPES)[number];
