@@ -11,11 +11,13 @@ const onError: ErrorHandler = (err, c) => {
       ? (INTERNAL_SERVER_ERROR as ContentfulStatusCode)
       : (currentStatus as ContentfulStatusCode);
 
-  const nodeEnv = (c.env as { NODE_ENV?: string } | undefined)?.NODE_ENV;
+  // Workers don't set NODE_ENV; default to hiding the stack and only expose it
+  // when an explicit DEBUG flag is set (local dev), so prod never leaks traces.
+  const debug = (c.env as { DEBUG?: string } | undefined)?.DEBUG === "true";
   return c.json(
     {
       message: err.message,
-      stack: nodeEnv === "production" ? undefined : err.stack,
+      stack: debug ? err.stack : undefined,
     },
     statusCode
   );
