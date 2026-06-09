@@ -103,9 +103,7 @@
       "indexes": {
         "account_userId_idx": {
           "name": "account_userId_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -114,12 +112,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -201,9 +195,7 @@
       "indexes": {
         "dhikrAggregate_by_user": {
           "name": "dhikrAggregate_by_user",
-          "columns": [
-            "authUserId"
-          ],
+          "columns": ["authUserId"],
           "isUnique": true
         }
       },
@@ -261,10 +253,7 @@
       "indexes": {
         "dhikrDaily_by_user_date": {
           "name": "dhikrDaily_by_user_date",
-          "columns": [
-            "authUserId",
-            "date"
-          ],
+          "columns": ["authUserId", "date"],
           "isUnique": true
         }
       },
@@ -378,24 +367,17 @@
       "indexes": {
         "emailQueue_by_dedupeKey": {
           "name": "emailQueue_by_dedupeKey",
-          "columns": [
-            "dedupeKey"
-          ],
+          "columns": ["dedupeKey"],
           "isUnique": true
         },
         "emailQueue_by_status_next": {
           "name": "emailQueue_by_status_next",
-          "columns": [
-            "status",
-            "nextAttemptAt"
-          ],
+          "columns": ["status", "nextAttemptAt"],
           "isUnique": false
         },
         "emailQueue_by_providerId": {
           "name": "emailQueue_by_providerId",
-          "columns": [
-            "providerId"
-          ],
+          "columns": ["providerId"],
           "isUnique": false
         }
       },
@@ -516,23 +498,17 @@
       "indexes": {
         "polarOrders_by_polarOrderId": {
           "name": "polarOrders_by_polarOrderId",
-          "columns": [
-            "polarOrderId"
-          ],
+          "columns": ["polarOrderId"],
           "isUnique": true
         },
         "polarOrders_by_customerEmail": {
           "name": "polarOrders_by_customerEmail",
-          "columns": [
-            "customerEmail"
-          ],
+          "columns": ["customerEmail"],
           "isUnique": false
         },
         "polarOrders_by_polarCustomerId": {
           "name": "polarOrders_by_polarCustomerId",
-          "columns": [
-            "polarCustomerId"
-          ],
+          "columns": ["polarCustomerId"],
           "isUnique": false
         }
       },
@@ -597,19 +573,12 @@
       "indexes": {
         "prayerLogs_by_user_date_prayer": {
           "name": "prayerLogs_by_user_date_prayer",
-          "columns": [
-            "authUserId",
-            "date",
-            "prayer"
-          ],
+          "columns": ["authUserId", "date", "prayer"],
           "isUnique": true
         },
         "prayerLogs_by_user_updated": {
           "name": "prayerLogs_by_user_updated",
-          "columns": [
-            "authUserId",
-            "updatedAt"
-          ],
+          "columns": ["authUserId", "updatedAt"],
           "isUnique": false
         }
       },
@@ -828,38 +797,27 @@
       "indexes": {
         "prayerTimeCaches_by_cacheKey": {
           "name": "prayerTimeCaches_by_cacheKey",
-          "columns": [
-            "cacheKey"
-          ],
+          "columns": ["cacheKey"],
           "isUnique": false
         },
         "prayerTimeCaches_by_userCacheKey": {
           "name": "prayerTimeCaches_by_userCacheKey",
-          "columns": [
-            "userCacheKey"
-          ],
+          "columns": ["userCacheKey"],
           "isUnique": false
         },
         "prayerTimeCaches_by_userId": {
           "name": "prayerTimeCaches_by_userId",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "prayerTimeCaches_by_user_updated": {
           "name": "prayerTimeCaches_by_user_updated",
-          "columns": [
-            "userId",
-            "updatedAt"
-          ],
+          "columns": ["userId", "updatedAt"],
           "isUnique": false
         },
         "prayerTimeCaches_by_expiry": {
           "name": "prayerTimeCaches_by_expiry",
-          "columns": [
-            "expiresAt"
-          ],
+          "columns": ["expiresAt"],
           "isUnique": false
         }
       },
@@ -988,16 +946,12 @@
       "indexes": {
         "session_token_unique": {
           "name": "session_token_unique",
-          "columns": [
-            "token"
-          ],
+          "columns": ["token"],
           "isUnique": true
         },
         "session_userId_idx": {
           "name": "session_userId_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -1006,12 +960,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1083,9 +1033,7 @@
       "indexes": {
         "shieldSelection_by_user": {
           "name": "shieldSelection_by_user",
-          "columns": [
-            "authUserId"
-          ],
+          "columns": ["authUserId"],
           "isUnique": true
         }
       },
@@ -1248,45 +1196,32 @@
       "indexes": {
         "subscriptions_by_authUserId": {
           "name": "subscriptions_by_authUserId",
-          "columns": [
-            "authUserId"
-          ],
+          "columns": ["authUserId"],
           "isUnique": false
         },
         "subscriptions_by_authUserId_status": {
           "name": "subscriptions_by_authUserId_status",
-          "columns": [
-            "authUserId",
-            "status"
-          ],
+          "columns": ["authUserId", "status"],
           "isUnique": false
         },
         "subscriptions_by_customerEmail": {
           "name": "subscriptions_by_customerEmail",
-          "columns": [
-            "customerEmail"
-          ],
+          "columns": ["customerEmail"],
           "isUnique": false
         },
         "subscriptions_by_polarOrderId": {
           "name": "subscriptions_by_polarOrderId",
-          "columns": [
-            "polarOrderId"
-          ],
+          "columns": ["polarOrderId"],
           "isUnique": false
         },
         "subscriptions_by_polarCustomerId": {
           "name": "subscriptions_by_polarCustomerId",
-          "columns": [
-            "polarCustomerId"
-          ],
+          "columns": ["polarCustomerId"],
           "isUnique": false
         },
         "subscriptions_by_rcAppUserId": {
           "name": "subscriptions_by_rcAppUserId",
-          "columns": [
-            "rcAppUserId"
-          ],
+          "columns": ["rcAppUserId"],
           "isUnique": false
         }
       },
@@ -1354,9 +1289,7 @@
       "indexes": {
         "user_email_unique": {
           "name": "user_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": true
         }
       },
@@ -1421,9 +1354,7 @@
       "indexes": {
         "userAchievementCounters_by_user": {
           "name": "userAchievementCounters_by_user",
-          "columns": [
-            "authUserId"
-          ],
+          "columns": ["authUserId"],
           "isUnique": true
         }
       },
@@ -1474,25 +1405,17 @@
       "indexes": {
         "userAchievements_by_user": {
           "name": "userAchievements_by_user",
-          "columns": [
-            "authUserId"
-          ],
+          "columns": ["authUserId"],
           "isUnique": false
         },
         "userAchievements_by_user_code": {
           "name": "userAchievements_by_user_code",
-          "columns": [
-            "authUserId",
-            "code"
-          ],
+          "columns": ["authUserId", "code"],
           "isUnique": true
         },
         "userAchievements_by_user_seen": {
           "name": "userAchievements_by_user_seen",
-          "columns": [
-            "authUserId",
-            "seenAt"
-          ],
+          "columns": ["authUserId", "seenAt"],
           "isUnique": false
         }
       },
@@ -1578,9 +1501,7 @@
       "indexes": {
         "userLocations_by_user": {
           "name": "userLocations_by_user",
-          "columns": [
-            "authUserId"
-          ],
+          "columns": ["authUserId"],
           "isUnique": false
         }
       },
@@ -1708,9 +1629,7 @@
       "indexes": {
         "users_by_authUserId": {
           "name": "users_by_authUserId",
-          "columns": [
-            "authUserId"
-          ],
+          "columns": ["authUserId"],
           "isUnique": false
         }
       },
@@ -1770,9 +1689,7 @@
       "indexes": {
         "verification_identifier_idx": {
           "name": "verification_identifier_idx",
-          "columns": [
-            "identifier"
-          ],
+          "columns": ["identifier"],
           "isUnique": false
         }
       },
