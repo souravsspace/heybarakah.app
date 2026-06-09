@@ -18,45 +18,56 @@ function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
-function bytesToBase64(bytes: ArrayBuffer): string {
-  const view = new Uint8Array(bytes);
-  let binary = "";
-  for (const byte of view) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary);
-}
+// Reject signatures whose timestamp is outside this window (replay protection).
+const MAX_SIGNATURE_AGE_SECONDS = 300;
 
 /**
  * Verify a Resend (Svix) webhook signature with Web Crypto — no svix/node dep.
  * The signed content is `${id}.${timestamp}.${body}`, HMAC-SHA256'd with the
  * base64 secret (the part after `whsec_`). The `svix-signature` header is a
- * space-separated list of `v1,<sig>`; a match on any entry passes.
+ * space-separated list of `v1,<sig>`; the request passes if any entry verifies.
+ * Verification uses `crypto.subtle.verify` (constant-time, no early-return
+ * string compare) and the timestamp must be within ±5 min (replay window).
  */
 export async function verifyResendSignature(
   secret: string,
   headers: SvixHeaders,
   body: string
 ): Promise<boolean> {
+  const ts = Number(headers.timestamp);
+  if (
+    !Number.isFinite(ts) ||
+    Math.abs(Date.now() / 1000 - ts) > MAX_SIGNATURE_AGE_SECONDS
+  ) {
+    return false;
+  }
   const rawSecret = secret.startsWith("whsec_") ? secret.slice(6) : secret;
   const key = await crypto.subtle.importKey(
     "raw",
     base64ToBytes(rawSecret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["verify"]
   );
-  const signed = `${headers.id}.${headers.timestamp}.${body}`;
-  const mac = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(signed)
+  const signed = new TextEncoder().encode(
+    `${headers.id}.${headers.timestamp}.${body}`
   );
-  const expected = bytesToBase64(mac);
-  return headers.signature
+  const candidates = headers.signature
     .split(" ")
     .map((part) => part.split(",")[1])
-    .some((sig) => sig === expected);
+    .filter(Boolean);
+  for (const sig of candidates) {
+    const ok = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      base64ToBytes(sig),
+      signed
+    );
+    if (ok) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**

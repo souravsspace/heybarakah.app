@@ -73,14 +73,28 @@ describe("verifyResendSignature", () => {
 
   it("accepts a correctly signed payload", async () => {
     const body = '{"type":"email.delivered"}';
-    const sig = await svixSign(secret, "msg_1", "171", body);
+    const now = String(Math.floor(Date.now() / 1000));
+    const sig = await svixSign(secret, "msg_1", now, body);
     expect(
       await verifyResendSignature(
         secret,
-        { id: "msg_1", timestamp: "171", signature: sig },
+        { id: "msg_1", timestamp: now, signature: sig },
         body
       )
     ).toBe(true);
+  });
+
+  it("rejects a stale timestamp outside the replay window", async () => {
+    const body = '{"type":"email.delivered"}';
+    const stale = "171";
+    const sig = await svixSign(secret, "msg_1", stale, body);
+    expect(
+      await verifyResendSignature(
+        secret,
+        { id: "msg_1", timestamp: stale, signature: sig },
+        body
+      )
+    ).toBe(false);
   });
 
   it("rejects a tampered payload", async () => {
@@ -101,7 +115,7 @@ const SIGNED_ENV = { ...env, RESEND_WEBHOOK_SECRET: WEBHOOK_SECRET };
 // Build a request carrying valid svix headers signed with WEBHOOK_SECRET.
 async function signedPost(rawBody: string): Promise<Request> {
   const id = "msg_test";
-  const timestamp = "171";
+  const timestamp = String(Math.floor(Date.now() / 1000));
   const signature = await svixSign(WEBHOOK_SECRET, id, timestamp, rawBody);
   return new Request("http://localhost/webhooks/resend", {
     method: "POST",
