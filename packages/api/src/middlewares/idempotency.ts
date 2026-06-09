@@ -26,6 +26,12 @@ export function idempotency() {
     if (c.req.method !== "POST" || !key || c.req.path.includes("/api/auth/")) {
       return next();
     }
+    // Reject oversized / non-printable keys: the constructed KV key
+    // (`idem:<scope>:<path>:<key>`) must stay under KV's 512-byte limit, else
+    // KV.put throws and the client gets a 500 it can never replay past.
+    if (key.length > 256 || /[^\x20-\x7E]/.test(key)) {
+      return c.json({ error: "Invalid Idempotency-Key" }, 400);
+    }
 
     const scope = c.get("user")?.id ?? "anon";
     const kvKey = `idem:${scope}:${c.req.path}:${key}`;
