@@ -61,33 +61,39 @@ export async function enqueueEmail(
   db: Database,
   message: EmailMessage
 ): Promise<string> {
-  if (message.dedupeKey) {
-    const [existing] = await db
-      .select({ id: emailQueue.id })
-      .from(emailQueue)
-      .where(eq(emailQueue.dedupeKey, message.dedupeKey))
-      .limit(1);
-    if (existing) {
-      return existing.id;
-    }
-  }
-
   const now = Date.now();
   const id = crypto.randomUUID();
-  await db.insert(emailQueue).values({
-    id,
-    dedupeKey: message.dedupeKey ?? null,
-    to: message.to,
-    subject: message.subject,
-    html: message.html,
-    text: message.text ?? null,
-    status: "queued",
-    attempts: 0,
-    nextAttemptAt: now,
-    createdAt: now,
-    updatedAt: now,
-  });
-  return id;
+  // UNIQUE(dedupeKey) + onConflictDoNothing makes the enqueue atomically
+  // idempotent (no select-then-insert TOCTOU). NULL dedupeKeys are distinct in
+  // SQLite, so keyless emails always insert. `returning` is empty on conflict →
+  // fetch the pre-existing row's id.
+  const inserted = await db
+    .insert(emailQueue)
+    .values({
+      id,
+      dedupeKey: message.dedupeKey ?? null,
+      to: message.to,
+      subject: message.subject,
+      html: message.html,
+      text: message.text ?? null,
+      status: "queued",
+      attempts: 0,
+      nextAttemptAt: now,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoNothing({ target: emailQueue.dedupeKey })
+    .returning({ id: emailQueue.id });
+  if (inserted.length > 0) {
+    return inserted[0].id;
+  }
+  // A conflict can only arise from a non-null dedupeKey (NULLs are distinct).
+  const [existing] = await db
+    .select({ id: emailQueue.id })
+    .from(emailQueue)
+    .where(eq(emailQueue.dedupeKey, message.dedupeKey as string))
+    .limit(1);
+  return existing.id;
 }
 
 /**
