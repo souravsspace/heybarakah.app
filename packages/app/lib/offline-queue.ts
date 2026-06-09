@@ -4,6 +4,10 @@ import { AppState } from "react-native";
 
 const QUEUE_KEY = "@barakah/offline-queue/v1";
 
+// A fetch network failure surfaces as a TypeError with one of these in its
+// message; any other TypeError is a code bug, not an offline signal.
+const NETWORK_ERROR_RE = /network|fetch|load failed|connection/i;
+
 export interface QueuedMutation {
   args: Record<string, unknown>;
   id: string;
@@ -108,13 +112,18 @@ export function useOfflineReplay(handlers: Record<string, MutationHandler>) {
         try {
           await handler(op.args);
         } catch (err) {
-          // `fetch` rejects with TypeError when the device is offline. Keep the
-          // op queued and stop the drain; the next foreground retries it.
-          if (err instanceof TypeError) {
+          // `fetch` rejects with a network TypeError when the device is offline.
+          // Match the message too: a non-network TypeError (e.g. a bug in the
+          // handler) must NOT keep the op queued forever — treat it as poison.
+          if (
+            err instanceof TypeError &&
+            NETWORK_ERROR_RE.test(String(err.message))
+          ) {
+            // Keep the op queued and stop the drain; next foreground retries it.
             return;
           }
-          // Any other rejection is a server/validation error that can't succeed
-          // on retry — drop the poison op (surfaced in dev) and keep draining.
+          // Any other rejection is a server/validation/code error that can't
+          // succeed on retry — drop the poison op (surfaced in dev), keep draining.
           if (__DEV__) {
             console.warn(`[offline-queue] dropping op "${op.kind}":`, err);
           }
