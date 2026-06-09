@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery as useRqQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery as useRqQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -106,6 +106,7 @@ export default function Locked() {
   const [pendingAndroid, setPendingAndroid] = useState<Set<string>>(new Set());
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  const queryClient = useQueryClient();
   const { data: selection } = useRqQuery({
     queryKey: ["cf", "shield"],
     queryFn: async () => {
@@ -125,8 +126,9 @@ export default function Locked() {
       if (!res.ok) {
         throw new Error("Failed to save shield selection (iOS)");
       }
+      queryClient.invalidateQueries({ queryKey: ["cf", "shield"] });
     },
-    []
+    [queryClient]
   );
   const upsertAndroid = useCallback(
     async (args: { androidPackageNames: string[] }) => {
@@ -134,8 +136,9 @@ export default function Locked() {
       if (!res.ok) {
         throw new Error("Failed to save shield selection (Android)");
       }
+      queryClient.invalidateQueries({ queryKey: ["cf", "shield"] });
     },
-    []
+    [queryClient]
   );
 
   useEffect(() => {
