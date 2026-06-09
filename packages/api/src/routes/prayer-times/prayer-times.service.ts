@@ -325,13 +325,12 @@ export async function purgeExpiredPrayerCaches(
   db: Database,
   now: number = Date.now()
 ): Promise<number> {
-  const expired = await db
-    .select({ id: prayerTimeCaches.id })
-    .from(prayerTimeCaches)
-    .where(lt(prayerTimeCaches.expiresAt, now));
-  if (expired.length === 0) {
-    return 0;
-  }
-  await db.delete(prayerTimeCaches).where(lt(prayerTimeCaches.expiresAt, now));
-  return expired.length;
+  // Single bounded statement: DELETE … RETURNING avoids the prior unbounded
+  // full-row SELECT (D1 10 MB response cap on a cold sweep) and the
+  // select-then-delete race. RETURNING only the id keeps the response small.
+  const deleted = await db
+    .delete(prayerTimeCaches)
+    .where(lt(prayerTimeCaches.expiresAt, now))
+    .returning({ id: prayerTimeCaches.id });
+  return deleted.length;
 }
