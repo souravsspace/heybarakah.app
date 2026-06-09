@@ -193,27 +193,22 @@ export async function applyRevenueCatEntitlement(
   authUserId: string,
   verified: RevenueCatVerified
 ): Promise<SubscriptionRow | null> {
-  const activeRows = await db
-    .select()
-    .from(subscriptions)
-    .where(
-      and(
-        eq(subscriptions.authUserId, authUserId),
-        eq(subscriptions.status, "active")
-      )
-    )
-    .limit(10);
-  const activePolarRow = activeRows.find((row) => shouldSkipRcSync(row.source));
-  if (activePolarRow) {
-    return activePolarRow;
-  }
-
-  const existing = await db
+  // One read of the user's rows, then evaluate both the Polar-precedence guard
+  // and the existing-RC-row lookup from the same snapshot (avoids a two-select
+  // inconsistency window).
+  const rows = await db
     .select()
     .from(subscriptions)
     .where(eq(subscriptions.authUserId, authUserId))
     .limit(20);
-  const rcRow = existing.find((row) => row.source === "revenuecat");
+  const activePolarRow = rows.find(
+    (row) => row.status === "active" && shouldSkipRcSync(row.source)
+  );
+  if (activePolarRow) {
+    return activePolarRow;
+  }
+
+  const rcRow = rows.find((row) => row.source === "revenuecat");
   const now = new Date().toISOString();
   const doc = buildRevenueCatSubscriptionDoc(
     { authUserId, ...verified },
