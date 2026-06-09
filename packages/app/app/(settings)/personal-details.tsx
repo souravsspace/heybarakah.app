@@ -91,32 +91,41 @@ export default function PersonalDetails() {
     setUploading(true);
     try {
       const manipulated = await manipulateToWebp(asset.uri);
+      const uploadUrl = `${API_BASE_URL}/api/v1/me/avatar`;
       // Worker-proxied upload: the raw image bytes are the request body (no
-      // presign). Native replays the @better-auth/expo session cookie; web
-      // sends it via credentials. RN/Hermes can't build a network Blob from a
-      // file:// ArrayBuffer, so POST the file bytes directly off disk.
-      const headers: Record<string, string> = {
-        "Content-Type": manipulated.mime,
-      };
-      if (Platform.OS !== "web") {
+      // presign). FileSystem.uploadAsync is native-only, so web takes a
+      // credentialed fetch path (the browser attaches the session cookie);
+      // native replays the @better-auth/expo cookie and streams the file off
+      // disk (RN/Hermes can't build a network Blob from a file:// ArrayBuffer).
+      if (Platform.OS === "web") {
+        const blob = await fetch(manipulated.uri).then((r) => r.blob());
+        const res = await fetch(uploadUrl, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": manipulated.mime },
+          body: blob,
+        });
+        if (!res.ok) {
+          throw new Error(`Upload failed: ${res.status}`);
+        }
+      } else {
+        const headers: Record<string, string> = {
+          "Content-Type": manipulated.mime,
+        };
         const cookie = (
           authClient as { getCookie?: () => string }
         ).getCookie?.();
         if (cookie) {
           headers.Cookie = cookie;
         }
-      }
-      const res = await FileSystem.uploadAsync(
-        `${API_BASE_URL}/api/v1/me/avatar`,
-        manipulated.uri,
-        {
+        const res = await FileSystem.uploadAsync(uploadUrl, manipulated.uri, {
           httpMethod: "POST",
           uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
           headers,
+        });
+        if (res.status < 200 || res.status >= 300) {
+          throw new Error(`Upload failed: ${res.status}`);
         }
-      );
-      if (res.status < 200 || res.status >= 300) {
-        throw new Error(`Upload failed: ${res.status}`);
       }
       await queryClient.invalidateQueries({ queryKey: ["cf", "me", "avatar"] });
       setImageChanged(true);
