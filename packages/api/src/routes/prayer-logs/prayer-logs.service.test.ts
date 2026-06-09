@@ -99,6 +99,61 @@ describe("prayer-logs service", () => {
     expect(week.length).toBe(0);
   });
 
+  it("logging the same prayer twice keeps one row and does not double-count", async () => {
+    const db = createDatabase(env.DB);
+    const user = "dedup-user";
+    await seedProfile(db, user);
+
+    await logPrayer(db, user, {
+      date: DATE,
+      prayer: "fajr",
+      status: "on_time",
+    });
+    await logPrayer(db, user, {
+      date: DATE,
+      prayer: "fajr",
+      status: "on_time",
+    });
+
+    const week = await getMyWeek(db, user, DATE);
+    expect(week.length).toBe(1);
+
+    const [counter] = await db
+      .select()
+      .from(userAchievementCounters)
+      .where(eq(userAchievementCounters.authUserId, user));
+    expect(counter.onTimePrayerLogs).toBe(1);
+    expect(counter.fajrOnTimePrayerLogs).toBe(1);
+  });
+
+  it("re-logging with a new status adjusts counter deltas, not row count", async () => {
+    const db = createDatabase(env.DB);
+    const user = "restatus-user";
+    await seedProfile(db, user);
+
+    await logPrayer(db, user, {
+      date: DATE,
+      prayer: "maghrib",
+      status: "on_time",
+    });
+    await logPrayer(db, user, {
+      date: DATE,
+      prayer: "maghrib",
+      status: "qada",
+    });
+
+    const week = await getMyWeek(db, user, DATE);
+    expect(week.length).toBe(1);
+    expect(week[0].status).toBe("qada");
+
+    const [counter] = await db
+      .select()
+      .from(userAchievementCounters)
+      .where(eq(userAchievementCounters.authUserId, user));
+    expect(counter.onTimePrayerLogs).toBe(0);
+    expect(counter.qadaPrayerLogs).toBe(1);
+  });
+
   it("clearPrayer removes the log and decrements counters", async () => {
     const db = createDatabase(env.DB);
     const user = "clear-user";
