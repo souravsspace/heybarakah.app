@@ -110,13 +110,37 @@ describe("verifyResendSignature", () => {
   });
 });
 
+const WEBHOOK_SECRET = `whsec_${btoa("supersecretkey")}`;
+const SIGNED_ENV = { ...env, RESEND_WEBHOOK_SECRET: WEBHOOK_SECRET };
+
+// Build a request carrying valid svix headers signed with WEBHOOK_SECRET.
+async function signedPost(rawBody: string): Promise<Request> {
+  const id = "msg_test";
+  const timestamp = "171";
+  const signature = await svixSign(WEBHOOK_SECRET, id, timestamp, rawBody);
+  return new Request("http://localhost/webhooks/resend", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "svix-id": id,
+      "svix-timestamp": timestamp,
+      "svix-signature": signature,
+    },
+    body: rawBody,
+  });
+}
+
 describe("resend webhook", () => {
   it("flips a queue row to failed on a bounce", async () => {
     const id = await seedSent("re_bounce_1");
+    const body = JSON.stringify({
+      type: "email.bounced",
+      data: { email_id: "re_bounce_1" },
+    });
     const res = await appWith().request(
-      post({ type: "email.bounced", data: { email_id: "re_bounce_1" } }),
+      await signedPost(body),
       undefined,
-      env
+      SIGNED_ENV
     );
     expect(res.status).toBe(200);
 
@@ -131,10 +155,14 @@ describe("resend webhook", () => {
 
   it("leaves a delivered row untouched", async () => {
     const id = await seedSent("re_ok_1");
+    const body = JSON.stringify({
+      type: "email.delivered",
+      data: { email_id: "re_ok_1" },
+    });
     const res = await appWith().request(
-      post({ type: "email.delivered", data: { email_id: "re_ok_1" } }),
+      await signedPost(body),
       undefined,
-      env
+      SIGNED_ENV
     );
     expect(res.status).toBe(200);
 
@@ -148,14 +176,37 @@ describe("resend webhook", () => {
 
   it("400s on a malformed body", async () => {
     const res = await appWith().request(
-      new Request("http://localhost/webhooks/resend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{not json",
-      }),
+      await signedPost("{not json"),
       undefined,
-      env
+      SIGNED_ENV
     );
     expect(res.status).toBe(400);
+  });
+
+  it("500s when the webhook secret is not configured", async () => {
+    const res = await appWith().request(
+      post({ type: "email.delivered", data: { email_id: "x" } }),
+      undefined,
+      { ...env, RESEND_WEBHOOK_SECRET: undefined }
+    );
+    expect(res.status).toBe(500);
+  });
+
+  it("403s on an invalid signature", async () => {
+    const req = new Request("http://localhost/webhooks/resend", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "svix-id": "msg_test",
+        "svix-timestamp": "171",
+        "svix-signature": "v1,bm90LWEtdmFsaWQtc2ln",
+      },
+      body: JSON.stringify({
+        type: "email.delivered",
+        data: { email_id: "x" },
+      }),
+    });
+    const res = await appWith().request(req, undefined, SIGNED_ENV);
+    expect(res.status).toBe(403);
   });
 });
