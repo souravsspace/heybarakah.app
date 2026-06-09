@@ -7,9 +7,6 @@ const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn() }));
 vi.mock("resend", () => ({
   Resend: class {
     emails = { send: sendMock };
-    constructor(_apiKey: string) {
-      // no-op
-    }
   },
 }));
 
