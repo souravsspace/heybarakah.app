@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import type { Database } from "@/db";
 import { dhikrAggregate, dhikrDaily } from "@/db/schema";
@@ -39,23 +39,24 @@ async function updateDhikrAggregate(
   delta: number,
   updatedAt: number
 ): Promise<void> {
-  const [aggregate] = await db
-    .select()
-    .from(dhikrAggregate)
-    .where(eq(dhikrAggregate.authUserId, authUserId))
-    .limit(1);
-  if (aggregate) {
-    await db
-      .update(dhikrAggregate)
-      .set({ total: Math.max(0, aggregate.total + delta), updatedAt })
-      .where(eq(dhikrAggregate.authUserId, authUserId));
-    return;
-  }
-  await db.insert(dhikrAggregate).values({
-    authUserId,
-    total: await sumDhikrDaily(db, authUserId),
-    updatedAt,
-  });
+  // Atomic upsert: the increment happens in SQL (`total + delta`) so concurrent
+  // writers can't lose updates (no read-modify-write). The `values.total` seed
+  // is used only on first insert (no existing row) — recomputed from the daily
+  // rows so a lazily-created aggregate matches history. `max(0, …)` floors it.
+  await db
+    .insert(dhikrAggregate)
+    .values({
+      authUserId,
+      total: await sumDhikrDaily(db, authUserId),
+      updatedAt,
+    })
+    .onConflictDoUpdate({
+      target: dhikrAggregate.authUserId,
+      set: {
+        total: sql`max(0, ${dhikrAggregate.total} + ${delta})`,
+        updatedAt,
+      },
+    });
 }
 
 async function findDay(db: Database, authUserId: string, date: string) {
@@ -100,28 +101,27 @@ export async function increment(
   delta: number
 ): Promise<number> {
   const now = Date.now();
-  const existing = await findDay(db, authUserId, date);
-  let nextCount: number;
-  if (existing) {
-    nextCount = existing.count + delta;
-    await db
-      .update(dhikrDaily)
-      .set({ count: nextCount, updatedAt: now })
-      .where(eq(dhikrDaily.id, existing.id));
-  } else {
-    await db.insert(dhikrDaily).values({
+  // Atomic upsert on (authUserId, date): the count increment runs in SQL so two
+  // concurrent increments can't clobber each other, and the UNIQUE index makes a
+  // racing insert resolve to the update branch instead of a duplicate row.
+  const [row] = await db
+    .insert(dhikrDaily)
+    .values({
       authUserId,
       date,
       count: delta,
       target: DEFAULT_TARGET,
       updatedAt: now,
-    });
-    nextCount = delta;
-  }
+    })
+    .onConflictDoUpdate({
+      target: [dhikrDaily.authUserId, dhikrDaily.date],
+      set: { count: sql`${dhikrDaily.count} + ${delta}`, updatedAt: now },
+    })
+    .returning({ count: dhikrDaily.count });
   await updateDhikrAggregate(db, authUserId, delta, now);
   // Convex scheduled this; under REST we evaluate inline (cheap, same txn budget).
   await runEvaluate(db, { authUserId, today: date });
-  return nextCount;
+  return row.count;
 }
 
 export async function setTarget(
@@ -131,21 +131,19 @@ export async function setTarget(
   target: number
 ): Promise<void> {
   const now = Date.now();
-  const existing = await findDay(db, authUserId, date);
-  if (existing) {
-    await db
-      .update(dhikrDaily)
-      .set({ target, updatedAt: now })
-      .where(eq(dhikrDaily.id, existing.id));
-    return;
-  }
-  await db.insert(dhikrDaily).values({
-    authUserId,
-    date,
-    count: 0,
-    target,
-    updatedAt: now,
-  });
+  await db
+    .insert(dhikrDaily)
+    .values({
+      authUserId,
+      date,
+      count: 0,
+      target,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [dhikrDaily.authUserId, dhikrDaily.date],
+      set: { target, updatedAt: now },
+    });
 }
 
 export async function reset(
