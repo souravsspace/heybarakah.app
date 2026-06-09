@@ -9,13 +9,13 @@ Purpose: Astro marketing site deployed to Cloudflare Workers.
 - `src/layouts/` owns page shells and SEO/JSON-LD wiring.
 - `src/styles/global.css` defines Tailwind v4 theme tokens.
 - `src/app-config.ts` is the shared site copy/config source.
-- `src/lib/convex.ts` calls Convex with `@barakah/core` generated API types.
+- `src/lib/waitlist.ts` POSTs the waitlist email to the Cloudflare API (`PUBLIC_API_URL`).
 
 ## Rules
 
 - Use `Layout.astro` for normal pages so canonical, metadata, sitemap links, and JSON-LD stay consistent.
 - Use `client:*` directives only for interactive React components.
-- Keep waitlist submissions going through `src/lib/convex.ts`.
+- Keep waitlist submissions going through `src/lib/waitlist.ts`.
 - Import marketing env through `src/env.ts`; it re-exports `@barakah/env/marketing`.
 - Keep Tailwind v4 tokens in `src/styles/global.css`.
 - Keep Cloudflare worker settings in `wrangler.jsonc`; build output target is `dist/_worker.js/index.js`.
