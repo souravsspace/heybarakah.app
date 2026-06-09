@@ -55,6 +55,21 @@ describe("dhikr service", () => {
     expect(ach.map((a) => a.code)).toContain("first_dhikr");
   });
 
+  it("accumulates across sequential increments (onConflict + atomic seed)", async () => {
+    const db = createDatabase(env.DB);
+    const user = "dhikr-accumulate";
+    await db
+      .insert(users)
+      .values({ authUserId: user, completedAt: new Date().toISOString() });
+
+    await increment(db, user, DATE, 5);
+    await increment(db, user, DATE, 7);
+
+    const today = await getToday(db, user, DATE);
+    expect(today.count).toBe(12);
+    expect(today.sessionTotal).toBe(12);
+  });
+
   it("sets a custom target without changing the count", async () => {
     const db = createDatabase(env.DB);
     const user = "target-user";
