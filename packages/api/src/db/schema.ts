@@ -157,7 +157,7 @@ export const polarOrders = sqliteTable(
     raw: text("raw", { mode: "json" }).$type<unknown>(),
   },
   (t) => [
-    index("polarOrders_by_polarOrderId").on(t.polarOrderId),
+    uniqueIndex("polarOrders_by_polarOrderId").on(t.polarOrderId),
     index("polarOrders_by_customerEmail").on(t.customerEmail),
     index("polarOrders_by_polarCustomerId").on(t.polarCustomerId),
   ]
