@@ -27,11 +27,10 @@ export function rateLimit(
   const scope = options.scope ?? "global";
 
   return async (c, next) => {
-    const ip =
-      c.req.header("cf-connecting-ip") ??
-      c.req.header("x-real-ip") ??
-      c.req.header("x-forwarded-for") ??
-      "unknown";
+    // Only cf-connecting-ip is set by Cloudflare and cannot be spoofed by the
+    // client; x-forwarded-for / x-real-ip are caller-controlled and would let a
+    // client escape (or poison) a rate-limit bucket.
+    const ip = c.req.header("cf-connecting-ip") ?? "unknown";
 
     const now = Math.floor(Date.now() / 1000);
     const windowStart = now - (now % windowSeconds);
