@@ -11,7 +11,7 @@ Purpose: Expo React Native app.
 ## Rules
 
 - Use `@/*` for app-local imports; `tsconfig.json` maps it to the package root.
-- Keep root providers in `app/_layout.tsx`; it wires Convex Better Auth, user state, subscription state, onboarding state, theme, splash, and achievement popups.
+- Keep root providers in `app/_layout.tsx`; it wires the React Query client, Better Auth (CF API), user state, subscription state, onboarding state, theme, splash, and achievement popups.
 - Keep authenticated app gating in `app/(app)/_layout.tsx`; unauthenticated users redirect to onboarding and unsubscribed users redirect to `no-active-sub`.
 - Keep onboarding navigation/progress behavior in `app/(onboarding)/_layout.tsx` and `hooks/use-onboarding-nav.ts`.
 - Use NativeWind classes for app UI where existing components do.
