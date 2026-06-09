@@ -82,8 +82,10 @@ export async function resetOfflineQueue(): Promise<void> {
 
 /**
  * Drains the persisted mutation queue on mount and whenever the app returns to
- * the foreground. Each handler resolves only once Convex confirms the write, so
- * while offline the loop simply waits — and resumes draining on reconnect.
+ * the foreground. Handlers POST to the CF API; `fetch` rejects with a
+ * `TypeError` when the device is offline, so the drain retains the op and stops,
+ * resuming on the next foreground. A non-network rejection is a server/validation
+ * error that can't succeed on retry, so that op is dropped.
  */
 export function useOfflineReplay(handlers: Record<string, MutationHandler>) {
   const handlersRef = useRef(handlers);
@@ -104,13 +106,15 @@ export function useOfflineReplay(handlers: Record<string, MutationHandler>) {
           continue;
         }
         try {
-          // Pends while offline; resolves when the server commits.
           await handler(op.args);
         } catch (err) {
-          // A rejection is a server/validation error (network drops pend, not
-          // reject), so retrying can never succeed — drop it to avoid a queue
-          // that is permanently stuck behind one poison op. Surface it in dev
-          // so a mismatched enqueue payload doesn't vanish silently.
+          // `fetch` rejects with TypeError when the device is offline. Keep the
+          // op queued and stop the drain; the next foreground retries it.
+          if (err instanceof TypeError) {
+            return;
+          }
+          // Any other rejection is a server/validation error that can't succeed
+          // on retry — drop the poison op (surfaced in dev) and keep draining.
           if (__DEV__) {
             console.warn(`[offline-queue] dropping op "${op.kind}":`, err);
           }
