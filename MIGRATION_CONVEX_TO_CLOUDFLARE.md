@@ -79,6 +79,33 @@ DELETE) and `src/` (pure domain logic — prayer math, achievements, validators 
 > 40 files green, `db.batch()` atomicity, polar workerd smoke). They remain for
 > reference; the active work is the removal phases above.
 
+> **Progress (2026-06-10, session 7) — DATA-INTEGRITY HARDENING + TEST INFRA.**
+> Cleared the top deferred review findings:
+> - **UNIQUE constraints** (migration `0003_lovely_scalphunter`): promoted the
+>   natural-key indexes to `uniqueIndex` — `prayerLogs(user,date,prayer)`,
+>   `userAchievements(user,code)`, `dhikrDaily(user,date)`, `dhikrAggregate(user)`,
+>   `shieldSelection(user)`, `userAchievementCounters(user)`, `emailQueue.dedupeKey`.
+> - **Atomic upserts** replace every read-modify-write that the new constraints
+>   guard: dhikr increment (SQL `count + delta` via `onConflictDoUpdate`), shield
+>   ios/android, achievement unlock (`onConflictDoNothing`), prayer-log + counter
+>   writes, email enqueue (idempotent on `dedupeKey`). Removed the now-dead
+>   `counterExists` read.
+> - **Test migration loading refactored:** tests no longer import individual
+>   migration `.sql` files. `vitest.config.ts` does `readD1Migrations(src/db/migrations)`
+>   once → `TEST_MIGRATIONS` binding; a shared `applyMigrations()` helper
+>   (`src/test-support`) applies them per DB test file. (A global `setupFiles`
+>   variant was rejected — it eagerly boots the worker graph and breaks per-file
+>   `vi.mock`.) **166 vitest / 40 files green, turbo typecheck 6/6.**
+> - **Convex audit:** zero convex deps (package.json + lockfile), zero imports,
+>   zero runtime code repo-wide. Only remnants = historical comments + the
+>   `scripts/backfill/` migration helper (parses Convex export JSONL; never runs
+>   under the pre-launch no-data decision).
+>
+> **Still open / in-scope (not blocked):** none critical. **Blocked on user CF
+> secrets:** Phase 9 deploy. **Optional:** §8b observability (Sentry/Logpush),
+> §9 Apple-secret rotation runbook, §7 CI sibling-file test gate (coverage is
+> domain-level by design).
+
 ---
 
 > **Progress (2026-06-09, session 4):** doc-sync pass — ticked stale §7 boxes
