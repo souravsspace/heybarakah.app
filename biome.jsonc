@@ -5,7 +5,7 @@
     "includes": ["!packages/marketing", "!design", "!modules", "!graphify-out"]
   },
   "javascript": {
-    "globals": ["__DEV__"]
+    "globals": ["__DEV__", "Bun"]
   },
   "linter": {
     "rules": {
