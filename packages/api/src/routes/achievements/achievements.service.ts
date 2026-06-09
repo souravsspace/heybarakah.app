@@ -144,23 +144,19 @@ export async function runEvaluate(
   const now = Date.now();
   const inserted: AchievementCode[] = [];
   for (const code of newly) {
-    const [dup] = await db
-      .select({ id: userAchievements.id })
-      .from(userAchievements)
-      .where(
-        and(
-          eq(userAchievements.authUserId, authUserId),
-          eq(userAchievements.code, code)
-        )
-      )
-      .limit(1);
-    if (dup) {
-      continue;
-    }
-    await db
+    // UNIQUE(authUserId, code) + onConflictDoNothing makes the unlock idempotent
+    // atomically — `returning` is empty when the row already existed, so a
+    // re-evaluation (logPrayer runs eval every time) never double-inserts.
+    const rows = await db
       .insert(userAchievements)
-      .values({ authUserId, code, unlockedAt: now });
-    inserted.push(code);
+      .values({ authUserId, code, unlockedAt: now })
+      .onConflictDoNothing({
+        target: [userAchievements.authUserId, userAchievements.code],
+      })
+      .returning({ id: userAchievements.id });
+    if (rows.length > 0) {
+      inserted.push(code);
+    }
   }
   return inserted;
 }
