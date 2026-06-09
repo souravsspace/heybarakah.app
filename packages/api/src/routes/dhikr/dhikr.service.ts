@@ -9,9 +9,6 @@ const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export const DEFAULT_TARGET = 33;
 export const MAX_TARGET = 10_000;
 export const MAX_INCREMENT = 1000;
-// Bounds the aggregate-miss recompute path so a pathological per-user row count
-// can't blow the read budget. One row per day → ~137 years.
-const SUM_DHIKR_DAILY_LIMIT = 50_000;
 
 export function isValidDateKey(date: string): boolean {
   if (!DATE_KEY_PATTERN.test(date)) {
@@ -21,33 +18,22 @@ export function isValidDateKey(date: string): boolean {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === date;
 }
 
-async function sumDhikrDaily(
-  db: Database,
-  authUserId: string
-): Promise<number> {
-  const rows = await db
-    .select({ count: dhikrDaily.count })
-    .from(dhikrDaily)
-    .where(eq(dhikrDaily.authUserId, authUserId))
-    .limit(SUM_DHIKR_DAILY_LIMIT);
-  return rows.reduce((sum, row) => sum + row.count, 0);
-}
-
 async function updateDhikrAggregate(
   db: Database,
   authUserId: string,
   delta: number,
   updatedAt: number
 ): Promise<void> {
-  // Atomic upsert: the increment happens in SQL (`total + delta`) so concurrent
-  // writers can't lose updates (no read-modify-write). The `values.total` seed
-  // is used only on first insert (no existing row) — recomputed from the daily
-  // rows so a lazily-created aggregate matches history. `max(0, …)` floors it.
+  // Fully atomic upsert (no read-modify-write, no TOCTOU). On first insert the
+  // seed is computed in SQL from the daily rows so a lazily-created aggregate
+  // matches history; on conflict the increment runs in SQL (`total + delta`),
+  // floored at 0. Both branches resolve inside the one statement, so concurrent
+  // first-increments can't double-count.
   await db
     .insert(dhikrAggregate)
     .values({
       authUserId,
-      total: await sumDhikrDaily(db, authUserId),
+      total: sql`(select coalesce(sum(${dhikrDaily.count}), 0) from ${dhikrDaily} where ${dhikrDaily.authUserId} = ${authUserId})`,
       updatedAt,
     })
     .onConflictDoUpdate({
