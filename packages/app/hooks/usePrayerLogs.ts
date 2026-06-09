@@ -127,6 +127,13 @@ function useLogMutate() {
       const data = await res.json();
       queryClient.invalidateQueries({ queryKey: PRAYER_LOGS_KEY });
       queryClient.invalidateQueries({ queryKey: ["cf", "streak"] });
+      // The server evaluates achievements inside this write; refresh the unseen
+      // query so the popup provider surfaces anything just unlocked.
+      if (data.unlocked.length > 0) {
+        queryClient.invalidateQueries({
+          queryKey: ["cf", "achievements", "unseen"],
+        });
+      }
       return data;
     },
     [queryClient]
