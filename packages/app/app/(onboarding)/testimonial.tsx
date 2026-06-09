@@ -7,8 +7,6 @@ import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 const ACCENT = "#29603E";
 const INK = "#0F1311";
 const MUTED = "#6B7280";
-const SUBTLE = "#9CA3AF";
-const HAIRLINE = "#E5E7EB";
 const LINE = "rgba(15, 19, 17, 0.14)";
 const LINE_ACCENT = "rgba(41, 96, 62, 0.42)";
 const MARKER_OUTLINE = "rgba(15, 19, 17, 0.2)";
