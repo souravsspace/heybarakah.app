@@ -1,10 +1,9 @@
 import { env } from "cloudflare:test";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { createDatabase } from "@/db";
-import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
 import { userAchievements, users } from "@/db/schema";
-
+import { applyMigrations } from "@/test-support/apply-migrations";
 import {
   DEFAULT_TARGET,
   getToday,
@@ -14,21 +13,11 @@ import {
   setTarget,
 } from "./dhikr.service";
 
-async function applyMigration() {
-  const statements = migration0000
-    .split("--> statement-breakpoint")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  for (const statement of statements) {
-    await env.DB.prepare(statement).run();
-  }
-}
+applyMigrations();
 
 const DATE = "2026-06-08";
 
 describe("dhikr service", () => {
-  beforeAll(applyMigration);
-
   it("validates date keys (rejects impossible dates)", () => {
     expect(isValidDateKey("2026-06-08")).toBe(true);
     expect(isValidDateKey("2026-02-30")).toBe(false);

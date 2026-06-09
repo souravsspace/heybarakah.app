@@ -1,24 +1,14 @@
 import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createDatabase } from "@/db";
 // Raw import of the generated migration so the test exercises the real DDL.
-import migrationSql from "@/db/migrations/0000_swift_mojo.sql?raw";
 import { prayerLogs, shieldSelection, users } from "@/db/schema";
+import { applyMigrations } from "@/test-support/apply-migrations";
 
-async function applyMigration() {
-  const statements = migrationSql
-    .split("--> statement-breakpoint")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  for (const statement of statements) {
-    await env.DB.prepare(statement).run();
-  }
-}
+applyMigrations();
 
 describe("db schema", () => {
-  beforeAll(applyMigration);
-
   it("creates all 12 app tables", async () => {
     const { results } = await env.DB.prepare(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'"

@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn() }));
 
@@ -11,9 +11,6 @@ vi.mock("resend", () => ({
 }));
 
 import { createDatabase } from "@/db";
-import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
-import migration0001 from "@/db/migrations/0001_legal_solo.sql?raw";
-import migration0002 from "@/db/migrations/0002_smiling_johnny_blaze.sql?raw";
 import { emailQueue } from "@/db/schema";
 import {
   enqueueEmail,
@@ -21,18 +18,9 @@ import {
   processQueueRow,
   sweepEmailQueue,
 } from "@/lib/resend";
+import { applyMigrations } from "@/test-support/apply-migrations";
 
-async function applyMigrations() {
-  for (const sql of [migration0000, migration0001, migration0002]) {
-    const statements = sql
-      .split("--> statement-breakpoint")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    for (const statement of statements) {
-      await env.DB.prepare(statement).run();
-    }
-  }
-}
+applyMigrations();
 
 const baseEnv = {
   RESEND_API_KEY: "re_test",
@@ -46,7 +34,6 @@ const msg = {
   text: "thanks",
 };
 
-beforeAll(applyMigrations);
 beforeEach(() => sendMock.mockReset());
 
 describe("enqueueEmail", () => {

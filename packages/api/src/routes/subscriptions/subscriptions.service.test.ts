@@ -1,11 +1,10 @@
 import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { createDatabase } from "@/db";
-import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
 import { subscriptions } from "@/db/schema";
-
+import { applyMigrations } from "@/test-support/apply-migrations";
 import {
   applyRevenueCatEntitlement,
   claimMockSubscription,
@@ -14,19 +13,9 @@ import {
   parseRevenueCatEntitlementPayload,
 } from "./subscriptions.service";
 
-async function applyMigration() {
-  const statements = migration0000
-    .split("--> statement-breakpoint")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  for (const statement of statements) {
-    await env.DB.prepare(statement).run();
-  }
-}
+applyMigrations();
 
 const FUTURE = new Date(Date.now() + 86_400_000).toISOString();
-
-beforeAll(applyMigration);
 
 describe("subscriptions service — RevenueCat precedence (critical)", () => {
   it("does NOT overwrite an active Polar-owned subscription with RC sync", async () => {

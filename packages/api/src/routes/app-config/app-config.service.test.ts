@@ -1,24 +1,13 @@
 import { env } from "cloudflare:test";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { createDatabase } from "@/db";
-import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
-
+import { applyMigrations } from "@/test-support/apply-migrations";
 import { getAppConfig, setAppConfig } from "./app-config.service";
 
-async function applyMigration() {
-  const statements = migration0000
-    .split("--> statement-breakpoint")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  for (const statement of statements) {
-    await env.DB.prepare(statement).run();
-  }
-}
+applyMigrations();
 
 describe("app-config service", () => {
-  beforeAll(applyMigration);
-
   it("returns null when no config exists", async () => {
     const db = createDatabase(env.DB);
     expect(await getAppConfig(db)).toBeNull();

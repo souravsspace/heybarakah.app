@@ -1,11 +1,10 @@
 import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { createDatabase } from "@/db";
-import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
 import { users } from "@/db/schema";
-
+import { applyMigrations } from "@/test-support/apply-migrations";
 import {
   create,
   listMine,
@@ -14,15 +13,7 @@ import {
   setActive,
 } from "./user-locations.service";
 
-async function applyMigration() {
-  const statements = migration0000
-    .split("--> statement-breakpoint")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  for (const statement of statements) {
-    await env.DB.prepare(statement).run();
-  }
-}
+applyMigrations();
 
 const NYC = {
   name: "New York",
@@ -36,8 +27,6 @@ async function seedProfile(db: ReturnType<typeof createDatabase>, id: string) {
 }
 
 describe("user-locations service", () => {
-  beforeAll(applyMigration);
-
   it("creates a location and sets it active", async () => {
     const db = createDatabase(env.DB);
     const user = "loc-user";

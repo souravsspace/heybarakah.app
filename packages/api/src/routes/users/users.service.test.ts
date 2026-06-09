@@ -1,10 +1,8 @@
 import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { createDatabase } from "@/db";
-import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
-import migration0001 from "@/db/migrations/0001_legal_solo.sql?raw";
 import {
   user as authUser,
   dhikrDaily,
@@ -15,7 +13,7 @@ import {
   userAchievements,
   users,
 } from "@/db/schema";
-
+import { applyMigrations } from "@/test-support/apply-migrations";
 import {
   deleteMyAccount,
   getAvatarObject,
@@ -24,19 +22,7 @@ import {
   upsertProfile,
 } from "./users.service";
 
-async function applyMigrations() {
-  for (const sql of [migration0000, migration0001]) {
-    const statements = sql
-      .split("--> statement-breakpoint")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    for (const statement of statements) {
-      await env.DB.prepare(statement).run();
-    }
-  }
-}
-
-beforeAll(applyMigrations);
+applyMigrations();
 
 describe("users service — profile", () => {
   it("upserts a profile and validates the name length", async () => {

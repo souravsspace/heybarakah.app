@@ -1,24 +1,13 @@
 import { env } from "cloudflare:test";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
 import { createTestApp } from "@/lib/create-app";
-
+import { applyMigrations } from "@/test-support/apply-migrations";
 import { userLocations } from "./user-locations.index";
 
-async function applyMigration() {
-  const statements = migration0000
-    .split("--> statement-breakpoint")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  for (const statement of statements) {
-    await env.DB.prepare(statement).run();
-  }
-}
+applyMigrations();
 
 describe("user-locations routes", () => {
-  beforeAll(applyMigration);
-
   it("returns empty list + null active for an unauthenticated user", async () => {
     const app = createTestApp(userLocations);
     const res = await app.request("/locations", {}, env);

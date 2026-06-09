@@ -1,12 +1,11 @@
 import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createDatabase } from "@/db";
-import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
 
 import { prayerTimeCaches } from "@/db/schema";
-
+import { applyMigrations } from "@/test-support/apply-migrations";
 import {
   getCachedPrayerTimes,
   type PrayerRequest,
@@ -14,17 +13,8 @@ import {
   refreshPrayerTimes,
 } from "./prayer-times.service";
 
-async function applyMigration() {
-  const statements = migration0000
-    .split("--> statement-breakpoint")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  for (const statement of statements) {
-    await env.DB.prepare(statement).run();
-  }
-}
+applyMigrations();
 
-beforeAll(applyMigration);
 afterEach(() => vi.restoreAllMocks());
 
 // ISNA (method 2) is adhan-js-supported, so blocking the network forces the

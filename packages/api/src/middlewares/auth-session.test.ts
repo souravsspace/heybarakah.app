@@ -1,23 +1,12 @@
 import { env } from "cloudflare:test";
-import { beforeAll, describe, expect, it } from "vitest";
-import migration0000 from "@/db/migrations/0000_swift_mojo.sql?raw";
-import migration0001 from "@/db/migrations/0001_legal_solo.sql?raw";
+import { describe, expect, it } from "vitest";
 import { createRouter } from "@/lib/create-router";
 import { authSession, requireUser } from "@/middlewares/auth-session";
 import { logger } from "@/middlewares/logger";
 import onError from "@/stoker/middlewares/on-error";
+import { applyMigrations } from "@/test-support/apply-migrations";
 
-async function applyMigrations() {
-  for (const sql of [migration0000, migration0001]) {
-    const statements = sql
-      .split("--> statement-breakpoint")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    for (const statement of statements) {
-      await env.DB.prepare(statement).run();
-    }
-  }
-}
+applyMigrations();
 
 function buildApp() {
   const app = createRouter();
@@ -32,8 +21,6 @@ function buildApp() {
 }
 
 describe("authSession middleware", () => {
-  beforeAll(applyMigrations);
-
   it("sets auth on the context and a null user when unauthenticated", async () => {
     const app = buildApp();
     const res = await app.request("/whoami", {}, env);
