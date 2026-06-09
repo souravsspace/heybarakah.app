@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 
 import type { EnvVars } from "@/env";
+import { escapeHtml } from "@/lib/html";
 
 interface SendOTPInput {
   code: string;
@@ -33,7 +34,7 @@ function buildOTPEmail(code: string): {
         <td align="center">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:420px;border:1px solid #e5e7eb;border-radius:12px;padding:32px;">
             <tr><td style="font-size:16px;line-height:1.5;color:#111111;">Your sign-in code</td></tr>
-            <tr><td style="padding:24px 0;font-size:36px;font-weight:700;letter-spacing:8px;color:${ACCENT};">${code}</td></tr>
+            <tr><td style="padding:24px 0;font-size:36px;font-weight:700;letter-spacing:8px;color:${ACCENT};">${escapeHtml(code)}</td></tr>
             <tr><td style="font-size:14px;line-height:1.5;color:#6b7280;">This code expires shortly. If you didn't request it, you can safely ignore this email.</td></tr>
           </table>
         </td>
