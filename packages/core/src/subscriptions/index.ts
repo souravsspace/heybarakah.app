@@ -1,15 +1,10 @@
-export * from "./validators";
-
-import type { Infer } from "convex/values";
 import type {
-  productId,
-  revenueCatPeriodType,
-  revenueCatStore,
+  ProductId,
+  RevenueCatPeriodType,
+  RevenueCatStore,
 } from "./validators";
 
-export type ProductId = Infer<typeof productId>;
-export type RevenueCatStore = Infer<typeof revenueCatStore>;
-export type RevenueCatPeriodType = Infer<typeof revenueCatPeriodType>;
+export * from "./validators";
 
 export type SubscriptionStatus =
   | "active"
