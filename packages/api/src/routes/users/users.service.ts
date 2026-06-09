@@ -8,6 +8,7 @@ import {
   user as authUser,
   dhikrAggregate,
   dhikrDaily,
+  emailQueue,
   polarOrders,
   prayerLogs,
   prayerTimeCaches,
@@ -170,6 +171,9 @@ export async function purgeUserData(
           eq(polarOrders.customerEmail, normalizedEmail)
         )
       );
+    // Drop any queued/pending transactional emails so nothing is sent to a
+    // deleted user post-deletion.
+    await db.delete(emailQueue).where(eq(emailQueue.to, normalizedEmail));
   } else {
     await db.delete(polarOrders).where(eq(polarOrders.authUserId, authUserId));
   }
