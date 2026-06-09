@@ -4,6 +4,7 @@ import {
   real,
   sqliteTable,
   text,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
 // Better Auth tables (singular: user/account/session/verification) live in their
@@ -219,7 +220,11 @@ export const prayerLogs = sqliteTable(
     updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
   },
   (t) => [
-    index("prayerLogs_by_user_date_prayer").on(t.authUserId, t.date, t.prayer),
+    uniqueIndex("prayerLogs_by_user_date_prayer").on(
+      t.authUserId,
+      t.date,
+      t.prayer
+    ),
     index("prayerLogs_by_user_updated").on(t.authUserId, t.updatedAt),
   ]
 );
@@ -238,7 +243,7 @@ export const shieldSelection = sqliteTable(
     enabled: integer("enabled", { mode: "boolean" }).notNull(),
     updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
   },
-  (t) => [index("shieldSelection_by_user").on(t.authUserId)]
+  (t) => [uniqueIndex("shieldSelection_by_user").on(t.authUserId)]
 );
 
 export const dhikrDaily = sqliteTable(
@@ -251,7 +256,7 @@ export const dhikrDaily = sqliteTable(
     target: integer("target", { mode: "number" }).notNull(),
     updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
   },
-  (t) => [index("dhikrDaily_by_user_date").on(t.authUserId, t.date)]
+  (t) => [uniqueIndex("dhikrDaily_by_user_date").on(t.authUserId, t.date)]
 );
 
 export const dhikrAggregate = sqliteTable(
@@ -262,7 +267,7 @@ export const dhikrAggregate = sqliteTable(
     total: integer("total", { mode: "number" }).notNull(),
     updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
   },
-  (t) => [index("dhikrAggregate_by_user").on(t.authUserId)]
+  (t) => [uniqueIndex("dhikrAggregate_by_user").on(t.authUserId)]
 );
 
 export const userLocations = sqliteTable(
@@ -293,7 +298,7 @@ export const userAchievements = sqliteTable(
   },
   (t) => [
     index("userAchievements_by_user").on(t.authUserId),
-    index("userAchievements_by_user_code").on(t.authUserId, t.code),
+    uniqueIndex("userAchievements_by_user_code").on(t.authUserId, t.code),
     index("userAchievements_by_user_seen").on(t.authUserId, t.seenAt),
   ]
 );
@@ -313,7 +318,7 @@ export const userAchievementCounters = sqliteTable(
     qadaPrayerLogs: integer("qadaPrayerLogs", { mode: "number" }).notNull(),
     updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
   },
-  (t) => [index("userAchievementCounters_by_user").on(t.authUserId)]
+  (t) => [uniqueIndex("userAchievementCounters_by_user").on(t.authUserId)]
 );
 
 export const appConfig = sqliteTable("appConfig", {
@@ -348,7 +353,7 @@ export const emailQueue = sqliteTable(
     updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
   },
   (t) => [
-    index("emailQueue_by_dedupeKey").on(t.dedupeKey),
+    uniqueIndex("emailQueue_by_dedupeKey").on(t.dedupeKey),
     index("emailQueue_by_status_next").on(t.status, t.nextAttemptAt),
     index("emailQueue_by_providerId").on(t.providerId),
   ]
