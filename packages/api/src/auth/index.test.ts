@@ -6,7 +6,7 @@ const runtimeEnv = {
   DB: {} as never,
   KV: {} as never,
   R2: {} as never,
-  BETTER_AUTH_SECRET: "test-secret",
+  BETTER_AUTH_SECRET: "test-better-auth-secret-0123456789ab",
   BETTER_AUTH_URL: "http://localhost:8787",
   SITE_URL: "https://heybarakah.app",
   NATIVE_APP_URL: "barakah://",
