@@ -33,27 +33,27 @@ export async function upsertIos(
 ): Promise<void> {
   const now = Date.now();
   const enabled = args.iosItemCount > 0;
-  const existing = await findMine(db, authUserId);
-  if (existing) {
-    await db
-      .update(shieldSelection)
-      .set({
+  // Atomic upsert keyed on the UNIQUE authUserId — a racing first write resolves
+  // to the update branch instead of inserting a second selection row.
+  await db
+    .insert(shieldSelection)
+    .values({
+      authUserId,
+      iosSelectionData: args.iosSelectionData,
+      iosItemCount: args.iosItemCount,
+      windows: DEFAULT_WINDOWS,
+      enabled,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: shieldSelection.authUserId,
+      set: {
         iosSelectionData: args.iosSelectionData,
         iosItemCount: args.iosItemCount,
         enabled,
         updatedAt: now,
-      })
-      .where(eq(shieldSelection.authUserId, authUserId));
-    return;
-  }
-  await db.insert(shieldSelection).values({
-    authUserId,
-    iosSelectionData: args.iosSelectionData,
-    iosItemCount: args.iosItemCount,
-    windows: DEFAULT_WINDOWS,
-    enabled,
-    updatedAt: now,
-  });
+      },
+    });
 }
 
 export async function upsertAndroid(
@@ -63,21 +63,19 @@ export async function upsertAndroid(
 ): Promise<void> {
   const now = Date.now();
   const enabled = androidPackageNames.length > 0;
-  const existing = await findMine(db, authUserId);
-  if (existing) {
-    await db
-      .update(shieldSelection)
-      .set({ androidPackageNames, enabled, updatedAt: now })
-      .where(eq(shieldSelection.authUserId, authUserId));
-    return;
-  }
-  await db.insert(shieldSelection).values({
-    authUserId,
-    androidPackageNames,
-    windows: DEFAULT_WINDOWS,
-    enabled,
-    updatedAt: now,
-  });
+  await db
+    .insert(shieldSelection)
+    .values({
+      authUserId,
+      androidPackageNames,
+      windows: DEFAULT_WINDOWS,
+      enabled,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: shieldSelection.authUserId,
+      set: { androidPackageNames, enabled, updatedAt: now },
+    });
 }
 
 export async function setWindows(
