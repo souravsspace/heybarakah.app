@@ -101,6 +101,17 @@ DELETE) and `src/` (pure domain logic — prayer math, achievements, validators 
 >   `scripts/backfill/` migration helper (parses Convex export JSONL; never runs
 >   under the pre-launch no-data decision).
 >
+> **Code review (5 subagents, api + app):** triaged → fixed F1–F22 (security:
+> middleware order, Idempotency-Key validation, secret min-32, email HTML escape,
+> cf-connecting-ip only; webhooks: polarOrderId UNIQUE+upsert [migration 0004],
+> dropped dead confirmedEmailAt guard, lease-claimed cron sweep, constant-time
+> Svix verify + replay window; data: emailQueue purge on account delete, bounded
+> cache purge, atomic dhikr aggregate seed, single-read RC precedence; +5 new
+> regression tests). **api 172 tests / 40 files green.** Documented-not-fixed
+> (rationale in [[open_work_api_review_fixes_2026_06_10]] memory): counter-delta
+> concurrency races (mitigated by Idempotency-Key), rate-limit KV TOCTOU (needs
+> DO), client-supplied date, backfill/reset-db one-shot nits.
+>
 > **Still open / in-scope (not blocked):** none critical. **Blocked on user CF
 > secrets:** Phase 9 deploy. **Optional:** §8b observability (Sentry/Logpush),
 > §9 Apple-secret rotation runbook, §7 CI sibling-file test gate (coverage is
