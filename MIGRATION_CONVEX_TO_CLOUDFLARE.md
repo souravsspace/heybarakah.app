@@ -48,13 +48,29 @@ DELETE) and `src/` (pure domain logic — prayer math, achievements, validators 
   `env/app.ts` dropped `EXPO_PUBLIC_CONVEX_URL`/`_SITE_URL` + `EXPO_PUBLIC_USE_CF_API`;
   `EXPO_PUBLIC_API_URL` is required (`z.url()`). App `.env`/`.env.example` cleaned.
   Grep `USE_CF_API`/`EXPO_PUBLIC_CONVEX` in app+env = CLEAN. Typecheck green.
-- [ ] **Phase 5 — Marketing → CF** (`WaitlistForm` + `lib/convex.ts` →
-  `POST /api/v1/marketing/waitlist`; `env/marketing.ts`).
-- [ ] **Phase 6 — Decouple `core/src` from `convex/values`** (4 validator files;
-  delete dead convex `v` exports, keep pure logic; api tests stay green).
-- [ ] **Phase 7 — Delete `core/convex/` backend + convex deps** (3 package.jsons +
-  scripts; blocked by 1,2,5,6).
-- [ ] **Phase 8 — Verify** (turbo typecheck + api 164 tests + grep clean).
+- [x] **Phase 5 — Marketing → CF.** `lib/convex.ts`→`lib/waitlist.ts` (fetch
+  `POST ${PUBLIC_API_URL}/api/v1/marketing/waitlist`); `WaitlistForm` repointed;
+  `env/marketing.ts` + `.env.example` `PUBLIC_CONVEX_URL`→`PUBLIC_API_URL`. Marketing
+  src convex-free.
+- [x] **Phase 6 — Decouple `core/src` from `convex/values`.** 4 files: `subscriptions/
+  validators.ts` (pure `as const` unions + types), `subscriptions/index.ts` (drop `Infer`,
+  import types from validators), `shieldSelection/validators.ts` (keep `ALL_WINDOWS`/
+  `PrayerWindow`, drop `prayerWindow`/`shieldSelectionFields`), `users/validators.ts`
+  (keep `validateProfileInput`+consts, drop `profileFields`). core/src convex-free;
+  core+api typecheck green; **api 164 tests green**.
+- [x] **Phase 7 — Delete `core/convex/` backend + convex deps.** (7a) `git rm` convex/,
+  convex.json, scripts/reset-db.{ts,test.ts}; core dropped dev/dev:setup/reset:db scripts
+  + `./convex/*` exports + convex api re-export from index.ts; **collateral fix:** core
+  tsconfig now `types:["bun"]` (deleted reset-db.ts had been the only `import "bun"` that
+  loaded @types/bun globals for bun:test/process). (7b) dropped convex/@convex-dev deps
+  from core/app/marketing(+dead @barakah/core)/root catalog, `dev:convex` script, stale
+  `reset:db`; `bun install` → lockfile convex-free.
+- [x] **Phase 8 — Verify.** turbo typecheck **6/6 green**; api **164 tests green**;
+  `rg -i convex` (excl design bundle + this doc + node_modules) = only historical
+  comments + api/CLAUDE port-target refs, **zero imports/code/deps**. Config swept
+  (turbo env `PUBLIC_CONVEX_URL`→`PUBLIC_API_URL`, biome dropped `convex/_generated`
+  ignore); docs swept (core/app CLAUDE.md). 9 ultracite errors remain but are
+  **pre-existing**, unrelated to convex (backfill script, testimonial.tsx, plugin, 2 tests).
 - [ ] **Phase 9 — Deploy CF API.** 🔴 **BLOCKED on user secrets** (Appendix B):
   `wrangler secret put …`, `db:migrate:dev`, `wrangler deploy --env development`,
   set `EXPO_PUBLIC_API_URL`. Dev CF resources exist; prod ids still placeholder.
