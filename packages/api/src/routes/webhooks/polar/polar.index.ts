@@ -57,7 +57,7 @@ polarWebhook.post("/webhooks/polar", async (c) => {
   const name = order.customer?.name ?? order.billingName ?? null;
   const db = createDatabase(c.env.DB);
 
-  const { alreadyConfirmed } = await recordPaidOrder(db, {
+  await recordPaidOrder(db, {
     authUserId: metadataAuthUserId(
       (order as unknown as { metadata?: unknown }).metadata
     ),
@@ -74,12 +74,9 @@ polarWebhook.post("/webhooks/polar", async (c) => {
     raw: JSON.parse(body) as unknown,
   });
 
-  if (alreadyConfirmed) {
-    return c.text("ok", OK);
-  }
-
   // Durable enqueue (dedupeKey = order id) replaces the convex synchronous
-  // send + confirm dance; the cron sweep delivers and retries.
+  // send + confirm dance; the cron sweep delivers and retries. The dedupeKey
+  // makes a webhook retry idempotent, so we always enqueue.
   const { subject, html, text } = buildPurchaseEmail({
     name,
     totalAmount: order.totalAmount,

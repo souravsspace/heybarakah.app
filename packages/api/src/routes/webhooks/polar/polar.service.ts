@@ -1,8 +1,9 @@
-import { eq, type SQL } from "drizzle-orm";
+import { eq, type SQL, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 
 import type { Database } from "@/db";
 import { polarOrders, subscriptions } from "@/db/schema";
+import { escapeHtml } from "@/lib/html";
 
 export interface PaidOrderInput {
   authUserId?: string;
@@ -19,46 +20,23 @@ export interface PaidOrderInput {
 
 /**
  * Idempotently record a paid Polar order and activate the matching subscription.
- * Ported from convex `recordPaidOrder`. The `by_polarOrderId` lookups make a
- * webhook retry a no-op (Polar redelivers), and a paid order always wins source
- * precedence (source=polar, productId=lifetime) — RevenueCat must never
- * overwrite it.
- *
- * Returns `alreadyConfirmed` so the caller can skip re-enqueuing the receipt.
+ * Ported from convex `recordPaidOrder`. The order upsert on UNIQUE polarOrderId
+ * makes a webhook retry a no-op (Polar redelivers), and a paid order always wins
+ * source precedence (source=polar, productId=lifetime) — RevenueCat must never
+ * overwrite it. Receipt-email idempotency is the caller's enqueue dedupeKey.
  */
 export async function recordPaidOrder(
   db: Database,
   args: PaidOrderInput
-): Promise<{ alreadyConfirmed: boolean }> {
+): Promise<void> {
   const now = new Date().toISOString();
 
-  const [existingOrder] = await db
-    .select()
-    .from(polarOrders)
-    .where(eq(polarOrders.polarOrderId, args.polarOrderId))
-    .limit(1);
-
-  let alreadyConfirmed = false;
-  let orderWrite: BatchItem<"sqlite">;
-  if (existingOrder) {
-    alreadyConfirmed = Boolean(existingOrder.confirmedEmailAt);
-    orderWrite = db
-      .update(polarOrders)
-      .set({
-        authUserId: args.authUserId ?? existingOrder.authUserId,
-        polarCustomerId: args.polarCustomerId ?? null,
-        customerEmail: args.customerEmail,
-        customerName: args.customerName ?? null,
-        productId: args.productId ?? null,
-        totalAmount: args.totalAmount,
-        currency: args.currency,
-        invoiceNumber: args.invoiceNumber ?? null,
-        receivedAt: now,
-        raw: args.raw ?? null,
-      })
-      .where(eq(polarOrders.id, existingOrder.id));
-  } else {
-    orderWrite = db.insert(polarOrders).values({
+  // Upsert on UNIQUE(polarOrderId): a racing webhook retry resolves to an update
+  // instead of inserting a duplicate order row. On conflict, keep an
+  // already-linked authUserId when this delivery doesn't carry one.
+  const orderWrite: BatchItem<"sqlite"> = db
+    .insert(polarOrders)
+    .values({
       id: crypto.randomUUID(),
       authUserId: args.authUserId ?? null,
       polarOrderId: args.polarOrderId,
@@ -72,15 +50,28 @@ export async function recordPaidOrder(
       eventType: "order.paid",
       receivedAt: now,
       raw: args.raw ?? null,
+    })
+    .onConflictDoUpdate({
+      target: polarOrders.polarOrderId,
+      set: {
+        authUserId: args.authUserId ?? sql`${polarOrders.authUserId}`,
+        polarCustomerId: args.polarCustomerId ?? null,
+        customerEmail: args.customerEmail,
+        customerName: args.customerName ?? null,
+        productId: args.productId ?? null,
+        totalAmount: args.totalAmount,
+        currency: args.currency,
+        invoiceNumber: args.invoiceNumber ?? null,
+        receivedAt: now,
+        raw: args.raw ?? null,
+      },
     });
-  }
 
   // Order + subscription activation must be atomic (D1 has no interactive txn).
   // Reads happen first; the writes are built (not run) and batched together.
   const existing = await resolveExistingPolarSub(db, args);
   const subWrite = buildPolarSubscriptionWrite(db, args, now, existing);
   await db.batch([orderWrite, subWrite]);
-  return { alreadyConfirmed };
 }
 
 // Resolve the target subscription in precedence order; keying on the order id
@@ -162,6 +153,14 @@ export function buildPurchaseEmail(order: {
   const invoiceLine = order.invoiceNumber
     ? `Invoice ${order.invoiceNumber}. `
     : "";
+  // Escape the webhook-supplied name + invoice number for the HTML body (the
+  // text variant is plain-text and safe as-is).
+  const htmlGreeting = order.name
+    ? `Assalamu alaikum ${escapeHtml(order.name)},`
+    : "Assalamu alaikum,";
+  const htmlInvoiceLine = order.invoiceNumber
+    ? `Invoice ${escapeHtml(order.invoiceNumber)}. `
+    : "";
   const subject = "Your Barakah purchase is confirmed";
   const text = `${greeting} thank you for supporting Barakah. ${invoiceLine}You paid ${amount} ${currency}. Your lifetime access is now active.`;
   const html = `<!doctype html>
@@ -170,8 +169,8 @@ export function buildPurchaseEmail(order: {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;">
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:420px;border:1px solid #e5e7eb;border-radius:12px;padding:32px;">
-          <tr><td style="font-size:16px;line-height:1.5;">${greeting}</td></tr>
-          <tr><td style="padding:16px 0;font-size:14px;line-height:1.6;color:#6b7280;">Thank you for supporting Barakah. ${invoiceLine}Your lifetime access is now active.</td></tr>
+          <tr><td style="font-size:16px;line-height:1.5;">${htmlGreeting}</td></tr>
+          <tr><td style="padding:16px 0;font-size:14px;line-height:1.6;color:#6b7280;">Thank you for supporting Barakah. ${htmlInvoiceLine}Your lifetime access is now active.</td></tr>
           <tr><td style="font-size:18px;font-weight:700;color:#29603E;">${amount} ${currency}</td></tr>
         </table>
       </td></tr>
