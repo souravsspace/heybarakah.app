@@ -21,10 +21,13 @@ function isAllowedOrigin(origin: string, allowExpo: boolean): boolean {
   if (WEB_ORIGINS.includes(origin)) {
     return true;
   }
-  if (origin.endsWith(".workers.dev")) {
-    return true;
-  }
+  // `*.workers.dev` is the staging API domain and native schemes are dev clients;
+  // both ride the same dev gate so prod (flag unset) never grants credentialed
+  // CORS to an arbitrary Cloudflare Worker.
   if (allowExpo) {
+    if (origin.endsWith(".workers.dev")) {
+      return true;
+    }
     return NATIVE_SCHEME_PREFIXES.some((prefix) => origin.startsWith(prefix));
   }
   return false;
