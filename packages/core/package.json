@@ -12,14 +12,9 @@
     "./subscriptions": "./src/subscriptions/index.ts",
     "./users": "./src/users/index.ts",
     "./auth": "./src/auth/index.ts",
-    "./shieldSelection": "./src/shieldSelection/index.ts",
-    "./convex/_generated/*": "./convex/_generated/*",
-    "./convex/*": "./convex/*"
+    "./shieldSelection": "./src/shieldSelection/index.ts"
   },
   "scripts": {
-    "dev": "convex dev --tail-logs always",
-    "dev:setup": "convex dev --configure --until-success",
-    "reset:db": "bun scripts/reset-db.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
