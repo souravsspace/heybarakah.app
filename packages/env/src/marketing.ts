@@ -7,11 +7,11 @@ export const env = createEnv({
   // active — a server-only secret added here would now fail validation.
   server: {},
   client: {
-    PUBLIC_CONVEX_URL: z.url(),
+    PUBLIC_API_URL: z.url(),
   },
   runtimeEnv: {
-    PUBLIC_CONVEX_URL:
-      import.meta.env.PUBLIC_CONVEX_URL ?? process.env.PUBLIC_CONVEX_URL,
+    PUBLIC_API_URL:
+      import.meta.env.PUBLIC_API_URL ?? process.env.PUBLIC_API_URL,
   },
   emptyStringAsUndefined: true,
 });
