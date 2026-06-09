@@ -58,6 +58,28 @@ describe("subscriptions service — RevenueCat precedence (critical)", () => {
     expect(result?.productId).toBe("yearly");
   });
 
+  it("is idempotent — re-syncing the same entitlement updates one row, not two", async () => {
+    const db = createDatabase(env.DB);
+    const user = "rc-idempotent";
+    await applyRevenueCatEntitlement(db, user, {
+      entitlementActive: true,
+      productIdentifier: "barakah_yearly",
+      expiresAt: FUTURE,
+    });
+    await applyRevenueCatEntitlement(db, user, {
+      entitlementActive: true,
+      productIdentifier: "barakah_yearly",
+      expiresAt: FUTURE,
+    });
+
+    const rows = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.authUserId, user));
+    expect(rows).toHaveLength(1);
+    expect(rows[0].source).toBe("revenuecat");
+  });
+
   it("returns null for an inactive entitlement with no existing row", async () => {
     const db = createDatabase(env.DB);
     const result = await applyRevenueCatEntitlement(db, "rc-inactive", {
