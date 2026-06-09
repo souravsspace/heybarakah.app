@@ -57,11 +57,13 @@ function applyMiddleware(app: AppOpenAPI) {
       credentials: true,
     })
   );
+  // Rate-limit FIRST so flood traffic is rejected before the per-request auth
+  // instance + D1 session read in authSession.
+  app.use(rateLimit({ max: GENERAL_RATE_LIMIT_MAX, windowSeconds: 60 }));
   // Resolve the Better Auth session (sets c.var.auth + c.var.user) for every
   // request, then mount the Better Auth handler at /api/auth/*.
   app.use(authSession());
-  // General KV rate limit (per-IP) + Idempotency-Key replay for retried writes.
-  app.use(rateLimit({ max: GENERAL_RATE_LIMIT_MAX, windowSeconds: 60 }));
+  // Idempotency replay (after authSession — keys are scoped by c.var.user.id).
   app.use(idempotency());
   app.on(["GET", "POST"], "/api/auth/*", (c) =>
     c.get("auth").handler(c.req.raw)
