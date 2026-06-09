@@ -278,8 +278,8 @@ export function SubscriptionProvider({
         await syncCustomerInfo(info);
       } catch {
         // Entitlement is already confirmed below; the customer-info listener
-        // retries the Convex sync. Don't let a sync hiccup report "nothing to
-        // restore" for a purchase RevenueCat just confirmed.
+        // retries the CF entitlement sync. Don't let a sync hiccup report
+        // "nothing to restore" for a purchase RevenueCat just confirmed.
       }
       return Boolean(info.entitlements.active[ENTITLEMENT_ID]);
     }
