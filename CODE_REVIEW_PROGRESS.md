@@ -24,7 +24,36 @@
 
 ---
 
-## ⏳ Pending — Fixes (scope: **Everything**, per user)
+## ✅ Fixes applied (this session)
+
+Implemented via **5 parallel subagents** (disjoint file ownership), then a central gate.
+**Gate result: lint clean (`ultracite`), `typecheck` clean, full suite green — 41 files / 191 tests pass** (was 172; +19 new tests). Committed per-fix (source + colocated test) with conventional `scope: api` messages; pushed.
+
+- **C1** ✅ backfill union-of-keys (`transform.ts`)
+- **H1** ✅ unique index on `subscriptions.polarOrderId` + migration `0005` + `onConflictDoUpdate` activation
+- **H3** ✅ generic 5xx message unless DEBUG (`on-error.ts`)
+- **H4** ✅ `reset-db --remote` guarded behind `--yes` + non-prod `--env`
+- **H5** ✅ (safe form) account deletion now batched + purges `prayerTimeCaches`
+- **M1** ✅ `db.batch()` for dhikr daily+aggregate, achievement unlocks, `markSeen` single UPDATE, account purge
+- **M2** ✅ idempotency anon scope folds in IP; caches only 2xx
+- **M3** ✅ `emailOTP` pins `otpLength:6/expiresIn:300/allowedAttempts:3` + stricter OTP-send rate rule
+- **M4** ✅ `getMySubscription` prefers `source==="polar"` deterministically
+- **M5** ✅ RC precedence guard now respects Polar-row expiry
+- **M7** ✅ dedicated tighter rate limit on waitlist route
+- **M8 (docs)** ✅ `/doc` + `/docs` gated behind `DOCS_ENABLED`/`DEBUG`
+- **L2** ✅ scheduled per-task isolation + failure logging
+- **L4** ✅ `enqueueEmail` atomic `onConflictDoUpdate ... returning`
+- **L7** ✅ debug logs gated behind env flag
+- **L8** ✅ warn on dropped Polar order with no email
+- **L9** ✅ `prayedAt` `.min(0)` (prayer-logs; dhikr has no such field)
+- **L10** ✅ `logger.warn` before AlAdhan fallback (logger param optional; wire `c.var.logger` in `prayer-times.handlers.ts` to emit in prod)
+
+### Deferred (documented, by decision — see below)
+- **H2** avatar endpoint auth (breaks native client), **H5 full re-key**, **M6** (blocked: "Never modify `packages/core`"), **M8 timestamp standardization** (breaking migration), plus pure-doc nits **L1/L3/L11/L12**.
+
+---
+
+## ⏳ Original fix plan (reference)
 
 Per-file workflow required by `packages/api/CLAUDE.md`: test-first → `bun x ultracite fix` → `bun turbo typecheck` (zero errors) → per-file conventional commit (`scope: api`).
 
