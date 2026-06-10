@@ -48,6 +48,29 @@ describe("idempotency middleware", () => {
     expect(getCalls()).toBe(2);
   });
 
+  it("does not cache non-2xx responses (transient errors stay retryable)", async () => {
+    let calls = 0;
+    const app = createRouter();
+    app.use(idempotency());
+    app.post("/fail", (c) => {
+      calls++;
+      return c.json({ calls }, 429);
+    });
+    const req = () =>
+      new Request("http://localhost/fail", {
+        method: "POST",
+        headers: { "Idempotency-Key": "retry-me" },
+      });
+    const first = await app.request(req(), {}, env);
+    const second = await app.request(req(), {}, env);
+
+    expect(first.status).toBe(429);
+    expect(second.status).toBe(429);
+    // The 429 was not pinned to the key — the handler ran again.
+    expect(second.headers.get("Idempotent-Replay")).toBeNull();
+    expect(calls).toBe(2);
+  });
+
   it("never caches auth routes (replay would drop Set-Cookie)", async () => {
     let calls = 0;
     const app = createRouter();
