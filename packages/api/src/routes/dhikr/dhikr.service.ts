@@ -18,18 +18,20 @@ export function isValidDateKey(date: string): boolean {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === date;
 }
 
-async function updateDhikrAggregate(
+function buildAggregateWrite(
   db: Database,
   authUserId: string,
   delta: number,
   updatedAt: number
-): Promise<void> {
+) {
   // Fully atomic upsert (no read-modify-write, no TOCTOU). On first insert the
   // seed is computed in SQL from the daily rows so a lazily-created aggregate
   // matches history; on conflict the increment runs in SQL (`total + delta`),
   // floored at 0. Both branches resolve inside the one statement, so concurrent
-  // first-increments can't double-count.
-  await db
+  // first-increments can't double-count. Returned (not awaited) so callers can
+  // batch it with the daily write — the daily write must run first in the batch
+  // so the first-insert seed subquery sees the updated daily count.
+  return db
     .insert(dhikrAggregate)
     .values({
       authUserId,
@@ -90,7 +92,7 @@ export async function increment(
   // Atomic upsert on (authUserId, date): the count increment runs in SQL so two
   // concurrent increments can't clobber each other, and the UNIQUE index makes a
   // racing insert resolve to the update branch instead of a duplicate row.
-  const [row] = await db
+  const dailyWrite = db
     .insert(dhikrDaily)
     .values({
       authUserId,
@@ -104,10 +106,16 @@ export async function increment(
       set: { count: sql`${dhikrDaily.count} + ${delta}`, updatedAt: now },
     })
     .returning({ count: dhikrDaily.count });
-  await updateDhikrAggregate(db, authUserId, delta, now);
+  // One atomic batch so the per-day count and the session aggregate can't
+  // diverge. The daily write runs first so the aggregate's first-insert seed
+  // subquery reads the already-updated daily count.
+  const [dailyRows] = await db.batch([
+    dailyWrite,
+    buildAggregateWrite(db, authUserId, delta, now),
+  ]);
   // Convex scheduled this; under REST we evaluate inline (cheap, same txn budget).
   await runEvaluate(db, { authUserId, today: date });
-  return row.count;
+  return dailyRows[0].count;
 }
 
 export async function setTarget(
@@ -142,9 +150,12 @@ export async function reset(
     return;
   }
   const now = Date.now();
-  await db
-    .update(dhikrDaily)
-    .set({ count: 0, updatedAt: now })
-    .where(eq(dhikrDaily.id, existing.id));
-  await updateDhikrAggregate(db, authUserId, -existing.count, now);
+  // Batch the day-zero and the aggregate decrement so they can't desync.
+  await db.batch([
+    db
+      .update(dhikrDaily)
+      .set({ count: 0, updatedAt: now })
+      .where(eq(dhikrDaily.id, existing.id)),
+    buildAggregateWrite(db, authUserId, -existing.count, now),
+  ]);
 }

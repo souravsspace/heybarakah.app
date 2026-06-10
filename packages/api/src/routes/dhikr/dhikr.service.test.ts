@@ -70,6 +70,24 @@ describe("dhikr service", () => {
     expect(today.sessionTotal).toBe(12);
   });
 
+  it("keeps the daily count and session aggregate in sync (batched write)", async () => {
+    const db = createDatabase(env.DB);
+    const user = "dhikr-batched";
+    await db
+      .insert(users)
+      .values({ authUserId: user, completedAt: new Date().toISOString() });
+
+    // First increment seeds the aggregate from the daily row inside one batch.
+    expect(await increment(db, user, DATE, 3)).toBe(3);
+    expect((await getToday(db, user, DATE)).sessionTotal).toBe(3);
+
+    // A second increment on the conflict branch advances both in lockstep.
+    expect(await increment(db, user, DATE, 4)).toBe(7);
+    const after = await getToday(db, user, DATE);
+    expect(after.count).toBe(7);
+    expect(after.sessionTotal).toBe(7);
+  });
+
   it("sets a custom target without changing the count", async () => {
     const db = createDatabase(env.DB);
     const user = "target-user";
