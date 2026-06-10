@@ -5,7 +5,7 @@ import {
   evaluateAchievements,
   evaluateAllProgress,
 } from "@barakah/core/achievements";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 
 import type { Database } from "@/db";
 import {
@@ -71,6 +71,24 @@ async function dhikrTotalForUser(
     .where(eq(dhikrDaily.authUserId, authUserId))
     .limit(EVALUATE_DHIKR_DAILY_LIMIT);
   return rows.reduce((sum, row) => sum + row.count, 0);
+}
+
+// UNIQUE(authUserId, code) + onConflictDoNothing makes each unlock idempotent;
+// `returning` is empty when the row already existed. Returned (not awaited) so
+// the unlocks can be submitted as one atomic db.batch.
+function buildUnlockInsert(
+  db: Database,
+  authUserId: string,
+  code: AchievementCode,
+  unlockedAt: number
+) {
+  return db
+    .insert(userAchievements)
+    .values({ authUserId, code, unlockedAt })
+    .onConflictDoNothing({
+      target: [userAchievements.authUserId, userAchievements.code],
+    })
+    .returning({ id: userAchievements.id });
 }
 
 /**
@@ -142,23 +160,18 @@ export async function runEvaluate(
   }
 
   const now = Date.now();
-  const inserted: AchievementCode[] = [];
-  for (const code of newly) {
-    // UNIQUE(authUserId, code) + onConflictDoNothing makes the unlock idempotent
-    // atomically — `returning` is empty when the row already existed, so a
-    // re-evaluation (logPrayer runs eval every time) never double-inserts.
-    const rows = await db
-      .insert(userAchievements)
-      .values({ authUserId, code, unlockedAt: now })
-      .onConflictDoNothing({
-        target: [userAchievements.authUserId, userAchievements.code],
-      })
-      .returning({ id: userAchievements.id });
-    if (rows.length > 0) {
-      inserted.push(code);
-    }
-  }
-  return inserted;
+  // One atomic batch instead of one await per code on the hot path (every
+  // logPrayer / dhikr increment runs eval). The batch results map 1:1 to
+  // `newly`, so an empty result at index i means that code was already unlocked
+  // (onConflictDoNothing) and so wasn't newly inserted this run.
+  const inserts = newly.map((code) =>
+    buildUnlockInsert(db, authUserId, code, now)
+  ) as [
+    ReturnType<typeof buildUnlockInsert>,
+    ...ReturnType<typeof buildUnlockInsert>[],
+  ];
+  const results = await db.batch(inserts);
+  return newly.filter((_, i) => results[i].length > 0);
 }
 
 async function latestTimezone(
@@ -319,19 +332,20 @@ export async function markSeen(
   authUserId: string,
   codes: string[]
 ): Promise<void> {
-  const now = Date.now();
-  const codeSet = new Set(codes);
-  const rows = await db
-    .select()
-    .from(userAchievements)
-    .where(eq(userAchievements.authUserId, authUserId))
-    .limit(ACHIEVEMENTS.length + 10);
-  for (const row of rows) {
-    if (codeSet.has(row.code) && row.seenAt === null) {
-      await db
-        .update(userAchievements)
-        .set({ seenAt: now })
-        .where(eq(userAchievements.id, row.id));
-    }
+  if (codes.length === 0) {
+    return;
   }
+  // Single bounded UPDATE instead of a read + N per-row updates. Scoped to the
+  // authed user; `codes` is capped at 64 by the route schema, and the IS NULL
+  // guard keeps the stamp idempotent (already-seen rows are left untouched).
+  await db
+    .update(userAchievements)
+    .set({ seenAt: Date.now() })
+    .where(
+      and(
+        eq(userAchievements.authUserId, authUserId),
+        inArray(userAchievements.code, codes),
+        isNull(userAchievements.seenAt)
+      )
+    );
 }
