@@ -131,7 +131,7 @@ export const subscriptions = sqliteTable(
     index("subscriptions_by_authUserId").on(t.authUserId),
     index("subscriptions_by_authUserId_status").on(t.authUserId, t.status),
     index("subscriptions_by_customerEmail").on(t.customerEmail),
-    index("subscriptions_by_polarOrderId").on(t.polarOrderId),
+    uniqueIndex("subscriptions_by_polarOrderId").on(t.polarOrderId),
     index("subscriptions_by_polarCustomerId").on(t.polarCustomerId),
     index("subscriptions_by_rcAppUserId").on(t.rcAppUserId),
   ]
