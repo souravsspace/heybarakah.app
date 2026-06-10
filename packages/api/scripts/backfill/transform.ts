@@ -100,7 +100,20 @@ export function toInsertSql(
   if (rows.length === 0) {
     return "";
   }
-  const columns = Object.keys(rows[0]);
+  // `toD1Row` omits undefined-valued keys, so rows of the same table can have
+  // different column sets. Build the union of keys in first-seen order across
+  // ALL rows (id stays first) so every row's values align to the same columns;
+  // a missing key resolves to `undefined` → `NULL` via `toSqlLiteral`.
+  const columns: string[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    for (const key of Object.keys(row)) {
+      if (!seen.has(key)) {
+        seen.add(key);
+        columns.push(key);
+      }
+    }
+  }
   const values = rows
     .map((row) => `(${columns.map((c) => toSqlLiteral(row[c])).join(", ")})`)
     .join(",\n");
