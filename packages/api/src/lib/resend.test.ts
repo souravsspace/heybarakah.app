@@ -53,6 +53,20 @@ describe("enqueueEmail", () => {
     const first = await enqueueEmail(db, { ...msg, dedupeKey: "order-1" });
     const second = await enqueueEmail(db, { ...msg, dedupeKey: "order-1" });
     expect(second).toBe(first);
+
+    // The atomic upsert returns the existing id without creating a second row.
+    const rows = await db
+      .select()
+      .from(emailQueue)
+      .where(eq(emailQueue.dedupeKey, "order-1"));
+    expect(rows).toHaveLength(1);
+  });
+
+  it("always inserts keyless (null dedupeKey) emails", async () => {
+    const db = createDatabase(env.DB);
+    const a = await enqueueEmail(db, { ...msg, to: "k1@x.com" });
+    const b = await enqueueEmail(db, { ...msg, to: "k2@x.com" });
+    expect(a).not.toBe(b);
   });
 });
 

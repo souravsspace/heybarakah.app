@@ -1,4 +1,4 @@
-import { and, eq, lte } from "drizzle-orm";
+import { and, eq, lte, sql } from "drizzle-orm";
 import { Resend } from "resend";
 
 import type { Database } from "@/db";
@@ -63,11 +63,13 @@ export async function enqueueEmail(
 ): Promise<string> {
   const now = Date.now();
   const id = crypto.randomUUID();
-  // UNIQUE(dedupeKey) + onConflictDoNothing makes the enqueue atomically
-  // idempotent (no select-then-insert TOCTOU). NULL dedupeKeys are distinct in
-  // SQLite, so keyless emails always insert. `returning` is empty on conflict →
-  // fetch the pre-existing row's id.
-  const inserted = await db
+  // UNIQUE(dedupeKey) + onConflictDoUpdate makes the enqueue atomically
+  // idempotent and returns the surviving row's id in a single statement (no
+  // select-then-insert / insert-then-select TOCTOU). On conflict we keep the
+  // existing row untouched (a no-op `dedupeKey = excluded.dedupeKey`) so the
+  // original id is what comes back. NULL dedupeKeys are distinct in SQLite, so
+  // keyless emails never conflict and always insert.
+  const [inserted] = await db
     .insert(emailQueue)
     .values({
       id,
@@ -82,23 +84,12 @@ export async function enqueueEmail(
       createdAt: now,
       updatedAt: now,
     })
-    .onConflictDoNothing({ target: emailQueue.dedupeKey })
+    .onConflictDoUpdate({
+      target: emailQueue.dedupeKey,
+      set: { dedupeKey: sql`excluded."dedupeKey"` },
+    })
     .returning({ id: emailQueue.id });
-  if (inserted.length > 0) {
-    return inserted[0].id;
-  }
-  // A conflict can only arise from a non-null dedupeKey (NULLs are distinct).
-  const [existing] = await db
-    .select({ id: emailQueue.id })
-    .from(emailQueue)
-    .where(eq(emailQueue.dedupeKey, message.dedupeKey as string))
-    .limit(1);
-  if (!existing) {
-    throw new Error(
-      `enqueueEmail: dedupeKey conflict but row not found: ${message.dedupeKey}`
-    );
-  }
-  return existing.id;
+  return inserted.id;
 }
 
 /**
