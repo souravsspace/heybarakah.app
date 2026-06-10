@@ -46,6 +46,34 @@ describe("subscriptions service — RevenueCat precedence (critical)", () => {
     expect(rows[0].source).toBe("polar");
   });
 
+  it("ignores an EXPIRED active Polar row and lets RC sync proceed", async () => {
+    const db = createDatabase(env.DB);
+    const user = "rc-vs-expired-polar";
+    await db.insert(subscriptions).values({
+      id: crypto.randomUUID(),
+      authUserId: user,
+      productId: "yearly",
+      status: "active",
+      source: "polar",
+      // active status but already past expiry — must not block RC.
+      expiresAt: new Date(Date.now() - 1000).toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    const result = await applyRevenueCatEntitlement(db, user, {
+      entitlementActive: true,
+      productIdentifier: "barakah_monthly",
+      expiresAt: FUTURE,
+    });
+
+    expect(result?.source).toBe("revenuecat");
+    const rows = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.authUserId, user));
+    expect(rows.some((row) => row.source === "revenuecat")).toBe(true);
+  });
+
   it("creates a RevenueCat row when no Polar subscription exists", async () => {
     const db = createDatabase(env.DB);
     const user = "rc-only";
@@ -103,6 +131,34 @@ describe("subscriptions service — claims + reads", () => {
       updatedAt: new Date().toISOString(),
     });
     expect(await getMySubscription(db, { id: user })).toBeNull();
+  });
+
+  it("getMySubscription prefers an active Polar row over an active RC row", async () => {
+    const db = createDatabase(env.DB);
+    const user = "dual-source";
+    // RC row written more recently than the Polar row — updatedAt ordering alone
+    // would surface RC, but Polar must win per the source-precedence invariant.
+    await db.insert(subscriptions).values({
+      id: crypto.randomUUID(),
+      authUserId: user,
+      productId: "lifetime",
+      status: "active",
+      source: "polar",
+      expiresAt: null,
+      updatedAt: new Date(Date.now() - 60_000).toISOString(),
+    });
+    await db.insert(subscriptions).values({
+      id: crypto.randomUUID(),
+      authUserId: user,
+      productId: "monthly",
+      status: "active",
+      source: "revenuecat",
+      expiresAt: FUTURE,
+      updatedAt: new Date().toISOString(),
+    });
+
+    const result = await getMySubscription(db, { id: user });
+    expect(result?.source).toBe("polar");
   });
 
   it("claimPolarByEmail links unowned polar rows to the user", async () => {

@@ -31,7 +31,7 @@ export async function getMySubscription(
   db: Database,
   user: SessionUser
 ): Promise<SubscriptionRow | null> {
-  const [active] = await db
+  const activeRows = await db
     .select()
     .from(subscriptions)
     .where(
@@ -41,7 +41,13 @@ export async function getMySubscription(
       )
     )
     .orderBy(desc(subscriptions.updatedAt))
-    .limit(1);
+    .limit(20);
+  // Source precedence is deterministic: an active Polar row always wins over an
+  // active RevenueCat row (the invariant "RC must NOT overwrite Polar-owned"),
+  // regardless of updatedAt write timing. Falls back to the most-recently
+  // updated active row otherwise.
+  const active =
+    activeRows.find((row) => row.source === "polar") ?? activeRows[0];
   if (active) {
     return isExpired(active.expiresAt) ? null : active;
   }
@@ -202,7 +208,10 @@ export async function applyRevenueCatEntitlement(
     .where(eq(subscriptions.authUserId, authUserId))
     .limit(20);
   const activePolarRow = rows.find(
-    (row) => row.status === "active" && shouldSkipRcSync(row.source)
+    (row) =>
+      row.status === "active" &&
+      !isExpired(row.expiresAt) &&
+      shouldSkipRcSync(row.source)
   );
   if (activePolarRow) {
     return activePolarRow;
