@@ -7,6 +7,7 @@ import {
   user as authUser,
   dhikrDaily,
   prayerLogs,
+  prayerTimeCaches,
   session as sessionTable,
   shieldSelection,
   subscriptions,
@@ -106,6 +107,30 @@ describe("users service — account deletion (P0)", () => {
       code: "first_steps",
       unlockedAt: now,
     });
+    // prayerTimeCaches keys on `userId` (the Better Auth user id == authUserId).
+    await db.insert(prayerTimeCaches).values({
+      id: crypto.randomUUID(),
+      userId: user,
+      cacheKey: "ck-delete-me",
+      userCacheKey: `${user}:ck-delete-me`,
+      latitude: 1,
+      longitude: 1,
+      latitudeRounded: 1,
+      longitudeRounded: 1,
+      timezone: "UTC",
+      method: 2,
+      school: 1,
+      startDate: "2026-06-08",
+      endDate: "2026-06-14",
+      days: 7,
+      source: "adhan-js",
+      primarySource: "adhan-js",
+      timings: [],
+      generatedAt: now,
+      expiresAt: now + 1_000_000,
+      createdAt: now,
+      updatedAt: now,
+    });
 
     await deleteMyAccount(db, env.R2, user, email);
 
@@ -123,6 +148,10 @@ describe("users service — account deletion (P0)", () => {
         .select()
         .from(userAchievements)
         .where(eq(userAchievements.authUserId, user)),
+      db
+        .select()
+        .from(prayerTimeCaches)
+        .where(eq(prayerTimeCaches.userId, user)),
     ]);
     for (const rows of counts) {
       expect(rows).toHaveLength(0);
