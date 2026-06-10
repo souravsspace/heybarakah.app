@@ -37,6 +37,17 @@ describe("createAuth config", () => {
     expect(ids).not.toContain("anonymous");
   });
 
+  it("rate-limits the OTP send endpoint tighter than the global budget", () => {
+    const rules = auth.options.rateLimit?.customRules ?? {};
+    const otpRule = rules["/email-otp/send-verification-otp"];
+    expect(otpRule).toBeDefined();
+    expect(otpRule).toMatchObject({ window: 60, max: 5 });
+    // Stricter than the global per-window max so a victim address can't be flooded.
+    expect((otpRule as { max: number }).max).toBeLessThan(
+      auth.options.rateLimit?.max ?? Number.POSITIVE_INFINITY
+    );
+  });
+
   it("wires social providers and trusted origins from runtime env", () => {
     const runtime = createAuth(runtimeEnv, undefined, "http://localhost:8787");
     expect(runtime.options.socialProviders?.google?.clientId).toBe("g-id");
