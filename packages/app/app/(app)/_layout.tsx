@@ -118,6 +118,14 @@ function AuthedShell() {
           gestureEnabled: false,
         }}
       />
+      <Stack.Screen
+        name="prayer-logged"
+        options={{
+          presentation: "fullScreenModal",
+          animation: "fade",
+          gestureEnabled: false,
+        }}
+      />
     </Stack>
   );
 }
