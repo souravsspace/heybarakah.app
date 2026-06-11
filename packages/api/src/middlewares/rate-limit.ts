@@ -41,8 +41,10 @@ export function rateLimit(
       return c.json({ error: "Too many requests" }, TOO_MANY_REQUESTS);
     }
 
+    // TTL = time left in this window (KV floor 60s) — a flat windowSeconds TTL
+    // kept late-window keys alive up to 2x the window after they became dead.
     await c.env.KV.put(key, String(current + 1), {
-      expirationTtl: windowSeconds,
+      expirationTtl: Math.max(60, windowStart + windowSeconds - now),
     });
 
     return next();
