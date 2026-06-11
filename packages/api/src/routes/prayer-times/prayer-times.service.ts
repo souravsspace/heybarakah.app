@@ -186,18 +186,19 @@ export async function upsertPrayerTimesCache(
   kv: KVNamespace,
   payload: Omit<CacheRow, "id"> & { id?: string }
 ): Promise<PublicPrayerCache> {
-  const existing = await readD1(db, payload.cacheKey);
+  // Atomic upsert keyed on the UNIQUE cacheKey index — the prior
+  // select-then-insert raced under concurrent refreshes for the same location
+  // and accumulated duplicate rows. createdAt is excluded from the conflict
+  // update so the original insert timestamp survives.
   const now = Date.now();
-  if (existing) {
-    await db
-      .update(prayerTimeCaches)
-      .set({ ...payload, createdAt: existing.createdAt, updatedAt: now })
-      .where(eq(prayerTimeCaches.id, existing.id));
-  } else {
-    await db
-      .insert(prayerTimeCaches)
-      .values({ ...payload, id: payload.id ?? crypto.randomUUID() });
-  }
+  const { id: _id, createdAt: _createdAt, ...conflictUpdates } = payload;
+  await db
+    .insert(prayerTimeCaches)
+    .values({ ...payload, id: payload.id ?? crypto.randomUUID() })
+    .onConflictDoUpdate({
+      target: prayerTimeCaches.cacheKey,
+      set: { ...conflictUpdates, updatedAt: now },
+    });
   const fresh = (await readD1(db, payload.cacheKey)) as CacheRow;
   const safe = strip(fresh);
   await writeHot(kv, payload.cacheKey, safe);
