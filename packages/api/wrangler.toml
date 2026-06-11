@@ -38,6 +38,11 @@ bucket_name = "barakah-avatars"
 [env.development]
 name = "barakah-api-dev"
 
+# Named environments do not inherit the top-level [triggers] block — without
+# this, the email-queue sweep and prayer-cache eviction never run in dev.
+[env.development.triggers]
+crons = ["*/5 * * * *"]
+
 [env.development.vars]
 SITE_URL = "https://heybarakah.app"
 NATIVE_APP_URL = "barakah://"
