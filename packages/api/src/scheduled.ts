@@ -1,4 +1,5 @@
 import { createDatabase } from "@/db";
+import { parseEnv } from "@/env";
 import { sweepEmailQueue } from "@/lib/resend";
 import { createLogger } from "@/middlewares/logger";
 import { purgeExpiredPrayerCaches } from "@/routes/prayer-times/prayer-times.service";
@@ -20,6 +21,18 @@ export async function handleScheduled(
 ): Promise<SweepResult> {
   const db = createDatabase(env.DB);
   const log = createLogger(crypto.randomUUID());
+
+  // The request path Zod-validates env on every call; the cron path skipped it,
+  // so a missing secret (e.g. RESEND_API_KEY) only surfaced as per-row send
+  // failures that burned the retry budget. Surface misconfiguration loudly here
+  // instead — but still run both sweeps (the cache purge needs no secrets).
+  try {
+    parseEnv(env);
+  } catch (error) {
+    log.error("scheduled: env validation failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   let emailsProcessed = 0;
   try {
