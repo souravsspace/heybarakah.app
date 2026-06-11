@@ -1,6 +1,6 @@
 import { validateProfileInput } from "@barakah/core/users";
 import type { R2Bucket, R2ObjectBody } from "@cloudflare/workers-types";
-import { eq, or } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type { Database } from "@/db";
 import {
@@ -160,13 +160,16 @@ export async function purgeUserData(
   // account + session, but we also delete them explicitly for completeness.
   await db.batch([
     db.delete(users).where(eq(users.authUserId, authUserId)),
+    // lower() on the email-keyed deletes: rows written before write-time email
+    // normalization can carry mixed-case addresses, and the P0 deletion path
+    // must catch those too.
     db
       .delete(subscriptions)
       .where(
         normalizedEmail
           ? or(
               eq(subscriptions.authUserId, authUserId),
-              eq(subscriptions.customerEmail, normalizedEmail)
+              sql`lower(${subscriptions.customerEmail}) = ${normalizedEmail}`
             )
           : eq(subscriptions.authUserId, authUserId)
       ),
@@ -176,14 +179,18 @@ export async function purgeUserData(
           .where(
             or(
               eq(polarOrders.authUserId, authUserId),
-              eq(polarOrders.customerEmail, normalizedEmail)
+              sql`lower(${polarOrders.customerEmail}) = ${normalizedEmail}`
             )
           )
       : db.delete(polarOrders).where(eq(polarOrders.authUserId, authUserId)),
     // Drop any queued/pending transactional emails so nothing is sent to a
     // deleted user post-deletion (only resolvable by email).
     ...(normalizedEmail
-      ? [db.delete(emailQueue).where(eq(emailQueue.to, normalizedEmail))]
+      ? [
+          db
+            .delete(emailQueue)
+            .where(sql`lower(${emailQueue.to}) = ${normalizedEmail}`),
+        ]
       : []),
     db.delete(prayerLogs).where(eq(prayerLogs.authUserId, authUserId)),
     db
