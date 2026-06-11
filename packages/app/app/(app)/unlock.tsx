@@ -150,18 +150,21 @@ export default function Unlock() {
       return;
     }
     setPrayerBusy(true);
+    const status = classifyNow(activePrayer);
     try {
       await logPrayer({
         date: today,
         prayer: activePrayer,
-        status: classifyNow(activePrayer),
+        status,
         prayedAt: Date.now(),
       });
       await liftShield();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-        () => undefined
-      );
-      close();
+      // Swap the unlock modal for the celebration screen; it names the prayer,
+      // then routes Home where the new log is already reflected live.
+      router.replace({
+        pathname: "/(app)/prayer-logged",
+        params: { prayer: activePrayer, status },
+      } as never);
     } finally {
       setPrayerBusy(false);
     }
