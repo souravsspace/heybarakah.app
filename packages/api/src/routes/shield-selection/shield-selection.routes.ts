@@ -46,7 +46,7 @@ export const upsertIos = createRoute({
     body: jsonContentRequired(
       z.object({
         iosSelectionData: z.string().max(MAX_IOS_SELECTION_BYTES),
-        iosItemCount: z.number().int().min(0),
+        iosItemCount: z.number().int().min(0).max(10_000),
       }),
       "iOS FamilyActivitySelection blob + item count"
     ),
