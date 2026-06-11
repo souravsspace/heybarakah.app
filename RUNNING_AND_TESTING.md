@@ -27,6 +27,7 @@ Paths (relative to the base URL):
 | Health check | `GET /api/v1/health` |
 | OpenAPI JSON | `GET /api/v1/doc` |
 | API docs (Scalar UI) | `GET /api/v1/docs` |
+| Realtime sync (WebSocket) | `GET /api/v1/sync` (upgrade; `wss://` in prod) |
 | Better Auth (all auth flows) | `/api/auth/*` |
 | OAuth callback (Google) | `/api/auth/callback/google` |
 | OAuth callback (Apple) | `/api/auth/callback/apple` |
@@ -35,6 +36,11 @@ Paths (relative to the base URL):
 
 > Note: auth is mounted at `/api/auth/*` (NOT under `/api/v1`). Domain routes and
 > webhooks are under `/api/v1`.
+
+> **Docs gate:** `/api/v1/doc` + `/api/v1/docs` 404 (`{"message":"Not Found"}`)
+> unless `DOCS_ENABLED=true` (or `DEBUG=true`) is set on the env — keeps the API
+> surface unpublished in prod by default. Local: it's in `.dev.vars`; restart
+> `wrangler dev` after adding it. Deployed: `wrangler secret put DOCS_ENABLED`.
 
 ---
 
@@ -107,6 +113,46 @@ So whatever you set `BETTER_AUTH_URL` to (per environment) is the base.
 
 ---
 
+## 4b. Realtime sync (WebSocket + Durable Object)
+
+The app live-updates like Convex did — but over this Hono/Cloudflare backend. A
+mutation on one device pushes an invalidation to the user's **other** devices,
+which refetch (~300ms). No polling.
+
+**How it works:**
+- Per-user Durable Object `SyncHub` (`packages/api/src/sync/sync-hub.ts`) holds
+  each device's WebSocket via the Hibernation API (idle connections cost ~0).
+- After a successful mutation, `sync-notify` middleware derives a topic from the
+  URL path and RPC-broadcasts it into the user's DO, which fans an
+  `{type:"invalidate",topics}` frame out to every connected socket.
+- Client (`packages/app/lib/sync-socket.ts`, started by `hooks/use-realtime-sync.ts`)
+  maps each topic → React Query keys → `invalidateQueries`. Reconnects with
+  exponential backoff, reconnects on app foreground, heartbeats every 25s.
+- Endpoint: `GET /api/v1/sync` (auth-gated upgrade). Native sends the Better Auth
+  `Cookie` header; web rides the credentialed cookie. URL derives from
+  `EXPO_PUBLIC_API_URL` (`https://` → `wss://`).
+
+**Topics → keys:** `prayer-logs` (→ prayer-logs, streak, achievements),
+`achievements`, `locations`, `shield`, `subscription`, `me`. (dhikr is
+client-local — no topic.)
+
+**Deploy note:** `wrangler deploy --env development` applies the `SyncHub` DO
+migration (`new_sqlite_classes`, in `wrangler.toml` under both top-level and
+`[env.development]` — named envs don't inherit DO blocks). No DO = `/sync` 500s.
+
+**Test (needs two clients on the same account):**
+1. Sign in on two devices (or device + simulator).
+2. On device A: log a prayer.
+3. Device B's home/streak updates within ~1s **without any interaction** — no
+   pull-to-refresh. Repeat for achievement unlock, location add/rename, shield
+   toggle, subscription change, profile edit.
+4. Background device B, mutate on A, foreground B → it reconnects and shows fresh
+   data.
+5. Watch it: `wrangler tail --env development` shows a `GET /api/v1/sync` 101 when
+   a device connects.
+
+---
+
 ## 5. Run & test the API
 
 All commands from `packages/api` (or use the root passthrough `bun run *:api`).
@@ -127,7 +173,7 @@ open  http://localhost:8787/api/v1/docs            # Scalar API explorer
 
 # Run the test suite (vitest + @cloudflare/vitest-pool-workers, real D1/KV/R2
 # via miniflare). Migrations auto-load from src/db/migrations — no .sql imports.
-bun run test                  # 172 tests / 40 files
+bun run test                  # 199 tests / 42 files
 
 # Typecheck everything (repo root)
 bun turbo typecheck
@@ -215,6 +261,41 @@ without `--env development`. CI deploy: `.github/workflows/deploy-api.yml`.
 
 ---
 
+## 8b. Cloudflare dev — update loop (run after each change)
+
+The app points at the deployed dev worker (`EXPO_PUBLIC_API_URL=
+https://barakah-api-dev.workers.dev`), so API changes are NOT live until you
+redeploy. Match the command to what you changed:
+
+| You changed | Run (from `packages/api`) |
+|---|---|
+| API code (routes/handlers/middleware/`src/sync/*`) | `wrangler deploy --env development` |
+| DB schema (`src/db/schema.ts`) | `bun run db:generate` → `bun run db:migrate:dev` → `wrangler deploy --env development` |
+| `wrangler.toml` bindings/DO/migrations | `wrangler deploy --env development` (applies new DO/migration) |
+| A secret value (`.dev.vars`) | `wrangler secret put <NAME> --env development` (no redeploy needed) |
+| Non-secret var (`[env.development.vars]`) | `wrangler deploy --env development` |
+| App JS/TS only | nothing on CF — reload Metro (`r`) |
+| App `.env` (`EXPO_PUBLIC_*`) | restart Metro (env inlined at bundle time) |
+
+Always-true checks after a deploy:
+
+```bash
+cd packages/api
+wrangler deploy --env development        # prints the live workers.dev URL
+curl https://barakah-api-dev.workers.dev/api/v1/health     # smoke test
+wrangler tail --env development          # live logs (watch /sync 101, errors)
+```
+
+> If `wrangler deploy` prints a URL different from `BETTER_AUTH_URL`, update all
+> three (`wrangler.toml` `[env.development.vars] BETTER_AUTH_URL`, app
+> `EXPO_PUBLIC_API_URL`, marketing `PUBLIC_API_URL`) **and** the Google/Apple
+> redirect URIs + Polar/Resend webhook URLs to the new base — they must match.
+
+> First-time only: push every secret (§8), run `db:migrate:dev`, register OAuth
+> redirect URIs + webhooks. After that this loop is just `deploy` per change.
+
+---
+
 ## 9. End-to-end test flows
 
 1. **Email sign-in:** app → enter email → `send-verification-otp` → Resend
@@ -226,6 +307,8 @@ without `--env development`. CI deploy: `.github/workflows/deploy-api.yml`.
    clears (RevenueCat SDK also reflects entitlement instantly).
 4. **RevenueCat (in-app):** purchase in app → `POST /api/v1/subscription/revenuecat`
    verifies server-side and reconciles the D1 row (never overwrites a Polar one).
+5. **Realtime sync:** two devices, same account → mutate on A → B updates within
+   ~1s with no interaction (see §4b).
 
 ---
 
@@ -237,4 +320,6 @@ without `--env development`. CI deploy: `.github/workflows/deploy-api.yml`.
 - [ ] Google/Apple redirect URIs registered for the chosen `BETTER_AUTH_URL`
 - [ ] Polar webhook → `/api/v1/webhooks/polar`, Resend webhook → `/api/v1/webhooks/resend`
 - [ ] Remote D1 migrated (`db:migrate:dev` / `:prod`) before first real traffic
+- [ ] `SyncHub` DO migration applied (`wrangler deploy --env development`) for realtime
+- [ ] `DOCS_ENABLED` set only where you want the API explorer exposed
 - [ ] `ALLOW_MOCK_SUBSCRIPTIONS` unset in production
