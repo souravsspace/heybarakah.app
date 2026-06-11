@@ -6,7 +6,12 @@ import {
 } from "@better-auth/expo/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import {
+  DefaultTheme,
+  type ErrorBoundaryProps,
+  Stack,
+  ThemeProvider,
+} from "expo-router";
 import { hideAsync, preventAutoHideAsync } from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
@@ -14,6 +19,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { AchievementPopupProvider } from "@/components/achievement-popup-provider";
+import { ErrorScreen } from "@/components/error-screen";
 import { ForceUpdateGate } from "@/components/force-update-gate";
 import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { ThemeProvider as BarakahThemeProvider } from "@/contexts/theme-context";
@@ -33,6 +39,13 @@ preventAutoHideAsync().catch(() => undefined);
 export const unstable_settings = {
   anchor: "index",
 };
+
+// Top-level catch-all: any render error in the app tree lands here instead of a
+// native red box / crash. ErrorScreen is provider-free so it renders even when
+// the failure is a provider itself.
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return <ErrorScreen error={error} retry={retry} />;
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
