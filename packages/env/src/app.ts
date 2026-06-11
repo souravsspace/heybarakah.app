@@ -11,10 +11,10 @@ export const env = createEnv({
   // active — a server-only secret added here would now fail validation.
   server: {},
   client: {
-    EXPO_PUBLIC_CONVEX_URL: z.url(),
-    EXPO_PUBLIC_CONVEX_SITE_URL: z.url(),
     EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: z.string().optional(),
     EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: z.string().optional(),
+    // Cloudflare Hono API base. Required — the app talks only to this backend.
+    EXPO_PUBLIC_API_URL: z.url(),
   },
 
   /**
@@ -22,12 +22,11 @@ export const env = createEnv({
    * `process.env` or `import.meta.env`.
    */
   runtimeEnv: {
-    EXPO_PUBLIC_CONVEX_URL: process.env.EXPO_PUBLIC_CONVEX_URL,
-    EXPO_PUBLIC_CONVEX_SITE_URL: process.env.EXPO_PUBLIC_CONVEX_SITE_URL,
     EXPO_PUBLIC_REVENUECAT_IOS_API_KEY:
       process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
     EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY:
       process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY,
+    EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
   },
 
   /**

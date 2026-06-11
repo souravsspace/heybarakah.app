@@ -1,10 +1,17 @@
 import "../global.css";
 
-import { env } from "@barakah/env/app";
-import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
-import { ConvexReactClient } from "convex/react";
+import {
+  setupExpoFocusManager,
+  setupExpoOnlineManager,
+} from "@better-auth/expo/client";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import {
+  DefaultTheme,
+  type ErrorBoundaryProps,
+  Stack,
+  ThemeProvider,
+} from "expo-router";
 import { hideAsync, preventAutoHideAsync } from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
@@ -12,25 +19,42 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { AchievementPopupProvider } from "@/components/achievement-popup-provider";
+import { ErrorScreen } from "@/components/error-screen";
 import { ForceUpdateGate } from "@/components/force-update-gate";
 import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { ThemeProvider as BarakahThemeProvider } from "@/contexts/theme-context";
 import { UserProvider } from "@/contexts/user-context";
 import { OnboardingProvider } from "@/hooks/use-onboarding-state";
 import { useOtaUpdates } from "@/hooks/use-ota-updates";
-import { authClient } from "@/lib/auth-client";
+import { useRealtimeSync } from "@/hooks/use-realtime-sync";
+import { queryClient } from "@/lib/query-client";
 import { SubscriptionProvider } from "@/lib/subscription";
 import { registerWidgets } from "@/lib/widgets-native";
 
-const convex = new ConvexReactClient(env.EXPO_PUBLIC_CONVEX_URL, {
-  unsavedChangesWarning: false,
-});
+// Drive React Query refetch-on-focus + online state from Expo (§8 policy).
+setupExpoFocusManager();
+setupExpoOnlineManager();
 
 preventAutoHideAsync().catch(() => undefined);
 
 export const unstable_settings = {
   anchor: "index",
 };
+
+// Lives inside UserProvider + QueryClientProvider so it can read the signed-in
+// user and the shared query cache. Opens the realtime sync socket; renders
+// nothing.
+function RealtimeSync() {
+  useRealtimeSync();
+  return null;
+}
+
+// Top-level catch-all: any render error in the app tree lands here instead of a
+// native red box / crash. ErrorScreen is provider-free so it renders even when
+// the failure is a provider itself.
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return <ErrorScreen error={error} retry={retry} />;
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -61,8 +85,9 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ConvexBetterAuthProvider authClient={authClient} client={convex}>
+      <QueryClientProvider client={queryClient}>
         <UserProvider>
+          <RealtimeSync />
           <ThemeProvider value={DefaultTheme}>
             <SubscriptionProvider>
               <OnboardingProvider>
@@ -108,7 +133,7 @@ export default function RootLayout() {
             </SubscriptionProvider>
           </ThemeProvider>
         </UserProvider>
-      </ConvexBetterAuthProvider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }

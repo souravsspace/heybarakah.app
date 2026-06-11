@@ -1,14 +1,15 @@
-import { api } from "@barakah/core/convex/_generated/api";
 import type { PrayerWindow } from "@barakah/core/shieldSelection";
-import { useQuery } from "convex/react";
+import { useQuery as useRqQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
+import { api } from "@/lib/api-client";
 import {
   clearAllBlocks,
   clearScheduledWindows,
   getBlockConfiguration,
   isTemporarilyUnlocked,
   type PrayerBlockWindow,
+  relockApps,
   scheduleBlockWindows,
   setBlockedApps,
   startMonitoring,
@@ -98,12 +99,33 @@ function computeWindows(windows: PrayerWindow[], timings: Timings) {
   return out.sort((a, b) => a.start - b.start);
 }
 
-type ShieldSelection = ReturnType<
-  typeof useQuery<typeof api.lib.shieldSelection.getMine>
->;
+interface ShieldRow {
+  androidPackageNames: string[] | null;
+  enabled: boolean;
+  iosItemCount: number | null;
+  iosSelectionData: string | null;
+  windows: PrayerWindow[];
+}
+
+// `undefined` = loading, `null` = no selection (the contract this hook relies on).
+type ShieldSelection = ShieldRow | null | undefined;
+
+function useShieldSelection(): ShieldSelection {
+  const query = useRqQuery({
+    queryKey: ["cf", "shield"],
+    queryFn: async (): Promise<ShieldRow | null> => {
+      const res = await api.api.v1.shield.$get();
+      if (!res.ok) {
+        throw new Error("Failed to load shield selection");
+      }
+      return (await res.json()) as ShieldRow | null;
+    },
+  });
+  return query.isPending ? undefined : (query.data ?? null);
+}
 
 export function usePrayerShield() {
-  const liveSelection = useQuery(api.lib.shieldSelection.getMine);
+  const liveSelection = useShieldSelection();
   const [cachedSelection, setCachedSelection] =
     useState<NonNullable<ShieldSelection> | null>(null);
   const [cacheLoaded, setCacheLoaded] = useState(false);
@@ -246,6 +268,17 @@ export function usePrayerShield() {
       !isTemporarilyUnlocked()
     ) {
       temporaryUnlock(Math.max(1, inside.end - nowMin)).catch(() => null);
+    }
+
+    // iOS foreground backstop: directly engage the stored shield when we're
+    // inside an unlogged window. The DeviceActivity extension covers the
+    // app-closed case, but registering a schedule while already inside an
+    // interval doesn't reliably fire `intervalDidStart`, which left blocked apps
+    // open at salah while Barakah was foreground (the LA showed, the shield
+    // didn't). relockApps re-applies the persisted token set; it's idempotent so
+    // the 30s tick can re-assert it harmlessly.
+    if (Platform.OS === "ios" && effective && !isTemporarilyUnlocked()) {
+      relockApps().catch(() => null);
     }
 
     // Android has no equivalent OS scheduler, so keep driving its foreground

@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
 
-import { joinWaitlist } from "@/lib/convex";
+import { joinWaitlist } from "@/lib/waitlist";
 
 type Status = "idle" | "submitting" | "success" | "error";
 

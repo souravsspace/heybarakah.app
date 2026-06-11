@@ -20,6 +20,7 @@ const GROUPS = [
   "group.com.souravsspace.Barakah.shield",
   "group.com.souravsspace.Barakah.expowidgets",
 ];
+const DICT_RE = /<dict>/;
 
 /** Inject the union of GROUPS into one entitlements plist on disk. */
 function patchEntitlementsFile(filePath) {
@@ -42,12 +43,12 @@ function patchEntitlementsFile(filePath) {
   );
   xml = arrayRe.test(xml)
     ? xml.replace(arrayRe, block)
-    : xml.replace(/<dict>/, `<dict>\n  ${block}`);
+    : xml.replace(DICT_RE, `<dict>\n  ${block}`);
   fs.writeFileSync(filePath, xml);
 }
 
-module.exports = function withAppGroups(config) {
-  config = withEntitlementsPlist(config, (cfg) => {
+module.exports = function withAppGroups(inputConfig) {
+  const config = withEntitlementsPlist(inputConfig, (cfg) => {
     const current = Array.isArray(cfg.modResults[KEY])
       ? cfg.modResults[KEY]
       : [];
@@ -65,11 +66,13 @@ module.exports = function withAppGroups(config) {
       patchEntitlementsFile(
         path.join(iosRoot, "Barakah", "Barakah.entitlements")
       );
+      // Official expo-widgets generates the extension as "ExpoWidgetsTarget"
+      // (was "BarakahWidgetExtension" under the old @bittingz widgets).
       patchEntitlementsFile(
         path.join(
           iosRoot,
-          "BarakahWidgetExtension",
-          "BarakahWidgetExtension.entitlements"
+          "ExpoWidgetsTarget",
+          "ExpoWidgetsTarget.entitlements"
         )
       );
       return cfg;

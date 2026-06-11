@@ -1,14 +1,38 @@
-import { api } from "@barakah/core/convex/_generated/api";
-import { useQuery } from "convex/react";
+import { useQuery as useRqQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 import { useDhikr } from "@/contexts/dhikr-context";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import { api } from "@/lib/api-client";
 import { pickDailyAyah } from "@/lib/daily-ayah";
 import { dateKey } from "@/lib/date-utils";
 import { buildWidgetSnapshot } from "@/lib/widget-snapshot";
 import { setSnapshot } from "@/lib/widgets-native";
 
 const DEBOUNCE_MS = 800;
+
+interface Streak {
+  asOf: string;
+  best: number;
+  days: number;
+  history: number[];
+  todayDone: number;
+}
+
+function useStreak(today: string): Streak | undefined {
+  const query = useRqQuery({
+    queryKey: ["cf", "streak", today],
+    queryFn: async (): Promise<Streak> => {
+      const res = await api.api.v1["prayer-logs"].streak.$get({
+        query: { today },
+      });
+      if (!res.ok) {
+        throw new Error("Failed to load streak");
+      }
+      return await res.json();
+    },
+  });
+  return query.data;
+}
 
 function tomorrowKey(): string {
   const d = new Date();
@@ -21,7 +45,7 @@ export function useWidgetSync(): void {
   const today = dateKey();
   const tomorrow = tomorrowKey();
 
-  const streak = useQuery(api.lib.prayerLogs.getStreak, { today });
+  const streak = useStreak(today);
   // Dhikr mirrors the on-screen tasbih (DhikrProvider, AsyncStorage-backed) so
   // the widget always matches `(tabs)/dhikr.tsx`. The Convex `dhikr.getToday`
   // store is written only by the (currently inert) widget-tap path, so reading
@@ -68,14 +92,6 @@ export function useWidgetSync(): void {
     lastJson.current = json;
 
     const id = setTimeout(() => {
-      if (__DEV__) {
-        // TEMP probe: prove what streak/dhikr values actually reach the widget.
-        // Real non-zero here but a zeroed widget ⇒ stale App-Group read; zeros
-        // here ⇒ query/status semantics. Remove once widget data is verified.
-        console.log(
-          `[widgets] push streak days=${snapshot.streak.days} best=${snapshot.streak.best} todayDone=${snapshot.streak.todayDone} hist=${snapshot.streak.history.length} | dhikr count=${snapshot.dhikr.count} target=${snapshot.dhikr.target} session=${snapshot.dhikr.sessionTotal}`
-        );
-      }
       setSnapshot(snapshot).catch(() => {
         // Widget bridge is iOS-only and may no-op on other platforms. Clear the
         // dedupe marker so a transient failure doesn't permanently suppress the

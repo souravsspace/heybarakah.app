@@ -1,4 +1,3 @@
-import type { Id } from "@barakah/core/convex/_generated/dataModel";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -20,6 +19,9 @@ import {
   requestLocationPermission,
   reverseGeocodeLocation,
 } from "@/hooks/use-permissions";
+
+/** Opaque location id (formerly a Convex `Id<"userLocations">`). */
+type Id<_T extends string> = string;
 
 export default function Locations() {
   const router = useRouter();

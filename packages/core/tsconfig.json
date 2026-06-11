@@ -2,6 +2,7 @@
   "extends": "@barakah/tsconfig/base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
+    "types": ["bun"],
     "paths": {
       "@barakah/mails/*": ["../mails/emails/*"]
     }

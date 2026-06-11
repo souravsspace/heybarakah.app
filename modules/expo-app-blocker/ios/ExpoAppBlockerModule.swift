@@ -662,11 +662,17 @@ public class ExpoAppBlockerModule: Module {
       }
     }
 
-    // Starting monitoring inside an active interval fires intervalDidStart
-    // immediately, applying the shield. Outside every window, clear any stale
-    // shield from a previous immediate-apply (the token config stays persisted
-    // so the next window can re-apply it).
-    if !insideAnyWindow {
+    // Apple claims starting monitoring inside an active interval fires
+    // intervalDidStart immediately, but in practice it's unreliable, which left
+    // blocked apps open at salah. So when we register while already inside a
+    // window, apply the persisted shield here directly instead of waiting on the
+    // extension. Outside every window, clear any stale shield (the token config
+    // stays persisted so the next window can re-apply it).
+    if insideAnyWindow, let config = currentBlockConfig, config.isActive {
+      DispatchQueue.main.async {
+        try? self.applyBlocks(config)
+      }
+    } else if !insideAnyWindow {
       DispatchQueue.main.async {
         self.store.shield.applications = nil
         self.store.shield.applicationCategories = nil

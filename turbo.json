@@ -3,6 +3,7 @@
   "globalDependencies": [".env.local"],
   "tasks": {
     "typecheck": { "dependsOn": ["^build"] },
+    "test": { "dependsOn": ["^build"], "outputs": [] },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"],
@@ -12,7 +13,7 @@
         "RESEND_FROM",
         "RESEND_REPLY_TO",
         "POLAR_WEBHOOK_SECRET",
-        "PUBLIC_CONVEX_URL"
+        "PUBLIC_API_URL"
       ]
     },
     "dev": { "cache": false, "persistent": true }

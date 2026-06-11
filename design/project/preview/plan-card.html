@@ -1,0 +1,51 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Plan card — paywall" subtitle="Yearly selected + monthly" viewport="700x280" -->
+<html><head><meta charset="utf-8"><title>Plan card</title>
+<style>
+@font-face { font-family: "Inter"; src: url("../fonts/Inter-VariableFont_opsz_wght.ttf") format("truetype"); font-weight: 100 900; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #fff; font-family: "Inter", sans-serif; color: #000; }
+body { padding: 32px 36px; display: flex; flex-direction: column; gap: 26px; }
+
+.plan { position: relative; padding: 22px 22px; border-radius: 16px; border: 2.5px solid #E5E7EB; background: #F4F2EE; display:flex; align-items:center; justify-content: space-between; }
+.plan.selected { border-color: #29603E; background: #fff; }
+.plan .badge {
+  position: absolute; top: -11px; left: 16px;
+  background: #29603E; color: #fff; padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+}
+.plan .check {
+  position: absolute; top: -8px; right: 14px;
+  width: 22px; height: 22px; border-radius: 9999px;
+  background: #29603E; color: #F4EDDF;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.plan .left .name-row { display: flex; align-items: baseline; gap: 10px; }
+.plan .left .name { font-size: 18px; font-weight: 700; color: #000; }
+.plan .left .strike { font-size: 15px; font-weight: 500; color: #6B7280; text-decoration: line-through; }
+.plan .left .sub { font-size: 14px; font-weight: 500; color: #6B7280; margin-top: 6px; }
+.plan .right { font-size: 17px; font-weight: 700; color: #000; }
+</style></head><body>
+
+<div class="plan selected">
+  <span class="badge">7 DAY FREE TRIAL</span>
+  <span class="check">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg>
+  </span>
+  <div class="left">
+    <div class="name-row"><span class="name">Yearly</span><span class="strike">$239.88</span></div>
+    <div class="sub">12 mo · $39.99</div>
+  </div>
+  <div class="right">≈ $3.33 / mo</div>
+</div>
+
+<div class="plan">
+  <div class="left">
+    <div class="name-row"><span class="name">Monthly</span><span class="strike">$19.99</span></div>
+    <div class="sub">1 mo · $7.99</div>
+  </div>
+  <div class="right">$7.99 / mo</div>
+</div>
+
+</body></html>

@@ -1,0 +1,84 @@
+name = "barakah-api"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+# Cron — every 5 min: sweep the durable email queue (delivery + retry) and evict
+# expired prayer-time cache rows. Entry point: scheduled() in src/index.ts.
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Non-secret config. Secrets (Appendix B) go via `wrangler secret` / `.dev.vars`.
+[vars]
+SITE_URL = "https://heybarakah.app"
+NATIVE_APP_URL = "barakah://"
+BETTER_AUTH_URL = "https://api.heybarakah.app"
+
+# D1 — create with: wrangler d1 create barakah-db
+[[d1_databases]]
+binding = "DB"
+database_name = "barakah-db"
+database_id = "<d1-database-id>"
+migrations_dir = "src/db/migrations"
+
+# KV — create with: wrangler kv namespace create KV
+[[kv_namespaces]]
+binding = "KV"
+id = "<kv-namespace-id>"
+
+# R2 — create with: wrangler r2 bucket create barakah-avatars
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "barakah-avatars"
+
+# Durable Object — per-user realtime hub (WebSocket hibernation). One instance
+# per Better Auth user id; holds device sockets and broadcasts mutation
+# invalidations. No storage used, but a SQLite-backed class is the modern
+# default and is required on the Workers free plan.
+[[durable_objects.bindings]]
+name = "SYNC"
+class_name = "SyncHub"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SyncHub"]
+
+# Staging / parallel-verification environment (see §9).
+[env.development]
+name = "barakah-api-dev"
+
+# Named environments do not inherit the top-level DO binding/migration blocks.
+[[env.development.durable_objects.bindings]]
+name = "SYNC"
+class_name = "SyncHub"
+
+[[env.development.migrations]]
+tag = "v1"
+new_sqlite_classes = ["SyncHub"]
+
+# Named environments do not inherit the top-level [triggers] block — without
+# this, the email-queue sweep and prayer-cache eviction never run in dev.
+[env.development.triggers]
+crons = ["*/5 * * * *"]
+
+[env.development.vars]
+SITE_URL = "https://heybarakah.app"
+NATIVE_APP_URL = "barakah://"
+BETTER_AUTH_URL = "https://barakah-api-dev.souravsspace.workers.dev"
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "barakah-db-dev"
+database_id = "c7a44a07-17d3-4f3d-8a23-65aca16940e7"
+migrations_dir = "src/db/migrations"
+
+[[env.development.kv_namespaces]]
+binding = "KV"
+id = "a6ccf241f1954ba5a7f53b52217c34f4"
+
+[[env.development.r2_buckets]]
+binding = "R2"
+bucket_name = "barakah-avatars-dev"

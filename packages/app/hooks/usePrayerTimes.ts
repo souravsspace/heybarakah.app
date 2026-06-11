@@ -1,4 +1,3 @@
-import { api } from "@barakah/core/convex/_generated/api";
 import {
   calculateAdhanJsPrayerDays,
   createPrayerTimesCacheKey,
@@ -7,8 +6,9 @@ import {
   type PrayerDay,
   type PrayerTimesSource,
 } from "@barakah/core/prayer";
-import { useAction, useQuery } from "convex/react";
+import { useQuery as useRqQuery } from "@tanstack/react-query";
 import { useNetworkState } from "expo-network";
+import type { InferRequestType } from "hono/client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
 import {
@@ -25,6 +25,7 @@ import {
   requestLocationPermission,
   reverseGeocodeLocation,
 } from "@/hooks/use-permissions";
+import { api } from "@/lib/api-client";
 import { dateKey } from "@/lib/date-utils";
 
 type CalcMethod =
@@ -128,6 +129,85 @@ function mergeDaysPreferStored(
   });
 }
 
+interface CachedPrayerTimes {
+  cacheKey: string;
+  generatedAt: number;
+  source: PrayerTimesSource;
+  timings: PrayerDay[];
+}
+type RefreshResult = { source: PrayerTimesSource; timings: PrayerDay[] } | null;
+
+interface PrayerTimesRequest {
+  city?: string;
+  countryCode?: string;
+  days: number;
+  latitude: number;
+  longitude: number;
+  method: number;
+  school: number;
+  startDate: string;
+  timezone: string;
+}
+
+type PrayerTimesQuery = InferRequestType<
+  (typeof api.api.v1)["prayer-times"]["$get"]
+>["query"];
+
+// hc query params must be strings; numeric fields are coerced server-side.
+function toPrayerTimesQuery(args: PrayerTimesRequest): PrayerTimesQuery {
+  const query: Record<string, string> = {
+    latitude: String(args.latitude),
+    longitude: String(args.longitude),
+    timezone: args.timezone,
+    method: String(args.method),
+    school: String(args.school),
+    startDate: args.startDate,
+    days: String(args.days),
+  };
+  if (args.countryCode) {
+    query.countryCode = args.countryCode;
+  }
+  if (args.city) {
+    query.city = args.city;
+  }
+  return query as PrayerTimesQuery;
+}
+
+function useCachedPrayerTimes(
+  args: PrayerTimesRequest | null
+): CachedPrayerTimes | undefined {
+  const query = useRqQuery({
+    queryKey: [
+      "cf",
+      "prayer-times",
+      args ? createPrayerTimesCacheKey(args) : "none",
+    ],
+    enabled: Boolean(args),
+    queryFn: async (): Promise<CachedPrayerTimes | null> => {
+      const res = await api.api.v1["prayer-times"].$get({
+        query: toPrayerTimesQuery(args as PrayerTimesRequest),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to load prayer times");
+      }
+      return (await res.json()) as unknown as CachedPrayerTimes | null;
+    },
+  });
+  return query.data ?? undefined;
+}
+
+type RefreshFn = (args: PrayerTimesRequest) => Promise<RefreshResult>;
+
+function useRefreshPrayerTimes(): RefreshFn {
+  return useCallback(async (args: PrayerTimesRequest) => {
+    const res = await api.api.v1["prayer-times"].refresh.$post({ json: args });
+    if (!res.ok) {
+      throw new Error("Failed to refresh prayer times");
+    }
+    return (await res.json()) as unknown as RefreshResult;
+  }, []);
+}
+
 export function usePrayerTimes() {
   const { state } = useOnboardingState();
   const [today, setToday] = useState(dateKey);
@@ -226,11 +306,8 @@ export function usePrayerTimes() {
     [requestArgs]
   );
 
-  const cached = useQuery(
-    api.lib.prayerTimes.getCachedPrayerTimes,
-    requestArgs ?? "skip"
-  );
-  const refreshAction = useAction(api.lib.prayerTimes.refreshPrayerTimes);
+  const cached = useCachedPrayerTimes(requestArgs);
+  const refreshAction = useRefreshPrayerTimes();
 
   useEffect(() => {
     if (activeLocation) {

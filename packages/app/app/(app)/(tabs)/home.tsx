@@ -1,11 +1,10 @@
-import { api } from "@barakah/core/convex/_generated/api";
 import {
   classifyPrayerStatus,
   type LoggablePrayerName,
   type PrayerStatus,
 } from "@barakah/core/prayer";
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation } from "convex/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -24,6 +23,7 @@ import { useUser } from "@/contexts/user-context";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { useLogPrayer, useWeekLogs } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import { api } from "@/lib/api-client";
 import {
   activePrayerNow,
   dateKey,
@@ -148,7 +148,7 @@ function useCountdown(target: Date | null) {
 export default function Home() {
   const { state, dispatch } = useOnboardingState();
   const { user, profile } = useUser();
-  const upsertProfile = useMutation(api.lib.users.upsertProfile);
+  const queryClient = useQueryClient();
   const uploadedRef = useRef(false);
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -168,21 +168,30 @@ export default function Home() {
     }
     if (profile === null && state.completedAt) {
       uploadedRef.current = true;
-      upsertProfile({
-        name: state.name,
-        gender: state.gender,
-        madhab: state.madhab,
-        consistency: state.consistency,
-        struggle: state.struggle,
-        goal: state.goal,
-        calcMethod: state.calcMethod,
-        strictness: state.strictness,
-        locationGranted: state.locationGranted,
-        notifGranted: state.notifGranted,
-        prayersToLock: state.prayersToLock,
-        completedAt: state.completedAt,
-      })
-        .then(() => dispatch({ type: "RESET" }))
+      api.api.v1.me.profile
+        .$post({
+          json: {
+            name: state.name,
+            gender: state.gender,
+            madhab: state.madhab,
+            consistency: state.consistency,
+            struggle: state.struggle,
+            goal: state.goal,
+            calcMethod: state.calcMethod,
+            strictness: state.strictness,
+            locationGranted: state.locationGranted,
+            notifGranted: state.notifGranted,
+            prayersToLock: state.prayersToLock,
+            completedAt: state.completedAt,
+          },
+        })
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error("Failed to save profile");
+          }
+          await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
+          dispatch({ type: "RESET" });
+        })
         .catch(() => {
           uploadedRef.current = false;
         });
@@ -192,7 +201,7 @@ export default function Home() {
       uploadedRef.current = true;
       dispatch({ type: "RESET" });
     }
-  }, [profile, state, dispatch, upsertProfile]);
+  }, [profile, state, dispatch, queryClient]);
 
   const name =
     profile?.name?.trim() ||

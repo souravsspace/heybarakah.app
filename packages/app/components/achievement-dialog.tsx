@@ -34,7 +34,10 @@ interface DialogProps {
   icon: AchievementIcon;
   mode: AchievementDialogMode;
   onClose: () => void;
+  onNext?: () => void;
   onViewAll?: () => void;
+  pageCount?: number;
+  pageIndex?: number;
   progress?: { current: number; target: number; unit: string };
   quote?: AchievementQuote;
   tier: AchievementTier;
@@ -144,7 +147,10 @@ export function AchievementDialog({
   icon,
   mode,
   onClose,
+  onNext,
   onViewAll,
+  pageCount = 1,
+  pageIndex = 0,
   progress,
   quote,
   tier,
@@ -183,15 +189,29 @@ export function AchievementDialog({
     return `LOCKED · ${CATEGORY_LABEL[category].toUpperCase()}`;
   })();
 
+  // Multiple achievements from one action share a single dialog session: the
+  // primary CTA advances through them, then closes (marking all seen) on the
+  // last page.
+  const isPager = mode === "reveal" && pageCount > 1;
+  const onLastPage = pageIndex >= pageCount - 1;
+
   const ctaLabel = (() => {
     if (mode === "reveal") {
-      return "ALHAMDULILLAH";
+      return isPager && !onLastPage ? "NEXT" : "ALHAMDULILLAH";
     }
     if (mode === "locked") {
       return "KEEP GOING";
     }
     return "CLOSE";
   })();
+
+  const onPrimary = () => {
+    if (isPager && !onLastPage) {
+      onNext?.();
+      return;
+    }
+    handleClose();
+  };
 
   const translateY = useSharedValue(Dimensions.get("window").height);
   const dragY = useSharedValue(0);
@@ -369,7 +389,11 @@ export function AchievementDialog({
                 />
               )}
 
-              <View style={{ alignItems: "center", gap: 14 }}>
+              <Animated.View
+                entering={FadeIn.duration(220)}
+                key={`${pageIndex}-${title}`}
+                style={{ alignItems: "center", gap: 14 }}
+              >
                 <View
                   style={{
                     width: 80,
@@ -406,7 +430,30 @@ export function AchievementDialog({
                 >
                   {description}
                 </Text>
-              </View>
+              </Animated.View>
+
+              {isPager ? (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignSelf: "center",
+                    gap: 6,
+                  }}
+                >
+                  {Array.from({ length: pageCount }).map((_, i) => (
+                    <View
+                      key={i}
+                      style={{
+                        width: i === pageIndex ? 18 : 6,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor:
+                          i === pageIndex ? colors.primary : colors.divider,
+                      }}
+                    />
+                  ))}
+                </View>
+              ) : null}
 
               {mode === "locked" && progress ? (
                 <View style={{ gap: 8, paddingHorizontal: 8 }}>
@@ -525,7 +572,7 @@ export function AchievementDialog({
                 <Pressable
                   accessibilityLabel={ctaLabel}
                   accessibilityRole="button"
-                  onPress={handleClose}
+                  onPress={onPrimary}
                   style={({ pressed }) => ({
                     paddingVertical: 14,
                     borderRadius: 999,

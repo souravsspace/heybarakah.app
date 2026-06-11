@@ -51,3 +51,9 @@ tmp
 
 # claude runtime
 .claude/scheduled_tasks.lock
+
+# Cloudflare Worker local secrets (per-package .gitignore also covers these)
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.wrangler/

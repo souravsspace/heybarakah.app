@@ -1,4 +1,3 @@
-export { api, internal } from "./convex/_generated/api";
 export * from "./src/achievements";
 export * from "./src/auth";
 export * from "./src/marketing";

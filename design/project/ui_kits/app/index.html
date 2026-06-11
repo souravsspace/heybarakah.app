@@ -1,0 +1,113 @@
+<!doctype html>
+<!-- @dsCard group="UI Kit — App" name="App UI Kit" subtitle="Pixel recreation of the heybarakah.app Expo flow — onboarding, tabs, surfaces" viewport="2200x1400" -->
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Barakah — App UI Kit</title>
+<style>
+  @font-face { font-family: "Inter"; src: url("../../fonts/Inter-VariableFont_opsz_wght.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+  @font-face { font-family: "Libre Baskerville"; src: url("../../fonts/LibreBaskerville-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #ECE9E3; font-family: "Inter", sans-serif; min-height: 100vh; }
+  .doc { padding: 44px 28px 120px; max-width: 2080px; margin: 0 auto; }
+  .doc-head { text-align: center; margin-bottom: 8px; }
+  .doc-head h1 { font: 700 30px/1.15 "Libre Baskerville", Georgia, serif; color: #14241B; margin: 0; letter-spacing: -0.01em; }
+  .doc-head p { font-size: 13px; color: #6B7280; margin: 10px auto 0; max-width: 560px; line-height: 1.5; }
+  .group { margin-top: 56px; }
+  .group-head { display: flex; align-items: center; gap: 16px; margin: 0 auto 30px; max-width: 1900px; }
+  .group-head h2 { font: 700 11px/1 "Inter"; letter-spacing: 0.26em; text-transform: uppercase; color: #51604F; margin: 0; white-space: nowrap; }
+  .group-head .sub { font: 500 11px/1 "Inter"; color: #9A9A92; letter-spacing: 0.02em; }
+  .group-head .rule { flex: 1; height: 1px; background: #D6D2CA; }
+  .stage { display: flex; gap: 40px 36px; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+  .frame-col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .frame-label { font: 700 10.5px/1 "Inter"; letter-spacing: 0.18em; text-transform: uppercase; color: #6B7280; }
+  .toggle {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    background: #0F1311; border-radius: 9999px; display: flex; padding: 5px; gap: 3px;
+    box-shadow: 0 14px 36px rgba(11,23,16,0.26); z-index: 9999;
+  }
+  .toggle button {
+    background: transparent; border: 0; color: rgba(255,255,255,0.6);
+    padding: 9px 18px; border-radius: 9999px; cursor: pointer;
+    font: 600 12px/1 "Inter"; letter-spacing: 0.02em; display: flex; align-items: center; gap: 7px;
+  }
+  .toggle button.active { background: #29603E; color: #fff; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="frame.jsx"></script>
+<script type="text/babel" src="screens-tabs.jsx"></script>
+<script type="text/babel" src="screens-flow.jsx"></script>
+
+<script type="text/babel">
+  function AppWithToggle() {
+    const [dark, setDark] = React.useState(false);
+    React.useEffect(() => { document.body.style.background = dark ? "#0B0E0C" : "#ECE9E3"; }, [dark]);
+    return (
+      <React.Fragment>
+        <AppBoard dark={dark} />
+        <div className="toggle">
+          <button className={dark ? "" : "active"} onClick={() => setDark(false)}>
+            <Icon name="sun" size={15} color={dark ? "rgba(255,255,255,0.6)" : "#fff"} sw={1.8} /> Light
+          </button>
+          <button className={dark ? "active" : ""} onClick={() => setDark(true)}>
+            <Icon name="moon" size={15} color={dark ? "#fff" : "rgba(255,255,255,0.6)"} fill={dark} sw={1.8} /> Dark
+          </button>
+        </div>
+      </React.Fragment>
+    );
+  }
+
+  function AppBoard({ dark }) {
+    const ink = dark ? "#F4F4F2" : "#14241B";
+    const sub = dark ? "#8E8E93" : "#6B7280";
+    const rule = dark ? "#26302A" : "#D6D2CA";
+    const eyebrow = dark ? "#9DB4A4" : "#51604F";
+    const Frame = ({ label, children }) => (
+      <div className="frame-col">{children}<div className="frame-label" style={{ color: sub }}>{label}</div></div>
+    );
+    const Group = ({ title, subtitle, children }) => (
+      <div className="group">
+        <div className="group-head">
+          <h2 style={{ color: eyebrow }}>{title}</h2>
+          <span className="sub" style={{ color: sub }}>{subtitle}</span>
+          <div className="rule" style={{ background: rule }} />
+        </div>
+        <div className="stage">{children}</div>
+      </div>
+    );
+    return (
+      <div className="doc">
+        <div className="doc-head">
+          <h1 style={{ color: ink }}>Barakah — App UI Kit</h1>
+          <p style={{ color: sub }}>A faithful recreation of the heybarakah.app mobile app (Expo · NativeWind). Onboarding, the five main tabs, and the lock & ledger surfaces.</p>
+        </div>
+        <Group title="Onboarding" subtitle="First-run flow · light only">
+          <Frame label="Auth"><Phone dark={false}><AuthScreen /></Phone></Frame>
+          <Frame label="Paywall · Plans"><Phone dark={false}><PaywallScreen /></Phone></Frame>
+        </Group>
+        <Group title="Main App" subtitle="Signed-in tabs">
+          <Frame label="Home"><Phone dark={dark} tab="home"><HomeScreen dark={dark} /></Phone></Frame>
+          <Frame label="Dhikr"><Phone dark={dark} tab="dhikr"><DhikrScreen dark={dark} /></Phone></Frame>
+          <Frame label="Locked"><Phone dark={dark} tab="locked"><LockedScreen dark={dark} /></Phone></Frame>
+          <Frame label="Progress"><Phone dark={dark} tab="progress"><ProgressScreen dark={dark} /></Phone></Frame>
+          <Frame label="Profile"><Phone dark={dark} tab="profile"><ProfileScreen dark={dark} /></Phone></Frame>
+        </Group>
+        <Group title="Surfaces" subtitle="Prayer-lock & the ledger">
+          <Frame label="Unlock"><Phone dark={dark}><UnlockScreen dark={dark} /></Phone></Frame>
+          <Frame label="Achievements"><Phone dark={dark}><AchievementsScreen dark={dark} /></Phone></Frame>
+        </Group>
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<AppWithToggle />);
+</script>
+</body>
+</html>

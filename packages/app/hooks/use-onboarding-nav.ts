@@ -37,12 +37,8 @@ export function useOnboardingNav() {
     if (index < 0) {
       return;
     }
-    // Post-purchase setup ends at the name screen, which lives outside the
-    // onboarding group and finalizes the profile.
-    if (isPostPurchase && index >= total - 1) {
-      router.push("/name" as never);
-      return;
-    }
+    // The flow ends on `/complete`, the terminal route whose own button
+    // finalizes the profile, so there is nothing to advance to past it.
     if (index >= total - 1) {
       return;
     }

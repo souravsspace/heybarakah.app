@@ -1,0 +1,16 @@
+{
+  "extends": "@barakah/tsconfig/api.json",
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types", "@types/bun"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "drizzle.config.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": ["node_modules", "dist", ".wrangler"]
+}

@@ -1,0 +1,64 @@
+name: Deploy · api
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/api/**"
+      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    defaults:
+      run:
+        working-directory: packages/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+        working-directory: .
+
+      - name: Apply D1 migrations (remote)
+        run: bunx wrangler d1 migrations apply barakah-db --remote
+
+      # Push each Appendix B secret from GitHub Actions secrets. Bindings
+      # (DB/KV/R2) and non-secret [vars] live in wrangler.toml, not here.
+      - name: Sync Worker secrets
+        run: |
+          set -euo pipefail
+          put() { echo "$2" | bunx wrangler secret put "$1"; }
+          put BETTER_AUTH_SECRET            "${{ secrets.BETTER_AUTH_SECRET }}"
+          put GOOGLE_CLIENT_ID              "${{ secrets.GOOGLE_CLIENT_ID }}"
+          put GOOGLE_CLIENT_SECRET          "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+          put APPLE_CLIENT_ID               "${{ secrets.APPLE_CLIENT_ID }}"
+          put APPLE_APP_BUNDLE_IDENTIFIER   "${{ secrets.APPLE_APP_BUNDLE_IDENTIFIER }}"
+          put APPLE_CLIENT_SECRET           "${{ secrets.APPLE_CLIENT_SECRET }}"
+          put RESEND_API_KEY                "${{ secrets.RESEND_API_KEY }}"
+          put RESEND_AUDIENCE_ID            "${{ secrets.RESEND_AUDIENCE_ID }}"
+          put RESEND_FROM                   "${{ secrets.RESEND_FROM }}"
+          put RESEND_REPLY_TO               "${{ secrets.RESEND_REPLY_TO }}"
+          put RESEND_AUTH_EMAIL             "${{ secrets.RESEND_AUTH_EMAIL }}"
+          put RESEND_WEBHOOK_SECRET         "${{ secrets.RESEND_WEBHOOK_SECRET }}"
+          put POLAR_WEBHOOK_SECRET          "${{ secrets.POLAR_WEBHOOK_SECRET }}"
+          put REVENUECAT_SECRET_KEY         "${{ secrets.REVENUECAT_SECRET_KEY }}"
+
+      - name: Deploy
+        run: bunx wrangler deploy

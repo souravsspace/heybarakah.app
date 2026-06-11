@@ -1,9 +1,20 @@
-import { api } from "@barakah/core/convex/_generated/api";
-import { useMutation } from "convex/react";
 import type { EventSubscription } from "expo-modules-core";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Platform } from "react-native";
+import { api } from "@/lib/api-client";
 import { dateKey } from "@/lib/date-utils";
+
+type IncrementFn = (date: string, by: number) => Promise<unknown>;
+
+function useDhikrIncrement(): IncrementFn {
+  return useCallback(async (date: string, by: number) => {
+    const res = await api.api.v1.dhikr.increment.$post({ json: { date, by } });
+    if (!res.ok) {
+      throw new Error("Failed to increment dhikr");
+    }
+    return await res.json();
+  }, []);
+}
 
 /**
  * Handles taps on interactive widgets. The Dhikr widget's increment button
@@ -15,7 +26,7 @@ import { dateKey } from "@/lib/date-utils";
  * handled; background/cold-start behavior must be verified on a device.
  */
 export function useWidgetInteractions(): void {
-  const increment = useMutation(api.lib.dhikr.increment);
+  const increment = useDhikrIncrement();
 
   useEffect(() => {
     if (Platform.OS !== "ios") {
@@ -31,15 +42,8 @@ export function useWidgetInteractions(): void {
         return;
       }
       sub = addUserInteractionListener((event) => {
-        if (__DEV__) {
-          // TEMP probe: logs only if the JS runtime is alive when the widget is
-          // tapped. A tap from the home screen with the app suspended that logs
-          // nothing here ⇒ the increment must move to native. Remove once the
-          // dhikr-tap path is verified end-to-end.
-          console.log(`[widgets] interaction target=${event.target}`);
-        }
         if (event.target === DHIKR_INCREMENT_TARGET) {
-          increment({ date: dateKey(), by: 1 }).catch(() => {
+          increment(dateKey(), 1).catch(() => {
             // Offline or unauthenticated — the next sync reconciles the count.
           });
         }

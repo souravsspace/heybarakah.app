@@ -1,0 +1,128 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Background meshes" subtitle="9 named meshes · light + dark · meshes.tsx" viewport="700x920" -->
+<html><head><meta charset="utf-8"><title>Background Meshes</title>
+<style>
+@font-face { font-family: "Inter"; src: url("../fonts/Inter-VariableFont_opsz_wght.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #FFF; font-family: "Inter", system-ui, sans-serif; color: #0A0A0A; }
+body { padding: 28px 32px; }
+.eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase;
+  color: #6B7280; margin: 0 0 8px 0;
+}
+.lede { font-size: 12px; color: #6B7280; max-width: 560px; margin: 0 0 22px 0; line-height: 1.55; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 14px; }
+.tile {
+  position: relative; width: 100%; aspect-ratio: 320/220;
+  border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,0,0,0.06);
+}
+.tile.dark { border-color: rgba(255,255,255,0.08); }
+.tile svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.label { font-size: 11px; font-weight: 600; color: #0A0A0A; margin-top: 8px; }
+.sub { font-size: 10px; color: #6B7280; font-family: ui-monospace, Menlo, monospace; margin-top: 2px; }
+.section { margin-top: 26px; }
+.cell { display: flex; flex-direction: column; }
+</style></head><body>
+<p class="eyebrow">Background meshes · meshes.tsx</p>
+<p class="lede">Every screen wears one. Same name, two schemes. Full-bleed behind everything — cards sit on top as translucent surfaces with a hairline border.</p>
+
+<p class="eyebrow" style="margin-top:18px">Light</p>
+<div class="grid">
+  <div class="cell"><div class="tile"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="hLD" cx="14%" cy="-4%" r="78%"><stop offset="0" stop-color="#FAF7F0" stop-opacity=".95"/><stop offset=".55" stop-color="#FAF7F0" stop-opacity=".32"/><stop offset="1" stop-color="#FAF7F0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="hLTR" cx="98%" cy="-6%" r="62%"><stop offset="0" stop-color="#29603E" stop-opacity=".16"/><stop offset=".5" stop-color="#29603E" stop-opacity=".06"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="hLBL" cx="2%" cy="106%" r="62%"><stop offset="0" stop-color="#29603E" stop-opacity=".16"/><stop offset=".5" stop-color="#29603E" stop-opacity=".06"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#F8FAF8"/><rect width="320" height="220" fill="url(#hLD)"/><rect width="320" height="220" fill="url(#hLTR)"/><rect width="320" height="220" fill="url(#hLBL)"/></svg></div>
+    <div class="label">HomeMesh</div><div class="sub">Home tab · #F8FAF8</div></div>
+  <div class="cell"><div class="tile"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="lLC" cx="50%" cy="28%" rx="48%" ry="92%"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".85"/><stop offset=".5" stop-color="#FAF7F0" stop-opacity=".32"/><stop offset="1" stop-color="#FAF7F0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="lLF" cx="50%" cy="108%" rx="80%" ry="32%"><stop offset="0" stop-color="#29603E" stop-opacity=".12"/><stop offset=".6" stop-color="#29603E" stop-opacity=".04"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#F4F6F4"/><rect width="320" height="220" fill="url(#lLC)"/><rect width="320" height="220" fill="url(#lLF)"/></svg></div>
+    <div class="label">LockedMesh</div><div class="sub">Locked tab · #F4F6F4</div></div>
+  <div class="cell"><div class="tile"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="pLD" cx="50%" cy="-12%" r="82%"><stop offset="0" stop-color="#FAF7F0" stop-opacity=".92"/><stop offset=".5" stop-color="#FAF7F0" stop-opacity=".38"/><stop offset="1" stop-color="#FAF7F0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="pLC" cx="0%" cy="108%" r="58%"><stop offset="0" stop-color="#29603E" stop-opacity=".14"/><stop offset=".5" stop-color="#29603E" stop-opacity=".05"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#F8FAF8"/><rect width="320" height="220" fill="url(#pLD)"/><rect width="320" height="220" fill="url(#pLC)"/></svg></div>
+    <div class="label">ProfileMesh</div><div class="sub">Profile · #F8FAF8</div></div>
+  <div class="cell"><div class="tile"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="dLH" cx="50%" cy="-6%" r="74%"><stop offset="0" stop-color="#FAF7F0" stop-opacity=".92"/><stop offset=".55" stop-color="#FAF7F0" stop-opacity=".34"/><stop offset="1" stop-color="#FAF7F0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="dLCr" cx="50%" cy="2%" r="38%"><stop offset="0" stop-color="#29603E" stop-opacity=".12"/><stop offset=".6" stop-color="#29603E" stop-opacity=".04"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#F8FAF8"/><rect width="320" height="220" fill="url(#dLH)"/><rect width="320" height="220" fill="url(#dLCr)"/></svg></div>
+    <div class="label">DhikrMesh</div><div class="sub">Dhikr · #F8FAF8</div></div>
+  <div class="cell"><div class="tile"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="rLM" cx="-4%" cy="50%" rx="68%" ry="92%"><stop offset="0" stop-color="#FAF7F0" stop-opacity=".9"/><stop offset=".6" stop-color="#FAF7F0" stop-opacity=".3"/><stop offset="1" stop-color="#FAF7F0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="rLC" cx="106%" cy="-4%" r="44%"><stop offset="0" stop-color="#29603E" stop-opacity=".12"/><stop offset=".6" stop-color="#29603E" stop-opacity=".04"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#F8FAF8"/><rect width="320" height="220" fill="url(#rLM)"/><rect width="320" height="220" fill="url(#rLC)"/></svg></div>
+    <div class="label">RecordMesh</div><div class="sub">Dhikr record · #F8FAF8</div></div>
+  <div class="cell"><div class="tile"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="gLS" cx="-8%" cy="112%" r="120%"><stop offset="0" stop-color="#FAF7F0" stop-opacity=".88"/><stop offset=".5" stop-color="#FAF7F0" stop-opacity=".28"/><stop offset="1" stop-color="#FAF7F0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gLC" cx="104%" cy="-4%" r="50%"><stop offset="0" stop-color="#29603E" stop-opacity=".14"/><stop offset=".5" stop-color="#29603E" stop-opacity=".05"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#F8FAF8"/><rect width="320" height="220" fill="url(#gLS)"/><rect width="320" height="220" fill="url(#gLC)"/></svg></div>
+    <div class="label">ProgressMesh</div><div class="sub">Progress · #F8FAF8</div></div>
+  <div class="cell"><div class="tile"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="uLT" cx="50%" cy="18%" r="76%"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".92"/><stop offset=".42" stop-color="#FAF7F0" stop-opacity=".38"/><stop offset="1" stop-color="#FAF7F0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="uLL" cx="8%" cy="96%" r="70%"><stop offset="0" stop-color="#29603E" stop-opacity=".14"/><stop offset=".55" stop-color="#29603E" stop-opacity=".05"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="uLR" cx="100%" cy="0%" r="58%"><stop offset="0" stop-color="#29603E" stop-opacity=".1"/><stop offset=".6" stop-color="#29603E" stop-opacity=".03"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#F8FAF8"/><rect width="320" height="220" fill="url(#uLT)"/><rect width="320" height="220" fill="url(#uLL)"/><rect width="320" height="220" fill="url(#uLR)"/></svg></div>
+    <div class="label">UnlockMesh</div><div class="sub">Unlock · #F8FAF8</div></div>
+  <div class="cell"><div class="tile"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="aLC" cx="94%" cy="-4%" r="68%"><stop offset="0" stop-color="#29603E" stop-opacity=".14"/><stop offset=".5" stop-color="#29603E" stop-opacity=".05"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="aLW" cx="6%" cy="106%" r="62%"><stop offset="0" stop-color="#29603E" stop-opacity=".08"/><stop offset=".55" stop-color="#29603E" stop-opacity=".03"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="aLD" cx="50%" cy="0%" r="78%"><stop offset="0" stop-color="#FAF7F0" stop-opacity=".7"/><stop offset=".55" stop-color="#FAF7F0" stop-opacity=".22"/><stop offset="1" stop-color="#FAF7F0" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#F8F1E1"/><rect width="320" height="220" fill="url(#aLD)"/><rect width="320" height="220" fill="url(#aLC)"/><rect width="320" height="220" fill="url(#aLW)"/></svg></div>
+    <div class="label">AchievementsMesh</div><div class="sub">Ledger · #F8F1E1</div></div>
+  <div class="cell"><div class="tile"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="sLA" cx="88%" cy="12%" r="68%"><stop offset="0" stop-color="#29603E" stop-opacity=".1"/><stop offset=".55" stop-color="#29603E" stop-opacity=".04"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="sLG" cx="8%" cy="92%" r="70%"><stop offset="0" stop-color="#29603E" stop-opacity=".06"/><stop offset=".6" stop-color="#29603E" stop-opacity=".02"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#F8F1E1"/><rect width="320" height="220" fill="url(#sLA)"/><rect width="320" height="220" fill="url(#sLG)"/></svg></div>
+    <div class="label">SplashMesh</div><div class="sub">Launch · #F8F1E1</div></div>
+</div>
+
+<p class="eyebrow" style="margin-top:26px">Dark</p>
+<div class="grid">
+  <div class="cell"><div class="tile dark"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="hDN" cx="18%" cy="6%" r="72%"><stop offset="0" stop-color="#DDE8E1" stop-opacity=".2"/><stop offset=".48" stop-color="#29603E" stop-opacity=".34"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="hDE" cx="92%" cy="0%" r="72%"><stop offset="0" stop-color="#F7F9F7" stop-opacity=".04"/><stop offset=".5" stop-color="#29603E" stop-opacity=".2"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="hDS" cx="92%" cy="106%" r="78%"><stop offset="0" stop-color="#29603E" stop-opacity=".42"/><stop offset=".58" stop-color="#29603E" stop-opacity=".16"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#0E1311"/><rect width="320" height="220" fill="url(#hDN)"/><rect width="320" height="220" fill="url(#hDE)"/><rect width="320" height="220" fill="url(#hDS)"/></svg></div>
+    <div class="label">HomeMesh</div><div class="sub">#0E1311 base</div></div>
+  <div class="cell"><div class="tile dark"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="lDC" cx="50%" cy="20%" rx="44%" ry="88%"><stop offset="0" stop-color="#C8D2CC" stop-opacity=".08"/><stop offset=".5" stop-color="#C8D2CC" stop-opacity=".03"/><stop offset="1" stop-color="#C8D2CC" stop-opacity="0"/></radialGradient>
+    <radialGradient id="lDF" cx="50%" cy="110%" rx="80%" ry="40%"><stop offset="0" stop-color="#000000" stop-opacity=".5"/><stop offset="1" stop-color="#000000" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#0B0E0C"/><rect width="320" height="220" fill="url(#lDC)"/><rect width="320" height="220" fill="url(#lDF)"/></svg></div>
+    <div class="label">LockedMesh</div><div class="sub">#0B0E0C base</div></div>
+  <div class="cell"><div class="tile dark"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="pDD" cx="92%" cy="-8%" r="74%"><stop offset="0" stop-color="#29603E" stop-opacity=".3"/><stop offset=".5" stop-color="#29603E" stop-opacity=".12"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="pDM" cx="6%" cy="-4%" r="60%"><stop offset="0" stop-color="#DDE8E1" stop-opacity=".07"/><stop offset=".5" stop-color="#DDE8E1" stop-opacity=".03"/><stop offset="1" stop-color="#DDE8E1" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#0B0E0C"/><rect width="320" height="220" fill="url(#pDD)"/><rect width="320" height="220" fill="url(#pDM)"/></svg></div>
+    <div class="label">ProfileMesh</div><div class="sub">#0B0E0C base</div></div>
+  <div class="cell"><div class="tile dark"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="dDM" cx="50%" cy="0%" r="58%"><stop offset="0" stop-color="#29603E" stop-opacity=".32"/><stop offset=".55" stop-color="#29603E" stop-opacity=".1"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#0B0E0C"/><rect width="320" height="220" fill="url(#dDM)"/></svg></div>
+    <div class="label">DhikrMesh</div><div class="sub">#0B0E0C base</div></div>
+  <div class="cell"><div class="tile dark"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="rDM" cx="-4%" cy="50%" rx="62%" ry="88%"><stop offset="0" stop-color="#1A2422" stop-opacity=".6"/><stop offset=".6" stop-color="#1A2422" stop-opacity=".18"/><stop offset="1" stop-color="#1A2422" stop-opacity="0"/></radialGradient>
+    <radialGradient id="rDC" cx="106%" cy="106%" r="48%"><stop offset="0" stop-color="#29603E" stop-opacity=".22"/><stop offset=".6" stop-color="#29603E" stop-opacity=".06"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#0B0E0C"/><rect width="320" height="220" fill="url(#rDM)"/><rect width="320" height="220" fill="url(#rDC)"/></svg></div>
+    <div class="label">RecordMesh</div><div class="sub">#0B0E0C base</div></div>
+  <div class="cell"><div class="tile dark"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="gDS" cx="-8%" cy="112%" r="118%"><stop offset="0" stop-color="#29603E" stop-opacity=".32"/><stop offset=".4" stop-color="#29603E" stop-opacity=".1"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#0B0E0C"/><rect width="320" height="220" fill="url(#gDS)"/></svg></div>
+    <div class="label">ProgressMesh</div><div class="sub">#0B0E0C base</div></div>
+  <div class="cell"><div class="tile dark"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="uDT" cx="50%" cy="18%" r="76%"><stop offset="0" stop-color="#DDE8E1" stop-opacity=".1"/><stop offset=".42" stop-color="#29603E" stop-opacity=".2"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="uDL" cx="8%" cy="96%" r="70%"><stop offset="0" stop-color="#29603E" stop-opacity=".24"/><stop offset=".55" stop-color="#29603E" stop-opacity=".08"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#0B0E0C"/><rect width="320" height="220" fill="url(#uDT)"/><rect width="320" height="220" fill="url(#uDL)"/></svg></div>
+    <div class="label">UnlockMesh</div><div class="sub">#0B0E0C base</div></div>
+  <div class="cell"><div class="tile dark"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="aDC" cx="92%" cy="-6%" r="72%"><stop offset="0" stop-color="#29603E" stop-opacity=".22"/><stop offset=".55" stop-color="#29603E" stop-opacity=".07"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="aDP" cx="6%" cy="106%" r="76%"><stop offset="0" stop-color="#F5EBDB" stop-opacity=".05"/><stop offset=".6" stop-color="#F5EBDB" stop-opacity=".02"/><stop offset="1" stop-color="#F5EBDB" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#0E1311"/><rect width="320" height="220" fill="url(#aDC)"/><rect width="320" height="220" fill="url(#aDP)"/></svg></div>
+    <div class="label">AchievementsMesh</div><div class="sub">#0E1311 base</div></div>
+  <div class="cell"><div class="tile dark"><svg viewBox="0 0 320 220" preserveAspectRatio="none"><defs>
+    <radialGradient id="sDA" cx="88%" cy="14%" r="68%"><stop offset="0" stop-color="#29603E" stop-opacity=".14"/><stop offset=".55" stop-color="#29603E" stop-opacity=".05"/><stop offset="1" stop-color="#29603E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="sDC" cx="8%" cy="92%" r="70%"><stop offset="0" stop-color="#F5EBDB" stop-opacity=".06"/><stop offset=".6" stop-color="#F5EBDB" stop-opacity=".02"/><stop offset="1" stop-color="#F5EBDB" stop-opacity="0"/></radialGradient>
+  </defs><rect width="320" height="220" fill="#0E1311"/><rect width="320" height="220" fill="url(#sDA)"/><rect width="320" height="220" fill="url(#sDC)"/></svg></div>
+    <div class="label">SplashMesh</div><div class="sub">#0E1311 base</div></div>
+</div>
+</body></html>

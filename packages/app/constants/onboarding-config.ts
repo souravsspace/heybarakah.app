@@ -24,19 +24,24 @@ export const ONBOARDING_ROUTES = [
   "/(onboarding)/paywall/try-free",
   "/(onboarding)/paywall/akhira-worth",
   "/(onboarding)/paywall/plans",
+  "/(onboarding)/your-name",
+  "/(onboarding)/complete",
 ] as const;
 
 export type OnboardingRoute = (typeof ONBOARDING_ROUTES)[number];
 
 // Setup subset shown to a user who already paid on the web and is signing in
-// for the first time: prayer config + permissions, then `/name`. Skips the
-// marketing, quiz, and paywall screens since access is already owned.
+// for the first time: prayer config + permissions, then name + a completion
+// screen that finalizes the profile. Skips the marketing, quiz, and paywall
+// screens since access is already owned.
 export const POST_PURCHASE_ROUTES = [
   "/(onboarding)/config/calc-method",
   "/(onboarding)/config/prayers",
   "/(onboarding)/config/strictness",
   "/(onboarding)/notify-framing",
   "/(onboarding)/permissions",
+  "/(onboarding)/your-name",
+  "/(onboarding)/complete",
 ] as const satisfies readonly OnboardingRoute[];
 
 export const POST_PURCHASE_ENTRY = POST_PURCHASE_ROUTES[0];

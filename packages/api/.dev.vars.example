@@ -1,0 +1,41 @@
+# Copy to .dev.vars (git-ignored) for local `wrangler dev`.
+# Production: set each via `wrangler secret put <NAME>` (see §9 / Appendix B).
+# Never commit real secrets or .p8 key files.
+
+BETTER_AUTH_SECRET=           # openssl rand -base64 32
+BETTER_AUTH_URL=http://localhost:8787
+SITE_URL=https://heybarakah.app
+NATIVE_APP_URL=barakah://
+
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+APPLE_CLIENT_ID=com.souravsspace.Barakah.signin
+APPLE_APP_BUNDLE_IDENTIFIER=com.souravsspace.Barakah
+APPLE_CLIENT_SECRET=          # output of packages/core/scripts/generate-apple-secret.ts
+
+RESEND_API_KEY=
+RESEND_AUDIENCE_ID=
+RESEND_FROM=Barakah <salam@heybarakah.app>
+RESEND_REPLY_TO=hello@heybarakah.app
+RESEND_AUTH_EMAIL=Barakah <no-reply@heybarakah.app>
+RESEND_WEBHOOK_SECRET=        # whsec_...
+
+POLAR_WEBHOOK_SECRET=         # polar_whs_...
+
+REVENUECAT_SECRET_KEY=        # sk_... v1 secret REST key (server-side entitlement verify)
+
+# Dev-only gates — MUST stay unset in production
+ALLOW_MOCK_SUBSCRIPTIONS=
+ALLOW_EXPO_ORIGINS=
+
+# Debug/observability flags ("true" or "1"). DEBUG: error stacks + docs UI.
+# LOG_LEVEL: debug logs. DOCS_ENABLED: OpenAPI doc + Scalar UI only.
+DEBUG=
+LOG_LEVEL=
+DOCS_ENABLED=
+
+# drizzle-kit d1-http (CLI only, for db:generate against remote D1)
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_DATABASE_ID=
+CLOUDFLARE_D1_TOKEN=

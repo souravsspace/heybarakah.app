@@ -1,15 +1,25 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Redirect, Stack, useGlobalSearchParams } from "expo-router";
+import {
+  type ErrorBoundaryProps,
+  Redirect,
+  Stack,
+  useGlobalSearchParams,
+} from "expo-router";
 import { useNavigationState } from "expo-router/react-navigation";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ErrorScreen } from "@/components/error-screen";
 import { ProgressBar } from "@/components/onboarding/progress-bar";
 import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { POST_PURCHASE_FLOW } from "@/constants/onboarding-config";
 import { useUser } from "@/contexts/user-context";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useSubscription } from "@/lib/subscription";
+
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return <ErrorScreen error={error} retry={retry} />;
+}
 
 export default function OnboardingLayout() {
   const { progress, back, index, currentPath } = useOnboardingNav();
@@ -43,6 +53,7 @@ export default function OnboardingLayout() {
   const hideHeader =
     focusedName === "welcome" ||
     currentPath === "/(onboarding)/paywall/plans" ||
+    currentPath === "/(onboarding)/complete" ||
     gestureToWelcome ||
     index <= 0;
 
@@ -72,6 +83,10 @@ export default function OnboardingLayout() {
         <Stack.Screen name="welcome" options={{ animation: "none" }} />
         <Stack.Screen
           name="problem"
+          options={{ gestureEnabled: false, fullScreenGestureEnabled: false }}
+        />
+        <Stack.Screen
+          name="complete"
           options={{ gestureEnabled: false, fullScreenGestureEnabled: false }}
         />
       </Stack>

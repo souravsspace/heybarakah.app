@@ -1,5 +1,4 @@
-import { api } from "@barakah/core/convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery as useRqQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -19,6 +18,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LINKS } from "@/constants/links";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
+import { api } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
 import { useSubscription } from "@/lib/subscription";
 
@@ -44,13 +44,21 @@ const PLAN_VALUE_LABEL: Record<string, string> = {
 export default function Profile() {
   const router = useRouter();
   const { user, profile } = useUser();
-  const imageUrl = useQuery(api.lib.users.getMyAvatarUrl);
-  const deleteAccount = useMutation(api.lib.users.deleteMyAccount);
+  const { data: imageUrl } = useRqQuery({
+    queryKey: ["cf", "me", "avatar"],
+    queryFn: async (): Promise<string | null> => {
+      const res = await api.api.v1.me.avatar.$get();
+      if (!res.ok) {
+        throw new Error("Failed to load avatar");
+      }
+      return (await res.json()).url;
+    },
+  });
   const { activeSubscription } = useSubscription();
   const { colors, scheme } = useTheme();
   const isPremium = !!activeSubscription;
   const subscriptionLabel = activeSubscription
-    ? (PLAN_VALUE_LABEL[activeSubscription.productId] ?? "Premium")
+    ? (PLAN_VALUE_LABEL[activeSubscription.productId as string] ?? "Premium")
     : "Free";
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
@@ -123,9 +131,12 @@ export default function Profile() {
 
   const runDelete = async () => {
     try {
-      // Purge Convex app data first while the session is still valid, then
-      // remove the auth record. Routing to the blocking screen runs sign-out.
-      await deleteAccount({});
+      // Purge app data first while the session is still valid, then remove the
+      // auth record. Routing to the blocking screen runs sign-out.
+      const res = await api.api.v1.me.delete.$post();
+      if (!res.ok) {
+        throw new Error("Failed to delete account");
+      }
       let authRemoved = true;
       try {
         await authClient.deleteUser();

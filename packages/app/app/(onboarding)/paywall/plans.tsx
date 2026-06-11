@@ -25,8 +25,8 @@ const CARD_REST = "#F4F2EE";
 
 const CTA_LABELS: Record<PlanId, string> = {
   yearly: "TRY FOR $0.00",
-  monthly: "START MONTHLY · $7.99/MO",
-  family: "START FAMILY · $4.99/MO",
+  monthly: "START MONTHLY",
+  family: "START FAMILY",
 };
 
 const FOOTER_CAPTIONS: Record<PlanId, string> = {
