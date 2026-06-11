@@ -42,13 +42,15 @@ export const create = createRoute({
   tags,
   request: {
     body: jsonContentRequired(
+      // Bounds mirror the service-level validation so oversized payloads are
+      // rejected at the framework layer before reaching the handler.
       z.object({
-        name: z.string().min(1),
-        latitude: z.number(),
-        longitude: z.number(),
-        timezone: z.string(),
-        city: z.string().optional(),
-        countryCode: z.string().optional(),
+        name: z.string().min(1).max(60),
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        timezone: z.string().min(1).max(64),
+        city: z.string().max(100).optional(),
+        countryCode: z.string().max(8).optional(),
         setActive: z.boolean().optional(),
       }),
       "New location"
@@ -66,7 +68,7 @@ export const rename = createRoute({
   request: {
     params: IdParam,
     body: jsonContentRequired(
-      z.object({ name: z.string().min(1) }),
+      z.object({ name: z.string().min(1).max(60) }),
       "New name"
     ),
   },
