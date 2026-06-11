@@ -27,8 +27,15 @@ export interface PaidOrderInput {
  */
 export async function recordPaidOrder(
   db: Database,
-  args: PaidOrderInput
+  rawArgs: PaidOrderInput
 ): Promise<void> {
+  // Normalize at write time so the email-keyed lookups (claim-by-email, account
+  // deletion, getMySubscription fallback) can match with a plain `=` — SQLite
+  // text comparison is case-sensitive and Polar sends the email as-received.
+  const args: PaidOrderInput = {
+    ...rawArgs,
+    customerEmail: rawArgs.customerEmail.toLowerCase().trim(),
+  };
   const now = new Date().toISOString();
 
   // Upsert on UNIQUE(polarOrderId): a racing webhook retry resolves to an update
@@ -160,6 +167,8 @@ export function buildPurchaseEmail(order: {
 }): { subject: string; html: string; text: string } {
   const amount = (order.totalAmount / CENTS_PER_UNIT).toFixed(2);
   const currency = order.currency.toUpperCase();
+  // Webhook-supplied; escape alongside name/invoice for the HTML body.
+  const htmlCurrency = escapeHtml(currency);
   const greeting = order.name
     ? `Assalamu alaikum ${order.name},`
     : "Assalamu alaikum,";
@@ -184,7 +193,7 @@ export function buildPurchaseEmail(order: {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:420px;border:1px solid #e5e7eb;border-radius:12px;padding:32px;">
           <tr><td style="font-size:16px;line-height:1.5;">${htmlGreeting}</td></tr>
           <tr><td style="padding:16px 0;font-size:14px;line-height:1.6;color:#6b7280;">Thank you for supporting Barakah. ${htmlInvoiceLine}Your lifetime access is now active.</td></tr>
-          <tr><td style="font-size:18px;font-weight:700;color:#29603E;">${amount} ${currency}</td></tr>
+          <tr><td style="font-size:18px;font-weight:700;color:#29603E;">${amount} ${htmlCurrency}</td></tr>
         </table>
       </td></tr>
     </table>
