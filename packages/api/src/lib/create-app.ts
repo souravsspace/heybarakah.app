@@ -5,6 +5,7 @@ import { authSession } from "@/middlewares/auth-session";
 import { idempotency } from "@/middlewares/idempotency";
 import { logger } from "@/middlewares/logger";
 import { rateLimit } from "@/middlewares/rate-limit";
+import { syncNotify } from "@/middlewares/sync-notify";
 import notFound from "@/stoker/middlewares/not-found";
 import onError from "@/stoker/middlewares/on-error";
 import type { AppOpenAPI } from "@/types/app-type";
@@ -65,6 +66,9 @@ function applyMiddleware(app: AppOpenAPI) {
   app.use(authSession());
   // Idempotency replay (after authSession — keys are scoped by c.var.user.id).
   app.use(idempotency());
+  // Realtime fan-out: after a successful mutation, push an invalidation topic to
+  // the user's other devices via their SyncHub DO (no-op on reads / failures).
+  app.use(syncNotify());
   app.on(["GET", "POST"], "/api/auth/*", (c) =>
     c.get("auth").handler(c.req.raw)
   );
