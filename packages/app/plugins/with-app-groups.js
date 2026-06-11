@@ -66,11 +66,13 @@ module.exports = function withAppGroups(inputConfig) {
       patchEntitlementsFile(
         path.join(iosRoot, "Barakah", "Barakah.entitlements")
       );
+      // Official expo-widgets generates the extension as "ExpoWidgetsTarget"
+      // (was "BarakahWidgetExtension" under the old @bittingz widgets).
       patchEntitlementsFile(
         path.join(
           iosRoot,
-          "BarakahWidgetExtension",
-          "BarakahWidgetExtension.entitlements"
+          "ExpoWidgetsTarget",
+          "ExpoWidgetsTarget.entitlements"
         )
       );
       return cfg;
