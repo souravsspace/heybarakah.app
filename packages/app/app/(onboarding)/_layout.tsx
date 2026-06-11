@@ -53,6 +53,7 @@ export default function OnboardingLayout() {
   const hideHeader =
     focusedName === "welcome" ||
     currentPath === "/(onboarding)/paywall/plans" ||
+    currentPath === "/(onboarding)/complete" ||
     gestureToWelcome ||
     index <= 0;
 
@@ -82,6 +83,10 @@ export default function OnboardingLayout() {
         <Stack.Screen name="welcome" options={{ animation: "none" }} />
         <Stack.Screen
           name="problem"
+          options={{ gestureEnabled: false, fullScreenGestureEnabled: false }}
+        />
+        <Stack.Screen
+          name="complete"
           options={{ gestureEnabled: false, fullScreenGestureEnabled: false }}
         />
       </Stack>
