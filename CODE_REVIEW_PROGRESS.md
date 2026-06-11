@@ -110,3 +110,33 @@ Plan: fan out across parallel subagents with **strictly disjoint file ownership*
 - `.dev.vars` (dummy, gitignored) exists locally for the test gate — do not commit.
 - Run gate before each commit: `bun run typecheck` + targeted `bunx vitest run <file>`.
 - Pre-existing `dev` commit history is "Unverified" per the stop-hook; inherited, not rewritten.
+
+---
+
+## Round 2 — post-merge 4-agent review (2026-06-11)
+
+Four parallel code-reviewer agents (security/auth/webhooks, DB/data-integrity, infra/middleware/scheduled, routes/validation/tests) reviewed `packages/api` for what the first review missed. All fixes below landed on `dev` as per-file commits; full suite green (typecheck 6/6, vitest 191/191).
+
+### Fixed
+- [x] **P1** `wrangler.toml` — `[env.development]` had no cron triggers (named envs don't inherit `[triggers]`); email sweep + cache purge never ran in dev.
+- [x] **P1** `schema.ts` + migration `0006` — `users.authUserId` and `prayerTimeCaches.cacheKey` upgraded to UNIQUE (with pre-dedup DELETEs); `upsertProfile`, `setAvatar`, `upsertPrayerTimesCache` rewritten as atomic `onConflictDoUpdate`.
+- [x] **P1** `achievements.service.ts` — prayer-log fetch ordered `desc(date)` instead of `desc(updatedAt)` so the 5000/1000-row caps keep the contiguous recent window streak eval needs.
+- [x] **P1** `dhikr.service.ts` `reset()` — aggregate decrement now computed in SQL from the live daily count (was a stale pre-read), ordered before the zeroing UPDATE in the same batch.
+- [x] **P2** `polar.service.ts` — customerEmail lowercased at write; `currency` escaped in receipt HTML.
+- [x] **P2** `subscriptions.service.ts` — `lower()` email lookups (pre-normalization rows), `claimPolarByEmail` optimistic-lock guard (`authUserId IS NULL`), RC update via `UPDATE … RETURNING`, generic RC fetch-failure message (was leaking upstream status).
+- [x] **P2** `resend.service.ts` — invalid base64 svix candidate now caught (was uncaught DOMException → 500 instead of 403).
+- [x] **P2** `on-error.ts` — DEBUG via `isTruthyFlag` (was `=== "true"` split-brain with logger/docs gates).
+- [x] **P2** `scheduled.ts` — `parseEnv` at sweep start so missing secrets surface loudly instead of burning per-row retry budgets.
+- [x] **P2** zod bounds — user-locations (name/city/countryCode/timezone/lat/lon), users profile (name/completedAt/activePrayerLocationId), prayer-times (timezone/tune/city/countryCode/lat/lon/startDate), shield `iosItemCount` max, markSeen per-code length, waitlist email `.max(254)`.
+- [x] **P2** `users.handlers.ts` — Content-Length early reject before buffering avatar bodies.
+- [x] **P3** not-found path echo removed; `DEBUG`/`LOG_LEVEL`/`DOCS_ENABLED` declared in `EnvSchema` + `.dev.vars.example`; rate-limit TTL trimmed to window remainder; idempotency KV put size guard; backfill skipped-tables comment.
+
+### Deferred (round 2)
+- `z.unknown()` response schemas (users/subscriptions/prayer-times/achievements) — incremental typed contracts; documented rationale stands for now.
+- HTTP-layer happy-path tests for authenticated mutations (service layer is covered; handler shim is not).
+- OpenAPI `security: [{ BearerAuth: [] }]` declarations per authed route (doc-accuracy only).
+- Waitlist invalid-email returns 200 + `ok:false` by design (marketing form contract + limiter counting); only the length cap was added.
+- `getStreak` anchored to `args.date` not server-today (semantic; client refetches `/streak` anyway).
+- `file://` in CORS `NATIVE_SCHEME_PREFIXES` — needs a decision on whether an RN WebView case requires it.
+- Pre-cutover dedup check for `prayerLogs` written before migration 0003 (backfill ops note).
+- `purgeUserData` assumes `prayerTimeCaches.userId == authUserId` for backfilled rows — verify during backfill.
