@@ -99,7 +99,7 @@ export const users = sqliteTable(
     image: text("image"),
     activePrayerLocationId: text("activePrayerLocationId"),
   },
-  (t) => [index("users_by_authUserId").on(t.authUserId)]
+  (t) => [uniqueIndex("users_by_authUserId").on(t.authUserId)]
 );
 
 export const subscriptions = sqliteTable(
@@ -200,7 +200,7 @@ export const prayerTimeCaches = sqliteTable(
     updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
   },
   (t) => [
-    index("prayerTimeCaches_by_cacheKey").on(t.cacheKey),
+    uniqueIndex("prayerTimeCaches_by_cacheKey").on(t.cacheKey),
     index("prayerTimeCaches_by_userCacheKey").on(t.userCacheKey),
     index("prayerTimeCaches_by_userId").on(t.userId),
     index("prayerTimeCaches_by_user_updated").on(t.userId, t.updatedAt),
