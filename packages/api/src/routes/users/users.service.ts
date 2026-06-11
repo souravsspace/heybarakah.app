@@ -67,14 +67,19 @@ export async function upsertProfile(
     });
   }
 
-  const existing = await getProfile(db, authUserId);
-  if (existing) {
-    await db.update(users).set(input).where(eq(users.authUserId, authUserId));
-  } else {
-    await db
-      .insert(users)
-      .values({ id: crypto.randomUUID(), authUserId, ...input });
-  }
+  // Atomic upsert keyed on the UNIQUE authUserId index — the prior
+  // select-then-insert raced under concurrent onboarding requests and could
+  // create duplicate profile rows.
+  const updates = Object.fromEntries(
+    Object.entries(input).filter(([, value]) => value !== undefined)
+  );
+  await db
+    .insert(users)
+    .values({ id: crypto.randomUUID(), authUserId, ...input })
+    .onConflictDoUpdate({
+      target: users.authUserId,
+      set: Object.keys(updates).length > 0 ? updates : { authUserId },
+    });
   // Onboarding completion can unlock first_steps (matches Convex upsertProfile).
   await runEvaluate(db, { authUserId });
   return (await getProfile(db, authUserId)) as ProfileRow;
@@ -102,17 +107,13 @@ export async function setAvatar(
     });
   }
 
-  const existing = await getProfile(db, authUserId);
-  if (existing) {
-    await db
-      .update(users)
-      .set({ image: key })
-      .where(eq(users.authUserId, authUserId));
-  } else {
-    await db
-      .insert(users)
-      .values({ id: crypto.randomUUID(), authUserId, image: key });
-  }
+  await db
+    .insert(users)
+    .values({ id: crypto.randomUUID(), authUserId, image: key })
+    .onConflictDoUpdate({
+      target: users.authUserId,
+      set: { image: key },
+    });
   return key;
 }
 
