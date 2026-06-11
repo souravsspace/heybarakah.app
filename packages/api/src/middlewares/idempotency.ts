@@ -5,6 +5,12 @@ import type { AppBindings } from "@/types/app-type";
 /** Cached idempotent responses live for 24h (KV min TTL is 60s). */
 const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
 
+/**
+ * Skip caching bodies past this size — KV values cap at 25 MiB and a throwing
+ * KV.put would turn an already-successful 2xx into a 500.
+ */
+const MAX_CACHEABLE_BODY_BYTES = 512 * 1024;
+
 /** Matches any non-printable-ASCII char; rejects unsafe Idempotency-Key values. */
 const NON_PRINTABLE_ASCII = /[^\x20-\x7E]/;
 
@@ -60,6 +66,9 @@ export function idempotency() {
     // retryable rather than being pinned to this key for 24h.
     if (c.res.status >= 200 && c.res.status < 300) {
       const body = await c.res.clone().text();
+      if (body.length > MAX_CACHEABLE_BODY_BYTES) {
+        return;
+      }
       const payload: StoredResponse = {
         status: c.res.status,
         body,
