@@ -54,7 +54,7 @@ export const logPrayer = createRoute({
         date: DateKey,
         prayer: Prayer,
         status: Status,
-        prayedAt: z.number().int().optional(),
+        prayedAt: z.number().int().min(0).optional(),
       }),
       "Prayer log entry"
     ),

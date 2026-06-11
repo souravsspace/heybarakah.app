@@ -83,6 +83,21 @@ describe("toInsertSql", () => {
   it("returns empty string for no rows", () => {
     expect(toInsertSql("users", [])).toBe("");
   });
+
+  it("uses the union of keys across heterogeneous rows (missing → NULL, no data dropped)", () => {
+    const sql = toInsertSql("userLocations" as never, [
+      { id: "1", a: "x", b: "y" },
+      { id: "2", a: "z", c: "w" },
+    ]);
+    // Column list is the union in first-seen order, id first.
+    expect(sql).toContain(
+      'INSERT INTO "userLocations" ("id", "a", "b", "c") VALUES'
+    );
+    // Row 1 lacks `c` → trailing NULL; its `b` value is preserved.
+    expect(sql).toContain(`('1', 'x', 'y', NULL)`);
+    // Row 2 lacks `b` → NULL in that slot; its `c` value is NOT dropped.
+    expect(sql).toContain(`('2', 'z', NULL, 'w')`);
+  });
 });
 
 describe("BACKFILL_ORDER", () => {

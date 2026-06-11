@@ -11,12 +11,27 @@ const onError: ErrorHandler = (err, c) => {
       ? (INTERNAL_SERVER_ERROR as ContentfulStatusCode)
       : (currentStatus as ContentfulStatusCode);
 
+  // Always log the real error server-side regardless of what we expose.
+  c.var.logger?.error("unhandled error", {
+    message: err.message,
+    stack: err.stack,
+    status: statusCode,
+  });
+
   // Workers don't set NODE_ENV; default to hiding the stack and only expose it
   // when an explicit DEBUG flag is set (local dev), so prod never leaks traces.
   const debug = (c.env as { DEBUG?: string } | undefined)?.DEBUG === "true";
+
+  // For 5xx, never echo the raw message to the client (it can leak missing-secret
+  // names from parseEnv, DB driver internals, etc.) unless DEBUG is on. Client
+  // errors (4xx, e.g. thrown HTTPException) keep their intentional message.
+  const isServerError = statusCode >= INTERNAL_SERVER_ERROR;
+  const message =
+    isServerError && !debug ? "Internal Server Error" : err.message;
+
   return c.json(
     {
-      message: err.message,
+      message,
       stack: debug ? err.stack : undefined,
     },
     statusCode

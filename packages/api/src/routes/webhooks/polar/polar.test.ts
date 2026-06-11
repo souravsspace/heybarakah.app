@@ -127,6 +127,37 @@ describe("polar webhook", () => {
     ).toHaveLength(1);
   });
 
+  it("activation upsert yields exactly one active subscription row when the same order is processed twice", async () => {
+    // No authUserId in metadata, so resolveExistingPolarSub can only match on
+    // polarOrderId — exercising the onConflictDoUpdate path that closes the
+    // concurrent-redelivery window (UNIQUE(polarOrderId)).
+    const event = {
+      type: "order.paid",
+      data: {
+        id: "order-3",
+        customer: { id: "cus_3", email: "buyer3@example.com", name: "Buyer 3" },
+        product: { id: "prod_1" },
+        totalAmount: 4900,
+        currency: "usd",
+        invoiceNumber: "INV-3",
+      },
+    };
+    validateEventMock.mockReturnValue(event);
+    const app = appWith();
+
+    await app.request(post(event), undefined, env);
+    await app.request(post(event), undefined, env);
+
+    const db = createDatabase(env.DB);
+    const subs = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.polarOrderId, "order-3"));
+    expect(subs).toHaveLength(1);
+    expect(subs[0].status).toBe("active");
+    expect(subs[0].source).toBe("polar");
+  });
+
   it("ignores non-order.paid events", async () => {
     validateEventMock.mockReturnValue({ type: "order.refunded", data: {} });
     const res = await appWith().request(post({}), undefined, env);

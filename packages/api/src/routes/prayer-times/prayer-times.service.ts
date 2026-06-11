@@ -20,6 +20,7 @@ import { HTTPException } from "hono/http-exception";
 import type { Database } from "@/db";
 import { prayerTimeCaches } from "@/db/schema";
 import { createKVCache } from "@/lib/kv-cache";
+import type { Logger } from "@/middlewares/logger";
 import { UNPROCESSABLE_ENTITY } from "@/stoker/http-status-codes";
 
 export interface PrayerRequest {
@@ -204,7 +205,8 @@ export async function upsertPrayerTimesCache(
 }
 
 async function fetchAndNormalize(
-  request: PrayerRequest & { days: number }
+  request: PrayerRequest & { days: number },
+  logger?: Logger
 ): Promise<PrayerDay[]> {
   const start = new Date(`${request.startDate}T00:00:00Z`);
   const end = new Date(start);
@@ -232,7 +234,14 @@ async function fetchAndNormalize(
       );
     }
     return slicePrayerDays(parsedDays, request.startDate, request.days);
-  } catch {
+  } catch (error) {
+    // Deliberate adhan-js fallback (caller computes from supported methods), but
+    // surface the AlAdhan fetch/parse failure so outages aren't silent.
+    logger?.warn("AlAdhan fetch/normalize failed; using adhan-js fallback", {
+      startDate: request.startDate,
+      method: request.method,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return [];
   }
 }
@@ -246,7 +255,8 @@ export async function refreshPrayerTimes(
   db: Database,
   kv: KVNamespace,
   request: PrayerRequest,
-  userId: string
+  userId: string,
+  logger?: Logger
 ): Promise<PublicPrayerCache> {
   validatePrayerRequest(request);
   const cached = await getCachedPrayerTimes(db, kv, request);
@@ -259,7 +269,7 @@ export async function refreshPrayerTimes(
   const cacheKey = createPrayerTimesCacheKey(withDays);
   const userCacheKey = createUserPrayerTimesCacheKey(cacheKey, userId);
 
-  const normalized = await fetchAndNormalize(withDays);
+  const normalized = await fetchAndNormalize(withDays, logger);
   const fallback = isAdhanJsSupportedMethod(withDays.method)
     ? (calculateAdhanJsPrayerDays(withDays) ?? [])
     : [];

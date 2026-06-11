@@ -50,6 +50,11 @@ polarWebhook.post("/webhooks/polar", async (c) => {
   const order = event.data;
   const rawEmail = order.customer?.email;
   if (!rawEmail) {
+    // Ack 200 (Polar should not redeliver) but make the dropped paid order
+    // observable — otherwise a customer-less order.paid is silently lost.
+    c.var.logger.warn("polar order.paid dropped: no customer email", {
+      orderId: order.id,
+    });
     return c.text("ok", OK);
   }
 

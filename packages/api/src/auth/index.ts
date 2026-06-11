@@ -94,10 +94,18 @@ export function createAuth(
           customRules: {
             "/sign-in/email": { window: 60, max: 100 },
             "/sign-in/social": { window: 60, max: 100 },
+            // OTP send triggers an outbound email per request — a tighter budget
+            // than the global limit prevents email-bombing a victim address.
+            "/email-otp/send-verification-otp": { window: 60, max: 5 },
           },
         },
         plugins: [
           emailOTP({
+            // 6-digit code, 5-minute expiry, 3 verification attempts — pinned
+            // explicitly so a dep bump can't silently regress these.
+            otpLength: 6,
+            expiresIn: 300,
+            allowedAttempts: 3,
             sendVerificationOTP({ email, otp, type }) {
               if (type !== "sign-in" && type !== "email-verification") {
                 return Promise.resolve();

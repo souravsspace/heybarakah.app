@@ -1,8 +1,27 @@
 import { Scalar } from "@scalar/hono-api-reference";
+import type { MiddlewareHandler } from "hono";
 
-import type { AppOpenAPI } from "@/types/app-type";
+import { isTruthyFlag } from "@/env";
+import type { AppBindings, AppOpenAPI } from "@/types/app-type";
 
 export function configureOpenAPI(app: AppOpenAPI) {
+  // Gate the OpenAPI spec + Scalar UI so the full API surface isn't published
+  // in prod by default. Registration stays unconditional (keeps RPC types and
+  // the route shape stable); the routes simply 404 unless an explicit dev flag
+  // (DOCS_ENABLED or DEBUG) is set on `c.env`. Checked per-request since env is
+  // only available at request time on Workers.
+  const docsGate: MiddlewareHandler<AppBindings> = async (c, next) => {
+    const enabled =
+      isTruthyFlag((c.env as { DOCS_ENABLED?: string }).DOCS_ENABLED) ||
+      isTruthyFlag((c.env as { DEBUG?: string }).DEBUG);
+    if (!enabled) {
+      return c.notFound();
+    }
+    await next();
+  };
+  app.use("/doc", docsGate);
+  app.use("/docs", docsGate);
+
   app.doc("/doc", {
     openapi: "3.1.0",
     info: {

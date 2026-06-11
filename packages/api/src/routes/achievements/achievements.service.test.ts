@@ -90,4 +90,40 @@ describe("achievements listForMe / listUnseen / markSeen", () => {
     const unseenAfter = await listUnseen(db, user);
     expect(unseenAfter.map((u) => u.code)).not.toContain("first_steps");
   });
+
+  it("markSeen only stamps the listed codes and is idempotent", async () => {
+    const db = createDatabase(env.DB);
+    const user = "markseen-user";
+    const now = Date.now();
+    await db
+      .insert(users)
+      .values({ authUserId: user, completedAt: new Date(now).toISOString() });
+    await db
+      .insert(dhikrAggregate)
+      .values({ authUserId: user, total: 1, updatedAt: now });
+    await runEvaluate(db, { authUserId: user, today: "2026-06-08" });
+
+    const before = await listUnseen(db, user);
+    expect(before.map((u) => u.code)).toEqual(
+      expect.arrayContaining(["first_steps", "first_dhikr"])
+    );
+
+    // Mark only first_steps — first_dhikr must remain unseen.
+    await markSeen(db, user, ["first_steps"]);
+    const after = await listUnseen(db, user);
+    expect(after.map((u) => u.code)).not.toContain("first_steps");
+    expect(after.map((u) => u.code)).toContain("first_dhikr");
+
+    // Re-calling is a no-op (IS NULL guard) and doesn't resurrect anything.
+    await markSeen(db, user, ["first_steps"]);
+    const again = await listUnseen(db, user);
+    expect(again.map((u) => u.code)).not.toContain("first_steps");
+    expect(again.map((u) => u.code)).toContain("first_dhikr");
+
+    // Empty codes is a no-op.
+    await markSeen(db, user, []);
+    expect((await listUnseen(db, user)).map((u) => u.code)).toContain(
+      "first_dhikr"
+    );
+  });
 });

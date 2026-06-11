@@ -119,12 +119,25 @@ function buildPolarSubscriptionWrite(
       .where(eq(subscriptions.id, existing.id));
   }
 
-  return db.insert(subscriptions).values({
-    id: crypto.randomUUID(),
-    authUserId: args.authUserId ?? null,
-    customerEmail: args.customerEmail,
-    ...activation,
-  });
+  // Upsert on UNIQUE(polarOrderId): a concurrent/redelivered order.paid that both
+  // read `existing = null` resolves the loser to an update instead of inserting a
+  // second active row. On conflict, keep an already-linked authUserId when this
+  // delivery doesn't carry one.
+  return db
+    .insert(subscriptions)
+    .values({
+      id: crypto.randomUUID(),
+      authUserId: args.authUserId ?? null,
+      customerEmail: args.customerEmail,
+      ...activation,
+    })
+    .onConflictDoUpdate({
+      target: subscriptions.polarOrderId,
+      set: {
+        authUserId: args.authUserId ?? sql`${subscriptions.authUserId}`,
+        ...activation,
+      },
+    });
 }
 
 function findSub(db: Database, where: SQL) {

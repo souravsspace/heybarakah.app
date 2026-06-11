@@ -151,57 +151,57 @@ export async function purgeUserData(
 
   const normalizedEmail = email?.toLowerCase().trim() || null;
 
-  await db.delete(users).where(eq(users.authUserId, authUserId));
-  await db
-    .delete(subscriptions)
-    .where(
-      normalizedEmail
-        ? or(
-            eq(subscriptions.authUserId, authUserId),
-            eq(subscriptions.customerEmail, normalizedEmail)
-          )
-        : eq(subscriptions.authUserId, authUserId)
-    );
-  if (normalizedEmail) {
-    await db
-      .delete(polarOrders)
+  // Single atomic batch so the P0 account-deletion path can't partially apply
+  // and leave orphaned user data (D1 has no interactive txn). Email-keyed Polar
+  // rows + queued emails are folded in via normalizedEmail. `prayerTimeCaches`
+  // is keyed on `userId`, which stores the Better Auth user id (== authUserId).
+  // Better Auth identity is deleted last; its FK ON DELETE cascade clears
+  // account + session, but we also delete them explicitly for completeness.
+  await db.batch([
+    db.delete(users).where(eq(users.authUserId, authUserId)),
+    db
+      .delete(subscriptions)
       .where(
-        or(
-          eq(polarOrders.authUserId, authUserId),
-          eq(polarOrders.customerEmail, normalizedEmail)
-        )
-      );
+        normalizedEmail
+          ? or(
+              eq(subscriptions.authUserId, authUserId),
+              eq(subscriptions.customerEmail, normalizedEmail)
+            )
+          : eq(subscriptions.authUserId, authUserId)
+      ),
+    normalizedEmail
+      ? db
+          .delete(polarOrders)
+          .where(
+            or(
+              eq(polarOrders.authUserId, authUserId),
+              eq(polarOrders.customerEmail, normalizedEmail)
+            )
+          )
+      : db.delete(polarOrders).where(eq(polarOrders.authUserId, authUserId)),
     // Drop any queued/pending transactional emails so nothing is sent to a
-    // deleted user post-deletion.
-    await db.delete(emailQueue).where(eq(emailQueue.to, normalizedEmail));
-  } else {
-    await db.delete(polarOrders).where(eq(polarOrders.authUserId, authUserId));
-  }
-  await db.delete(prayerLogs).where(eq(prayerLogs.authUserId, authUserId));
-  await db
-    .delete(shieldSelection)
-    .where(eq(shieldSelection.authUserId, authUserId));
-  await db.delete(dhikrDaily).where(eq(dhikrDaily.authUserId, authUserId));
-  await db
-    .delete(dhikrAggregate)
-    .where(eq(dhikrAggregate.authUserId, authUserId));
-  await db
-    .delete(userLocations)
-    .where(eq(userLocations.authUserId, authUserId));
-  await db
-    .delete(userAchievements)
-    .where(eq(userAchievements.authUserId, authUserId));
-  await db
-    .delete(userAchievementCounters)
-    .where(eq(userAchievementCounters.authUserId, authUserId));
-  await db
-    .delete(prayerTimeCaches)
-    .where(eq(prayerTimeCaches.userId, authUserId));
-
-  // Better Auth identity last; FK ON DELETE cascade clears account + session.
-  await db.delete(session).where(eq(session.userId, authUserId));
-  await db.delete(account).where(eq(account.userId, authUserId));
-  await db.delete(authUser).where(eq(authUser.id, authUserId));
+    // deleted user post-deletion (only resolvable by email).
+    ...(normalizedEmail
+      ? [db.delete(emailQueue).where(eq(emailQueue.to, normalizedEmail))]
+      : []),
+    db.delete(prayerLogs).where(eq(prayerLogs.authUserId, authUserId)),
+    db
+      .delete(shieldSelection)
+      .where(eq(shieldSelection.authUserId, authUserId)),
+    db.delete(dhikrDaily).where(eq(dhikrDaily.authUserId, authUserId)),
+    db.delete(dhikrAggregate).where(eq(dhikrAggregate.authUserId, authUserId)),
+    db.delete(userLocations).where(eq(userLocations.authUserId, authUserId)),
+    db
+      .delete(userAchievements)
+      .where(eq(userAchievements.authUserId, authUserId)),
+    db
+      .delete(userAchievementCounters)
+      .where(eq(userAchievementCounters.authUserId, authUserId)),
+    db.delete(prayerTimeCaches).where(eq(prayerTimeCaches.userId, authUserId)),
+    db.delete(session).where(eq(session.userId, authUserId)),
+    db.delete(account).where(eq(account.userId, authUserId)),
+    db.delete(authUser).where(eq(authUser.id, authUserId)),
+  ]);
 }
 
 export async function deleteMyAccount(
