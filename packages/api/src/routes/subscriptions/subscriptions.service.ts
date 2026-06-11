@@ -4,7 +4,7 @@ import {
   type RevenueCatStore,
   shouldSkipRcSync,
 } from "@barakah/core/subscriptions";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { HTTPException } from "hono/http-exception";
 
@@ -57,10 +57,12 @@ export async function getMySubscription(
   if (!email) {
     return null;
   }
+  // lower() compare: rows written before email normalization landed in
+  // recordPaidOrder can carry mixed-case Polar emails.
   const byEmail = await db
     .select()
     .from(subscriptions)
-    .where(eq(subscriptions.customerEmail, email))
+    .where(sql`lower(${subscriptions.customerEmail}) = ${email}`)
     .limit(20);
   const polarRow = byEmail.find(
     (row) =>
@@ -83,18 +85,23 @@ export async function claimPolarByEmail(
   const now = new Date().toISOString();
   let linked = false;
 
+  // lower() compare: rows written before email normalization landed in
+  // recordPaidOrder can carry mixed-case Polar emails.
   const subs = await db
     .select()
     .from(subscriptions)
-    .where(eq(subscriptions.customerEmail, email))
+    .where(sql`lower(${subscriptions.customerEmail}) = ${email}`)
     .limit(20);
   const orders = await db
     .select()
     .from(polarOrders)
-    .where(eq(polarOrders.customerEmail, email))
+    .where(sql`lower(${polarOrders.customerEmail}) = ${email}`)
     .limit(20);
 
   // Linking the subscriptions + their orders to this user must be all-or-nothing.
+  // The `authUserId IS NULL` guard on each UPDATE is optimistic locking: two
+  // concurrent claims for the same email both read unclaimed rows, but only the
+  // first write wins — the loser's UPDATE matches zero rows.
   const writes: BatchItem<"sqlite">[] = [];
   for (const sub of subs) {
     if (sub.source === "polar" && !sub.authUserId) {
@@ -102,7 +109,9 @@ export async function claimPolarByEmail(
         db
           .update(subscriptions)
           .set({ authUserId: user.id, updatedAt: now })
-          .where(eq(subscriptions.id, sub.id))
+          .where(
+            and(eq(subscriptions.id, sub.id), isNull(subscriptions.authUserId))
+          )
       );
       linked = true;
     }
@@ -113,7 +122,9 @@ export async function claimPolarByEmail(
         db
           .update(polarOrders)
           .set({ authUserId: user.id })
-          .where(eq(polarOrders.id, order.id))
+          .where(
+            and(eq(polarOrders.id, order.id), isNull(polarOrders.authUserId))
+          )
       );
     }
   }
@@ -226,15 +237,13 @@ export async function applyRevenueCatEntitlement(
   );
 
   if (rcRow) {
-    await db
+    // UPDATE … RETURNING: one round-trip, and the caller gets the row the
+    // update actually produced (a follow-up SELECT could read a stale row).
+    const [updated] = await db
       .update(subscriptions)
       .set(doc)
-      .where(eq(subscriptions.id, rcRow.id));
-    const [updated] = await db
-      .select()
-      .from(subscriptions)
       .where(eq(subscriptions.id, rcRow.id))
-      .limit(1);
+      .returning();
     return updated ?? null;
   }
 
@@ -367,8 +376,10 @@ export async function syncRevenueCatEntitlement(
     { headers: { Authorization: `Bearer ${secretKey}` } }
   );
   if (!response.ok) {
+    // Generic client message — the upstream RC status code would leak provider
+    // behaviour (404 = unknown subscriber, 429 = RC throttled) to the caller.
     throw new HTTPException(UNAUTHORIZED, {
-      message: `RevenueCat subscriber fetch failed: ${response.status}`,
+      message: "Subscription verification failed",
     });
   }
   const payload = await response.json();
