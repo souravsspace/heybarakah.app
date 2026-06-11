@@ -47,7 +47,7 @@ export const markSeen = createRoute({
   tags,
   request: {
     body: jsonContentRequired(
-      z.object({ codes: z.array(z.string()).max(MAX_CODES) }),
+      z.object({ codes: z.array(z.string().min(1).max(64)).max(MAX_CODES) }),
       "Achievement codes to mark seen"
     ),
   },
