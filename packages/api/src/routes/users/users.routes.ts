@@ -4,8 +4,10 @@ import { OK } from "@/stoker/http-status-codes";
 import jsonContent from "@/stoker/openapi/helpers/json-content";
 import jsonContentRequired from "@/stoker/openapi/helpers/json-content-required";
 
+// String bounds mirror @barakah/core validateProfileInput so oversized payloads
+// die at the framework layer instead of reaching the handler.
 const ProfileBody = z.object({
-  name: z.string().optional(),
+  name: z.string().max(120).optional(),
   gender: z.enum(["male", "female"]).optional(),
   madhab: z.enum(["hanafi", "shafii", "maliki", "hanbali", "none"]).optional(),
   consistency: z.enum(["never", "sometimes", "most", "all"]).optional(),
@@ -26,8 +28,8 @@ const ProfileBody = z.object({
       isha: z.boolean(),
     })
     .optional(),
-  completedAt: z.string().optional(),
-  activePrayerLocationId: z.string().optional(),
+  completedAt: z.string().max(64).optional(),
+  activePrayerLocationId: z.string().max(64).optional(),
 });
 
 const tags = ["Users"];
