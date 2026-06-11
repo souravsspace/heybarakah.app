@@ -10,7 +10,10 @@ export const joinWaitlist = createRoute({
   tags: ["Marketing"],
   request: {
     body: jsonContentRequired(
-      z.object({ email: z.string() }),
+      // Length cap only — format validation stays in the service, which soft-
+      // fails with 200 + ok:false so the marketing form can show the message
+      // (and the rate limiter still counts the attempt).
+      z.object({ email: z.string().max(254) }),
       "Email to add to the waitlist"
     ),
   },
