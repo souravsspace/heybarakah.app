@@ -95,7 +95,11 @@ async function resolveExistingPolarSub(db: Database, args: PaidOrderInput) {
           eq(subscriptions.polarCustomerId, args.polarCustomerId)
         )
       : null) ??
-    (await findSub(db, eq(subscriptions.customerEmail, args.customerEmail)))
+    // lower(): rows written before email normalization can be mixed-case.
+    (await findSub(
+      db,
+      sql`lower(${subscriptions.customerEmail}) = ${args.customerEmail}`
+    ))
   );
 }
 
