@@ -168,6 +168,28 @@ describe("users service — account deletion (P0)", () => {
     // Profile resolves to null.
     expect(await getProfile(db, user)).toBeNull();
   });
+
+  it("purges email-keyed rows stored with mixed-case addresses", async () => {
+    const db = createDatabase(env.DB);
+    const user = "delete-mixed";
+    // A web (anonymous) Polar purchase recorded before write-time email
+    // normalization — stored mixed-case, never linked to an authUserId.
+    const subId = crypto.randomUUID();
+    await db.insert(subscriptions).values({
+      id: subId,
+      customerEmail: "Mixed.Case@Example.COM",
+      productId: "lifetime",
+      status: "active",
+      source: "polar",
+      updatedAt: new Date().toISOString(),
+    });
+
+    await deleteMyAccount(db, env.R2, user, "mixed.case@example.com");
+
+    expect(
+      await db.select().from(subscriptions).where(eq(subscriptions.id, subId))
+    ).toHaveLength(0);
+  });
 });
 
 describe("users service — avatar", () => {
