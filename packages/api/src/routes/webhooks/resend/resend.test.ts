@@ -107,6 +107,18 @@ describe("verifyResendSignature", () => {
       )
     ).toBe(false);
   });
+
+  it("rejects an invalid-base64 signature candidate instead of throwing", async () => {
+    const body = '{"type":"email.delivered"}';
+    const now = String(Math.floor(Date.now() / 1000));
+    await expect(
+      verifyResendSignature(
+        secret,
+        { id: "msg_1", timestamp: now, signature: "v1,!!!not-base64!!!" },
+        body
+      )
+    ).resolves.toBe(false);
+  });
 });
 
 const WEBHOOK_SECRET = `whsec_${btoa("supersecretkey")}`;
