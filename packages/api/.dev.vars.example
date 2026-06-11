@@ -29,6 +29,12 @@ REVENUECAT_SECRET_KEY=        # sk_... v1 secret REST key (server-side entitleme
 ALLOW_MOCK_SUBSCRIPTIONS=
 ALLOW_EXPO_ORIGINS=
 
+# Debug/observability flags ("true" or "1"). DEBUG: error stacks + docs UI.
+# LOG_LEVEL: debug logs. DOCS_ENABLED: OpenAPI doc + Scalar UI only.
+DEBUG=
+LOG_LEVEL=
+DOCS_ENABLED=
+
 # drizzle-kit d1-http (CLI only, for db:generate against remote D1)
 CLOUDFLARE_ACCOUNT_ID=
 CLOUDFLARE_DATABASE_ID=
