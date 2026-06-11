@@ -1,4 +1,5 @@
 import type {
+  Request as CfRequest,
   ExecutionContext,
   ScheduledController,
 } from "@cloudflare/workers-types";
@@ -21,9 +22,33 @@ import { resendWebhook } from "@/routes/webhooks/resend/resend.index";
 import { handleScheduled } from "@/scheduled";
 import type { AppBindings } from "@/types/app-type";
 
+// Durable Object class must be a named export of the Worker entry so the runtime
+// can instantiate it for the SYNC binding (wrangler.toml migration).
+export { SyncHub } from "@/sync/sync-hub";
+
 const app = createApp().basePath("/api/v1");
 
 configureOpenAPI(app);
+
+// Realtime WebSocket endpoint. Runs through the full middleware chain (so the
+// Better Auth session is resolved into c.var.user), then upgrades the
+// connection and forwards it to the caller's per-user SyncHub Durable Object,
+// addressed by user id so every device shares one hub. The DO holds the socket
+// via the Hibernation API; mutation routes broadcast invalidations into it.
+app.get("/sync", async (c) => {
+  if (c.req.header("Upgrade") !== "websocket") {
+    return new Response("Expected a WebSocket upgrade", { status: 426 });
+  }
+  const user = c.get("user");
+  if (!user) {
+    return new Response("Authentication required", { status: 401 });
+  }
+  // Forward the upgrade to the user's hub DO. The workers/undici Request +
+  // Response types differ from the lib.dom globals Hono uses, so bridge them.
+  const stub = c.env.SYNC.getByName(user.id);
+  const upgraded = await stub.fetch(c.req.raw as unknown as CfRequest);
+  return upgraded as unknown as Response;
+});
 
 // Domain routers — each carries its own path; mounted under /api/v1. Chained
 // explicitly (not a loop) so Hono RPC type inference is preserved for the typed
