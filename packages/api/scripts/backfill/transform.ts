@@ -17,7 +17,12 @@ export type ConvexDoc = Record<string, unknown> & {
   _id?: string;
 };
 
-/** Import order: identity first (ids), then profiles, then user-keyed data. */
+/**
+ * Import order: identity first (ids), then profiles, then user-keyed data.
+ * Intentionally skipped: `emailQueue` (transient — in-flight Convex emails are
+ * not carried over; re-trigger sends post-cutover if needed) and
+ * `prayerTimeCaches` (recomputed on demand from the first refresh request).
+ */
 export const BACKFILL_ORDER = [
   "user",
   "account",
