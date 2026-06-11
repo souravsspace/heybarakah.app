@@ -18,6 +18,7 @@ import { emailQueue, polarOrders, subscriptions } from "@/db/schema";
 import { createApp } from "@/lib/create-app";
 import { applyMigrations } from "@/test-support/apply-migrations";
 import { polarWebhook } from "./polar.index";
+import { recordPaidOrder } from "./polar.service";
 
 applyMigrations();
 
@@ -102,6 +103,28 @@ describe("polar webhook", () => {
       .from(emailQueue)
       .where(eq(emailQueue.dedupeKey, "polar-order:order-1"));
     expect(queued).toHaveLength(1);
+  });
+
+  it("recordPaidOrder normalizes the customer email to lowercase at write", async () => {
+    const db = createDatabase(env.DB);
+    await recordPaidOrder(db, {
+      polarOrderId: "order-case",
+      customerEmail: " Buyer.CASE@Example.COM ",
+      currency: "usd",
+      totalAmount: 4900,
+    });
+
+    const [order] = await db
+      .select()
+      .from(polarOrders)
+      .where(eq(polarOrders.polarOrderId, "order-case"));
+    expect(order.customerEmail).toBe("buyer.case@example.com");
+
+    const [sub] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.polarOrderId, "order-case"));
+    expect(sub.customerEmail).toBe("buyer.case@example.com");
   });
 
   it("is idempotent — a redelivered order does not double-insert", async () => {
