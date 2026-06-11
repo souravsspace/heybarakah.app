@@ -57,14 +57,20 @@ export async function verifyResendSignature(
     .map((part) => part.split(",")[1])
     .filter(Boolean);
   for (const sig of candidates) {
-    const ok = await crypto.subtle.verify(
-      "HMAC",
-      key,
-      base64ToBytes(sig),
-      signed
-    );
-    if (ok) {
-      return true;
+    // atob throws a DOMException on non-base64 input — a forged header must be
+    // a verification failure (403 at the route), not an uncaught 500.
+    try {
+      const ok = await crypto.subtle.verify(
+        "HMAC",
+        key,
+        base64ToBytes(sig),
+        signed
+      );
+      if (ok) {
+        return true;
+      }
+    } catch {
+      // invalid base64 in this candidate — try the next one
     }
   }
   return false;
