@@ -33,6 +33,13 @@ export const EnvSchema = z.object({
   // Dev-only gates — MUST stay unset in production
   ALLOW_MOCK_SUBSCRIPTIONS: z.string().optional(),
   ALLOW_EXPO_ORIGINS: z.string().optional(),
+
+  // Debug/observability flags (isTruthyFlag: "true" or "1"). DEBUG exposes
+  // error stacks + docs UI; LOG_LEVEL enables debug logs; DOCS_ENABLED exposes
+  // the OpenAPI doc + Scalar UI without the rest of DEBUG.
+  DEBUG: z.string().optional(),
+  LOG_LEVEL: z.string().optional(),
+  DOCS_ENABLED: z.string().optional(),
 });
 
 export type EnvVars = z.infer<typeof EnvSchema>;
