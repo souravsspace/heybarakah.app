@@ -9,6 +9,7 @@ import {
   getBlockConfiguration,
   isTemporarilyUnlocked,
   type PrayerBlockWindow,
+  relockApps,
   scheduleBlockWindows,
   setBlockedApps,
   startMonitoring,
@@ -267,6 +268,17 @@ export function usePrayerShield() {
       !isTemporarilyUnlocked()
     ) {
       temporaryUnlock(Math.max(1, inside.end - nowMin)).catch(() => null);
+    }
+
+    // iOS foreground backstop: directly engage the stored shield when we're
+    // inside an unlogged window. The DeviceActivity extension covers the
+    // app-closed case, but registering a schedule while already inside an
+    // interval doesn't reliably fire `intervalDidStart`, which left blocked apps
+    // open at salah while Barakah was foreground (the LA showed, the shield
+    // didn't). relockApps re-applies the persisted token set; it's idempotent so
+    // the 30s tick can re-assert it harmlessly.
+    if (Platform.OS === "ios" && effective && !isTemporarilyUnlocked()) {
+      relockApps().catch(() => null);
     }
 
     // Android has no equivalent OS scheduler, so keep driving its foreground
