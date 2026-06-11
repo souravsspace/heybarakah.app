@@ -150,12 +150,21 @@ export async function reset(
     return;
   }
   const now = Date.now();
-  // Batch the day-zero and the aggregate decrement so they can't desync.
+  // Batch the aggregate decrement and the day-zero so they can't desync. The
+  // decrement reads the daily count in SQL at write time (not the pre-read
+  // `existing.count`, which a concurrent increment could have outdated) and
+  // must run before the zeroing statement inside the same batch txn.
   await db.batch([
+    db
+      .update(dhikrAggregate)
+      .set({
+        total: sql`max(0, ${dhikrAggregate.total} - coalesce((select ${dhikrDaily.count} from ${dhikrDaily} where ${dhikrDaily.id} = ${existing.id}), 0))`,
+        updatedAt: now,
+      })
+      .where(eq(dhikrAggregate.authUserId, authUserId)),
     db
       .update(dhikrDaily)
       .set({ count: 0, updatedAt: now })
       .where(eq(dhikrDaily.id, existing.id)),
-    buildAggregateWrite(db, authUserId, -existing.count, now),
   ]);
 }
