@@ -67,7 +67,7 @@ crons = ["*/5 * * * *"]
 [env.development.vars]
 SITE_URL = "https://heybarakah.app"
 NATIVE_APP_URL = "barakah://"
-BETTER_AUTH_URL = "https://barakah-api-dev.workers.dev"
+BETTER_AUTH_URL = "https://barakah-api-dev.souravsspace.workers.dev"
 
 [[env.development.d1_databases]]
 binding = "DB"
