@@ -116,7 +116,10 @@ export async function runEvaluate(
       .select()
       .from(prayerLogs)
       .where(eq(prayerLogs.authUserId, authUserId))
-      .orderBy(desc(prayerLogs.updatedAt))
+      // desc(date), not desc(updatedAt): streak evaluation walks backwards from
+      // `today`, so the cap must keep the newest contiguous date window. Re-logged
+      // old prayers would otherwise push current-streak rows past the limit.
+      .orderBy(desc(prayerLogs.date))
       .limit(EVALUATE_PRAYER_LOG_LIMIT),
     dhikrTotalForUser(db, authUserId),
     db.select().from(users).where(eq(users.authUserId, authUserId)).limit(1),
@@ -238,7 +241,8 @@ export async function listForMe(
       .select()
       .from(prayerLogs)
       .where(eq(prayerLogs.authUserId, authUserId))
-      .orderBy(desc(prayerLogs.updatedAt))
+      // Same windowing rule as runEvaluate: newest contiguous date window.
+      .orderBy(desc(prayerLogs.date))
       .limit(LIST_PRAYER_LOG_LIMIT),
     db
       .select()
