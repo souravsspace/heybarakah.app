@@ -1,6 +1,9 @@
+import { HTTPException } from "hono/http-exception";
+
 import { createDatabase } from "@/db";
+import { AVATAR_MAX_BYTES } from "@/lib/r2";
 import { requireUser } from "@/middlewares/auth-session";
-import { OK } from "@/stoker/http-status-codes";
+import { OK, UNPROCESSABLE_ENTITY } from "@/stoker/http-status-codes";
 import type { AppRouterHandler } from "@/types/app-type";
 import type {
   DeleteMyAccountRoute,
@@ -57,6 +60,15 @@ export const getMyAvatarUrl: AppRouterHandler<GetMyAvatarUrlRoute> = async (
 export const setAvatar: AppRouterHandler<SetAvatarRoute> = async (c) => {
   const user = requireUser(c);
   const db = createDatabase(c.env.DB);
+  // Reject oversized uploads before buffering the body — Workers accept bodies
+  // far past the 5 MB avatar cap, and arrayBuffer() loads it all into memory.
+  // putAvatar still enforces the byteLength cap for chunked requests.
+  const contentLength = Number(c.req.header("content-length") ?? 0);
+  if (contentLength > AVATAR_MAX_BYTES) {
+    throw new HTTPException(UNPROCESSABLE_ENTITY, {
+      message: "Avatar exceeds the maximum allowed size",
+    });
+  }
   const body = await c.req.raw.arrayBuffer();
   const key = await service.setAvatar(
     db,
