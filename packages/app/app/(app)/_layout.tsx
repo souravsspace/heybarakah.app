@@ -1,6 +1,13 @@
 import * as Notifications from "expo-notifications";
-import { Redirect, Stack, usePathname, useRouter } from "expo-router";
+import {
+  type ErrorBoundaryProps,
+  Redirect,
+  Stack,
+  usePathname,
+  useRouter,
+} from "expo-router";
 import { useEffect, useRef } from "react";
+import { ErrorScreen } from "@/components/error-screen";
 import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { DhikrProvider } from "@/contexts/dhikr-context";
 import { useUser } from "@/contexts/user-context";
@@ -15,6 +22,10 @@ import {
   checkAndClearPendingUnlock,
 } from "@/lib/app-blocker";
 import { useSubscription } from "@/lib/subscription";
+
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return <ErrorScreen error={error} retry={retry} />;
+}
 
 function AuthedShell() {
   useDailyAyahNotification();
