@@ -26,6 +26,7 @@ import { ThemeProvider as BarakahThemeProvider } from "@/contexts/theme-context"
 import { UserProvider } from "@/contexts/user-context";
 import { OnboardingProvider } from "@/hooks/use-onboarding-state";
 import { useOtaUpdates } from "@/hooks/use-ota-updates";
+import { useRealtimeSync } from "@/hooks/use-realtime-sync";
 import { queryClient } from "@/lib/query-client";
 import { SubscriptionProvider } from "@/lib/subscription";
 import { registerWidgets } from "@/lib/widgets-native";
@@ -39,6 +40,14 @@ preventAutoHideAsync().catch(() => undefined);
 export const unstable_settings = {
   anchor: "index",
 };
+
+// Lives inside UserProvider + QueryClientProvider so it can read the signed-in
+// user and the shared query cache. Opens the realtime sync socket; renders
+// nothing.
+function RealtimeSync() {
+  useRealtimeSync();
+  return null;
+}
 
 // Top-level catch-all: any render error in the app tree lands here instead of a
 // native red box / crash. ErrorScreen is provider-free so it renders even when
@@ -78,6 +87,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <UserProvider>
+          <RealtimeSync />
           <ThemeProvider value={DefaultTheme}>
             <SubscriptionProvider>
               <OnboardingProvider>
