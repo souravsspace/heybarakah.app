@@ -264,7 +264,7 @@ without `--env development`. CI deploy: `.github/workflows/deploy-api.yml`.
 ## 8b. Cloudflare dev — update loop (run after each change)
 
 The app points at the deployed dev worker (`EXPO_PUBLIC_API_URL=
-https://barakah-api-dev.workers.dev`), so API changes are NOT live until you
+https://barakah-api-dev.souravsspace.workers.dev`), so API changes are NOT live until you
 redeploy. Match the command to what you changed:
 
 | You changed | Run (from `packages/api`) |
@@ -282,7 +282,7 @@ Always-true checks after a deploy:
 ```bash
 cd packages/api
 wrangler deploy --env development        # prints the live workers.dev URL
-curl https://barakah-api-dev.workers.dev/api/v1/health     # smoke test
+curl https://barakah-api-dev.souravsspace.workers.dev/api/v1/health     # smoke test
 wrangler tail --env development          # live logs (watch /sync 101, errors)
 ```
 
