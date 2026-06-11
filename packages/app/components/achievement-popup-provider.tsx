@@ -41,55 +41,58 @@ export function AchievementPopupProvider({
       queryClient.invalidateQueries({ queryKey: UNSEEN_QUERY_KEY });
     },
   });
-  const [queue, setQueue] = useState<UnseenUnlock[]>([]);
-  const [active, setActive] = useState<UnseenUnlock | null>(null);
+  // The whole set of just-unlocked achievements is shown in a single dialog
+  // session with an in-place pager, so two unlocks from one action (e.g.
+  // first_log + first_on_time) read as one celebration, not a glitchy repeat.
+  const [batch, setBatch] = useState<UnseenUnlock[]>([]);
+  const [index, setIndex] = useState(0);
   const dismissedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!unseen) {
       return;
     }
+    // Drop dismissed codes the server no longer reports so a later genuine
+    // re-unlock (shouldn't happen, but cheap to be safe) can surface again.
     const liveCodes = new Set<string>(unseen.map((u) => u.code));
     for (const code of Array.from(dismissedRef.current)) {
       if (!liveCodes.has(code)) {
         dismissedRef.current.delete(code);
       }
     }
-    if (unseen.length === 0) {
+    // Don't grow a batch mid-celebration; the next set surfaces after close.
+    if (batch.length > 0 || unseen.length === 0) {
       return;
     }
-    const activeCode = active?.code;
-    setQueue((prev) => {
-      const knownCodes = new Set<string>(prev.map((p) => p.code));
-      if (activeCode) {
-        knownCodes.add(activeCode);
-      }
-      for (const code of dismissedRef.current) {
-        knownCodes.add(code);
-      }
-      const next = unseen.filter(
-        (u): u is UnseenUnlock => !knownCodes.has(u.code)
-      );
-      return next.length === 0 ? prev : [...prev, ...next];
-    });
-  }, [unseen, active]);
+    const fresh = unseen.filter((u) => !dismissedRef.current.has(u.code));
+    if (fresh.length === 0) {
+      return;
+    }
+    setBatch(fresh);
+    setIndex(0);
+  }, [unseen, batch.length]);
 
-  useEffect(() => {
-    if (active || queue.length === 0) {
-      return;
+  const active = batch[index] ?? null;
+  const pageCount = batch.length;
+  const onLast = index >= pageCount - 1;
+
+  const onNext = () => {
+    if (!onLast) {
+      setIndex((i) => i + 1);
     }
-    setActive(queue[0]);
-    setQueue((q) => q.slice(1));
-  }, [active, queue]);
+  };
 
   const onClose = () => {
-    if (!active) {
+    if (pageCount === 0) {
       return;
     }
-    const code = active.code;
-    dismissedRef.current.add(code);
-    setActive(null);
-    markSeenMutation.mutateAsync([code]).catch(() => undefined);
+    const codes = batch.map((b) => b.code);
+    for (const code of codes) {
+      dismissedRef.current.add(code);
+    }
+    setBatch([]);
+    setIndex(0);
+    markSeenMutation.mutateAsync(codes).catch(() => undefined);
   };
 
   const onViewAll = () => {
@@ -105,7 +108,10 @@ export function AchievementPopupProvider({
         icon={active?.icon ?? "trophy-outline"}
         mode="reveal"
         onClose={onClose}
+        onNext={onNext}
         onViewAll={onViewAll}
+        pageCount={pageCount}
+        pageIndex={index}
         quote={active?.quote}
         tier={active?.tier ?? "bronze"}
         title={active?.title ?? ""}
