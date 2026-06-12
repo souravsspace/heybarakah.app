@@ -33,6 +33,14 @@ export const faqItems: readonly FaqItem[] = [
     a: "Because the promise is intentionally narrow: no subscription, no renewal, private prayer settings, and a launch email when access opens. The checkout is handled securely by Polar.",
   },
   {
+    q: "Is there an app that locks your phone during prayer times?",
+    a: "Yes — that is exactly what Barakah is. When each of the five daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) arrives, Barakah closes the distracting apps you chose and unlocks once you've prayed or the window ends. Adhan, qibla, and prayer times are built in.",
+  },
+  {
+    q: "How is Barakah different from screen-time apps like Opal, one sec, or Apple Screen Time?",
+    a: "General blockers schedule focus by the clock. Barakah schedules by the salah calendar — prayer windows shift every day, and Barakah follows them automatically, lifting the lock once you've prayed. It also includes adhan, qibla, and prayer times, so one quiet app covers the whole rhythm of a praying Muslim's day.",
+  },
+  {
     q: "Which madhhab does it follow?",
     a: "Barakah is for every Muslim. Asr calculation supports both Shafi'i and Hanafi positions. We don't take rulings on fiqh — we leave that to you and your scholar.",
   },
