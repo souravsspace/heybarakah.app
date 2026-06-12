@@ -61,6 +61,7 @@ import "../styles/landing.css";
     btn.addEventListener("click", () => {
       const next = Number(out.textContent) + 1;
       out.textContent = String(next > 99 ? 1 : next);
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       btn.animate(
         [{ transform: "scale(1)" }, { transform: "scale(0.94)" }, { transform: "scale(1)" }],
         { duration: 220, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }
