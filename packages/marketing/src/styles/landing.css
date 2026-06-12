@@ -600,33 +600,28 @@ section > .wrap { position: relative; z-index: 1; }
 .pd-board {
   position: relative;
   border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: clamp(22px, 3vw, 34px);
+  border-radius: var(--r-xl);
+  padding: clamp(18px, 2.2vw, 26px);
   background:
-    radial-gradient(70% 40% at 50% 0%, rgba(41,96,62,0.04), transparent 60%),
-    #fff;
+    radial-gradient(90% 60% at 10% -5%, rgba(248,241,225,0.9), transparent 55%),
+    radial-gradient(80% 55% at 100% 105%, rgba(41,96,62,0.1), transparent 55%),
+    var(--canvas);
+  display: grid;
+  gap: 10px;
   overflow: hidden;
 }
-.pd-board::before {
-  content: "";
-  position: absolute;
-  left: calc(clamp(22px, 3vw, 34px) + 26px);
-  top: clamp(22px, 3vw, 34px);
-  bottom: clamp(22px, 3vw, 34px);
-  width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(41,96,62,0.18) 12%, rgba(41,96,62,0.18) 88%, transparent);
-  pointer-events: none;
-}
 .pd-row {
-  position: relative;
   display: grid;
   grid-template-columns: 180px 1fr;
   gap: 22px;
   align-items: center;
-  padding: 19px 0;
-  border-bottom: 1px solid var(--divider);
+  padding: 16px 18px;
+  border: 1px solid rgba(41,96,62,0.12);
+  border-radius: var(--r-lg);
+  background: rgba(255,255,255,0.66);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
-.pd-row:last-child { border-bottom: none; }
 .pd-time {
   display: grid;
   grid-template-columns: 52px 1fr;
@@ -634,8 +629,6 @@ section > .wrap { position: relative; z-index: 1; }
   align-items: center;
 }
 .pd-time .pd-ar {
-  position: relative;
-  z-index: 1;
   width: 52px;
   height: 58px;
   display: grid;
@@ -643,9 +636,7 @@ section > .wrap { position: relative; z-index: 1; }
   padding-top: 6px;
   border-radius: 26px 26px 9px 9px;
   border: 1px solid rgba(41,96,62,0.22);
-  background:
-    radial-gradient(70% 40% at 50% 0%, rgba(41,96,62,0.08), transparent 60%),
-    var(--bg);
+  background: var(--primary-soft);
   font-family: "Times New Roman", serif;
   font-size: 16px;
   color: var(--primary);
@@ -693,22 +684,26 @@ section > .wrap { position: relative; z-index: 1; }
 .pd-pill.gold { background: var(--primary-soft); color: var(--primary); }
 .pd-pill.dhikr { background: var(--bg); border: 1px solid var(--border); color: var(--primary-press); }
 .pd-row.active {
-  margin-inline: -14px;
-  padding-inline: 14px;
-  border-radius: var(--r-md);
-  border: 1px solid rgba(41,96,62,0.2);
+  border-color: var(--primary-press);
   background:
-    radial-gradient(80% 60% at 50% 0%, rgba(41,96,62,0.05), transparent 60%),
-    var(--primary-soft);
+    radial-gradient(80% 70% at 50% -10%, rgba(248,241,225,0.16), transparent 60%),
+    linear-gradient(180deg, var(--primary), var(--primary-press));
+  color: #fff;
+  box-shadow: 0 14px 34px -22px rgba(41,96,62,0.65);
 }
-.pd-row.active + .pd-row { border-top: none; }
 .pd-row.active .pd-time .pd-ar {
-  background: var(--primary);
-  color: var(--bg);
-  border-color: var(--primary);
-  box-shadow: 0 0 0 5px rgba(41,96,62,0.12);
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
 }
-.pd-row.active .pd-time strong { color: var(--primary-press); }
+.pd-row.active .pd-time strong { color: #fff; }
+.pd-row.active .pd-time small { color: rgba(255,255,255,0.65); }
+.pd-row.active .pd-state p { color: rgba(255,255,255,0.78); }
+.pd-row.active .pd-pill {
+  background: rgba(255,255,255,0.16);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.24);
+}
 
 /* ============================================================
    Generic section header
@@ -1710,10 +1705,6 @@ section > .wrap { position: relative; z-index: 1; }
   .pd-row {
     grid-template-columns: 1fr;
     gap: 12px;
-    padding: 16px 0;
-  }
-  .pd-row.active {
-    margin-inline: 0;
     padding: 16px;
   }
   .pd-state { align-items: flex-start; flex-direction: column; gap: 10px; }
@@ -1808,10 +1799,6 @@ section > .wrap { position: relative; z-index: 1; }
   .pd-time small,
   .pd-state p {
     overflow-wrap: anywhere;
-  }
-  .pd-row.active {
-    padding: 14px;
-    border-radius: 16px;
   }
   .pd-pill {
     max-width: 100%;
