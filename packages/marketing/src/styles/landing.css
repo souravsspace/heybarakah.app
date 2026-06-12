@@ -819,23 +819,65 @@ section > .wrap { position: relative; z-index: 1; }
     radial-gradient(80% 55% at 100% 90%, rgba(41,96,62,0.04), transparent 58%),
     var(--bg);
 }
-.qo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 3vw, 40px); }
+.qo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(20px, 3vw, 40px);
+  max-width: 940px;
+  margin: 0 auto;
+  align-items: stretch;
+}
 .qo-col {
-  background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg); padding: 34px 32px 38px;
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 190px 190px var(--r-lg) var(--r-lg);
+  padding: 64px 34px 40px;
+  background:
+    radial-gradient(80% 40% at 50% 0%, rgba(201,162,58,0.08), transparent 60%),
+    var(--cream);
+}
+.qo-col::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(41,96,62,0.12);
+  border-radius: 180px 180px calc(var(--r-lg) - 4px) calc(var(--r-lg) - 4px);
+  pointer-events: none;
+}
+.qo-col::after {
+  content: "";
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  width: 17px;
+  height: 17px;
+  transform: translateX(-50%);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%2329603E' stroke-opacity='0.55' stroke-width='1.25'%3E%3Crect x='5' y='5' width='14' height='14'/%3E%3Crect x='5' y='5' width='14' height='14' transform='rotate(45 12 12)'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: contain;
 }
 .qo-col.quiet {
-  background: var(--canvas-cool);
+  border-color: rgba(255,255,255,0.06);
+  background:
+    radial-gradient(80% 40% at 50% 0%, rgba(255,255,255,0.1), transparent 60%),
+    linear-gradient(180deg, #0E2A1B, #0B1710);
+  color: #fff;
 }
-.qo-col h3 { font-family: var(--serif); font-size: 24px; margin: 0 0 4px; letter-spacing: -0.01em; }
-.qo-col .qo-tag { font-size: 13.5px; color: var(--muted); margin: 0 0 26px; }
+.qo-col.quiet::before { border-color: rgba(255,255,255,0.13); }
+.qo-col.quiet::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-opacity='0.5' stroke-width='1.25'%3E%3Crect x='5' y='5' width='14' height='14'/%3E%3Crect x='5' y='5' width='14' height='14' transform='rotate(45 12 12)'/%3E%3C/g%3E%3C/svg%3E");
+}
+.qo-col h3 { font-family: var(--serif); font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; text-align: center; }
+.qo-col .qo-tag { font-size: 13.5px; color: var(--muted); margin: 0 0 30px; text-align: center; }
+.qo-col.quiet .qo-tag { color: rgba(255,255,255,0.55); }
 .qo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .qo-list li { display: flex; align-items: center; gap: 14px; padding: 13px 2px; border-bottom: 1px solid var(--divider); font-size: 16px; }
+.qo-col.quiet .qo-list li { border-bottom-color: rgba(255,255,255,0.1); }
 .qo-list li:last-child { border-bottom: none; }
 .qo-ic { width: 30px; height: 30px; border-radius: 50%; flex: none; display: grid; place-items: center; }
-.qo-ic svg { width: 17px; height: 17px; stroke-width: 2.2; }
-.qo-ic.q { background: rgba(180,35,24,0.08); color: #B42318; }
+.qo-ic svg { width: 16px; height: 16px; stroke-width: 2; }
+.qo-ic.q { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.14); }
 .qo-ic.o { background: var(--primary-soft); color: var(--primary); }
-.qo-col.quiet .qo-list li span.qt { color: var(--ink); }
+.qo-col.quiet .qo-list li span.qt { color: rgba(255,255,255,0.88); }
 
 /* ============================================================
    Salah detail
@@ -1540,7 +1582,8 @@ section > .wrap { position: relative; z-index: 1; }
   .j-salah { border-radius: 130px 130px var(--r-lg) var(--r-lg); padding: 48px 24px 36px; }
   .j-salah::before { border-radius: 120px 120px calc(var(--r-lg) - 4px) calc(var(--r-lg) - 4px); }
   .qo-grid { grid-template-columns: 1fr; }
-  .qo-col { padding: 30px 24px 32px; }
+  .qo-col { padding: 56px 24px 32px; border-radius: 150px 150px var(--r-lg) var(--r-lg); }
+  .qo-col::before { border-radius: 140px 140px calc(var(--r-lg) - 4px) calc(var(--r-lg) - 4px); }
   .windows { padding: 54px 0; }
   .windows .w-intro {
     display: block;
