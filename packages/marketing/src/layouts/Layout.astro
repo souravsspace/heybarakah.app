@@ -60,8 +60,15 @@ const websiteLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: appConfig.brand.name,
+  alternateName: [appConfig.brand.shortName, "heybarakah"],
+  description: appConfig.brand.description,
   url: siteUrl,
   inLanguage: appConfig.seo.language,
+  publisher: {
+    "@type": "Organization",
+    name: appConfig.brand.name,
+    url: siteUrl,
+  },
 };
 
 const softwareLd = {

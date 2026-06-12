@@ -21,6 +21,7 @@ When designing or implementing any UI, components, layouts, or visual features, 
 9. **`design/project/assets/`** and **`design/project/fonts/`** — Brand marks, icons, font files.
 
 **Key rules to internalize:**
+
 - Mosque green `#29603E` is the **only** accent. Everything else is black, white, and cool grays.
 - Serif (Libre Baskerville) for headlines only. Sans (Inter) for all UI and body.
 - No emoji anywhere. No gradients on backgrounds. No bouncy animations.
@@ -122,13 +123,10 @@ Every file change must be committed individually. No batching.
 
 ### Versioning
 
-The app version lives in **three** files that must stay in sync:
+The app version lives in **two** files that must stay in sync:
 
-1. `package.json` (root) — `version`
-2. `packages/app/package.json` — `version`
-3. `packages/app/app.json` — `expo.version` (this is the iOS/Android user-facing app version)
-
-When the user asks to bump the version, bump all three at the same time. If the user only mentions one (e.g. "bump the root version"), confirm whether the app version (`app.json`) should bump too — never bump it silently and never leave it stale by accident. iOS `buildNumber` / Android `versionCode` are autoincremented by EAS; do not set them by hand.
+1. `packages/app/package.json` — `version`
+2. `packages/app/app.json` — `expo.version` (this is the iOS/Android user-facing app version)
 
 ---
 
@@ -162,6 +160,7 @@ Framework imports → `workspace:*` internal packages → relative paths.
 This project has a graphify knowledge graph at graphify-out/.
 
 Rules:
+
 - Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
 - If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
 - For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files

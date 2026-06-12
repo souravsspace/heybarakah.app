@@ -16,7 +16,6 @@ import { appConfig } from "../app-config";
       <rect width="1440" height="900" fill="url(#hBL)"/>
     </svg>
   </div>
-  <div class="hero-watermark" aria-hidden="true">ب</div>
   <div class="wrap hero-grid">
     <div class="hero-copy">
       <span class="eyebrow reveal">Prayer lock for Muslims</span>
@@ -34,16 +33,20 @@ import { appConfig } from "../app-config";
         <span class="dot"></span>
         <span>Private prayer settings</span>
       </div>
-      <div class="hero-intention reveal d4">
-        <span class="intention-seal" lang="ar" dir="rtl">نِيَّة</span>
-        <span>
-          <b>Early access should feel like an amanah.</b>
-          <small>Reserve the founding price now; get first launch access when Barakah opens.</small>
-        </span>
-      </div>
     </div>
 
     <div class="device-stage reveal d2">
+      <div class="mihrab-frame" aria-hidden="true">
+        <svg viewBox="0 0 440 620" fill="none">
+          <path d="M30 620 V250 C30 130 110 78 220 36 C330 78 410 130 410 250 V620" stroke="#29603E" stroke-opacity="0.16" stroke-width="1.5"/>
+          <path d="M58 620 V258 C58 150 128 102 220 66 C312 102 382 150 382 258 V620" stroke="#29603E" stroke-opacity="0.11" stroke-width="1.25"/>
+          <path d="M86 620 V266 C86 170 146 126 220 96 C294 126 354 170 354 266 V620" stroke="#29603E" stroke-opacity="0.07" stroke-width="1"/>
+          <g stroke="#29603E" stroke-opacity="0.3" stroke-width="1.25">
+            <rect x="211" y="3" width="18" height="18" transform="rotate(45 220 12)"/>
+            <rect x="211" y="3" width="18" height="18"/>
+          </g>
+        </svg>
+      </div>
       <div class="device">
         <div class="screen lock-screen-mock">
           <div class="statusbar" aria-hidden="true">
@@ -55,13 +58,6 @@ import { appConfig } from "../app-config";
           </div>
           <div class="lock">
             <div class="lock-halo"></div>
-            <div class="mihrab-glow" aria-hidden="true"></div>
-            <div class="prayer-seal" aria-hidden="true">
-              <span lang="ar" dir="rtl">الله</span>
-            </div>
-            <div class="qibla-rosette" aria-hidden="true">
-              <span lang="ar" dir="rtl">قِبْلَة</span>
-            </div>
             <div class="lock-body">
               <div class="lock-eyebrow">Maghrib window</div>
               <p class="lock-ar" lang="ar" dir="rtl">حَيَّ عَلَى الصَّلَاةِ</p>

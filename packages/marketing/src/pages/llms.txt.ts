@@ -4,7 +4,11 @@ import { appConfig } from "../app-config";
 const { brand, seo, contact, pricing, store, islamic } = appConfig;
 const url = (path: string) => new URL(path, seo.siteUrl).toString();
 
+const lastUpdated = new Date().toISOString().slice(0, 10);
+
 const body = `# ${brand.name}
+
+Last updated: ${lastUpdated}
 
 > ${brand.tagline}. Barakah quietly locks distractions during salah (${islamic.prayers.join(", ")}) so Muslims show up — not scroll.
 

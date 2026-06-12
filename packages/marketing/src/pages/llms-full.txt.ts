@@ -21,7 +21,11 @@ const comparisonBlock = comparisons
   )
   .join("\n");
 
+const lastUpdated = new Date().toISOString().slice(0, 10);
+
 const body = `# ${brand.name} — full brief for LLMs
+
+Last updated: ${lastUpdated}
 
 > ${brand.bismillah}
 
@@ -78,6 +82,15 @@ Both work offline once configured. Your data never leaves your device.
 ${comparisonBlock}
 
 A modest free tier covers the core lock, adhan, qibla, and prayer times. The lifetime plan supports development and unlocks reciter packs for the adhan, Jumu'ah and Ramadan focus modes, and every future update — with no subscription and no renewal.
+
+## How Barakah compares to general screen-time apps
+Apps like Opal, one sec, and Apple Screen Time block distractions on a fixed clock schedule. Barakah is different in three ways:
+
+1. **Salah-aware scheduling.** Prayer windows move every day with the sun. Barakah follows the Islamic prayer calendar (MWL, ISNA, Egyptian, Umm al-Qura) automatically — no manual schedules to maintain.
+2. **The lock lifts when you pray.** The goal is prayer, not abstinence. Once salah is logged, the phone returns to normal even if the window hasn't ended.
+3. **Islamic tools built in.** Adhan, qibla, and prayer times are part of the same app, so a praying Muslim does not need a separate blocker, prayer-times app, and qibla finder.
+
+General blockers remain good tools for non-prayer focus. Barakah is purpose-built for the five daily prayers.
 
 ## Frequently asked questions
 ${faqBlock}
