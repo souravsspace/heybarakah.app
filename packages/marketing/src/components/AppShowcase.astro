@@ -13,40 +13,57 @@
   <div class="wrap show-inner">
     <div class="show-grid">
       <div class="show-phones reveal">
-        <!-- Dhikr (back) -->
+        <!-- Dhikr (back) — mirrors app/(app)/(tabs)/dhikr.tsx -->
         <div class="mini-device back">
           <div class="mini-screen dhikr-mock">
+            <div class="dhikr-fill" aria-hidden="true"></div>
             <div class="dhikr-body">
-              <div class="dhikr-ar" lang="ar" dir="rtl">سُبْحَانَ اللهِ</div>
-              <div class="dhikr-ph">Subhan Allah</div>
-              <div class="dhikr-mean">Glory be to Allah</div>
-              <div class="tasbih-beads" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
-              <div class="dhikr-count" id="dhikrCount">33</div>
-              <button class="dhikr-ring" type="button" id="tasbihTap">tap</button>
+              <div class="dhikr-topbar">
+                <span class="dt-name">Subhanallah <i>· 1 of 5</i></span>
+                <span class="dt-count">23 / 33</span>
+              </div>
+              <div class="dhikr-words">
+                <div class="dhikr-ar" lang="ar" dir="rtl">سُبْحَانَ اللهِ</div>
+                <div class="dhikr-ph">Subhan Allah</div>
+                <div class="dhikr-mean">Glory be to Allah</div>
+              </div>
+              <button class="dhikr-big" type="button" id="tasbihTap" aria-label="Count dhikr">
+                <span class="db-count" id="dhikrCount">23</span>
+                <span class="db-of">of 33</span>
+              </button>
+              <div class="dhikr-lifetime">Lifetime · Subhanallah <b>1,204</b></div>
             </div>
           </div>
         </div>
-        <!-- Home (front) -->
+        <!-- Home (front) — mirrors app/(app)/(tabs)/home.tsx -->
         <div class="mini-device front">
           <div class="mini-screen home-mock">
             <div class="home-mesh" aria-hidden="true">
               <svg viewBox="0 0 300 620" preserveAspectRatio="none"><defs><radialGradient id="hm1" cx="12%" cy="0%" r="70%"><stop offset="0" stop-color="#FAF7F0"/><stop offset="1" stop-color="#FAF7F0" stop-opacity="0"/></radialGradient><radialGradient id="hm2" cx="100%" cy="38%" r="55%"><stop offset="0" stop-color="#DDE8E1"/><stop offset="1" stop-color="#DDE8E1" stop-opacity="0"/></radialGradient></defs><rect width="300" height="620" fill="#F8FAF8"/><rect width="300" height="620" fill="url(#hm1)"/><rect width="300" height="620" fill="url(#hm2)"/></svg>
             </div>
             <div class="home-body">
-              <div class="home-greet-eye">Assalamu alaikum</div>
-              <div class="home-greet">Salah rhythm</div>
+              <div class="home-topline">
+                <span class="ht-date">Thu 12 Jun · 16 Dhū al-Ḥijjah</span>
+                <span class="ht-trophy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6m12 5h1.5a2.5 2.5 0 0 0 0-5H18M6 4h12v5a6 6 0 0 1-12 0V4Z"/><path d="M12 15v3m-4 3h8"/></svg></span>
+              </div>
+              <div class="home-greet">Assalāmu ʿalaykum,<br />Sana.</div>
               <div class="home-hero-card">
-                <div class="hh-eye">Next prayer</div>
+                <div class="hh-top"><span class="hh-eye">Next prayer</span><span class="hh-city">London</span></div>
                 <div class="hh-name">Maghrib</div>
-                <div class="hh-time">5:58 PM · lock opens in 14m</div>
+                <div class="hh-time">5:58 PM</div>
+                <div class="hh-count">In 0h 14m 05s</div>
               </div>
-              <div class="home-ledger">
-                <div class="home-row done"><span class="hr-name">Fajr</span><span class="hr-time">Prayed</span><span class="hr-dot"></span></div>
-                <div class="home-row done"><span class="hr-name">Dhuhr</span><span class="hr-time">Prayed</span><span class="hr-dot"></span></div>
-                <div class="home-row"><span class="hr-name">Asr</span><span class="hr-time">3:36</span><span class="hr-dot"></span></div>
-                <div class="home-row live"><span class="hr-name">Maghrib</span><span class="hr-time">Now</span><span class="hr-dot"></span></div>
+              <div class="home-ledger-card">
+                <div class="hl-head"><span>Today</span><span>2 of 5 logged</span></div>
+                <div class="home-row done"><span class="hr-name">Fajr</span><span class="hr-state">On time</span></div>
+                <div class="home-row done"><span class="hr-name">Dhuhr</span><span class="hr-state">On time</span></div>
+                <div class="home-row"><span class="hr-name">Asr</span><span class="hr-time">4:12 PM</span></div>
+                <div class="home-row live">
+                  <span class="hr-name">Maghrib</span><span class="hr-time">5:58 PM</span>
+                </div>
+                <div class="home-row"><span class="hr-name">Isha</span><span class="hr-time">7:24 PM</span></div>
               </div>
-              <div class="phone-dua" lang="ar" dir="rtl">اللهم أعني على ذكرك وشكرك وحسن عبادتك</div>
+              <div class="home-quote">"Remember Me; I will remember you", 2:152</div>
             </div>
           </div>
         </div>
