@@ -572,8 +572,7 @@ section > .wrap { position: relative; z-index: 1; }
    ============================================================ */
 .prayer-day {
   background:
-    radial-gradient(100% 65% at 88% 0%, rgba(41,96,62,0.05), transparent 55%),
-    radial-gradient(80% 50% at 0% 100%, rgba(248,241,225,0.55), transparent 60%),
+    radial-gradient(80% 60% at 50% -10%, rgba(41,96,62,0.045), transparent 60%),
     var(--bg);
 }
 .prayer-day-grid {
@@ -603,8 +602,7 @@ section > .wrap { position: relative; z-index: 1; }
   border-radius: var(--r-xl);
   padding: clamp(18px, 2.2vw, 26px);
   background:
-    radial-gradient(90% 60% at 10% -5%, rgba(248,241,225,0.9), transparent 55%),
-    radial-gradient(80% 55% at 100% 105%, rgba(41,96,62,0.1), transparent 55%),
+    radial-gradient(80% 55% at 50% -8%, rgba(41,96,62,0.06), transparent 60%),
     var(--canvas);
   display: grid;
   gap: 10px;
@@ -612,7 +610,7 @@ section > .wrap { position: relative; z-index: 1; }
 }
 .pd-row {
   display: grid;
-  grid-template-columns: 180px 1fr;
+  grid-template-columns: 150px 1fr;
   gap: 22px;
   align-items: center;
   padding: 16px 18px;
@@ -624,22 +622,7 @@ section > .wrap { position: relative; z-index: 1; }
 }
 .pd-time {
   display: grid;
-  grid-template-columns: 52px 1fr;
-  gap: 12px;
-  align-items: center;
-}
-.pd-time .pd-ar {
-  width: 52px;
-  height: 58px;
-  display: grid;
-  place-items: center;
-  padding-top: 6px;
-  border-radius: 26px 26px 9px 9px;
-  border: 1px solid rgba(41,96,62,0.22);
-  background: var(--primary-soft);
-  font-family: "Times New Roman", serif;
-  font-size: 16px;
-  color: var(--primary);
+  gap: 2px;
 }
 .pd-time strong {
   display: block;
@@ -690,11 +673,6 @@ section > .wrap { position: relative; z-index: 1; }
     linear-gradient(180deg, var(--primary), var(--primary-press));
   color: #fff;
   box-shadow: 0 14px 34px -22px rgba(41,96,62,0.65);
-}
-.pd-row.active .pd-time .pd-ar {
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  border-color: rgba(255,255,255,0.3);
 }
 .pd-row.active .pd-time strong { color: #fff; }
 .pd-row.active .pd-time small { color: rgba(255,255,255,0.65); }
@@ -1065,83 +1043,97 @@ section > .wrap { position: relative; z-index: 1; }
   z-index: 4;
 }
 
-/* home screen */
+/* home screen — mirrors app/(app)/(tabs)/home.tsx */
 .home-mesh { position: absolute; inset: 0; }
 .home-mesh svg { width: 100%; height: 100%; }
-.home-body { position: absolute; inset: 0; padding: 40px 18px 18px; display: flex; flex-direction: column; }
-.home-greet-eye { font-size: 8px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
-.home-greet { font-family: var(--serif); font-size: 16px; margin: 5px 0 16px; letter-spacing: -0.01em; }
+.home-body { position: absolute; inset: 0; padding: 42px 14px 14px; display: flex; flex-direction: column; }
+.home-topline { display: flex; align-items: center; justify-content: space-between; }
+.ht-date { font-size: 7.5px; font-weight: 600; color: var(--muted); }
+.ht-trophy {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--primary); color: #fff;
+}
+.ht-trophy svg { width: 10px; height: 10px; }
+.home-greet { font-family: var(--serif); font-size: 15px; line-height: 1.2; margin: 7px 0 12px; letter-spacing: -0.01em; color: var(--ink); }
 .home-hero-card {
-  background: var(--primary); color: #fff; border-radius: 18px; padding: 16px;
-  box-shadow: 0 10px 24px -10px rgba(41,96,62,0.5);
+  position: relative;
+  border: 1px solid rgba(41,96,62,0.16);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.5);
+  padding: 12px;
+  backdrop-filter: blur(4px);
 }
-.home-hero-card .hh-eye { font-size: 8px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.7); }
-.home-hero-card .hh-name { font-family: var(--serif); font-size: 24px; margin: 6px 0 2px; }
-.home-hero-card .hh-time { font-variant-numeric: tabular-nums; font-size: 12px; color: rgba(255,255,255,0.78); }
-.home-ledger { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.home-hero-card .hh-top { display: flex; align-items: center; justify-content: space-between; }
+.home-hero-card .hh-eye { font-size: 8px; font-weight: 600; color: var(--muted); }
+.home-hero-card .hh-city { font-size: 8px; font-weight: 600; color: var(--subtle); text-decoration: underline; }
+.home-hero-card .hh-name { font-family: var(--serif); font-size: 26px; line-height: 1.05; margin: 6px 0 2px; color: var(--ink); }
+.home-hero-card .hh-time { font-variant-numeric: tabular-nums; font-size: 11px; color: var(--muted); }
+.home-hero-card .hh-count { font-variant-numeric: tabular-nums; font-size: 8px; font-weight: 600; color: var(--muted); margin-top: 5px; }
+.home-ledger-card {
+  margin-top: 10px;
+  border: 1px solid rgba(41,96,62,0.16);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.5);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  backdrop-filter: blur(4px);
+}
+.hl-head { display: flex; align-items: baseline; justify-content: space-between; font-size: 8px; font-weight: 700; color: var(--muted); }
+.hl-head span:last-child { font-weight: 600; color: var(--subtle); font-variant-numeric: tabular-nums; }
 .home-row {
-  background: rgba(255,255,255,0.6); border: 1px solid var(--border); border-radius: 12px;
-  padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(4px);
+  background: rgba(255,255,255,0.5); border: 1px solid var(--border); border-radius: 9px;
+  padding: 7px 9px; display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;
 }
-.home-row .hr-name { font-size: 12px; font-weight: 500; }
-.home-row .hr-time { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.home-row.done .hr-dot { background: var(--primary); }
-.home-row .hr-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--border-2); }
-.home-row.done .hr-dot { border-color: var(--primary); }
+.home-row .hr-name { font-family: var(--serif); font-size: 11px; color: var(--ink); }
+.home-row .hr-time { font-size: 9px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.home-row .hr-state { font-size: 8.5px; font-weight: 700; color: var(--primary); }
+.home-row.done .hr-name { color: var(--muted); }
 .home-row.live {
-  border-color: rgba(41,96,62,0.3);
-  background: var(--primary-soft);
-}
-.home-row.live .hr-dot {
-  background: var(--primary);
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(41,96,62,0.14);
+  background: rgba(232,240,234,0.55);
+  padding-block: 9px;
 }
-.phone-dua {
-  margin-top: auto;
-  padding: 12px 12px 13px;
-  border-radius: 16px;
-  background: rgba(255,255,255,0.56);
-  border: 1px solid var(--border);
-  color: var(--primary-press);
-  font-family: "Times New Roman", serif;
-  font-size: 14px;
-  line-height: 1.7;
-}
+.home-row.live .hr-name { color: var(--primary); font-size: 13px; }
+.home-quote { margin-top: auto; font-size: 8px; font-weight: 700; color: var(--muted); padding: 8px 4px 2px; }
 
-/* dhikr screen */
-.dhikr-body { position: absolute; inset: 0; padding: 44px 18px 22px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+/* dhikr screen — mirrors app/(app)/(tabs)/dhikr.tsx */
 .dhikr-mock {
   background: linear-gradient(180deg, var(--canvas), #fff);
 }
-.dhikr-ar { font-family: "Times New Roman", serif; font-size: 26px; direction: rtl; color: var(--ink); margin-bottom: 6px; }
-.dhikr-ph { font-size: 11px; color: var(--muted); font-style: normal; }
-.dhikr-mean { font-size: 11px; color: var(--subtle); margin-top: 2px; }
-.dhikr-count { font-family: var(--serif); font-size: 64px; color: var(--primary); margin: auto 0; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-.dhikr-ring {
-  width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--primary);
-  display: grid; place-items: center; margin: 0 auto 8px; color: var(--primary); font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-  background: #fff;
-  transition: transform .2s var(--ease), background .2s var(--ease);
+.dhikr-fill {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 70%;
+  background: var(--primary-soft);
 }
-.dhikr-ring:hover { transform: translateY(-2px); background: var(--primary-soft); }
-.mini-tasbih:hover { transform: translateY(-2px); background: rgba(255,255,255,0.12); }
-.tasbih-beads {
+.dhikr-body { position: absolute; inset: 0; padding: 42px 14px 16px; display: flex; flex-direction: column; align-items: stretch; text-align: center; }
+.dhikr-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.dt-name { font-size: 8px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); }
+.dt-name i { font-style: normal; color: var(--subtle); font-weight: 600; }
+.dt-count { font-size: 8.5px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dhikr-words { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.dhikr-ar { font-size: 19px; direction: rtl; color: var(--ink); font-weight: 500; }
+.dhikr-ph { font-size: 10px; color: var(--ink); font-style: italic; font-weight: 500; }
+.dhikr-mean { font-size: 8.5px; color: var(--muted); }
+.dhikr-big {
+  margin: auto 0;
+  background: none;
+  border: none;
   display: flex;
-  gap: 7px;
-  margin-top: 20px;
+  flex-direction: column;
+  align-items: center;
+  color: var(--ink);
+  transition: transform .15s var(--ease);
 }
-.tasbih-beads span {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--primary);
-  opacity: 0.7;
-}
-.tasbih-beads span:nth-child(2),
-.tasbih-beads span:nth-child(4) {
-  opacity: 0.3;
-}
+.dhikr-big:active { transform: scale(0.97); }
+.db-count { font-family: var(--serif); font-size: 64px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.db-of { font-size: 9px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.dhikr-lifetime { font-size: 7px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); }
+.dhikr-lifetime b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.mini-tasbih:hover { transform: translateY(-2px); background: rgba(255,255,255,0.12); }
 /* misbaha thread: features strung like prayer beads */
 .show-feature-list {
   position: relative;
@@ -1793,8 +1785,6 @@ section > .wrap { position: relative; z-index: 1; }
   .sec-head p {
     font-size: 15.5px;
   }
-  .pd-time { grid-template-columns: 46px minmax(0, 1fr); }
-  .pd-time .pd-ar { width: 46px; height: 52px; border-radius: 23px 23px 8px 8px; font-size: 15px; }
   .pd-time strong { font-size: 20px; }
   .pd-time small,
   .pd-state p {
