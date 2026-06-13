@@ -1,6 +1,19 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
-import { OK } from "@/stoker/http-status-codes";
+import {
+  INTERNAL_SERVER_ERROR,
+  OK,
+  TOO_MANY_REQUESTS,
+  UNAUTHORIZED,
+  UNPROCESSABLE_ENTITY,
+} from "@/stoker/http-status-codes";
+import {
+  rateLimitResponse,
+  serverErrorResponse,
+  unauthorizedResponse,
+  unprocessableMessageResponse,
+  validationErrorResponse,
+} from "@/stoker/openapi/helpers/error-responses";
 import jsonContent from "@/stoker/openapi/helpers/json-content";
 import jsonContentRequired from "@/stoker/openapi/helpers/json-content-required";
 
@@ -40,6 +53,8 @@ export const getMyAccount = createRoute({
   tags,
   responses: {
     [OK]: jsonContent(z.unknown(), "Auth user + in-app profile, or null"),
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -52,6 +67,10 @@ export const upsertProfile = createRoute({
   },
   responses: {
     [OK]: jsonContent(z.unknown(), "Updated profile row"),
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -61,6 +80,9 @@ export const deleteMyAccount = createRoute({
   tags,
   responses: {
     [OK]: jsonContent(z.object({ ok: z.boolean() }), "Account deleted"),
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -73,6 +95,8 @@ export const getMyAvatarUrl = createRoute({
       z.object({ url: z.string().nullable() }),
       "Public avatar URL, or null when unset"
     ),
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -85,6 +109,10 @@ export const setAvatar = createRoute({
   tags,
   responses: {
     [OK]: jsonContent(z.object({ key: z.string() }), "Stored avatar R2 key"),
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: unprocessableMessageResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
