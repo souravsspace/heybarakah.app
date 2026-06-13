@@ -64,6 +64,34 @@ export const unprocessableMessageResponse = jsonContent(
   "Request rejected by the handler"
 );
 
+/**
+ * 422 for routes that can fail EITHER way — the Zod hook (`{success,error}`) OR a
+ * service-thrown `HTTPException` (`{message}`). Documented as a union so the spec
+ * reflects both possible bodies.
+ */
+export const validationOrMessageResponse = jsonContent(
+  z.union([validationErrorSchema, createMessageObjectSchema("Invalid input")]),
+  "Request failed schema or domain validation"
+);
+
+/** 403 — action not permitted in this environment (e.g. mock subscriptions). */
+export const forbiddenResponse = jsonContent(
+  createMessageObjectSchema("Action not allowed in this environment"),
+  "Action forbidden"
+);
+
+/** 404 — the addressed resource does not exist or is not owned by the caller. */
+export const notFoundResponse = jsonContent(
+  createMessageObjectSchema("Not found"),
+  "Resource not found"
+);
+
+/** 409 — request conflicts with current state (e.g. per-user limit reached). */
+export const conflictResponse = jsonContent(
+  createMessageObjectSchema("Conflicts with current state"),
+  "Conflict"
+);
+
 /** 429 — per-IP rate limit exceeded (global middleware). */
 export const rateLimitResponse = jsonContent(
   errorStringSchema,
