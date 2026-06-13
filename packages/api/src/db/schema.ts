@@ -40,7 +40,7 @@ export interface PrayersToLock {
 }
 
 type ProductId = "yearly" | "monthly" | "family" | "lifetime";
-type SubscriptionStatus = "active" | "inactive" | "canceled" | "past_due";
+type SubscriptionStatus = "active" | "inactive" | "canceled";
 type SubscriptionSource = "mock" | "polar" | "revenuecat";
 type RevenueCatStore =
   | "app_store"
