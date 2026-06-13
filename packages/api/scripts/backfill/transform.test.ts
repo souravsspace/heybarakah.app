@@ -76,7 +76,7 @@ describe("toInsertSql", () => {
       { id: "1", authUserId: "u1", total: 10 },
       { id: "2", authUserId: "u2", total: 20 },
     ]);
-    expect(sql).toContain('INSERT INTO "dhikrAggregate"');
+    expect(sql).toContain('INSERT OR IGNORE INTO "dhikrAggregate"');
     expect(sql).toContain(`('1', 'u1', 10)`);
     expect(sql).toContain(`('2', 'u2', 20)`);
   });
@@ -91,7 +91,7 @@ describe("toInsertSql", () => {
     ]);
     // Column list is the union in first-seen order, id first.
     expect(sql).toContain(
-      'INSERT INTO "userLocations" ("id", "a", "b", "c") VALUES'
+      'INSERT OR IGNORE INTO "userLocations" ("id", "a", "b", "c") VALUES'
     );
     // Row 1 lacks `c` → trailing NULL; its `b` value is preserved.
     expect(sql).toContain(`('1', 'x', 'y', NULL)`);
