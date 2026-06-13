@@ -43,6 +43,7 @@ const PROVIDERS: {
 
 const PRIMARY = "#29603E";
 const INK = "#0F1311";
+const SYNC_WAIT_MS = 15_000;
 
 type Mode = "signup" | "signin";
 
@@ -94,7 +95,6 @@ export default function Auth() {
     }
   }
 
-  const SYNC_WAIT_MS = 15_000;
   const [syncWaitState, setSyncWaitState] = useState<
     "idle" | "waiting" | "expired"
   >("idle");
