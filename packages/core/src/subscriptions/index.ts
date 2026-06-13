@@ -6,11 +6,7 @@ import type {
 
 export * from "./validators";
 
-export type SubscriptionStatus =
-  | "active"
-  | "inactive"
-  | "canceled"
-  | "past_due";
+export type SubscriptionStatus = "active" | "inactive" | "canceled";
 
 export interface RevenueCatSyncInput {
   authUserId: string;
