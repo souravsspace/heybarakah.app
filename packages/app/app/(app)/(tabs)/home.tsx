@@ -21,12 +21,12 @@ import { ScrollBlurHeader } from "@/components/scroll-blur-header";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import { useTodayKey } from "@/hooks/use-today-key";
 import { useLogPrayer, useWeekLogs } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { api } from "@/lib/api-client";
 import {
   activePrayerNow,
-  dateKey,
   fmtRangeTime,
   PRAYER_ORDER,
   pad2,
@@ -121,6 +121,9 @@ function useCountdown(target: Date | null) {
     if (!target) {
       return;
     }
+    // Resync immediately so the first frame after `target` changes isn't
+    // computed against a stale `now` captured for the previous target.
+    setNow(new Date());
     if (target.getTime() - Date.now() <= 0) {
       return;
     }
@@ -229,7 +232,7 @@ export default function Home() {
   const countdown = useCountdown(nextPrayer?.at ?? null);
   const hijri = todayPrayerTimes?.hijriDate ?? null;
 
-  const today = dateKey();
+  const today = useTodayKey();
   const gregLine = formatDateLine(new Date());
   const hijriLine = formatHijri(hijri);
   const dateLine = hijriLine ? `${gregLine}  ·  ${hijriLine}` : gregLine;
