@@ -38,4 +38,18 @@ describe("subscriptions routes", () => {
     );
     expect(res.status).toBe(401);
   });
+
+  it("requires auth to claim a mock subscription", async () => {
+    const app = createTestApp(subscriptions);
+    const res = await app.request(
+      new Request("http://localhost/subscription/claim-mock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: "yearly" }),
+      }),
+      undefined,
+      env
+    );
+    expect(res.status).toBe(401);
+  });
 });
