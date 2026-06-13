@@ -85,7 +85,6 @@ export async function claimPolarByEmail(
     return { linked: false };
   }
   const now = new Date().toISOString();
-  let linked = false;
 
   // lower() compare: rows written before email normalization landed in
   // recordPaidOrder can carry mixed-case Polar emails.
@@ -105,8 +104,13 @@ export async function claimPolarByEmail(
   // concurrent claims for the same email both read unclaimed rows, but only the
   // first write wins — the loser's UPDATE matches zero rows.
   const writes: BatchItem<"sqlite">[] = [];
+  // Track which batch slots are subscription claims so `linked` reflects rows
+  // the optimistic-locked UPDATE actually won — a concurrent claim from another
+  // device can grab the row first, leaving this UPDATE matching zero rows.
+  const subWriteIndexes: number[] = [];
   for (const sub of subs) {
     if (sub.source === "polar" && !sub.authUserId) {
+      subWriteIndexes.push(writes.length);
       writes.push(
         db
           .update(subscriptions)
@@ -114,8 +118,8 @@ export async function claimPolarByEmail(
           .where(
             and(eq(subscriptions.id, sub.id), isNull(subscriptions.authUserId))
           )
+          .returning({ id: subscriptions.id })
       );
-      linked = true;
     }
   }
   for (const order of orders) {
@@ -131,9 +135,17 @@ export async function claimPolarByEmail(
     }
   }
 
-  if (writes.length > 0) {
-    await db.batch(writes as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  if (writes.length === 0) {
+    return { linked: false };
   }
+
+  const results = await db.batch(
+    writes as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]
+  );
+  const linked = subWriteIndexes.some((i) => {
+    const rows = results[i];
+    return Array.isArray(rows) && rows.length > 0;
+  });
 
   return { linked };
 }
