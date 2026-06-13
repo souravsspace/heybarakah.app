@@ -76,7 +76,9 @@ export default function PrayerLogged() {
     doneRef.current = true;
     // Pop the unlock/celebration modals, then land on Home — Home and Progress
     // already re-read the week logs via React Query, so the new entry is live.
-    router.dismissAll?.();
+    if (router.canDismiss?.()) {
+      router.dismissAll?.();
+    }
     router.replace("/(app)/(tabs)/home");
   }, [router]);
 
