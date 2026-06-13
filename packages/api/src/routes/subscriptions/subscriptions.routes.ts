@@ -1,6 +1,18 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
-import { OK } from "@/stoker/http-status-codes";
+import {
+  INTERNAL_SERVER_ERROR,
+  OK,
+  TOO_MANY_REQUESTS,
+  UNAUTHORIZED,
+  UNPROCESSABLE_ENTITY,
+} from "@/stoker/http-status-codes";
+import {
+  rateLimitResponse,
+  serverErrorResponse,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from "@/stoker/openapi/helpers/error-responses";
 import jsonContent from "@/stoker/openapi/helpers/json-content";
 import jsonContentRequired from "@/stoker/openapi/helpers/json-content-required";
 
@@ -16,6 +28,8 @@ export const getMySubscription = createRoute({
   tags,
   responses: {
     [OK]: jsonContent(SubscriptionSchema, "Active subscription, or null"),
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -25,6 +39,9 @@ export const claimPolarByEmail = createRoute({
   tags,
   responses: {
     [OK]: jsonContent(z.object({ linked: z.boolean() }), "Link result"),
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -40,6 +57,10 @@ export const claimMockSubscription = createRoute({
   },
   responses: {
     [OK]: jsonContent(SubscriptionSchema, "Mock subscription"),
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -52,6 +73,9 @@ export const syncRevenueCat = createRoute({
       SubscriptionSchema,
       "Verified RevenueCat subscription, or null"
     ),
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
