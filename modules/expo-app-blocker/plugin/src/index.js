@@ -304,14 +304,26 @@ function withAppBlockerIOS(config, pluginConfig) {
 
   config = withEntitlementsPlist(config, (config) => {
     config.modResults["com.apple.developer.family-controls"] = true;
-    config.modResults["com.apple.security.application-groups"] = [appGroup];
+    const groupsKey = "com.apple.security.application-groups";
+    const existingGroups = Array.isArray(config.modResults[groupsKey])
+      ? config.modResults[groupsKey]
+      : [];
+    config.modResults[groupsKey] = Array.from(
+      new Set([...existingGroups, appGroup])
+    );
     return config;
   });
 
   config = withInfoPlist(config, (config) => {
-    config.modResults.BGTaskSchedulerPermittedIdentifiers = [
-      `${config.ios?.bundleIdentifier || "expo.app-blocker"}.relock`,
-    ];
+    const relockId = `${config.ios?.bundleIdentifier || "expo.app-blocker"}.relock`;
+    const existingIds = Array.isArray(
+      config.modResults.BGTaskSchedulerPermittedIdentifiers
+    )
+      ? config.modResults.BGTaskSchedulerPermittedIdentifiers
+      : [];
+    config.modResults.BGTaskSchedulerPermittedIdentifiers = Array.from(
+      new Set([...existingIds, relockId])
+    );
     config.modResults.ExpoAppBlockerAppGroup = appGroup;
     return config;
   });
