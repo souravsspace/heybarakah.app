@@ -63,7 +63,8 @@ export function resolveProductId(
 export function buildRevenueCatSubscriptionDoc(
   input: RevenueCatSyncInput,
   now: string,
-  existingProductId?: ProductId
+  existingProductId?: ProductId,
+  existingActivatedAt?: string
 ): RevenueCatSubscriptionDoc {
   const product = resolveProductId(
     input.productIdentifier,
@@ -78,7 +79,11 @@ export function buildRevenueCatSubscriptionDoc(
     productId: product,
     status,
     source: "revenuecat",
-    activatedAt: input.entitlementActive ? now : undefined,
+    // Preserve the original activation timestamp across re-syncs; only stamp a
+    // fresh one when activating a row that had none.
+    activatedAt: input.entitlementActive
+      ? (existingActivatedAt ?? now)
+      : undefined,
     updatedAt: now,
     expiresAt: input.expiresAt,
     rcAppUserId: input.rcAppUserId,
