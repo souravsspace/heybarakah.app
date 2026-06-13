@@ -1,6 +1,18 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
-import { OK } from "@/stoker/http-status-codes";
+import {
+  INTERNAL_SERVER_ERROR,
+  OK,
+  TOO_MANY_REQUESTS,
+  UNAUTHORIZED,
+  UNPROCESSABLE_ENTITY,
+} from "@/stoker/http-status-codes";
+import {
+  rateLimitResponse,
+  serverErrorResponse,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from "@/stoker/openapi/helpers/error-responses";
 import jsonContent from "@/stoker/openapi/helpers/json-content";
 import jsonContentRequired from "@/stoker/openapi/helpers/json-content-required";
 
@@ -33,6 +45,8 @@ export const listMine = createRoute({
       }),
       "Saved locations + active id"
     ),
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -58,6 +72,10 @@ export const create = createRoute({
   },
   responses: {
     [OK]: jsonContent(z.object({ id: z.string() }), "Created location id"),
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -72,7 +90,13 @@ export const rename = createRoute({
       "New name"
     ),
   },
-  responses: { [OK]: okResponse },
+  responses: {
+    [OK]: okResponse,
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
 });
 
 export const remove = createRoute({
@@ -80,7 +104,13 @@ export const remove = createRoute({
   path: "/locations/{id}/remove",
   tags,
   request: { params: IdParam },
-  responses: { [OK]: okResponse },
+  responses: {
+    [OK]: okResponse,
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
 });
 
 export const setActive = createRoute({
@@ -88,7 +118,13 @@ export const setActive = createRoute({
   path: "/locations/{id}/active",
   tags,
   request: { params: IdParam },
-  responses: { [OK]: okResponse },
+  responses: {
+    [OK]: okResponse,
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
 });
 
 export type ListMineRoute = typeof listMine;
