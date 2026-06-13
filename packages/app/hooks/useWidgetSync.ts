@@ -1,6 +1,7 @@
 import { useQuery as useRqQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 import { useDhikr } from "@/contexts/dhikr-context";
+import { useTodayKey } from "@/hooks/use-today-key";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { api } from "@/lib/api-client";
 import { pickDailyAyah } from "@/lib/daily-ayah";
@@ -34,16 +35,16 @@ function useStreak(today: string): Streak | undefined {
   return query.data;
 }
 
-function tomorrowKey(): string {
-  const d = new Date();
+function tomorrowKeyFrom(todayKey: string): string {
+  const d = new Date(`${todayKey}T00:00:00`);
   d.setDate(d.getDate() + 1);
   return dateKey(d);
 }
 
 export function useWidgetSync(): void {
   const { prayerTimes } = usePrayerTimes();
-  const today = dateKey();
-  const tomorrow = tomorrowKey();
+  const today = useTodayKey();
+  const tomorrow = tomorrowKeyFrom(today);
 
   const streak = useStreak(today);
   // Dhikr mirrors the on-screen tasbih (DhikrProvider, AsyncStorage-backed) so
