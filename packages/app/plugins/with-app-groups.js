@@ -72,7 +72,7 @@ module.exports = function withAppGroups(inputConfig) {
       // future rename doesn't silently drop the app group.
       let patchedWidget = false;
       for (const entry of fs.readdirSync(iosRoot, { withFileTypes: true })) {
-        if (!entry.isDirectory() || !/widget/i.test(entry.name)) {
+        if (!(entry.isDirectory() && /widget/i.test(entry.name))) {
           continue;
         }
         const dir = path.join(iosRoot, entry.name);
