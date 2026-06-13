@@ -25,6 +25,7 @@ public class ExpoAppBlockerModule: Module {
   private var currentBlockConfig: BlockConfig?
   private let stateQueue = DispatchQueue(label: "expo.appblocker.state", qos: .userInitiated)
   private let scheduleLock = NSLock()
+  private let persistLoadLock = NSLock()
   private var isProcessingUnlockState = false
 
   public func definition() -> ModuleDefinition {
@@ -480,6 +481,7 @@ public class ExpoAppBlockerModule: Module {
       do {
         try applyBlocks(config)
       } catch {
+        print("[AppBlocker] checkAndApplyUnlockState applyBlocks failed: \(error)")
       }
     }
   }
@@ -545,18 +547,34 @@ public class ExpoAppBlockerModule: Module {
     return BlockConfig(items: items, isActive: isActive, schedule: schedule)
   }
 
+  // ManagedSettingsStore is not thread-safe and must be mutated on the main
+  // thread; off-thread writes silently fail to apply the shield. Route every
+  // store write through this helper so callers on stateQueue / the RN bridge
+  // thread are safe.
+  private func runOnMain(_ work: @escaping () -> Void) {
+    if Thread.isMainThread {
+      work()
+    } else {
+      DispatchQueue.main.async(execute: work)
+    }
+  }
+
+  private func clearShield() {
+    runOnMain {
+      self.store.shield.applications = nil
+      self.store.shield.applicationCategories = nil
+      self.store.shield.webDomains = nil
+    }
+  }
+
   private func applyBlocks(_ config: BlockConfig) throws {
     guard config.isActive else {
-      store.shield.applications = nil
-      store.shield.applicationCategories = nil
-      store.shield.webDomains = nil
+      clearShield()
       return
     }
 
     if isTemporarilyUnlockedInternal() {
-      store.shield.applications = nil
-      store.shield.applicationCategories = nil
-      store.shield.webDomains = nil
+      clearShield()
       return
     }
 
@@ -565,28 +583,28 @@ public class ExpoAppBlockerModule: Module {
     let validWebDomainTokens = config.items.compactMap { $0.webDomainToken }
 
     guard !validAppTokens.isEmpty || !validCategoryTokens.isEmpty || !validWebDomainTokens.isEmpty else {
-      store.shield.applications = nil
-      store.shield.applicationCategories = nil
-      store.shield.webDomains = nil
+      clearShield()
       return
     }
 
-    if !validAppTokens.isEmpty {
-      store.shield.applications = Set(validAppTokens)
-    } else {
-      store.shield.applications = nil
-    }
+    runOnMain {
+      if validAppTokens.isEmpty {
+        self.store.shield.applications = nil
+      } else {
+        self.store.shield.applications = Set(validAppTokens)
+      }
 
-    if !validCategoryTokens.isEmpty {
-      store.shield.applicationCategories = .specific(Set(validCategoryTokens))
-    } else {
-      store.shield.applicationCategories = nil
-    }
+      if validCategoryTokens.isEmpty {
+        self.store.shield.applicationCategories = nil
+      } else {
+        self.store.shield.applicationCategories = .specific(Set(validCategoryTokens))
+      }
 
-    if !validWebDomainTokens.isEmpty {
-      store.shield.webDomains = Set(validWebDomainTokens)
-    } else {
-      store.shield.webDomains = nil
+      if validWebDomainTokens.isEmpty {
+        self.store.shield.webDomains = nil
+      } else {
+        self.store.shield.webDomains = Set(validWebDomainTokens)
+      }
     }
   }
 
@@ -602,6 +620,7 @@ public class ExpoAppBlockerModule: Module {
     do {
       try applyBlocks(config)
     } catch {
+      print("[AppBlocker] relockApps applyBlocks failed: \(error)")
     }
   }
 
@@ -728,13 +747,22 @@ public class ExpoAppBlockerModule: Module {
         repeats: false
       )
     } else {
+      // Cross-midnight unlock: use the real expiration time-of-day. When the
+      // end components are earlier in the day than the start, DeviceActivity
+      // treats the interval as crossing midnight, so the relock fires at the
+      // actual expiry tomorrow — not at 23:59:59 tonight (which relocked the
+      // user hours early).
       schedule = DeviceActivitySchedule(
         intervalStart: DateComponents(
           hour: startComponents.hour,
           minute: startComponents.minute,
           second: startComponents.second
         ),
-        intervalEnd: DateComponents(hour: 23, minute: 59, second: 59),
+        intervalEnd: DateComponents(
+          hour: endComponents.hour,
+          minute: endComponents.minute,
+          second: endComponents.second
+        ),
         repeats: false
       )
     }
@@ -839,10 +867,16 @@ public class ExpoAppBlockerModule: Module {
   // MARK: - Persistence
 
   private func ensureLoadedPersistedConfig() {
+    // Callers reach here from both stateQueue and the RN bridge thread; guard
+    // the check-and-set so two threads can't both pass the flag and run
+    // parseBlockConfig + applyBlocks concurrently.
+    persistLoadLock.lock()
     if didLoadPersistedConfig {
+      persistLoadLock.unlock()
       return
     }
     didLoadPersistedConfig = true
+    persistLoadLock.unlock()
 
     guard let savedConfig = userDefaults.dictionary(forKey: blockConfigStorageKey) else {
       return
