@@ -86,4 +86,28 @@ describe("buildRevenueCatSubscriptionDoc", () => {
 
     expect(doc.productId).toBe("family");
   });
+
+  test("preserves existing activatedAt across re-sync of active row", () => {
+    const ORIGINAL = "2026-01-01T00:00:00.000Z";
+    const doc = buildRevenueCatSubscriptionDoc(
+      { authUserId: USER, entitlementActive: true },
+      NOW,
+      "monthly",
+      ORIGINAL
+    );
+
+    expect(doc.activatedAt).toBe(ORIGINAL);
+    expect(doc.updatedAt).toBe(NOW);
+  });
+
+  test("stamps fresh activatedAt when none existed", () => {
+    const doc = buildRevenueCatSubscriptionDoc(
+      { authUserId: USER, entitlementActive: true },
+      NOW,
+      undefined,
+      undefined
+    );
+
+    expect(doc.activatedAt).toBe(NOW);
+  });
 });

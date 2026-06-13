@@ -304,14 +304,26 @@ function withAppBlockerIOS(config, pluginConfig) {
 
   config = withEntitlementsPlist(config, (config) => {
     config.modResults["com.apple.developer.family-controls"] = true;
-    config.modResults["com.apple.security.application-groups"] = [appGroup];
+    const groupsKey = "com.apple.security.application-groups";
+    const existingGroups = Array.isArray(config.modResults[groupsKey])
+      ? config.modResults[groupsKey]
+      : [];
+    config.modResults[groupsKey] = Array.from(
+      new Set([...existingGroups, appGroup])
+    );
     return config;
   });
 
   config = withInfoPlist(config, (config) => {
-    config.modResults.BGTaskSchedulerPermittedIdentifiers = [
-      `${config.ios?.bundleIdentifier || "expo.app-blocker"}.relock`,
-    ];
+    const relockId = `${config.ios?.bundleIdentifier || "expo.app-blocker"}.relock`;
+    const existingIds = Array.isArray(
+      config.modResults.BGTaskSchedulerPermittedIdentifiers
+    )
+      ? config.modResults.BGTaskSchedulerPermittedIdentifiers
+      : [];
+    config.modResults.BGTaskSchedulerPermittedIdentifiers = Array.from(
+      new Set([...existingIds, relockId])
+    );
     config.modResults.ExpoAppBlockerAppGroup = appGroup;
     return config;
   });
@@ -354,7 +366,19 @@ function withAppBlockerIOS(config, pluginConfig) {
     //    substitution map mirrors the original withDangerousMod block — kept
     //    here so config-eval produces final, build-ready Swift in one pass.
     function hexToRgb(hex) {
-      const h = hex.replace("#", "");
+      let h = String(hex).replace("#", "").trim();
+      // Expand shorthand #abc → #aabbcc.
+      if (h.length === 3) {
+        h = h
+          .split("")
+          .map((c) => c + c)
+          .join("");
+      }
+      if (!/^[0-9a-fA-F]{6}$/.test(h)) {
+        throw new Error(
+          `expo-app-blocker: invalid hex color "${hex}" — expected #RGB or #RRGGBB`
+        );
+      }
       return {
         r: (Number.parseInt(h.substring(0, 2), 16) / 255).toFixed(3),
         g: (Number.parseInt(h.substring(2, 4), 16) / 255).toFixed(3),

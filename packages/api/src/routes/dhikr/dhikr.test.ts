@@ -50,4 +50,22 @@ describe("dhikr routes", () => {
     );
     expect(res.status).toBe(401);
   });
+
+  it("requires auth to set target", async () => {
+    const app = createTestApp(dhikr);
+    const res = await app.request(
+      jsonPost("/dhikr/target", { date: "2026-06-08", target: 100 }),
+      undefined,
+      env
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects a missing date on getToday with 422", async () => {
+    const app = createTestApp(dhikr);
+    const res = await app.request("/dhikr/today", {}, env);
+    expect(res.status).toBe(422);
+    const body = (await res.json()) as { success: boolean };
+    expect(body.success).toBe(false);
+  });
 });

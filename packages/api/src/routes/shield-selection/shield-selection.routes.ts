@@ -1,6 +1,18 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
-import { OK } from "@/stoker/http-status-codes";
+import {
+  INTERNAL_SERVER_ERROR,
+  OK,
+  TOO_MANY_REQUESTS,
+  UNAUTHORIZED,
+  UNPROCESSABLE_ENTITY,
+} from "@/stoker/http-status-codes";
+import {
+  rateLimitResponse,
+  serverErrorResponse,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from "@/stoker/openapi/helpers/error-responses";
 import jsonContent from "@/stoker/openapi/helpers/json-content";
 import jsonContentRequired from "@/stoker/openapi/helpers/json-content-required";
 
@@ -35,6 +47,8 @@ export const getMine = createRoute({
   tags,
   responses: {
     [OK]: jsonContent(ShieldSchema, "The user's shield selection, or null"),
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -51,7 +65,13 @@ export const upsertIos = createRoute({
       "iOS FamilyActivitySelection blob + item count"
     ),
   },
-  responses: { [OK]: okResponse },
+  responses: {
+    [OK]: okResponse,
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
 });
 
 export const upsertAndroid = createRoute({
@@ -68,7 +88,13 @@ export const upsertAndroid = createRoute({
       "Android package names to block"
     ),
   },
-  responses: { [OK]: okResponse },
+  responses: {
+    [OK]: okResponse,
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
 });
 
 export const setWindows = createRoute({
@@ -81,7 +107,13 @@ export const setWindows = createRoute({
       "Prayer windows to shield"
     ),
   },
-  responses: { [OK]: okResponse },
+  responses: {
+    [OK]: okResponse,
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
 });
 
 export const setEnabled = createRoute({
@@ -94,7 +126,13 @@ export const setEnabled = createRoute({
       "Enable/disable shield"
     ),
   },
-  responses: { [OK]: okResponse },
+  responses: {
+    [OK]: okResponse,
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
 });
 
 export type GetMineRoute = typeof getMine;

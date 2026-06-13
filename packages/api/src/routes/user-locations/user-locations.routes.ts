@@ -1,6 +1,22 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
-import { OK } from "@/stoker/http-status-codes";
+import {
+  CONFLICT,
+  INTERNAL_SERVER_ERROR,
+  NOT_FOUND,
+  OK,
+  TOO_MANY_REQUESTS,
+  UNAUTHORIZED,
+  UNPROCESSABLE_ENTITY,
+} from "@/stoker/http-status-codes";
+import {
+  conflictResponse,
+  notFoundResponse,
+  rateLimitResponse,
+  serverErrorResponse,
+  unauthorizedResponse,
+  validationOrMessageResponse,
+} from "@/stoker/openapi/helpers/error-responses";
 import jsonContent from "@/stoker/openapi/helpers/json-content";
 import jsonContentRequired from "@/stoker/openapi/helpers/json-content-required";
 
@@ -33,6 +49,8 @@ export const listMine = createRoute({
       }),
       "Saved locations + active id"
     ),
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -58,6 +76,13 @@ export const create = createRoute({
   },
   responses: {
     [OK]: jsonContent(z.object({ id: z.string() }), "Created location id"),
+    [UNAUTHORIZED]: unauthorizedResponse,
+    // Zod bounds (`{success,error}`) OR core `validateName` throw (`{message}`).
+    [UNPROCESSABLE_ENTITY]: validationOrMessageResponse,
+    // Per-user maximum (20) reached.
+    [CONFLICT]: conflictResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 
@@ -72,7 +97,16 @@ export const rename = createRoute({
       "New name"
     ),
   },
-  responses: { [OK]: okResponse },
+  responses: {
+    [OK]: okResponse,
+    [UNAUTHORIZED]: unauthorizedResponse,
+    // Zod bounds OR core `validateName` throw.
+    [UNPROCESSABLE_ENTITY]: validationOrMessageResponse,
+    // Location id not owned by the caller.
+    [NOT_FOUND]: notFoundResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
 });
 
 export const remove = createRoute({
@@ -80,7 +114,14 @@ export const remove = createRoute({
   path: "/locations/{id}/remove",
   tags,
   request: { params: IdParam },
-  responses: { [OK]: okResponse },
+  responses: {
+    [OK]: okResponse,
+    [UNAUTHORIZED]: unauthorizedResponse,
+    // Location id not owned by the caller.
+    [NOT_FOUND]: notFoundResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
 });
 
 export const setActive = createRoute({
@@ -88,7 +129,14 @@ export const setActive = createRoute({
   path: "/locations/{id}/active",
   tags,
   request: { params: IdParam },
-  responses: { [OK]: okResponse },
+  responses: {
+    [OK]: okResponse,
+    [UNAUTHORIZED]: unauthorizedResponse,
+    // Location id not owned by the caller, or no profile to set it on.
+    [NOT_FOUND]: notFoundResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
 });
 
 export type ListMineRoute = typeof listMine;

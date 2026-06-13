@@ -245,11 +245,20 @@ export function startLockActivityInstance(args: {
   name: PrayerName;
   startISO: string;
 }): string {
+  const startEpoch = Date.parse(args.startISO);
+  const endEpoch = Date.parse(args.endISO);
+  // Reject malformed/empty ISO strings before they reach native as NaN, which
+  // the Swift bridge would coerce to a bogus epoch and break the countdown.
+  if (!(Number.isFinite(startEpoch) && Number.isFinite(endEpoch))) {
+    throw new Error(
+      `startLockActivityInstance: invalid ISO (start="${args.startISO}", end="${args.endISO}")`
+    );
+  }
   const id = `${args.name}:${Date.now()}`;
   const activity = lockActivityFactory.start({
     prayerName: args.name,
-    startEpoch: Date.parse(args.startISO),
-    endEpoch: Date.parse(args.endISO),
+    startEpoch,
+    endEpoch,
   });
   activities.set(id, activity);
   return id;

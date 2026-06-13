@@ -30,6 +30,7 @@ export default function Faq() {
             return (
               <div className={isOpen ? "faq-item open" : "faq-item"} key={f.q}>
                 <button
+                  aria-controls={`faq-panel-${i}`}
                   aria-expanded={isOpen}
                   className="faq-q"
                   onClick={() => setOpen(isOpen ? null : i)}
@@ -51,6 +52,7 @@ export default function Faq() {
                 </button>
                 <div
                   className="faq-a"
+                  id={`faq-panel-${i}`}
                   style={{
                     maxHeight: isOpen ? `${innerRefs.current[i]?.scrollHeight ?? 0}px` : "0px",
                   }}

@@ -122,7 +122,10 @@ export function toInsertSql(
   const values = rows
     .map((row) => `(${columns.map((c) => toSqlLiteral(row[c])).join(", ")})`)
     .join(",\n");
-  return `INSERT INTO "${table}" (${columns
+  // INSERT OR IGNORE so a partial run (network failure, constraint hit
+  // mid-batch) can be safely retried — already-inserted rows are skipped on the
+  // UNIQUE/PK conflict instead of aborting the whole batch.
+  return `INSERT OR IGNORE INTO "${table}" (${columns
     .map((c) => `"${c}"`)
     .join(", ")}) VALUES\n${values};`;
 }

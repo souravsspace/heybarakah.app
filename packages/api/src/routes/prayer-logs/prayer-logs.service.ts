@@ -140,8 +140,13 @@ export interface StreakResult {
 export async function getStreak(
   db: Database,
   authUserId: string,
-  today: string
+  todayInput: string
 ): Promise<StreakResult> {
+  // Cap the client-supplied date to one day past the server's UTC date so a
+  // far-future value (e.g. "2099-12-31") can't anchor the lookback window at a
+  // date that forces a full-table scan.
+  const serverMax = addDays(new Date().toISOString().slice(0, 10), 1);
+  const today = todayInput > serverMax ? serverMax : todayInput;
   const startDate = addDays(today, -STREAK_MAX_LOOKBACK);
   const logs = await db
     .select({

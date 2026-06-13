@@ -33,6 +33,36 @@ describe("shield-selection routes", () => {
     expect(res.status).toBe(401);
   });
 
+  it("requires auth to upsert ios selection", async () => {
+    const app = createTestApp(shieldSelection);
+    const res = await app.request(
+      jsonPost("/shield/ios", { iosSelectionData: "blob", iosItemCount: 1 }),
+      undefined,
+      env
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("requires auth to upsert android selection", async () => {
+    const app = createTestApp(shieldSelection);
+    const res = await app.request(
+      jsonPost("/shield/android", { androidPackageNames: ["com.example"] }),
+      undefined,
+      env
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("requires auth to set windows", async () => {
+    const app = createTestApp(shieldSelection);
+    const res = await app.request(
+      jsonPost("/shield/windows", { windows: ["fajr"] }),
+      undefined,
+      env
+    );
+    expect(res.status).toBe(401);
+  });
+
   it("rejects an oversized android list with 422", async () => {
     const app = createTestApp(shieldSelection);
     const res = await app.request(

@@ -82,11 +82,21 @@ async function main() {
   process.stdout.write(`Resetting D1 (DB binding) target: ${where}\n`);
 
   const { $ } = await import("bun");
-  const sqlCommand = buildClearStatements().join(" ");
+  // `wrangler d1 execute --command` runs only ONE statement; everything after
+  // the first `;` is silently dropped. Write all statements to a temp .sql file
+  // and run with --file so every table is cleared.
+  const sqlFile = `${process.cwd()}/.reset-db.tmp.sql`;
+  await Bun.write(sqlFile, `${buildClearStatements().join("\n")}\n`);
   const target = args.remote ? "--remote" : "--local";
-  await (args.remote
-    ? $`wrangler d1 execute DB ${target} --env ${args.env} --command ${sqlCommand}`
-    : $`wrangler d1 execute DB ${target} --command ${sqlCommand}`);
+  try {
+    await (args.remote
+      ? $`wrangler d1 execute DB ${target} --env ${args.env} --file ${sqlFile}`
+      : $`wrangler d1 execute DB ${target} --file ${sqlFile}`);
+  } finally {
+    await Bun.file(sqlFile)
+      .unlink()
+      .catch(() => undefined);
+  }
 }
 
 if (import.meta.main) {

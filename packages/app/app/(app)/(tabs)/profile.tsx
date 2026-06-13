@@ -179,7 +179,7 @@ export default function Profile() {
           text: "Delete",
           style: "destructive",
           onPress: () => {
-            runDelete();
+            runDelete().catch(() => undefined);
           },
         },
       ]

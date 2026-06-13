@@ -14,7 +14,7 @@ import {
   slicePrayerDays,
 } from "@barakah/core/prayer";
 import type { KVNamespace } from "@cloudflare/workers-types";
-import { desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 
 import type { Database } from "@/db";
@@ -336,12 +336,32 @@ export async function purgeExpiredPrayerCaches(
   db: Database,
   now: number = Date.now()
 ): Promise<number> {
-  // Single bounded statement: DELETE … RETURNING avoids the prior unbounded
-  // full-row SELECT (D1 10 MB response cap on a cold sweep) and the
-  // select-then-delete race. RETURNING only the id keeps the response small.
-  const deleted = await db
-    .delete(prayerTimeCaches)
-    .where(lt(prayerTimeCaches.expiresAt, now))
-    .returning({ id: prayerTimeCaches.id });
-  return deleted.length;
+  // Delete in capped batches: an unbounded DELETE … RETURNING on a cold sweep
+  // of a large table can blow the D1 10 MB response cap. Loop a bounded subquery
+  // delete until a short batch signals the table is drained.
+  const BATCH = 200;
+  let total = 0;
+  for (;;) {
+    const deleted = await db
+      .delete(prayerTimeCaches)
+      .where(
+        and(
+          lt(prayerTimeCaches.expiresAt, now),
+          inArray(
+            prayerTimeCaches.id,
+            db
+              .select({ id: prayerTimeCaches.id })
+              .from(prayerTimeCaches)
+              .where(lt(prayerTimeCaches.expiresAt, now))
+              .limit(BATCH)
+          )
+        )
+      )
+      .returning({ id: prayerTimeCaches.id });
+    total += deleted.length;
+    if (deleted.length < BATCH) {
+      break;
+    }
+  }
+  return total;
 }

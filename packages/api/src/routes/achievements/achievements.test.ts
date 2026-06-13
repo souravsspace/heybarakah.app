@@ -41,4 +41,20 @@ describe("achievements routes", () => {
     );
     expect(res.status).toBe(401);
   });
+
+  it("rejects a bad markSeen body with 422", async () => {
+    const app = createTestApp(achievements);
+    const res = await app.request(
+      new Request("http://localhost/achievements/seen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codes: "x" }),
+      }),
+      undefined,
+      env
+    );
+    expect(res.status).toBe(422);
+    const body = (await res.json()) as { success: boolean };
+    expect(body.success).toBe(false);
+  });
 });

@@ -180,7 +180,9 @@ class AppBlockerService : Service() {
     private const val NOTIFICATION_ID = 9001
     private const val BLOCKED_NOTIFICATION_ID = 9002
     private const val POLL_INTERVAL_MS = 500L
-    private const val LOOKBACK_WINDOW_MS = 10_000L
+    // Wider than the poll interval so a scheduler delay or a fast app-switch
+    // between two polls can't drop a foreground event off the lookback window.
+    private const val LOOKBACK_WINDOW_MS = 30_000L
 
     fun start(context: Context) {
       val intent = Intent(context, AppBlockerService::class.java)

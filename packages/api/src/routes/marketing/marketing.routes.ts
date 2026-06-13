@@ -1,6 +1,16 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
-import { OK } from "@/stoker/http-status-codes";
+import {
+  INTERNAL_SERVER_ERROR,
+  OK,
+  TOO_MANY_REQUESTS,
+  UNPROCESSABLE_ENTITY,
+} from "@/stoker/http-status-codes";
+import {
+  rateLimitResponse,
+  serverErrorResponse,
+  validationErrorResponse,
+} from "@/stoker/openapi/helpers/error-responses";
 import jsonContent from "@/stoker/openapi/helpers/json-content";
 import jsonContentRequired from "@/stoker/openapi/helpers/json-content-required";
 
@@ -26,6 +36,9 @@ export const joinWaitlist = createRoute({
       }),
       "Waitlist join result"
     ),
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
 });
 

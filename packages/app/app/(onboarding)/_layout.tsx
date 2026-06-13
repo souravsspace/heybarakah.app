@@ -6,7 +6,6 @@ import {
   useGlobalSearchParams,
 } from "expo-router";
 import { useNavigationState } from "expo-router/react-navigation";
-import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ErrorScreen } from "@/components/error-screen";
@@ -36,7 +35,6 @@ export default function OnboardingLayout() {
     }
     return state.routes[state.index]?.name;
   });
-  const [gestureToWelcome, setGestureToWelcome] = useState(false);
 
   if (isLoading || isSubscriptionLoading) {
     return <AnimatedSplash />;
@@ -54,7 +52,6 @@ export default function OnboardingLayout() {
     focusedName === "welcome" ||
     currentPath === "/(onboarding)/paywall/plans" ||
     currentPath === "/(onboarding)/complete" ||
-    gestureToWelcome ||
     index <= 0;
 
   return (
@@ -71,9 +68,6 @@ export default function OnboardingLayout() {
         </View>
       )}
       <Stack
-        screenListeners={{
-          transitionEnd: () => setGestureToWelcome(false),
-        }}
         screenOptions={{
           headerShown: false,
           animation: "slide_from_right",

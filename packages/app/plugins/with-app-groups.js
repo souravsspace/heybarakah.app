@@ -66,15 +66,28 @@ module.exports = function withAppGroups(inputConfig) {
       patchEntitlementsFile(
         path.join(iosRoot, "Barakah", "Barakah.entitlements")
       );
-      // Official expo-widgets generates the extension as "ExpoWidgetsTarget"
-      // (was "BarakahWidgetExtension" under the old @bittingz widgets).
-      patchEntitlementsFile(
-        path.join(
-          iosRoot,
-          "ExpoWidgetsTarget",
-          "ExpoWidgetsTarget.entitlements"
-        )
-      );
+      // The widget extension folder name is owned by expo-widgets and has
+      // drifted before (BarakahWidgetExtension → ExpoWidgetsTarget). Discover
+      // any widget-extension entitlements on disk instead of hardcoding, so a
+      // future rename doesn't silently drop the app group.
+      let patchedWidget = false;
+      for (const entry of fs.readdirSync(iosRoot, { withFileTypes: true })) {
+        if (!(entry.isDirectory() && /widget/i.test(entry.name))) {
+          continue;
+        }
+        const dir = path.join(iosRoot, entry.name);
+        for (const file of fs.readdirSync(dir)) {
+          if (file.endsWith(".entitlements")) {
+            patchEntitlementsFile(path.join(dir, file));
+            patchedWidget = true;
+          }
+        }
+      }
+      if (!patchedWidget) {
+        console.warn(
+          "[with-app-groups] no widget extension entitlements found to patch"
+        );
+      }
       return cfg;
     },
   });

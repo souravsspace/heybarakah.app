@@ -8,6 +8,7 @@ import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
@@ -25,6 +26,14 @@ class OverlayManager(private val context: Context) {
   private var overlayView: View? = null
 
   fun show(blockedPackageName: String? = null) {
+    // Bail before touching WindowManager when the user hasn't granted the
+    // overlay permission — addView would throw SecurityException on every
+    // poll cycle, flooding logcat and burning CPU.
+    if (!Settings.canDrawOverlays(context)) {
+      Log.w(TAG, "SYSTEM_ALERT_WINDOW not granted; skipping overlay")
+      return
+    }
+
     if (overlayView != null) {
       Log.d(TAG, "Overlay already visible")
       if (blockedPackageName != null) {

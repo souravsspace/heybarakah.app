@@ -17,12 +17,15 @@ export function validateProfileInput(input: {
       }
     }
   }
-  if (
-    input.completedAt !== undefined &&
-    input.completedAt.length > PROFILE_COMPLETED_AT_MAX_LENGTH
-  ) {
-    throw new Error(
-      `completedAt exceeds ${PROFILE_COMPLETED_AT_MAX_LENGTH} characters`
-    );
+  if (input.completedAt !== undefined) {
+    if (input.completedAt.length > PROFILE_COMPLETED_AT_MAX_LENGTH) {
+      throw new Error(
+        `completedAt exceeds ${PROFILE_COMPLETED_AT_MAX_LENGTH} characters`
+      );
+    }
+    // Must be a real timestamp — callers store and parse it as ISO 8601.
+    if (Number.isNaN(Date.parse(input.completedAt))) {
+      throw new Error("completedAt is not a valid date");
+    }
   }
 }

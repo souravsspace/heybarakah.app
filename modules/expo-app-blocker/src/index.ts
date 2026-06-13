@@ -276,8 +276,13 @@ export function addPendingUnlockListener(
   if (Platform.OS !== "ios") {
     return null;
   }
-  const emitter = new EventEmitter(NativeModule);
-  return (emitter as any).addListener("onPendingUnlockRequest", handler);
+  const emitter = new EventEmitter(NativeModule) as unknown as {
+    addListener: (
+      event: string,
+      listener: () => void
+    ) => { remove: () => void };
+  };
+  return emitter.addListener("onPendingUnlockRequest", handler);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
