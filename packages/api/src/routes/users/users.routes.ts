@@ -12,7 +12,7 @@ import {
   serverErrorResponse,
   unauthorizedResponse,
   unprocessableMessageResponse,
-  validationErrorResponse,
+  validationOrMessageResponse,
 } from "@/stoker/openapi/helpers/error-responses";
 import jsonContent from "@/stoker/openapi/helpers/json-content";
 import jsonContentRequired from "@/stoker/openapi/helpers/json-content-required";
@@ -68,7 +68,8 @@ export const upsertProfile = createRoute({
   responses: {
     [OK]: jsonContent(z.unknown(), "Updated profile row"),
     [UNAUTHORIZED]: unauthorizedResponse,
-    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    // Zod hook (`{success,error}`) OR core `validateProfileInput` throw (`{message}`).
+    [UNPROCESSABLE_ENTITY]: validationOrMessageResponse,
     [TOO_MANY_REQUESTS]: rateLimitResponse,
     [INTERNAL_SERVER_ERROR]: serverErrorResponse,
   },
