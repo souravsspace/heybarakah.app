@@ -67,4 +67,46 @@ describe("prayer-logs routes", () => {
     );
     expect(res.status).toBe(422);
   });
+
+  it("requires auth to clear a prayer", async () => {
+    const app = createTestApp(prayerLogs);
+    const res = await app.request(
+      jsonPost("/prayer-logs/clear", { date: "2026-06-08", prayer: "fajr" }),
+      undefined,
+      env
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects an invalid startDate on getMyWeek with 422", async () => {
+    const app = createTestApp(prayerLogs);
+    const res = await app.request(
+      "/prayer-logs/week?startDate=2026-02-30",
+      {},
+      env
+    );
+    expect(res.status).toBe(422);
+  });
+
+  it("rejects a missing startDate on getMyWeek with 422", async () => {
+    const app = createTestApp(prayerLogs);
+    const res = await app.request("/prayer-logs/week", {}, env);
+    expect(res.status).toBe(422);
+  });
+
+  it("rejects an invalid today on getStreak with 422", async () => {
+    const app = createTestApp(prayerLogs);
+    const res = await app.request(
+      "/prayer-logs/streak?today=2026-02-30",
+      {},
+      env
+    );
+    expect(res.status).toBe(422);
+  });
+
+  it("rejects a missing today on getStreak with 422", async () => {
+    const app = createTestApp(prayerLogs);
+    const res = await app.request("/prayer-logs/streak", {}, env);
+    expect(res.status).toBe(422);
+  });
 });
