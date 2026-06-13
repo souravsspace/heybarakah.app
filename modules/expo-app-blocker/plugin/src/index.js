@@ -366,7 +366,19 @@ function withAppBlockerIOS(config, pluginConfig) {
     //    substitution map mirrors the original withDangerousMod block — kept
     //    here so config-eval produces final, build-ready Swift in one pass.
     function hexToRgb(hex) {
-      const h = hex.replace("#", "");
+      let h = String(hex).replace("#", "").trim();
+      // Expand shorthand #abc → #aabbcc.
+      if (h.length === 3) {
+        h = h
+          .split("")
+          .map((c) => c + c)
+          .join("");
+      }
+      if (!/^[0-9a-fA-F]{6}$/.test(h)) {
+        throw new Error(
+          `expo-app-blocker: invalid hex color "${hex}" — expected #RGB or #RRGGBB`
+        );
+      }
       return {
         r: (Number.parseInt(h.substring(0, 2), 16) / 255).toFixed(3),
         g: (Number.parseInt(h.substring(2, 4), 16) / 255).toFixed(3),
