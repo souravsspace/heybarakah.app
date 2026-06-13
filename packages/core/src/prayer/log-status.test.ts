@@ -168,6 +168,56 @@ describe("classifyPrayerStatus", () => {
     expect(status).toBe("qada");
   });
 
+  // The qada boundary is local midnight. These guard the non-UTC case where
+  // "tomorrow T00:00 local" maps to a UTC instant still inside the same UTC day.
+  it("dhuhr at local 23:59 is late in a positive-offset tz (Asia/Dhaka)", () => {
+    const status = classifyPrayerStatus({
+      // 2026-05-14 23:59 Dhaka (+06) === 2026-05-14 17:59 UTC
+      prayedAt: utc(2026, 5, 14, 17, 59),
+      prayer: "dhuhr",
+      schedule: SCHEDULE,
+      dateKey: "2026-05-14",
+      timezone: "Asia/Dhaka",
+    });
+    expect(status).toBe("late");
+  });
+
+  it("dhuhr at next local midnight is qada in a positive-offset tz", () => {
+    const status = classifyPrayerStatus({
+      // 2026-05-15 00:00 Dhaka (+06) === 2026-05-14 18:00 UTC (same UTC day)
+      prayedAt: utc(2026, 5, 14, 18, 0),
+      prayer: "dhuhr",
+      schedule: SCHEDULE,
+      dateKey: "2026-05-14",
+      timezone: "Asia/Dhaka",
+    });
+    expect(status).toBe("qada");
+  });
+
+  it("maghrib at local 23:59 is late in a negative-offset tz (America/New_York)", () => {
+    const status = classifyPrayerStatus({
+      // 2026-01-14 23:59 New York (-05) === 2026-01-15 04:59 UTC
+      prayedAt: utc(2026, 1, 15, 4, 59),
+      prayer: "maghrib",
+      schedule: SCHEDULE,
+      dateKey: "2026-01-14",
+      timezone: "America/New_York",
+    });
+    expect(status).toBe("late");
+  });
+
+  it("maghrib at next local midnight is qada in a negative-offset tz", () => {
+    const status = classifyPrayerStatus({
+      // 2026-01-15 00:00 New York (-05) === 2026-01-15 05:00 UTC
+      prayedAt: utc(2026, 1, 15, 5, 0),
+      prayer: "maghrib",
+      schedule: SCHEDULE,
+      dateKey: "2026-01-14",
+      timezone: "America/New_York",
+    });
+    expect(status).toBe("qada");
+  });
+
   it("throws on invalid dateKey", () => {
     expect(() =>
       classifyPrayerStatus({
