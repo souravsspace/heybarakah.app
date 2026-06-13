@@ -1,5 +1,7 @@
 import {
   buildRevenueCatSubscriptionDoc,
+  PRODUCT_IDS,
+  type ProductId,
   type RevenueCatPeriodType,
   type RevenueCatStore,
   shouldSkipRcSync,
@@ -230,10 +232,14 @@ export async function applyRevenueCatEntitlement(
 
   const rcRow = rows.find((row) => row.source === "revenuecat");
   const now = new Date().toISOString();
+  const existingProductId = PRODUCT_IDS.includes(rcRow?.productId as ProductId)
+    ? (rcRow?.productId as ProductId)
+    : undefined;
   const doc = buildRevenueCatSubscriptionDoc(
     { authUserId, ...verified },
     now,
-    rcRow?.productId as never
+    existingProductId,
+    rcRow?.activatedAt ?? undefined
   );
 
   if (rcRow) {
