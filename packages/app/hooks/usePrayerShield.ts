@@ -2,6 +2,7 @@ import type { PrayerWindow } from "@barakah/core/shieldSelection";
 import { useQuery as useRqQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
+import { useTodayKey } from "@/hooks/use-today-key";
 import { api } from "@/lib/api-client";
 import {
   clearAllBlocks,
@@ -16,7 +17,6 @@ import {
   stopMonitoring,
   temporaryUnlock,
 } from "@/lib/app-blocker";
-import { dateKey } from "@/lib/date-utils";
 import {
   cancelShieldNotifications,
   scheduleShieldNotifications,
@@ -140,7 +140,7 @@ export function usePrayerShield() {
   // we know the real selection, so callers must wait.
   const resolving = liveSelection === undefined && !cacheLoaded;
   const { todayPrayerTimes } = usePrayerTimes();
-  const today = dateKey();
+  const today = useTodayKey();
   const week = useWeekLogs(today);
   const weekRef = useRef(week);
   weekRef.current = week;
