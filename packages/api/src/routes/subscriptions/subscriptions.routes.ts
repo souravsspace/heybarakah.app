@@ -1,6 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
 import {
+  FORBIDDEN,
   INTERNAL_SERVER_ERROR,
   OK,
   TOO_MANY_REQUESTS,
@@ -8,6 +9,7 @@ import {
   UNPROCESSABLE_ENTITY,
 } from "@/stoker/http-status-codes";
 import {
+  forbiddenResponse,
   rateLimitResponse,
   serverErrorResponse,
   unauthorizedResponse,
@@ -58,6 +60,9 @@ export const claimMockSubscription = createRoute({
   responses: {
     [OK]: jsonContent(SubscriptionSchema, "Mock subscription"),
     [UNAUTHORIZED]: unauthorizedResponse,
+    // Gated off (`ALLOW_MOCK_SUBSCRIPTIONS` unset) or product mismatch → service
+    // throws FORBIDDEN.
+    [FORBIDDEN]: forbiddenResponse,
     [UNPROCESSABLE_ENTITY]: validationErrorResponse,
     [TOO_MANY_REQUESTS]: rateLimitResponse,
     [INTERNAL_SERVER_ERROR]: serverErrorResponse,
