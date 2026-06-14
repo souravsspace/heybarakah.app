@@ -18,6 +18,7 @@ describe("topicForPath", () => {
     expect(topicForPath("/api/v1/me/avatar")).toBe("me");
     expect(topicForPath("/api/v1/locations/abc123/active")).toBe("locations");
     expect(topicForPath("/api/v1/shield/ios")).toBe("shield");
+    expect(topicForPath("/api/v1/dhikr/presets/increment")).toBe("dhikr");
   });
 
   it("ignores a trailing query string", () => {
@@ -30,7 +31,6 @@ describe("topicForPath", () => {
     expect(topicForPath("/api/v1/health")).toBeNull();
     expect(topicForPath("/api/v1/prayer-times")).toBeNull();
     expect(topicForPath("/api/v1/app-config")).toBeNull();
-    expect(topicForPath("/api/v1/dhikr/increment")).toBeNull();
     expect(topicForPath("/api/auth/sign-in/email")).toBeNull();
     expect(topicForPath("/")).toBeNull();
   });

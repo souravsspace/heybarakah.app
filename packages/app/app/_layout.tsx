@@ -104,6 +104,10 @@ export default function RootLayout() {
                       <Stack.Screen name="(app)" />
                       <Stack.Screen name="(settings)" />
                       <Stack.Screen
+                        name="logging-out"
+                        options={{ animation: "fade", gestureEnabled: false }}
+                      />
+                      <Stack.Screen
                         name="modal"
                         options={{ presentation: "modal", title: "Modal" }}
                       />

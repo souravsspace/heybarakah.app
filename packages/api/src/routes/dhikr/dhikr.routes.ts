@@ -16,17 +16,32 @@ import {
 import jsonContent from "@/stoker/openapi/helpers/json-content";
 import jsonContentRequired from "@/stoker/openapi/helpers/json-content-required";
 
-import { isValidDateKey, MAX_INCREMENT, MAX_TARGET } from "./dhikr.service";
+import {
+  isValidDateKey,
+  isValidPresetId,
+  MAX_INCREMENT,
+  MAX_TARGET,
+} from "./dhikr.service";
 
 const DateKey = z
   .string()
   .refine(isValidDateKey, { message: "Invalid date" })
   .openapi({ example: "2026-06-08" });
 
+const PresetId = z
+  .string()
+  .refine(isValidPresetId, { message: "Invalid preset" })
+  .openapi({ example: "subhanallah" });
+
 const TodaySchema = z.object({
   count: z.number(),
   target: z.number(),
   sessionTotal: z.number(),
+});
+
+const PresetTotalsSchema = z.object({
+  totals: z.record(z.string(), z.number()),
+  grandTotal: z.number(),
 });
 
 const tags = ["Dhikr"];
@@ -109,7 +124,48 @@ export const reset = createRoute({
   },
 });
 
+export const getPresets = createRoute({
+  method: "get",
+  path: "/dhikr/presets",
+  tags,
+  responses: {
+    [OK]: jsonContent(
+      PresetTotalsSchema,
+      "Per-preset lifetime totals + grand total"
+    ),
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
+});
+
+export const incrementPreset = createRoute({
+  method: "post",
+  path: "/dhikr/presets/increment",
+  tags,
+  request: {
+    body: jsonContentRequired(
+      z.object({
+        presetId: PresetId,
+        by: z.number().int().min(1).max(MAX_INCREMENT).optional(),
+      }),
+      "Preset to increment + amount (default 1)"
+    ),
+  },
+  responses: {
+    [OK]: jsonContent(
+      z.object({ presetTotal: z.number(), grandTotal: z.number() }),
+      "Updated preset total + grand total"
+    ),
+    [UNAUTHORIZED]: unauthorizedResponse,
+    [UNPROCESSABLE_ENTITY]: validationErrorResponse,
+    [TOO_MANY_REQUESTS]: rateLimitResponse,
+    [INTERNAL_SERVER_ERROR]: serverErrorResponse,
+  },
+});
+
 export type GetTodayRoute = typeof getToday;
 export type IncrementRoute = typeof increment;
 export type SetTargetRoute = typeof setTarget;
 export type ResetRoute = typeof reset;
+export type GetPresetsRoute = typeof getPresets;
+export type IncrementPresetRoute = typeof incrementPreset;

@@ -8,7 +8,6 @@ import Svg, { Line, Polygon } from "react-native-svg";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
 import { useUser } from "@/contexts/user-context";
-import { authClient } from "@/lib/auth-client";
 import { useSubscription } from "@/lib/subscription";
 
 const MOSQUE_GREEN = "#29603E";
@@ -82,9 +81,11 @@ export default function NoActiveSub() {
   const { restore } = useSubscription();
   const [isRestoring, setIsRestoring] = useState(false);
 
-  async function useDifferentAccount() {
-    await authClient.signOut().catch(() => undefined);
-    router.replace("/(account)/auth");
+  function useDifferentAccount() {
+    // Full sign-out (RevenueCat + Better Auth), reset onboarding, clear the
+    // account cache, then land on the onboarding welcome flow. Shared with the
+    // profile "Log out" action so both behave identically.
+    router.replace("/logging-out");
   }
 
   async function onRestore() {

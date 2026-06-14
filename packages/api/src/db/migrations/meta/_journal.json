@@ -50,6 +50,13 @@
       "when": 1781165790436,
       "tag": "0006_warm_mongoose",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1781467594200,
+      "tag": "0007_petite_kinsey_walden",
+      "breakpoints": true
     }
   ]
 }

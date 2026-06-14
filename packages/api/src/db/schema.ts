@@ -270,6 +270,23 @@ export const dhikrAggregate = sqliteTable(
   (t) => [uniqueIndex("dhikrAggregate_by_user").on(t.authUserId)]
 );
 
+// Per-preset lifetime totals (Subhanallah, Alhamdulillah, …). Mirrors the
+// client's per-preset counter so each dhikr keeps its own lifetime count across
+// devices. The grand total still lives in dhikrAggregate (read by achievements).
+export const dhikrPreset = sqliteTable(
+  "dhikrPreset",
+  {
+    id: text("id").primaryKey().$defaultFn(uuid),
+    authUserId: text("authUserId").notNull(),
+    presetId: text("presetId").notNull(),
+    total: integer("total", { mode: "number" }).notNull(),
+    updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("dhikrPreset_by_user_preset").on(t.authUserId, t.presetId),
+  ]
+);
+
 export const userLocations = sqliteTable(
   "userLocations",
   {
@@ -368,6 +385,7 @@ export const schema = {
   shieldSelection,
   dhikrDaily,
   dhikrAggregate,
+  dhikrPreset,
   userLocations,
   userAchievements,
   userAchievementCounters,

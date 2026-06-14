@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQuery as useRqQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import {
   createContext,
@@ -10,6 +11,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { useUser } from "@/contexts/user-context";
+import { api } from "@/lib/api-client";
 
 export interface Preset {
   arabic: string;
@@ -60,9 +63,34 @@ export const PRESETS: Preset[] = [
   },
 ];
 
-const LIFETIME_KEY = "@barakah/dhikr/lifetime";
+// Per-user storage keys. A device-global key leaked one account's lifetime
+// counts into the next account on the same device, so keys are namespaced by the
+// signed-in user id. `synced` caches the last-known cloud totals (instant +
+// offline display); `pending` holds local taps not yet flushed to the server.
+const SYNCED_KEY_PREFIX = "@barakah/dhikr/synced";
+const PENDING_KEY_PREFIX = "@barakah/dhikr/pending";
+const syncedKey = (userId: string) => `${SYNCED_KEY_PREFIX}/${userId}`;
+const pendingKey = (userId: string) => `${PENDING_KEY_PREFIX}/${userId}`;
+const FLUSH_DELAY_MS = 1200;
 
 type Lifetime = Record<string, number>;
+
+interface CloudTotals {
+  grandTotal: number;
+  totals: Lifetime;
+}
+
+function readMap(raw: string | null): Lifetime {
+  if (!raw) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(raw) as Lifetime;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
 
 interface DhikrContextValue {
   active: Preset;
@@ -82,49 +110,179 @@ interface DhikrContextValue {
 const DhikrContext = createContext<DhikrContextValue | null>(null);
 
 export function DhikrProvider({ children }: { children: ReactNode }) {
+  const { user } = useUser();
+  const userId = user?.id ?? null;
   const [activeIndex, setActiveIndex] = useState(0);
   const [count, setCount] = useState(0);
-  const [totals, setTotals] = useState<Lifetime>({});
+  // Cloud-authoritative per-preset totals + local taps not yet flushed. Displayed
+  // total = synced + pending (local-first, survives offline).
+  const [synced, setSynced] = useState<Lifetime>({});
+  const [pending, setPending] = useState<Lifetime>({});
   // Authoritative live counter. State lags a render behind, so rapid double-taps
   // would otherwise read a stale `count`; the ref advances synchronously per tap.
   const countRef = useRef(0);
-  const totalsHydrated = useRef(false);
+  const hydrated = useRef(false);
+  const pendingRef = useRef<Lifetime>({});
+  const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flushingRef = useRef(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(LIFETIME_KEY)
-      .then((raw) => {
-        if (!raw) {
+    pendingRef.current = pending;
+  }, [pending]);
+
+  // Cloud totals (authoritative across devices). The realtime sync layer
+  // invalidates ["cf","dhikr"] when another device increments.
+  const cloudQuery = useRqQuery({
+    queryKey: ["cf", "dhikr"],
+    enabled: Boolean(userId),
+    queryFn: async (): Promise<CloudTotals> => {
+      const res = await api.api.v1.dhikr.presets.$get();
+      if (!res.ok) {
+        throw new Error("Failed to load dhikr");
+      }
+      return (await res.json()) as CloudTotals;
+    },
+  });
+
+  // Hydrate local caches on user change. Reset first so the previous account's
+  // counts never flash before the new account's load resolves.
+  useEffect(() => {
+    hydrated.current = false;
+    setSynced({});
+    setPending({});
+    pendingRef.current = {};
+    if (!userId) {
+      hydrated.current = true;
+      return;
+    }
+    let cancelled = false;
+    Promise.all([
+      AsyncStorage.getItem(syncedKey(userId)),
+      AsyncStorage.getItem(pendingKey(userId)),
+    ])
+      .then(([s, p]) => {
+        if (cancelled) {
           return;
         }
-        try {
-          const parsed = JSON.parse(raw) as Lifetime;
-          if (parsed && typeof parsed === "object") {
-            setTotals(parsed);
-          }
-        } catch {
-          // ignore malformed
-        }
+        setSynced(readMap(s));
+        const pendingMap = readMap(p);
+        setPending(pendingMap);
+        pendingRef.current = pendingMap;
       })
       .catch(() => undefined)
       .finally(() => {
-        totalsHydrated.current = true;
+        if (!cancelled) {
+          hydrated.current = true;
+        }
       });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
-  // Persist totals as a pure effect — keeping the write out of the setState
-  // updater (updaters must be pure; React may double-invoke them).
+  // Adopt cloud totals whenever they load or refresh.
   useEffect(() => {
-    if (!totalsHydrated.current) {
+    if (cloudQuery.data) {
+      setSynced(cloudQuery.data.totals ?? {});
+    }
+  }, [cloudQuery.data]);
+
+  // Persist both caches (kept out of the setState updaters, which must be pure).
+  useEffect(() => {
+    if (!(hydrated.current && userId)) {
       return;
     }
-    AsyncStorage.setItem(LIFETIME_KEY, JSON.stringify(totals)).catch(
+    AsyncStorage.setItem(syncedKey(userId), JSON.stringify(synced)).catch(
       () => undefined
     );
-  }, [totals]);
+  }, [synced, userId]);
+  useEffect(() => {
+    if (!(hydrated.current && userId)) {
+      return;
+    }
+    AsyncStorage.setItem(pendingKey(userId), JSON.stringify(pending)).catch(
+      () => undefined
+    );
+  }, [pending, userId]);
 
-  const addLifetime = useCallback((id: string, n = 1) => {
-    setTotals((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + n }));
-  }, []);
+  // Push unsynced taps to the server. Each preset's server total already includes
+  // the sent delta, so synced is set to it and the same delta removed from pending
+  // in lockstep — the displayed sum never flickers. Failures keep pending for the
+  // next flush, so offline taps are never lost.
+  const flush = useCallback(async () => {
+    if (!userId || flushingRef.current) {
+      return;
+    }
+    const entries = Object.entries(pendingRef.current).filter(([, n]) => n > 0);
+    if (entries.length === 0) {
+      return;
+    }
+    flushingRef.current = true;
+    try {
+      for (const [presetId, by] of entries) {
+        try {
+          const res = await api.api.v1.dhikr.presets.increment.$post({
+            json: { presetId, by },
+          });
+          if (!res.ok) {
+            continue;
+          }
+          const { presetTotal } = (await res.json()) as {
+            presetTotal: number;
+            grandTotal: number;
+          };
+          setSynced((prev) => ({ ...prev, [presetId]: presetTotal }));
+          setPending((prev) => ({
+            ...prev,
+            [presetId]: Math.max(0, (prev[presetId] ?? 0) - by),
+          }));
+        } catch {
+          // Keep pending; retry on the next flush.
+        }
+      }
+    } finally {
+      flushingRef.current = false;
+    }
+  }, [userId]);
+
+  const scheduleFlush = useCallback(() => {
+    if (flushTimer.current) {
+      clearTimeout(flushTimer.current);
+    }
+    flushTimer.current = setTimeout(() => {
+      flush().catch(() => undefined);
+    }, FLUSH_DELAY_MS);
+  }, [flush]);
+
+  // Flush leftover pending on mount / user change (e.g. taps made while offline),
+  // and clear the debounce timer on unmount.
+  useEffect(() => {
+    if (userId) {
+      flush().catch(() => undefined);
+    }
+    return () => {
+      if (flushTimer.current) {
+        clearTimeout(flushTimer.current);
+      }
+    };
+  }, [userId, flush]);
+
+  const addLifetime = useCallback(
+    (id: string, n = 1) => {
+      setPending((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + n }));
+      scheduleFlush();
+    },
+    [scheduleFlush]
+  );
+
+  // Displayed lifetime = cloud-synced + unflushed local taps.
+  const totals = useMemo<Lifetime>(() => {
+    const merged: Lifetime = { ...synced };
+    for (const [id, n] of Object.entries(pending)) {
+      merged[id] = (merged[id] ?? 0) + n;
+    }
+    return merged;
+  }, [synced, pending]);
 
   const active = PRESETS[activeIndex];
   const complete = count >= active.target;
