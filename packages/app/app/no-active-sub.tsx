@@ -8,8 +8,6 @@ import Svg, { Line, Polygon } from "react-native-svg";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
 import { useUser } from "@/contexts/user-context";
-import { useOnboardingState } from "@/hooks/use-onboarding-state";
-import { authClient } from "@/lib/auth-client";
 import { useSubscription } from "@/lib/subscription";
 
 const MOSQUE_GREEN = "#29603E";
@@ -81,15 +79,13 @@ export default function NoActiveSub() {
   const router = useRouter();
   const { user } = useUser();
   const { restore } = useSubscription();
-  const { dispatch } = useOnboardingState();
   const [isRestoring, setIsRestoring] = useState(false);
 
-  async function useDifferentAccount() {
-    await authClient.signOut().catch(() => undefined);
-    // Clear the prior purchase/onboarding markers so the root index does not
-    // bounce the signed-out user to `auth?mode=signup`. Land on sign-in.
-    dispatch({ type: "RESET" });
-    router.replace("/(account)/auth?mode=signin");
+  function useDifferentAccount() {
+    // Full sign-out (RevenueCat + Better Auth), reset onboarding, clear the
+    // account cache, then land on the onboarding welcome flow. Shared with the
+    // profile "Log out" action so both behave identically.
+    router.replace("/logging-out");
   }
 
   async function onRestore() {
