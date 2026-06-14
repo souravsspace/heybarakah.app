@@ -9,11 +9,7 @@ import { MosquePodium } from "@/components/onboarding/illustrations/mosque-podiu
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { LINKS } from "@/constants/links";
-import {
-  PLANS,
-  POST_PURCHASE_ENTRY,
-  POST_PURCHASE_FLOW,
-} from "@/constants/onboarding-config";
+import { PLANS } from "@/constants/onboarding-config";
 import { useUser } from "@/contexts/user-context";
 import { useOnboardingNav } from "@/hooks/use-onboarding-nav";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
@@ -64,7 +60,7 @@ export default function Plans() {
   const { state, dispatch } = useOnboardingState();
   const { goTo } = useOnboardingNav();
   const router = useRouter();
-  const { user, profile } = useUser();
+  const { user } = useUser();
   const {
     purchase,
     offerings,
@@ -129,21 +125,6 @@ export default function Plans() {
     dispatch({ type: "SET_FIELD", payload: { plan: id } });
   }
 
-  // After an authed purchase: a buyer who has not finished the in-app setup yet
-  // (no `users` row, no local completion marker) must run the post-purchase
-  // setup before home — otherwise the profile is never created and a reopen
-  // bounces them into POST_PURCHASE_ROUTES. Already-set-up users go straight in.
-  function goAfterPurchase() {
-    if (profile == null && !state.completedAt) {
-      router.replace({
-        pathname: POST_PURCHASE_ENTRY,
-        params: { flow: POST_PURCHASE_FLOW },
-      } as never);
-      return;
-    }
-    router.replace("/home");
-  }
-
   async function onRestore() {
     if (isRestoring) {
       return;
@@ -153,7 +134,7 @@ export default function Plans() {
       const ok = await restore();
       if (ok) {
         if (user) {
-          goAfterPurchase();
+          router.replace("/home");
         } else {
           goTo("/(account)/auth?mode=signup");
         }
@@ -186,7 +167,7 @@ export default function Plans() {
         },
       });
       if (user) {
-        goAfterPurchase();
+        router.replace("/home");
       } else {
         goTo("/(account)/auth?mode=signup");
       }
@@ -225,7 +206,7 @@ export default function Plans() {
 
       if (__DEV__ && user) {
         await claimMockSubscription(selected);
-        goAfterPurchase();
+        router.replace("/home");
         return;
       }
 
