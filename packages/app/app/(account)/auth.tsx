@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { selectionAsync } from "expo-haptics";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -49,6 +50,7 @@ type Mode = "signup" | "signin";
 
 export default function Auth() {
   const { state, dispatch } = useOnboardingState();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string; verifying?: string }>();
   const oAuthGoogle = useGoogleAuth();
@@ -234,15 +236,18 @@ export default function Auth() {
     }
 
     setPendingProvider(provider);
-    if (provider === "google") {
-      const didStart = await oAuthGoogle.signIn();
-      if (!didStart) {
-        setPendingProvider(null);
-      }
-      return;
-    }
-    const didStart = await oAuthApple.signIn();
-    if (!didStart) {
+    const didStart =
+      provider === "google"
+        ? await oAuthGoogle.signIn()
+        : await oAuthApple.signIn();
+    if (didStart) {
+      // The native Apple sheet (and the returning in-app browser) does not
+      // reliably fire a focus refetch, so the `["cf","me"]` account query stays
+      // stale and the redirect effect never sees the new user — the button just
+      // spins until an app restart. Force the account queries to refetch with
+      // the freshly stored session cookie so `user` populates immediately.
+      await queryClient.invalidateQueries({ queryKey: ["cf"] });
+    } else {
       setPendingProvider(null);
     }
   }
