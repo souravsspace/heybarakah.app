@@ -4,8 +4,8 @@
 // coarse topic the client maps back to React Query keys (lib/sync-topics.ts).
 //
 // Domains with no client-visible reactive query are intentionally absent
-// (health-check, prayer-times cache, app-config, dhikr [local-only on client],
-// marketing, webhooks) — mutating them pushes nothing.
+// (health-check, prayer-times cache, app-config, marketing, webhooks) —
+// mutating them pushes nothing.
 export const SYNC_TOPICS = {
   "prayer-logs": "prayer-logs",
   achievements: "achievements",
@@ -13,6 +13,7 @@ export const SYNC_TOPICS = {
   shield: "shield",
   subscription: "subscription",
   me: "me",
+  dhikr: "dhikr",
 } as const;
 
 export type SyncTopic = (typeof SYNC_TOPICS)[keyof typeof SYNC_TOPICS];
