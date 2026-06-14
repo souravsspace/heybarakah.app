@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useUser } from "@/contexts/user-context";
 
 export interface Preset {
   arabic: string;
@@ -60,7 +61,11 @@ export const PRESETS: Preset[] = [
   },
 ];
 
-const LIFETIME_KEY = "@barakah/dhikr/lifetime";
+// Per-user storage key. A device-global key leaked one account's lifetime
+// counts into the next account signed in on the same device, so the key is
+// namespaced by the signed-in user id.
+const LIFETIME_KEY_PREFIX = "@barakah/dhikr/lifetime";
+const lifetimeKey = (userId: string) => `${LIFETIME_KEY_PREFIX}/${userId}`;
 
 type Lifetime = Record<string, number>;
 
@@ -82,6 +87,8 @@ interface DhikrContextValue {
 const DhikrContext = createContext<DhikrContextValue | null>(null);
 
 export function DhikrProvider({ children }: { children: ReactNode }) {
+  const { user } = useUser();
+  const userId = user?.id ?? null;
   const [activeIndex, setActiveIndex] = useState(0);
   const [count, setCount] = useState(0);
   const [totals, setTotals] = useState<Lifetime>({});
@@ -90,10 +97,19 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
   const countRef = useRef(0);
   const totalsHydrated = useRef(false);
 
+  // Re-hydrate whenever the signed-in user changes. Reset in-memory totals first
+  // so the previous account's counts never flash before the new account loads.
   useEffect(() => {
-    AsyncStorage.getItem(LIFETIME_KEY)
+    totalsHydrated.current = false;
+    setTotals({});
+    if (!userId) {
+      totalsHydrated.current = true;
+      return;
+    }
+    let cancelled = false;
+    AsyncStorage.getItem(lifetimeKey(userId))
       .then((raw) => {
-        if (!raw) {
+        if (cancelled || !raw) {
           return;
         }
         try {
@@ -107,20 +123,25 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => undefined)
       .finally(() => {
-        totalsHydrated.current = true;
+        if (!cancelled) {
+          totalsHydrated.current = true;
+        }
       });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   // Persist totals as a pure effect — keeping the write out of the setState
   // updater (updaters must be pure; React may double-invoke them).
   useEffect(() => {
-    if (!totalsHydrated.current) {
+    if (!(totalsHydrated.current && userId)) {
       return;
     }
-    AsyncStorage.setItem(LIFETIME_KEY, JSON.stringify(totals)).catch(
+    AsyncStorage.setItem(lifetimeKey(userId), JSON.stringify(totals)).catch(
       () => undefined
     );
-  }, [totals]);
+  }, [totals, userId]);
 
   const addLifetime = useCallback((id: string, n = 1) => {
     setTotals((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + n }));
