@@ -35,8 +35,15 @@ export default function LoggingOut() {
       } catch {
         // ignore
       }
-      // Refetches with no cookie now resolve to null user + null subscription.
-      queryClient.removeQueries({ queryKey: ["cf"] });
+      // Force the cache to a signed-out state instead of refetching.
+      // `@better-auth/expo` keeps the session cookie in memory for the rest of
+      // the process even after `signOut` clears SecureStore, so a refetch here
+      // would replay that cookie, return the old user, and the onboarding layout
+      // would bounce us to /home. Setting null deterministically (and cancelling
+      // any in-flight fetch) keeps `user` null until the next cold start.
+      await queryClient.cancelQueries({ queryKey: ["cf"] });
+      queryClient.setQueryData(["cf", "me"], { user: null, profile: null });
+      queryClient.setQueryData(["cf", "subscription"], null);
       try {
         await logOutRevenueCat();
       } catch {
