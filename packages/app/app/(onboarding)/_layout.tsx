@@ -40,10 +40,18 @@ export default function OnboardingLayout() {
     return <AnimatedSplash />;
   }
   const isPaywallRoute = currentPath?.startsWith("/(onboarding)/paywall");
+  // The name + completion screens run after auth (user is signed in), so an
+  // authed mobile buyer must be allowed to finish them instead of being bounced
+  // home — same exemption the post-purchase flow already gets.
+  const isFinalizeRoute =
+    currentPath === "/(onboarding)/your-name" ||
+    currentPath === "/(onboarding)/complete";
   // A web buyer signing in for the first time is subscribed but still needs the
   // post-purchase setup subset, so do not bounce them home mid-flow.
   const shouldRedirectHome =
-    !isPostPurchase && user && (activeSubscription || !isPaywallRoute);
+    !(isPostPurchase || isFinalizeRoute) &&
+    user &&
+    (activeSubscription || !isPaywallRoute);
   if (shouldRedirectHome) {
     return <Redirect href="/home" />;
   }
