@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { selectionAsync } from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ const RESEND_COOLDOWN_SECONDS = 30;
 
 export default function EmailOtp() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ mode?: string }>();
   const mode = params.mode === "signup" ? "signup" : "signin";
   const [step, setStep] = useState<"email" | "code">("email");
@@ -115,7 +117,11 @@ export default function EmailOtp() {
         Alert.alert("Invalid code", error.message ?? "Try again.");
         return;
       }
-      // user-context will pick up user; auth.tsx effect handles nav
+      // Refetch the account queries with the freshly stored session cookie so
+      // `useUser` populates; auth.tsx (verifying=1 splash) then routes onward.
+      // Without this the in-app OTP flow never fires a focus refetch and the
+      // splash hangs until an app restart.
+      await queryClient.invalidateQueries({ queryKey: ["cf"] });
       router.replace({
         pathname: "/(account)/auth",
         params: { mode, verifying: "1" },
