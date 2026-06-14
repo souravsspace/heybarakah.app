@@ -22,4 +22,5 @@ export const TOPIC_QUERY_KEYS: Record<string, QueryKey[]> = {
   shield: [["cf", "shield"]],
   subscription: [["cf", "subscription"]],
   me: [["cf", "me"]],
+  dhikr: [["cf", "dhikr"]],
 };
