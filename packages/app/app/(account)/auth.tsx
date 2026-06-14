@@ -117,17 +117,25 @@ export default function Auth() {
   // the in-session and cold-start flows match.
   const enterAfterPurchase = useCallback(() => {
     if (profile === null && !state.completedAt) {
-      router.replace({
-        pathname: POST_PURCHASE_ENTRY,
-        params: { flow: POST_PURCHASE_FLOW },
-      } as never);
+      // Mobile in-app buyers (mode "signup") already finished the onboarding
+      // config during the funnel, so they only need name + the completion
+      // screen. Web (Polar) buyers signing in (mode "signin") never onboarded,
+      // so they run the full post-purchase setup subset.
+      if (mode === "signup") {
+        router.replace("/(onboarding)/your-name" as never);
+      } else {
+        router.replace({
+          pathname: POST_PURCHASE_ENTRY,
+          params: { flow: POST_PURCHASE_FLOW },
+        } as never);
+      }
       return;
     }
     if (!state.completedAt) {
       dispatch({ type: "COMPLETE" });
     }
     router.replace("/home");
-  }, [profile, state.completedAt, dispatch, router]);
+  }, [profile, state.completedAt, mode, dispatch, router]);
 
   useEffect(() => {
     if (
