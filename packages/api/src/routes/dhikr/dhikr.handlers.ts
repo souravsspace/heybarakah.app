@@ -3,7 +3,9 @@ import { requireUser } from "@/middlewares/auth-session";
 import { OK } from "@/stoker/http-status-codes";
 import type { AppRouterHandler } from "@/types/app-type";
 import type {
+  GetPresetsRoute,
   GetTodayRoute,
+  IncrementPresetRoute,
   IncrementRoute,
   ResetRoute,
   SetTargetRoute,
@@ -46,4 +48,24 @@ export const reset: AppRouterHandler<ResetRoute> = async (c) => {
   const db = createDatabase(c.env.DB);
   await service.reset(db, user.id, date);
   return c.json({ ok: true }, OK);
+};
+
+export const getPresets: AppRouterHandler<GetPresetsRoute> = async (c) => {
+  const user = c.get("user");
+  // Lenient like getToday: unauthenticated reads return empty totals, not 401.
+  if (!user) {
+    return c.json({ totals: {}, grandTotal: 0 }, OK);
+  }
+  const db = createDatabase(c.env.DB);
+  return c.json(await service.getPresetTotals(db, user.id), OK);
+};
+
+export const incrementPreset: AppRouterHandler<IncrementPresetRoute> = async (
+  c
+) => {
+  const user = requireUser(c);
+  const { presetId, by } = c.req.valid("json");
+  const db = createDatabase(c.env.DB);
+  const result = await service.incrementPreset(db, user.id, presetId, by ?? 1);
+  return c.json(result, OK);
 };
