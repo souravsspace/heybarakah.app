@@ -15,25 +15,37 @@ export default function LoggingOut() {
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
+    // Reset onboarding up front so it runs even if a gate redirects us before
+    // the async cleanup below resolves.
+    dispatch({ type: "RESET" });
     (async () => {
-      try {
-        await logOutRevenueCat();
-      } catch {
-        // ignore
-      }
+      // Order matters. Sign out (clears the session cookie) and drop the cached
+      // account FIRST so `user` becomes null before anything touches the
+      // subscription. Two reasons:
+      //   1. The auth gates (`(app)/_layout`, `index`) check `!user` before
+      //      `!activeSubscription`, so a null user routes to welcome — never to
+      //      `no-active-sub`.
+      //   2. RevenueCat's logout fires the customer-info listener, which only
+      //      re-syncs the entitlement while `userId` is set. Clearing the user
+      //      first makes that listener a no-op, so it can't null the
+      //      subscription while the user still looks signed in (which is what
+      //      bounced us to `no-active-sub`).
       try {
         await authClient.signOut();
       } catch {
         // ignore
       }
-      await resetOfflineQueue();
-      // Drop the cached signed-in account so no stale `user`/subscription can
-      // bounce the now-signed-out app back into a gated screen.
+      // Refetches with no cookie now resolve to null user + null subscription.
       queryClient.removeQueries({ queryKey: ["cf"] });
+      try {
+        await logOutRevenueCat();
+      } catch {
+        // ignore
+      }
+      await resetOfflineQueue();
       if (!mounted.current) {
         return;
       }
-      dispatch({ type: "RESET" });
       router.replace("/(onboarding)/welcome" as never);
     })();
     return () => {
