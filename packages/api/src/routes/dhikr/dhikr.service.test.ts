@@ -6,9 +6,12 @@ import { userAchievements, users } from "@/db/schema";
 import { applyMigrations } from "@/test-support/apply-migrations";
 import {
   DEFAULT_TARGET,
+  getPresetTotals,
   getToday,
   increment,
+  incrementPreset,
   isValidDateKey,
+  isValidPresetId,
   reset,
   setTarget,
 } from "./dhikr.service";
@@ -110,5 +113,60 @@ describe("dhikr service", () => {
     const after = await getToday(db, user, DATE);
     expect(after.count).toBe(0);
     expect(after.sessionTotal).toBe(0);
+  });
+
+  it("validates preset ids", () => {
+    expect(isValidPresetId("subhanallah")).toBe(true);
+    expect(isValidPresetId("lailaha")).toBe(true);
+    expect(isValidPresetId("bogus")).toBe(false);
+  });
+
+  it("returns empty preset totals before any dhikr", async () => {
+    const db = createDatabase(env.DB);
+    expect(await getPresetTotals(db, "fresh-preset-user")).toEqual({
+      totals: {},
+      grandTotal: 0,
+    });
+  });
+
+  it("increments per-preset totals and the grand total independently", async () => {
+    const db = createDatabase(env.DB);
+    const user = "preset-user";
+    await db
+      .insert(users)
+      .values({ authUserId: user, completedAt: new Date().toISOString() });
+
+    expect(await incrementPreset(db, user, "subhanallah", 7)).toEqual({
+      presetTotal: 7,
+      grandTotal: 7,
+    });
+    expect(await incrementPreset(db, user, "subhanallah", 3)).toEqual({
+      presetTotal: 10,
+      grandTotal: 10,
+    });
+    // A different preset keeps its own total; the grand total spans both.
+    expect(await incrementPreset(db, user, "alhamdulillah", 5)).toEqual({
+      presetTotal: 5,
+      grandTotal: 15,
+    });
+
+    const { totals, grandTotal } = await getPresetTotals(db, user);
+    expect(totals).toEqual({ subhanallah: 10, alhamdulillah: 5 });
+    expect(grandTotal).toBe(15);
+  });
+
+  it("unlocks dhikr achievements off the grand total", async () => {
+    const db = createDatabase(env.DB);
+    const user = "preset-ach-user";
+    await db
+      .insert(users)
+      .values({ authUserId: user, completedAt: new Date().toISOString() });
+
+    await incrementPreset(db, user, "allahuakbar", 1);
+
+    const ach = await db
+      .select({ code: userAchievements.code })
+      .from(userAchievements);
+    expect(ach.map((a) => a.code)).toContain("first_dhikr");
   });
 });

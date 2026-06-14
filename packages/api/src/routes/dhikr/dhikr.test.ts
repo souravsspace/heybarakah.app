@@ -68,4 +68,36 @@ describe("dhikr routes", () => {
     const body = (await res.json()) as { success: boolean };
     expect(body.success).toBe(false);
   });
+
+  it("returns empty totals for an unauthenticated getPresets", async () => {
+    const app = createTestApp(dhikr);
+    const res = await app.request("/dhikr/presets", {}, env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      totals: Record<string, number>;
+      grandTotal: number;
+    };
+    expect(body.totals).toEqual({});
+    expect(body.grandTotal).toBe(0);
+  });
+
+  it("requires auth to increment a preset", async () => {
+    const app = createTestApp(dhikr);
+    const res = await app.request(
+      jsonPost("/dhikr/presets/increment", { presetId: "subhanallah", by: 1 }),
+      undefined,
+      env
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects an unknown preset id with 422", async () => {
+    const app = createTestApp(dhikr);
+    const res = await app.request(
+      jsonPost("/dhikr/presets/increment", { presetId: "bogus", by: 1 }),
+      undefined,
+      env
+    );
+    expect(res.status).toBe(422);
+  });
 });

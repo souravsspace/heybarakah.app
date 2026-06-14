@@ -8,11 +8,12 @@ import {
 } from "./reset-db";
 
 describe("reset-db", () => {
-  it("covers the 13 app tables plus the 4 Better Auth tables", () => {
-    expect(APP_TABLE_NAMES).toHaveLength(17);
+  it("covers the 14 app tables plus the 4 Better Auth tables", () => {
+    expect(APP_TABLE_NAMES).toHaveLength(18);
     expect(APP_TABLE_NAMES).toContain("users");
     expect(APP_TABLE_NAMES).toContain("appConfig");
     expect(APP_TABLE_NAMES).toContain("emailQueue");
+    expect(APP_TABLE_NAMES).toContain("dhikrPreset");
     // Better Auth tables (singular) — cleared too so a dev reset wipes sessions.
     expect(APP_TABLE_NAMES).toContain("user");
     expect(APP_TABLE_NAMES).toContain("account");
