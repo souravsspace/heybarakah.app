@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 
 import type { Database } from "@/db";
-import { dhikrAggregate, dhikrDaily } from "@/db/schema";
+import { dhikrAggregate, dhikrDaily, dhikrPreset } from "@/db/schema";
 
 import { runEvaluate } from "@/routes/achievements/achievements.service";
 
@@ -9,6 +9,86 @@ const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export const DEFAULT_TARGET = 33;
 export const MAX_TARGET = 10_000;
 export const MAX_INCREMENT = 1000;
+
+// The fixed set of dhikr presets the client tracks. The server validates the
+// id against this list so a typo can't create a junk per-preset row.
+export const PRESET_IDS = [
+  "subhanallah",
+  "alhamdulillah",
+  "allahuakbar",
+  "lailaha",
+] as const;
+
+export type PresetId = (typeof PRESET_IDS)[number];
+
+export function isValidPresetId(id: string): id is PresetId {
+  return (PRESET_IDS as readonly string[]).includes(id);
+}
+
+export interface PresetTotals {
+  grandTotal: number;
+  totals: Record<string, number>;
+}
+
+export async function getPresetTotals(
+  db: Database,
+  authUserId: string
+): Promise<PresetTotals> {
+  const rows = await db
+    .select({ presetId: dhikrPreset.presetId, total: dhikrPreset.total })
+    .from(dhikrPreset)
+    .where(eq(dhikrPreset.authUserId, authUserId));
+  const totals: Record<string, number> = {};
+  for (const row of rows) {
+    totals[row.presetId] = row.total;
+  }
+  const [aggregate] = await db
+    .select({ total: dhikrAggregate.total })
+    .from(dhikrAggregate)
+    .where(eq(dhikrAggregate.authUserId, authUserId))
+    .limit(1);
+  const grandTotal =
+    aggregate?.total ?? rows.reduce((sum, row) => sum + row.total, 0);
+  return { totals, grandTotal };
+}
+
+export async function incrementPreset(
+  db: Database,
+  authUserId: string,
+  presetId: PresetId,
+  delta: number
+): Promise<{ presetTotal: number; grandTotal: number }> {
+  const now = Date.now();
+  // Atomic batch: the per-preset total and the grand aggregate move in lockstep,
+  // each `+= delta` computed in SQL so concurrent increments can't clobber. The
+  // UNIQUE indexes make a racing insert resolve to the update branch.
+  const presetWrite = db
+    .insert(dhikrPreset)
+    .values({ authUserId, presetId, total: delta, updatedAt: now })
+    .onConflictDoUpdate({
+      target: [dhikrPreset.authUserId, dhikrPreset.presetId],
+      set: { total: sql`${dhikrPreset.total} + ${delta}`, updatedAt: now },
+    })
+    .returning({ total: dhikrPreset.total });
+  const aggregateWrite = db
+    .insert(dhikrAggregate)
+    .values({ authUserId, total: delta, updatedAt: now })
+    .onConflictDoUpdate({
+      target: dhikrAggregate.authUserId,
+      set: { total: sql`${dhikrAggregate.total} + ${delta}`, updatedAt: now },
+    })
+    .returning({ total: dhikrAggregate.total });
+  const [presetRows, aggregateRows] = await db.batch([
+    presetWrite,
+    aggregateWrite,
+  ]);
+  // Unlock dhikr-count achievements off the freshly updated grand total.
+  await runEvaluate(db, { authUserId });
+  return {
+    presetTotal: presetRows[0].total,
+    grandTotal: aggregateRows[0].total,
+  };
+}
 
 export function isValidDateKey(date: string): boolean {
   if (!DATE_KEY_PATTERN.test(date)) {
