@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
@@ -50,6 +51,10 @@ export default function LoggingOut() {
         // ignore
       }
       await resetOfflineQueue();
+      // Wipe all local storage so nothing account-scoped (dhikr lifetime counts,
+      // onboarding state, cached data) survives into the next account signed in
+      // on this device.
+      await AsyncStorage.clear().catch(() => undefined);
       if (!mounted.current) {
         return;
       }
