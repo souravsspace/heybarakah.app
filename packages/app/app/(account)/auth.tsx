@@ -109,6 +109,26 @@ export default function Auth() {
     return () => clearTimeout(timer);
   }, [syncWaitState]);
 
+  // Once access is granted (signed in with a sub, or a purchase just landed),
+  // a buyer with no `users` row yet runs the post-purchase setup
+  // (config + name + complete) before home. Routes through the onboarding group
+  // — `(tabs)/success`/`(tabs)/name` are not NativeTabs triggers, so replacing
+  // to them silently falls back to the home tab. Mirrors index.tsx recovery so
+  // the in-session and cold-start flows match.
+  const enterAfterPurchase = useCallback(() => {
+    if (profile === null && !state.completedAt) {
+      router.replace({
+        pathname: POST_PURCHASE_ENTRY,
+        params: { flow: POST_PURCHASE_FLOW },
+      } as never);
+      return;
+    }
+    if (!state.completedAt) {
+      dispatch({ type: "COMPLETE" });
+    }
+    router.replace("/home");
+  }, [profile, state.completedAt, dispatch, router]);
+
   useEffect(() => {
     if (
       !user ||
@@ -147,31 +167,14 @@ export default function Auth() {
     (async () => {
       try {
         if (activeSubscription) {
-          if (mode === "signup") {
-            router.replace("/success" as never);
-            return;
-          }
-          // Signed in with an active sub but no in-app profile yet (e.g. paid on
-          // the web): run the setup once before entering the app. An existing
-          // `users` row means onboarding is already done.
-          if (profile === null && !state.completedAt) {
-            router.replace({
-              pathname: POST_PURCHASE_ENTRY,
-              params: { flow: POST_PURCHASE_FLOW },
-            } as never);
-            return;
-          }
-          if (!state.completedAt) {
-            dispatch({ type: "COMPLETE" });
-          }
-          router.replace("/home");
+          enterAfterPurchase();
           return;
         }
 
         if (mode === "signup" && selectedPlan) {
           const result = await purchase(selectedPlan);
           if (result.ok) {
-            router.replace("/success" as never);
+            enterAfterPurchase();
             return;
           }
           if (result.cancelled) {
@@ -180,7 +183,7 @@ export default function Auth() {
           }
           if (__DEV__ && result.reason === "package-unavailable") {
             await claimMockSubscription(selectedPlan);
-            router.replace("/success" as never);
+            enterAfterPurchase();
             return;
           }
           Alert.alert("Purchase failed", result.reason);
@@ -204,13 +207,12 @@ export default function Auth() {
     revenueCatReady,
     offeringsLoading,
     state.plan,
-    state.completedAt,
     purchaseCompletedAt,
     syncWaitState,
     purchase,
     claimMockSubscription,
-    dispatch,
     router,
+    enterAfterPurchase,
   ]);
 
   useFocusEffect(
