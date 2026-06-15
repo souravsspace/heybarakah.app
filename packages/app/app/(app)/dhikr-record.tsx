@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Platform, Pressable, ScrollView, Text, View } from "react-native";
@@ -6,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RecordMesh } from "@/components/meshes";
 import { PRESETS, type Preset, useDhikr } from "@/contexts/dhikr-context";
 import { useTheme } from "@/contexts/theme-context";
+import { hapticSelection } from "@/lib/haptics";
 
 const ROMAN = ["I", "II", "III", "IV"] as const;
 
@@ -94,7 +94,7 @@ export default function DhikrRecord() {
               key={p.id}
               lifetime={totals[p.id] ?? 0}
               onPress={() => {
-                Haptics.selectionAsync().catch(() => undefined);
+                hapticSelection();
                 goTo(i);
                 close();
               }}
