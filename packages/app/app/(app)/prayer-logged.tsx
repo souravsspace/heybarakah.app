@@ -1,5 +1,4 @@
 import type { LoggablePrayerName, PrayerStatus } from "@barakah/core/prayer";
-import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef } from "react";
@@ -16,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { UnlockMesh } from "@/components/meshes";
 import { SuccessCheck } from "@/components/onboarding/illustrations/success-check";
 import { useTheme } from "@/contexts/theme-context";
+import { hapticNotification } from "@/lib/haptics";
 
 const HOLD_MS = 2600;
 
@@ -83,9 +83,7 @@ export default function PrayerLogged() {
   }, [router]);
 
   useEffect(() => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-      () => undefined
-    );
+    hapticNotification("success");
     bar.value = withTiming(0, { duration: HOLD_MS, easing: Easing.linear });
     const id = setTimeout(finish, HOLD_MS);
     return () => clearTimeout(id);
