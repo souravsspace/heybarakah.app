@@ -43,10 +43,7 @@ export default function PlanSummary() {
       label: "Calculation",
       value: labelFor(QUIZ_OPTIONS.calcMethod, state.calcMethod),
     },
-    {
-      label: "Strictness",
-      value: labelFor(QUIZ_OPTIONS.strictness, state.strictness),
-    },
+    { label: "Strictness", value: "~15 min each prayer" },
     {
       label: "Tracked",
       value:
