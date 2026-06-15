@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient, useQuery as useRqQuery } from "@tanstack/react-query";
-import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -43,6 +42,7 @@ import {
   setBlockedApps,
   startMonitoring,
 } from "@/lib/app-blocker";
+import { hapticNotification, hapticSelection } from "@/lib/haptics";
 import { enqueueMutation } from "@/lib/offline-queue";
 import {
   UPSERT_ANDROID_KIND,
@@ -219,7 +219,7 @@ export default function Locked() {
   const handleRequestRemove = useCallback(
     (event: { nativeEvent: BlockedItemRemoveEvent }) => {
       const { tokenId, type } = event.nativeEvent;
-      Haptics.selectionAsync().catch(() => undefined);
+      hapticSelection();
       Alert.alert(
         "Are you sure?",
         "Remove from shield? It will no longer go quiet at salah.",
@@ -246,9 +246,7 @@ export default function Locked() {
                   } catch {
                     // backend sync best-effort
                   }
-                  Haptics.notificationAsync(
-                    Haptics.NotificationFeedbackType.Success
-                  ).catch(() => undefined);
+                  hapticNotification("success");
                 }
               } catch {
                 // best-effort; user can retry
@@ -264,7 +262,7 @@ export default function Locked() {
   );
 
   const clearIos = useCallback(() => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     Alert.alert(
       "Clear everything?",
       "Remove all apps from the shield? Nothing will go quiet at salah until you add them back.",
@@ -272,9 +270,7 @@ export default function Locked() {
         { style: "cancel", text: "Cancel" },
         {
           onPress: async () => {
-            Haptics.notificationAsync(
-              Haptics.NotificationFeedbackType.Warning
-            ).catch(() => undefined);
+            hapticNotification("warning");
             setIosItems([]);
             setIosSelectionLocal("");
             await persistIos([], "");
@@ -288,7 +284,7 @@ export default function Locked() {
 
   const toggleAndroid = useCallback(
     async (pkg: string) => {
-      Haptics.selectionAsync().catch(() => undefined);
+      hapticSelection();
       const next = new Set(pendingAndroid);
       if (next.has(pkg)) {
         next.delete(pkg);
@@ -1009,9 +1005,7 @@ function DevPanel({
   iosItems: IOSBlockedItem[];
 }) {
   const activate = useCallback(async () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
-      () => undefined
-    );
+    hapticNotification("warning");
     try {
       if (Platform.OS === "ios") {
         if (iosItems.length === 0) {
@@ -1051,7 +1045,7 @@ function DevPanel({
   // Mocks a 20-minute Asr quiet window so the lock-screen Live Activity and
   // Dynamic Island can be checked without waiting for a real prayer.
   const startLA = useCallback(() => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     const now = new Date();
     const end = new Date(now.getTime() + 20 * 60 * 1000);
     startLockActivity({
@@ -1062,7 +1056,7 @@ function DevPanel({
   }, []);
 
   const stopLA = useCallback(() => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     endAllLockActivities().catch(() => undefined);
   }, []);
 
