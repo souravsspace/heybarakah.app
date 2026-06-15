@@ -86,23 +86,6 @@ export const QUIZ_OPTIONS = {
     { value: "karachi", label: "Karachi", hint: "South Asia" },
     { value: "custom", label: "Set up later" },
   ],
-  strictness: [
-    {
-      value: "adhan-iqama",
-      label: "Adhan to iqama",
-      hint: "Around 20 minutes",
-    },
-    {
-      value: "full-window",
-      label: "Adhan to end of window",
-      hint: "Recommended for full presence",
-    },
-    {
-      value: "custom",
-      label: "I'll choose later",
-      hint: "Set per prayer in settings",
-    },
-  ],
 } as const;
 
 export const PLANS = [
