@@ -1,5 +1,4 @@
 import { applicationId } from "expo-application";
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -16,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
+import { hapticSelection } from "@/lib/haptics";
 import { useSubscription } from "@/lib/subscription";
 
 type ProductId = "yearly" | "monthly" | "family" | "lifetime";
@@ -61,14 +61,14 @@ export default function Subscription() {
   const [isRestoring, setIsRestoring] = useState(false);
 
   const openSupport = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     Linking.openURL("mailto:support@heybarakah.app?subject=Subscription").catch(
       () => Alert.alert("Mail unavailable", "Email: support@heybarakah.app")
     );
   };
 
   const openFamilySettings = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     if (Platform.OS === "android") {
       Linking.openURL(
         "https://support.google.com/googleplay/answer/7007852"
@@ -83,7 +83,7 @@ export default function Subscription() {
   };
 
   const openFamilyHelp = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     const url =
       Platform.OS === "android"
         ? "https://support.google.com/googleplay/answer/7007852"
@@ -92,7 +92,7 @@ export default function Subscription() {
   };
 
   const manage = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     if (Platform.OS === "android") {
       if (!applicationId) {
         Alert.alert(
@@ -123,7 +123,7 @@ export default function Subscription() {
     if (isRestoring) {
       return;
     }
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     setIsRestoring(true);
     try {
       const ok = await restore();
@@ -141,7 +141,7 @@ export default function Subscription() {
   };
 
   const upgrade = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     router.push("/no-active-sub" as never);
   };
 
@@ -643,7 +643,7 @@ function Header({
     >
       <Pressable
         onPress={() => {
-          Haptics.selectionAsync().catch(() => undefined);
+          hapticSelection();
           onBack();
         }}
       >
