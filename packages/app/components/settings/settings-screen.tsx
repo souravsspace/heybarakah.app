@@ -71,7 +71,7 @@ export function SettingsScreen({
           showsVerticalScrollIndicator={false}
         >
           <Animated.View
-            entering={FadeInDown.duration(340).springify().damping(18)}
+            entering={FadeInDown.duration(300)}
             style={{ paddingHorizontal: 20, paddingTop: 10 }}
           >
             <Text
@@ -136,7 +136,7 @@ export function Section({
 }) {
   return (
     <Animated.View
-      entering={FadeInDown.duration(340).delay(delay).springify().damping(18)}
+      entering={FadeInDown.duration(300).delay(delay)}
       style={{ marginTop: 26 }}
     >
       <Text

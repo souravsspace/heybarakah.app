@@ -158,7 +158,7 @@ export default function Subscription() {
       title="Subscription"
     >
       <Animated.View
-        entering={FadeInDown.duration(340).delay(30).springify().damping(18)}
+        entering={FadeInDown.duration(300).delay(30)}
         style={{ paddingHorizontal: 20, marginTop: 22 }}
       >
         {isPremium ? (
