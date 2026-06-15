@@ -4,7 +4,6 @@ import {
   type PrayerStatus,
 } from "@barakah/core/prayer";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -16,6 +15,7 @@ import { useLogPrayer, useWeekLogs } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { temporaryUnlock } from "@/lib/app-blocker";
 import { activePrayerNow, dateKey } from "@/lib/date-utils";
+import { hapticNotification } from "@/lib/haptics";
 import {
   LOCK_DURATION_MIN,
   lockBoundsMinutes,
@@ -134,9 +134,7 @@ export default function Unlock() {
       return;
     }
     setBusy(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
-      () => undefined
-    );
+    hapticNotification("warning");
     try {
       await temporaryUnlock(5);
     } finally {
