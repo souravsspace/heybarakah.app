@@ -1,4 +1,4 @@
-import * as Haptics from "expo-haptics";
+import * as Application from "expo-application";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Pressable, Switch, Text, View } from "react-native";
@@ -9,15 +9,12 @@ import {
   type ThemeMode,
   useTheme,
 } from "@/contexts/theme-context";
-import { usePref } from "@/hooks/use-pref";
+import { hapticSelection, useHapticsPref } from "@/lib/haptics";
 
 export default function Preferences() {
   const router = useRouter();
   const { colors, scheme, mode, setMode } = useTheme();
-  const reminders = usePref("prayer-reminders", true);
-  const haptics = usePref("haptics", true);
-  const autoLoc = usePref("auto-location", true);
-  const khushu = usePref("khushu-widget", false);
+  const haptics = useHapticsPref();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -35,7 +32,7 @@ export default function Preferences() {
         >
           <Pressable
             onPress={() => {
-              Haptics.selectionAsync().catch(() => undefined);
+              hapticSelection();
               if (router.canGoBack()) {
                 router.back();
               } else {
@@ -74,51 +71,26 @@ export default function Preferences() {
         </View>
 
         <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
+          <SectionHeader colors={colors} label="Appearance" />
           <AppearanceCard colors={colors} mode={mode} setMode={setMode} />
         </View>
 
-        <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
-          <View
-            style={{
-              borderRadius: 18,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.card,
-              overflow: "hidden",
-            }}
-          >
-            <ToggleRow
-              colors={colors}
-              onValueChange={reminders.set}
-              subtitle="Notify me before each prayer with adhan."
-              title="Prayer reminders"
-              value={reminders.value}
-            />
-            <Divider colors={colors} />
-            <ToggleRow
-              colors={colors}
-              onValueChange={khushu.set}
-              subtitle="Show next prayer and Hijri date on lock screen."
-              title="Lock screen widget"
-              value={khushu.value}
-            />
-            <Divider colors={colors} />
+        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
+          <SectionHeader colors={colors} label="Feedback" />
+          <Card colors={colors}>
             <ToggleRow
               colors={colors}
               onValueChange={haptics.set}
-              subtitle="Subtle haptic feedback on taps and dhikr counter."
+              subtitle="Subtle haptic feedback on taps and the dhikr counter."
               title="Haptic feedback"
               value={haptics.value}
             />
-            <Divider colors={colors} />
-            <ToggleRow
-              colors={colors}
-              onValueChange={autoLoc.set}
-              subtitle="Update prayer times automatically as you travel."
-              title="Auto-adjust by location"
-              value={autoLoc.value}
-            />
-          </View>
+          </Card>
+        </View>
+
+        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
+          <SectionHeader colors={colors} label="About" />
+          <AboutCard colors={colors} />
         </View>
       </SafeAreaView>
     </View>
@@ -144,19 +116,6 @@ function AppearanceCard({
         padding: 16,
       }}
     >
-      <Text style={{ fontSize: 16, fontWeight: "700", color: colors.ink }}>
-        Appearance
-      </Text>
-      <Text
-        style={{
-          fontSize: 12,
-          color: colors.inkMuted,
-          marginTop: 4,
-          marginBottom: 16,
-        }}
-      >
-        Choose light, dark, or system appearance.
-      </Text>
       <View style={{ flexDirection: "row", gap: 10 }}>
         <ThemeTile
           colors={colors}
@@ -204,7 +163,7 @@ function ThemeTile({
   return (
     <Pressable
       onPress={() => {
-        Haptics.selectionAsync().catch(() => undefined);
+        hapticSelection();
         onPress();
       }}
       style={{ flex: 1, alignItems: "center", gap: 8 }}
@@ -406,7 +365,7 @@ function ToggleRow({
       <Switch
         ios_backgroundColor={colors.neutralSoft}
         onValueChange={(v) => {
-          Haptics.selectionAsync().catch(() => undefined);
+          hapticSelection();
           onValueChange(v);
         }}
         thumbColor="#FFFFFF"
@@ -417,14 +376,87 @@ function ToggleRow({
   );
 }
 
-function Divider({ colors }: { colors: ThemeColors }) {
+function SectionHeader({
+  colors,
+  label,
+}: {
+  colors: ThemeColors;
+  label: string;
+}) {
+  return (
+    <Text
+      style={{
+        fontSize: 12,
+        fontWeight: "700",
+        letterSpacing: 0.6,
+        textTransform: "uppercase",
+        color: colors.inkMuted,
+        marginLeft: 4,
+        marginBottom: 10,
+      }}
+    >
+      {label}
+    </Text>
+  );
+}
+
+function Card({
+  colors,
+  children,
+}: {
+  colors: ThemeColors;
+  children: React.ReactNode;
+}) {
   return (
     <View
       style={{
-        height: 1,
-        marginLeft: 16,
-        backgroundColor: colors.divider,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.card,
+        overflow: "hidden",
       }}
-    />
+    >
+      {children}
+    </View>
+  );
+}
+
+function AboutCard({ colors }: { colors: ThemeColors }) {
+  const version = Application.nativeApplicationVersion ?? "—";
+  const build = Application.nativeBuildVersion ?? "—";
+
+  return (
+    <Card colors={colors}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          gap: 14,
+        }}
+      >
+        <Text
+          style={{
+            flex: 1,
+            fontSize: 15,
+            fontWeight: "600",
+            color: colors.ink,
+          }}
+        >
+          Version
+        </Text>
+        <Text
+          style={{
+            fontSize: 14,
+            color: colors.inkMuted,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {version} ({build})
+        </Text>
+      </View>
+    </Card>
   );
 }
