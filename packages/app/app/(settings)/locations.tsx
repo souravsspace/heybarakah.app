@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -19,6 +18,7 @@ import {
   requestLocationPermission,
   reverseGeocodeLocation,
 } from "@/hooks/use-permissions";
+import { hapticSelection } from "@/lib/haptics";
 
 /** Opaque location id (formerly a Convex `Id<"userLocations">`). */
 type Id<_T extends string> = string;
@@ -67,7 +67,7 @@ export default function Locations() {
         countryCode: geo?.countryCode ?? undefined,
         setActive: locations.length === 0,
       });
-      Haptics.selectionAsync().catch(() => undefined);
+      hapticSelection();
       setNewName("");
       setAdding(false);
     } catch (err) {
@@ -81,7 +81,7 @@ export default function Locations() {
   };
 
   const onSetActive = async (id: Id<"userLocations"> | null) => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     try {
       await setActive(id);
     } catch (err) {
@@ -538,7 +538,7 @@ function ScreenHeader({
     >
       <Pressable
         onPress={() => {
-          Haptics.selectionAsync().catch(() => undefined);
+          hapticSelection();
           onBack();
         }}
         style={{
