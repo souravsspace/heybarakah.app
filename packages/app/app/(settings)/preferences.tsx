@@ -1,8 +1,10 @@
 import * as Application from "expo-application";
-import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { Pressable, Switch, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Card,
+  Section,
+  SettingsScreen,
+} from "@/components/settings/settings-screen";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import {
   type ThemeColors,
@@ -12,88 +14,34 @@ import {
 import { hapticSelection, useHapticsPref } from "@/lib/haptics";
 
 export default function Preferences() {
-  const router = useRouter();
-  const { colors, scheme, mode, setMode } = useTheme();
+  const { colors, mode, setMode } = useTheme();
   const haptics = useHapticsPref();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
-        <View
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 4,
-            paddingBottom: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <Pressable
-            onPress={() => {
-              hapticSelection();
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace("/profile" as never);
-              }
-            }}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: colors.surfaceSoft,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <IconSymbol
-              color={colors.ink}
-              name={"chevron.left" as never}
-              size={16}
-            />
-          </Pressable>
-          <Text
-            style={{
-              flex: 1,
-              textAlign: "center",
-              fontSize: 16,
-              fontWeight: "700",
-              color: colors.ink,
-              marginRight: 36,
-            }}
-          >
-            Preferences
-          </Text>
-        </View>
+    <SettingsScreen
+      subtitle="Tune how Barakah looks and feels."
+      title="Preferences"
+    >
+      <Section colors={colors} delay={40} title="Appearance">
+        <AppearanceCard colors={colors} mode={mode} setMode={setMode} />
+      </Section>
 
-        <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
-          <SectionHeader colors={colors} label="Appearance" />
-          <AppearanceCard colors={colors} mode={mode} setMode={setMode} />
-        </View>
+      <Section colors={colors} delay={90} title="Feedback">
+        <Card colors={colors}>
+          <ToggleRow
+            colors={colors}
+            onValueChange={haptics.set}
+            subtitle="Subtle haptic feedback on taps and the dhikr counter."
+            title="Haptic feedback"
+            value={haptics.value}
+          />
+        </Card>
+      </Section>
 
-        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-          <SectionHeader colors={colors} label="Feedback" />
-          <Card colors={colors}>
-            <ToggleRow
-              colors={colors}
-              onValueChange={haptics.set}
-              subtitle="Subtle haptic feedback on taps and the dhikr counter."
-              title="Haptic feedback"
-              value={haptics.value}
-            />
-          </Card>
-        </View>
-
-        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-          <SectionHeader colors={colors} label="About" />
-          <AboutCard colors={colors} />
-        </View>
-      </SafeAreaView>
-    </View>
+      <Section colors={colors} delay={140} title="About">
+        <AboutCard colors={colors} />
+      </Section>
+    </SettingsScreen>
   );
 }
 
@@ -372,52 +320,6 @@ function ToggleRow({
         trackColor={{ false: colors.neutralSoft, true: colors.primary }}
         value={value}
       />
-    </View>
-  );
-}
-
-function SectionHeader({
-  colors,
-  label,
-}: {
-  colors: ThemeColors;
-  label: string;
-}) {
-  return (
-    <Text
-      style={{
-        fontSize: 12,
-        fontWeight: "700",
-        letterSpacing: 0.6,
-        textTransform: "uppercase",
-        color: colors.inkMuted,
-        marginLeft: 4,
-        marginBottom: 10,
-      }}
-    >
-      {label}
-    </Text>
-  );
-}
-
-function Card({
-  colors,
-  children,
-}: {
-  colors: ThemeColors;
-  children: React.ReactNode;
-}) {
-  return (
-    <View
-      style={{
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.card,
-        overflow: "hidden",
-      }}
-    >
-      {children}
     </View>
   );
 }
