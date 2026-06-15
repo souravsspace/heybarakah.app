@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery as useRqQuery } from "@tanstack/react-query";
-import * as Haptics from "expo-haptics";
 import {
   createContext,
   type ReactNode,
@@ -13,6 +12,7 @@ import {
 } from "react";
 import { useUser } from "@/contexts/user-context";
 import { api } from "@/lib/api-client";
+import { hapticImpact, hapticSelection } from "@/lib/haptics";
 
 export interface Preset {
   arabic: string;
@@ -296,13 +296,13 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetSession = useCallback(() => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     countRef.current = 0;
     setCount(0);
   }, []);
 
   const nextDhikr = useCallback(() => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     setActiveIndex((idx) => (idx + 1) % PRESETS.length);
     countRef.current = 0;
     setCount(0);
@@ -316,17 +316,11 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
     const nextCount = prev + 1;
     countRef.current = nextCount;
     if (nextCount >= active.target) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(
-        () => undefined
-      );
+      hapticImpact("heavy");
     } else if (nextCount % 10 === 0) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
-        () => undefined
-      );
+      hapticImpact("medium");
     } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-        () => undefined
-      );
+      hapticImpact("light");
     }
     setCount(nextCount);
     addLifetime(active.id, 1);
