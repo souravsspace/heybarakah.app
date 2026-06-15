@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import { useEffect } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, {
@@ -8,6 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { hapticSelection } from "@/lib/haptics";
 
 interface Props {
   badge?: string | null;
@@ -47,7 +47,7 @@ export function PlanCard({
   return (
     <Pressable
       onPress={() => {
-        Haptics.selectionAsync().catch(() => undefined);
+        hapticSelection();
         onPress();
       }}
       style={({ pressed }) => ({ opacity: pressed ? 0.95 : 1 })}
