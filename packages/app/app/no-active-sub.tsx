@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -8,6 +7,7 @@ import Svg, { Line, Polygon } from "react-native-svg";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
 import { useUser } from "@/contexts/user-context";
+import { hapticSelection } from "@/lib/haptics";
 import { useSubscription } from "@/lib/subscription";
 
 const MOSQUE_GREEN = "#29603E";
@@ -206,7 +206,7 @@ export default function NoActiveSub() {
         <Pressable
           accessibilityRole="button"
           onPress={() => {
-            Haptics.selectionAsync().catch(() => undefined);
+            hapticSelection();
             router.push("/(onboarding)/paywall/plans");
           }}
           style={({ pressed }) => ({
