@@ -1,5 +1,4 @@
 import { useQueryClient } from "@tanstack/react-query";
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -9,6 +8,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
 import { api } from "@/lib/api-client";
+import { hapticSelection } from "@/lib/haptics";
 
 type Method =
   | "isna"
@@ -68,7 +68,7 @@ export default function CalcMethod() {
       return;
     }
     setSaving(m);
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     try {
       await api.api.v1.me.profile.$post({ json: { calcMethod: m } });
       await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
@@ -82,7 +82,7 @@ export default function CalcMethod() {
       return;
     }
     setSavingMadhab(m);
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     try {
       await api.api.v1.me.profile.$post({ json: { madhab: m } });
       await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
@@ -295,7 +295,7 @@ function ScreenHeader({
     >
       <Pressable
         onPress={() => {
-          Haptics.selectionAsync().catch(() => undefined);
+          hapticSelection();
           onBack();
         }}
         style={{
