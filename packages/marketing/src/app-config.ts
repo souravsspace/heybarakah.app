@@ -22,7 +22,7 @@ export const appConfig = {
     themeColor: "#29603E",
     ogImage: "/og.png",
     ogImageAlt:
-      "Barakah — a quiet prayer-lock app for Muslims. Mosque-green wordmark on a white field.",
+      "Barakah — a quiet prayer-lock app for Muslims. Cream calligraphic mark and serif wordmark on a mosque-green field with Islamic geometry.",
     keywords: [
       "prayer app",
       "salah",
