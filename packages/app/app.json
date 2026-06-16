@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Barakah",
+    "name": "Prayer Lock: Barakah",
     "slug": "Barakah",
-    "version": "0.9.6",
+    "version": "0.9.7",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "barakah",
