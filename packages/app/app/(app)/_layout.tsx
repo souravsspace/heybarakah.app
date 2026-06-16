@@ -8,7 +8,9 @@ import {
   useRouter,
 } from "expo-router";
 import { useEffect, useRef } from "react";
+import { View } from "react-native";
 import { ErrorScreen } from "@/components/error-screen";
+import { OfflineBanner } from "@/components/offline-banner";
 import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { DhikrProvider } from "@/contexts/dhikr-context";
 import { useUser } from "@/contexts/user-context";
@@ -109,34 +111,37 @@ function AuthedShell() {
   }, [router]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="achievements" />
-      <Stack.Screen
-        name="dhikr-record"
-        options={{
-          presentation: "modal",
-          animation: "slide_from_bottom",
-          gestureEnabled: true,
-        }}
-      />
-      <Stack.Screen
-        name="unlock"
-        options={{
-          presentation: "modal",
-          animation: "slide_from_bottom",
-          gestureEnabled: false,
-        }}
-      />
-      <Stack.Screen
-        name="prayer-logged"
-        options={{
-          presentation: "fullScreenModal",
-          animation: "fade",
-          gestureEnabled: false,
-        }}
-      />
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="achievements" />
+        <Stack.Screen
+          name="dhikr-record"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            gestureEnabled: true,
+          }}
+        />
+        <Stack.Screen
+          name="unlock"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="prayer-logged"
+          options={{
+            presentation: "fullScreenModal",
+            animation: "fade",
+            gestureEnabled: false,
+          }}
+        />
+      </Stack>
+      <OfflineBanner />
+    </View>
   );
 }
 
