@@ -80,19 +80,23 @@ export default function ReconnectRequired() {
   const isOnline = useOnline();
   const [isChecking, setIsChecking] = useState(false);
 
-  async function onTryAgain() {
+  function onTryAgain() {
     hapticSelection();
     setIsChecking(true);
-    try {
-      // Force a fresh server answer for the gate's inputs. If connectivity is
-      // back, the subscription effect rewrites the entitlement snapshot and the
-      // (app) gate re-admits the user; otherwise the gate routes back here.
-      await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
-      await queryClient.invalidateQueries({ queryKey: ["cf", "subscription"] });
-      router.replace("/home");
-    } finally {
-      setIsChecking(false);
-    }
+    // Mark the gate's inputs stale so they refetch once connectivity returns,
+    // then re-enter the gate. Fire-and-forget: with the Expo online manager the
+    // refetch is *paused* while offline, so awaiting would hang this button
+    // forever. The gate re-evaluates on /home and routes back here if still
+    // offline past the grace window.
+    queryClient.invalidateQueries({ queryKey: ["cf", "me"] }).catch(() => {
+      // refetch is paused while offline; nothing to surface here
+    });
+    queryClient
+      .invalidateQueries({ queryKey: ["cf", "subscription"] })
+      .catch(() => {
+        // refetch is paused while offline; nothing to surface here
+      });
+    router.replace("/home");
   }
 
   return (
