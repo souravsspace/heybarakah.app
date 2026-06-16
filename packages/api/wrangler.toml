@@ -3,6 +3,10 @@ main = "src/index.ts"
 compatibility_date = "2026-06-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Production custom domain. BETTER_AUTH_URL targets this host; Cloudflare creates
+# the proxied DNS record + cert (heybarakah.app zone is on this account).
+routes = [{ pattern = "api.heybarakah.app", custom_domain = true }]
+
 [observability]
 enabled = true
 
@@ -21,13 +25,13 @@ BETTER_AUTH_URL = "https://api.heybarakah.app"
 [[d1_databases]]
 binding = "DB"
 database_name = "barakah-db"
-database_id = "<d1-database-id>"
+database_id = "65334e88-d6dd-4e5c-a671-7617bcb8bd9b"
 migrations_dir = "src/db/migrations"
 
 # KV — create with: wrangler kv namespace create KV
 [[kv_namespaces]]
 binding = "KV"
-id = "<kv-namespace-id>"
+id = "1c8381b2e2b84ba2a647e94123741be5"
 
 # R2 — create with: wrangler r2 bucket create barakah-avatars
 [[r2_buckets]]
