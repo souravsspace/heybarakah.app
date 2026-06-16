@@ -16,7 +16,11 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      gcTime: 5 * 60_000,
+      // 24h so persisted queries aren't garbage-collected from memory mid-session
+      // and then dropped from disk on the next dehydration write — screen-level
+      // caches (achievements, prayer-logs, dhikr, shield) must survive offline
+      // even after their screen unmounts.
+      gcTime: 24 * 60 * 60 * 1000,
       retry: 2,
       refetchOnWindowFocus: true,
     },
