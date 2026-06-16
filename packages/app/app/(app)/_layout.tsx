@@ -1,3 +1,4 @@
+import { useIsRestoring } from "@tanstack/react-query";
 import * as Notifications from "expo-notifications";
 import {
   type ErrorBoundaryProps,
@@ -21,7 +22,12 @@ import {
   addPendingUnlockListener,
   checkAndClearPendingUnlock,
 } from "@/lib/app-blocker";
+import {
+  useEntitlementSnapshot,
+  withinGrace,
+} from "@/lib/entitlement-snapshot";
 import { useSubscription } from "@/lib/subscription";
+import { useOnline } from "@/lib/use-online";
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return <ErrorScreen error={error} retry={retry} />;
@@ -137,15 +143,36 @@ function AuthedShell() {
 export default function AppLayout() {
   const { user, isLoading } = useUser();
   const { activeSubscription, isSubscriptionLoading } = useSubscription();
+  const isOnline = useOnline();
+  const isRestoring = useIsRestoring();
+  const snapshot = useEntitlementSnapshot();
 
-  if (isLoading || isSubscriptionLoading) {
+  // Hold while the persisted query cache hydrates or the entitlement snapshot
+  // loads from disk — deciding before these resolve would falsely treat a
+  // returning, subscribed user as logged-out / unsubscribed.
+  if (isRestoring || snapshot === undefined) {
+    return <AnimatedSplash />;
+  }
+  // Online: wait for the live server truth. Offline: the persisted cache has
+  // already hydrated, so `user`/`activeSubscription` reflect last-known state.
+  if (isOnline && (isLoading || isSubscriptionLoading)) {
     return <AnimatedSplash />;
   }
   if (!user) {
     return <Redirect href={"/(onboarding)/welcome" as never} />;
   }
-  if (!activeSubscription) {
-    return <Redirect href="/no-active-sub" />;
+
+  // Online trusts the live entitlement; offline trusts the last server-confirmed
+  // snapshot only within the bounded grace window (so permanent airplane mode
+  // can't grant premium forever).
+  const subAllowed = isOnline
+    ? Boolean(activeSubscription)
+    : snapshot !== null && snapshot.active && withinGrace(snapshot);
+
+  if (!subAllowed) {
+    return (
+      <Redirect href={isOnline ? "/no-active-sub" : "/reconnect-required"} />
+    );
   }
 
   return (
