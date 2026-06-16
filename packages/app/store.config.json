@@ -1,0 +1,33 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "copyright": "2026 Barakah",
+    "categories": ["LIFESTYLE", "PRODUCTIVITY"],
+    "info": {
+      "en-US": {
+        "title": "Prayer Lock: Barakah",
+        "subtitle": "Screen time blocker for salah",
+        "promoText": "Lock distracting apps during each prayer window, fajr to isha, and build a calmer, more present salah habit.",
+        "keywords": [
+          "salah",
+          "namaz",
+          "muslim",
+          "islam",
+          "screen time",
+          "app blocker",
+          "focus",
+          "dhikr",
+          "athan",
+          "islamic",
+          "deen",
+          "habit",
+          "quran"
+        ],
+        "description": "Barakah turns the five daily prayers into protected, distraction-free time. When a prayer window opens, Barakah locks the apps that pull you away, so you answer the call to salah instead of your phone.\n\nWhy Barakah\n\n- Prayer-window app lock: distracting apps are blocked from fajr through isha, and unlock once you have logged your prayer.\n- Built around salah: fajr, dhuhr, asr, maghrib, and isha times are calculated for your location.\n- Gentle accountability: a simple log and streak help you stay consistent without guilt.\n- Dhikr and du'a: keep remembrance close with built-in dhikr counters.\n- Calm by design: no noise, no clutter, no ads. Just space to be present with Allah.\n\nBarakah is for Muslims who want their phone to support their deen instead of competing with it. Reclaim your attention, protect your prayers, and bring more barakah into your day.\n\nPrayer times are estimates; please confirm with your local masjid.",
+        "marketingUrl": "https://heybarakah.app",
+        "supportUrl": "https://heybarakah.app",
+        "privacyPolicyUrl": "https://heybarakah.app/privacy"
+      }
+    }
+  }
+}
