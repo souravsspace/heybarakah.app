@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { selectionAsync } from "expo-haptics";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -28,6 +27,7 @@ import {
   type AuthProvider,
   useOnboardingState,
 } from "@/hooks/use-onboarding-state";
+import { hapticSelection } from "@/lib/haptics";
 import { useAppleAuth } from "@/lib/oauth/use-apple-auth";
 import { useGoogleAuth } from "@/lib/oauth/use-google-auth";
 import { useSubscription } from "@/lib/subscription";
@@ -232,7 +232,7 @@ export default function Auth() {
   );
 
   async function pick(provider: AuthProvider) {
-    selectionAsync().catch(() => undefined);
+    hapticSelection();
     fillDefaultsIfWelcome(provider);
 
     // Email leaves this screen for the OTP flow; don't put it into a loading

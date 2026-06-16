@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { useEffect } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, {
@@ -9,6 +8,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { hapticSelection } from "@/lib/haptics";
 
 interface Props {
   hint?: string;
@@ -38,7 +38,7 @@ export function OptionRow({ label, hint, selected, onPress, icon }: Props) {
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       onPress={() => {
-        Haptics.selectionAsync().catch(() => undefined);
+        hapticSelection();
         onPress();
       }}
       style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}

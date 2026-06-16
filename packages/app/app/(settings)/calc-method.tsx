@@ -1,14 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
-import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Pressable, Text, View } from "react-native";
+import {
+  Card,
+  Section,
+  SettingsScreen,
+} from "@/components/settings/settings-screen";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
 import { api } from "@/lib/api-client";
+import { hapticSelection } from "@/lib/haptics";
 
 type Method =
   | "isna"
@@ -52,8 +53,7 @@ const MADHAB_OPTIONS: { key: Madhab; label: string; note: string }[] = [
 ];
 
 export default function CalcMethod() {
-  const router = useRouter();
-  const { colors, scheme } = useTheme();
+  const { colors } = useTheme();
   const { profile } = useUser();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState<Method | null>(null);
@@ -68,7 +68,7 @@ export default function CalcMethod() {
       return;
     }
     setSaving(m);
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     try {
       await api.api.v1.me.profile.$post({ json: { calcMethod: m } });
       await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
@@ -82,7 +82,7 @@ export default function CalcMethod() {
       return;
     }
     setSavingMadhab(m);
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     try {
       await api.api.v1.me.profile.$post({ json: { madhab: m } });
       await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
@@ -92,110 +92,59 @@ export default function CalcMethod() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
-        <ScreenHeader
-          colors={colors}
-          onBack={() => router.back()}
-          title="Calculation Method"
-        />
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: 80 }}
-          showsVerticalScrollIndicator={false}
+    <SettingsScreen
+      subtitle="Set the convention for fajr and isha, and asr timing by your madhab."
+      title="Calculation method"
+    >
+      <Section colors={colors} delay={40} title="Method">
+        <Card colors={colors}>
+          {METHODS.map((m, i) => (
+            <View key={m.key}>
+              {i > 0 ? <Divider colors={colors} /> : null}
+              <OptionRow
+                colors={colors}
+                disabled={!!saving}
+                onPress={() => pick(m.key)}
+                saving={saving === m.key}
+                selected={current === m.key}
+                subtitle={m.region}
+                title={m.title}
+              />
+            </View>
+          ))}
+        </Card>
+      </Section>
+
+      <Section colors={colors} delay={90} title="Madhab">
+        <Text
+          style={{
+            fontSize: 13,
+            color: colors.inkMuted,
+            lineHeight: 19,
+            marginBottom: 12,
+            paddingHorizontal: 4,
+          }}
         >
-          <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
-            <Text
-              style={{
-                fontSize: 13,
-                color: colors.inkMuted,
-                lineHeight: 19,
-                marginBottom: 18,
-              }}
-            >
-              Sets fajr and isha angles. Choose the convention used in your
-              region or by scholars you follow.
-            </Text>
-
-            <View
-              style={{
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: colors.border,
-                backgroundColor: colors.card,
-                overflow: "hidden",
-              }}
-            >
-              {METHODS.map((m, i) => (
-                <View key={m.key}>
-                  {i > 0 ? <Divider colors={colors} /> : null}
-                  <OptionRow
-                    colors={colors}
-                    disabled={!!saving}
-                    onPress={() => pick(m.key)}
-                    saving={saving === m.key}
-                    selected={current === m.key}
-                    subtitle={m.region}
-                    title={m.title}
-                  />
-                </View>
-              ))}
+          Determines asr timing based on shadow length.
+        </Text>
+        <Card colors={colors}>
+          {MADHAB_OPTIONS.map((m, i) => (
+            <View key={m.key}>
+              {i > 0 ? <Divider colors={colors} /> : null}
+              <OptionRow
+                colors={colors}
+                disabled={!!savingMadhab}
+                onPress={() => pickMadhab(m.key)}
+                saving={savingMadhab === m.key}
+                selected={currentMadhab === m.key}
+                subtitle={m.note}
+                title={m.label}
+              />
             </View>
-
-            <Text
-              style={{
-                marginTop: 28,
-                fontSize: 11,
-                fontWeight: "700",
-                letterSpacing: 2,
-                color: colors.inkMuted,
-                textTransform: "uppercase",
-                marginBottom: 10,
-                paddingHorizontal: 4,
-              }}
-            >
-              Madhab
-            </Text>
-            <Text
-              style={{
-                fontSize: 13,
-                color: colors.inkMuted,
-                lineHeight: 19,
-                marginBottom: 14,
-                paddingHorizontal: 4,
-              }}
-            >
-              Determines asr timing based on shadow length.
-            </Text>
-
-            <View
-              style={{
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: colors.border,
-                backgroundColor: colors.card,
-                overflow: "hidden",
-              }}
-            >
-              {MADHAB_OPTIONS.map((m, i) => (
-                <View key={m.key}>
-                  {i > 0 ? <Divider colors={colors} /> : null}
-                  <OptionRow
-                    colors={colors}
-                    disabled={!!savingMadhab}
-                    onPress={() => pickMadhab(m.key)}
-                    saving={savingMadhab === m.key}
-                    selected={currentMadhab === m.key}
-                    subtitle={m.note}
-                    title={m.label}
-                  />
-                </View>
-              ))}
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+          ))}
+        </Card>
+      </Section>
+    </SettingsScreen>
   );
 }
 
@@ -222,7 +171,7 @@ function OptionRow({
         <View
           style={{
             paddingHorizontal: 16,
-            paddingVertical: 14,
+            paddingVertical: 15,
             flexDirection: "row",
             alignItems: "center",
             gap: 12,
@@ -233,7 +182,7 @@ function OptionRow({
             <Text
               style={{
                 fontSize: 15,
-                fontWeight: "600",
+                fontWeight: selected ? "700" : "600",
                 color: colors.ink,
               }}
             >
@@ -254,11 +203,24 @@ function OptionRow({
               width: 22,
               height: 22,
               borderRadius: 11,
-              borderWidth: selected ? 7 : 1.5,
+              borderWidth: selected ? 2 : 1.5,
               borderColor: selected ? colors.primary : colors.border,
+              alignItems: "center",
+              justifyContent: "center",
               opacity: saving ? 0.5 : 1,
             }}
-          />
+          >
+            {selected ? (
+              <View
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: colors.primary,
+                }}
+              />
+            ) : null}
+          </View>
         </View>
       )}
     </Pressable>
@@ -270,63 +232,5 @@ function Divider({ colors }: { colors: ThemeColors }) {
     <View
       style={{ height: 1, marginLeft: 16, backgroundColor: colors.divider }}
     />
-  );
-}
-
-function ScreenHeader({
-  colors,
-  onBack,
-  title,
-}: {
-  colors: ThemeColors;
-  onBack: () => void;
-  title: string;
-}) {
-  return (
-    <View
-      style={{
-        paddingHorizontal: 20,
-        paddingTop: 4,
-        paddingBottom: 12,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-      }}
-    >
-      <Pressable
-        onPress={() => {
-          Haptics.selectionAsync().catch(() => undefined);
-          onBack();
-        }}
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 18,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: colors.surfaceSoft,
-          borderWidth: 1,
-          borderColor: colors.border,
-        }}
-      >
-        <IconSymbol
-          color={colors.ink}
-          name={"chevron.left" as never}
-          size={16}
-        />
-      </Pressable>
-      <Text
-        style={{
-          flex: 1,
-          textAlign: "center",
-          fontSize: 16,
-          fontWeight: "700",
-          color: colors.ink,
-          marginRight: 36,
-        }}
-      >
-        {title}
-      </Text>
-    </View>
   );
 }

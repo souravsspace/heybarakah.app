@@ -1,127 +1,47 @@
-import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import * as Application from "expo-application";
 import { Pressable, Switch, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Card,
+  Section,
+  SettingsScreen,
+} from "@/components/settings/settings-screen";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import {
   type ThemeColors,
   type ThemeMode,
   useTheme,
 } from "@/contexts/theme-context";
-import { usePref } from "@/hooks/use-pref";
+import { hapticSelection, useHapticsPref } from "@/lib/haptics";
 
 export default function Preferences() {
-  const router = useRouter();
-  const { colors, scheme, mode, setMode } = useTheme();
-  const reminders = usePref("prayer-reminders", true);
-  const haptics = usePref("haptics", true);
-  const autoLoc = usePref("auto-location", true);
-  const khushu = usePref("khushu-widget", false);
+  const { colors, mode, setMode } = useTheme();
+  const haptics = useHapticsPref();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
-        <View
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 4,
-            paddingBottom: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync().catch(() => undefined);
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace("/profile" as never);
-              }
-            }}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: colors.surfaceSoft,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <IconSymbol
-              color={colors.ink}
-              name={"chevron.left" as never}
-              size={16}
-            />
-          </Pressable>
-          <Text
-            style={{
-              flex: 1,
-              textAlign: "center",
-              fontSize: 16,
-              fontWeight: "700",
-              color: colors.ink,
-              marginRight: 36,
-            }}
-          >
-            Preferences
-          </Text>
-        </View>
+    <SettingsScreen
+      subtitle="Tune how Barakah looks and feels."
+      title="Preferences"
+    >
+      <Section colors={colors} delay={40} title="Appearance">
+        <AppearanceCard colors={colors} mode={mode} setMode={setMode} />
+      </Section>
 
-        <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
-          <AppearanceCard colors={colors} mode={mode} setMode={setMode} />
-        </View>
+      <Section colors={colors} delay={90} title="Feedback">
+        <Card colors={colors}>
+          <ToggleRow
+            colors={colors}
+            onValueChange={haptics.set}
+            subtitle="Subtle haptic feedback on taps and the dhikr counter."
+            title="Haptic feedback"
+            value={haptics.value}
+          />
+        </Card>
+      </Section>
 
-        <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
-          <View
-            style={{
-              borderRadius: 18,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.card,
-              overflow: "hidden",
-            }}
-          >
-            <ToggleRow
-              colors={colors}
-              onValueChange={reminders.set}
-              subtitle="Notify me before each prayer with adhan."
-              title="Prayer reminders"
-              value={reminders.value}
-            />
-            <Divider colors={colors} />
-            <ToggleRow
-              colors={colors}
-              onValueChange={khushu.set}
-              subtitle="Show next prayer and Hijri date on lock screen."
-              title="Lock screen widget"
-              value={khushu.value}
-            />
-            <Divider colors={colors} />
-            <ToggleRow
-              colors={colors}
-              onValueChange={haptics.set}
-              subtitle="Subtle haptic feedback on taps and dhikr counter."
-              title="Haptic feedback"
-              value={haptics.value}
-            />
-            <Divider colors={colors} />
-            <ToggleRow
-              colors={colors}
-              onValueChange={autoLoc.set}
-              subtitle="Update prayer times automatically as you travel."
-              title="Auto-adjust by location"
-              value={autoLoc.value}
-            />
-          </View>
-        </View>
-      </SafeAreaView>
-    </View>
+      <Section colors={colors} delay={140} title="About">
+        <AboutCard colors={colors} />
+      </Section>
+    </SettingsScreen>
   );
 }
 
@@ -144,19 +64,6 @@ function AppearanceCard({
         padding: 16,
       }}
     >
-      <Text style={{ fontSize: 16, fontWeight: "700", color: colors.ink }}>
-        Appearance
-      </Text>
-      <Text
-        style={{
-          fontSize: 12,
-          color: colors.inkMuted,
-          marginTop: 4,
-          marginBottom: 16,
-        }}
-      >
-        Choose light, dark, or system appearance.
-      </Text>
       <View style={{ flexDirection: "row", gap: 10 }}>
         <ThemeTile
           colors={colors}
@@ -204,7 +111,7 @@ function ThemeTile({
   return (
     <Pressable
       onPress={() => {
-        Haptics.selectionAsync().catch(() => undefined);
+        hapticSelection();
         onPress();
       }}
       style={{ flex: 1, alignItems: "center", gap: 8 }}
@@ -406,7 +313,7 @@ function ToggleRow({
       <Switch
         ios_backgroundColor={colors.neutralSoft}
         onValueChange={(v) => {
-          Haptics.selectionAsync().catch(() => undefined);
+          hapticSelection();
           onValueChange(v);
         }}
         thumbColor="#FFFFFF"
@@ -417,14 +324,41 @@ function ToggleRow({
   );
 }
 
-function Divider({ colors }: { colors: ThemeColors }) {
+function AboutCard({ colors }: { colors: ThemeColors }) {
+  const version = Application.nativeApplicationVersion ?? "—";
+  const build = Application.nativeBuildVersion ?? "—";
+
   return (
-    <View
-      style={{
-        height: 1,
-        marginLeft: 16,
-        backgroundColor: colors.divider,
-      }}
-    />
+    <Card colors={colors}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          gap: 14,
+        }}
+      >
+        <Text
+          style={{
+            flex: 1,
+            fontSize: 15,
+            fontWeight: "600",
+            color: colors.ink,
+          }}
+        >
+          Version
+        </Text>
+        <Text
+          style={{
+            fontSize: 14,
+            color: colors.inkMuted,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {version} ({build})
+        </Text>
+      </View>
+    </Card>
   );
 }

@@ -1,5 +1,4 @@
 import { useQuery as useRqQuery } from "@tanstack/react-query";
-import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -20,6 +19,7 @@ import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { useUser } from "@/contexts/user-context";
 import { api } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
+import { hapticNotification, hapticSelection } from "@/lib/haptics";
 import { useSubscription } from "@/lib/subscription";
 
 const SPLIT_RE = /\s+/;
@@ -90,14 +90,12 @@ export default function Profile() {
     scheme === "dark" ? "rgba(20,26,23,0.55)" : "rgba(255,255,255,0.55)";
 
   const go = (path: string) => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     router.push(path as never);
   };
 
   const handleLogout = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
-      () => undefined
-    );
+    hapticNotification("warning");
     Alert.alert("Log out", "Are you sure you want to log out?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -113,19 +111,19 @@ export default function Profile() {
   };
 
   const openMail = (to: string, subject: string) => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     Linking.openURL(
       `mailto:${to}?subject=${encodeURIComponent(subject)}`
     ).catch(() => Alert.alert("Mail unavailable", `Email: ${to}`));
   };
 
   const openUrl = (url: string) => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     Linking.openURL(url).catch(() => Alert.alert("Cannot open link", url));
   };
 
   const openSettings = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     Linking.openSettings().catch(() => undefined);
   };
 
@@ -159,9 +157,7 @@ export default function Profile() {
   };
 
   const confirmDelete = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
-      () => undefined
-    );
+    hapticNotification("warning");
     let note = "";
     if (activeSubscription?.source === "revenuecat") {
       note =

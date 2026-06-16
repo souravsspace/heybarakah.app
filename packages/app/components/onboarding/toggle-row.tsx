@@ -1,5 +1,5 @@
-import * as Haptics from "expo-haptics";
 import { Pressable, Switch, Text, View } from "react-native";
+import { hapticSelection } from "@/lib/haptics";
 
 interface Props {
   hint?: string;
@@ -13,7 +13,7 @@ export function ToggleRow({ label, hint, value, onToggle }: Props) {
     <Pressable
       className="flex-row items-center rounded-md border border-neutral bg-surface px-md py-sm"
       onPress={() => {
-        Haptics.selectionAsync().catch(() => undefined);
+        hapticSelection();
         onToggle();
       }}
     >

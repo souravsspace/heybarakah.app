@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef } from "react";
@@ -14,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DhikrMesh } from "@/components/meshes";
 import { PRESETS, useDhikr } from "@/contexts/dhikr-context";
 import { useTheme } from "@/contexts/theme-context";
+import { hapticSelection } from "@/lib/haptics";
 
 export default function DhikrScreen() {
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function DhikrScreen() {
   }));
 
   const openRecord = useCallback(() => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     router.push("/dhikr-record");
   }, [router]);
 

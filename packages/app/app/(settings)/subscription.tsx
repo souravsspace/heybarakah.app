@@ -1,7 +1,5 @@
 import { applicationId } from "expo-application";
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -9,13 +7,18 @@ import {
   Linking,
   Platform,
   Pressable,
-  ScrollView,
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import {
+  Card,
+  Section,
+  SettingsScreen,
+} from "@/components/settings/settings-screen";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
+import { hapticSelection } from "@/lib/haptics";
 import { useSubscription } from "@/lib/subscription";
 
 type ProductId = "yearly" | "monthly" | "family" | "lifetime";
@@ -52,7 +55,7 @@ const BENEFITS: { sf: string; title: string; subtitle: string }[] = [
 
 export default function Subscription() {
   const router = useRouter();
-  const { colors, scheme } = useTheme();
+  const { colors } = useTheme();
   const { activeSubscription, isSubscriptionLoading, restore } =
     useSubscription();
   const loading = isSubscriptionLoading;
@@ -61,14 +64,14 @@ export default function Subscription() {
   const [isRestoring, setIsRestoring] = useState(false);
 
   const openSupport = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     Linking.openURL("mailto:support@heybarakah.app?subject=Subscription").catch(
       () => Alert.alert("Mail unavailable", "Email: support@heybarakah.app")
     );
   };
 
   const openFamilySettings = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     if (Platform.OS === "android") {
       Linking.openURL(
         "https://support.google.com/googleplay/answer/7007852"
@@ -83,7 +86,7 @@ export default function Subscription() {
   };
 
   const openFamilyHelp = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     const url =
       Platform.OS === "android"
         ? "https://support.google.com/googleplay/answer/7007852"
@@ -92,7 +95,7 @@ export default function Subscription() {
   };
 
   const manage = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     if (Platform.OS === "android") {
       if (!applicationId) {
         Alert.alert(
@@ -123,7 +126,7 @@ export default function Subscription() {
     if (isRestoring) {
       return;
     }
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     setIsRestoring(true);
     try {
       const ok = await restore();
@@ -141,107 +144,100 @@ export default function Subscription() {
   };
 
   const upgrade = () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     router.push("/no-active-sub" as never);
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
-        <Header
-          colors={colors}
-          onBack={() => router.back()}
-          title="Subscription"
-        />
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
-            {isPremium ? (
-              <PlanCard colors={colors} productId={productId} />
-            ) : (
-              <UpgradeCard
+    <SettingsScreen
+      subtitle={
+        isPremium
+          ? "Your Barakah membership and benefits."
+          : "Unlock the full Barakah experience."
+      }
+      title="Subscription"
+    >
+      <Animated.View
+        entering={FadeInDown.duration(300).delay(30)}
+        style={{ paddingHorizontal: 20, marginTop: 22 }}
+      >
+        {isPremium ? (
+          <PlanCard colors={colors} productId={productId} />
+        ) : (
+          <UpgradeCard colors={colors} loading={loading} onUpgrade={upgrade} />
+        )}
+      </Animated.View>
+
+      <Section colors={colors} delay={80} title="What's included">
+        <Card colors={colors}>
+          {BENEFITS.map((b, i) => (
+            <View key={b.sf}>
+              <BenefitRow
                 colors={colors}
-                loading={loading}
-                onUpgrade={upgrade}
+                sf={b.sf}
+                subtitle={b.subtitle}
+                title={b.title}
               />
-            )}
-          </View>
+              {i < BENEFITS.length - 1 ? <Divider colors={colors} /> : null}
+            </View>
+          ))}
+        </Card>
+      </Section>
 
-          <Section colors={colors} title="What's included">
-            <Card colors={colors}>
-              {BENEFITS.map((b, i) => (
-                <View key={b.sf}>
-                  <BenefitRow
-                    colors={colors}
-                    sf={b.sf}
-                    subtitle={b.subtitle}
-                    title={b.title}
-                  />
-                  {i < BENEFITS.length - 1 ? <Divider colors={colors} /> : null}
-                </View>
-              ))}
-            </Card>
-          </Section>
+      {isPremium && productId === "family" ? (
+        <Section colors={colors} delay={120} title="Family sharing">
+          <Card colors={colors}>
+            <FamilyInfoRow colors={colors} />
+            <Divider colors={colors} />
+            <ActionRow
+              colors={colors}
+              onPress={openFamilySettings}
+              sf={Platform.OS === "android" ? "person.2.fill" : "gear"}
+              title={
+                Platform.OS === "android"
+                  ? "Open Play Family Library"
+                  : "Manage family in Settings"
+              }
+            />
+            <Divider colors={colors} />
+            <ActionRow
+              colors={colors}
+              onPress={openFamilyHelp}
+              sf="questionmark.circle.fill"
+              title="How family sharing works"
+            />
+          </Card>
+        </Section>
+      ) : null}
 
-          {isPremium && productId === "family" ? (
-            <Section colors={colors} title="Family sharing">
-              <Card colors={colors}>
-                <FamilyInfoRow colors={colors} />
-                <Divider colors={colors} />
-                <ActionRow
-                  colors={colors}
-                  onPress={openFamilySettings}
-                  sf={Platform.OS === "android" ? "person.2.fill" : "gear"}
-                  title={
-                    Platform.OS === "android"
-                      ? "Open Play Family Library"
-                      : "Manage family in Settings"
-                  }
-                />
-                <Divider colors={colors} />
-                <ActionRow
-                  colors={colors}
-                  onPress={openFamilyHelp}
-                  sf="questionmark.circle.fill"
-                  title="How family sharing works"
-                />
-              </Card>
-            </Section>
-          ) : null}
-
-          {isPremium ? (
-            <Section colors={colors} title="Manage">
-              <Card colors={colors}>
-                <ActionRow
-                  colors={colors}
-                  onPress={manage}
-                  sf="creditcard.fill"
-                  title="Manage subscription"
-                />
-                <Divider colors={colors} />
-                <ActionRow
-                  colors={colors}
-                  loading={isRestoring}
-                  onPress={onRestore}
-                  sf="arrow.clockwise"
-                  title="Restore purchases"
-                />
-                <Divider colors={colors} />
-                <ActionRow
-                  colors={colors}
-                  onPress={openSupport}
-                  sf="envelope.fill"
-                  title="Billing support"
-                />
-              </Card>
-            </Section>
-          ) : null}
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+      {isPremium ? (
+        <Section colors={colors} delay={160} title="Manage">
+          <Card colors={colors}>
+            <ActionRow
+              colors={colors}
+              onPress={manage}
+              sf="creditcard.fill"
+              title="Manage subscription"
+            />
+            <Divider colors={colors} />
+            <ActionRow
+              colors={colors}
+              loading={isRestoring}
+              onPress={onRestore}
+              sf="arrow.clockwise"
+              title="Restore purchases"
+            />
+            <Divider colors={colors} />
+            <ActionRow
+              colors={colors}
+              onPress={openSupport}
+              sf="envelope.fill"
+              title="Billing support"
+            />
+          </Card>
+        </Section>
+      ) : null}
+    </SettingsScreen>
   );
 }
 
@@ -265,35 +261,49 @@ function PlanCard({
   return (
     <View
       style={{
-        borderRadius: 20,
+        borderRadius: 22,
         borderWidth: 1,
         borderColor: colors.border,
         backgroundColor: colors.card,
         paddingHorizontal: 24,
-        paddingVertical: 28,
-        gap: 16,
+        paddingTop: 24,
+        paddingBottom: 22,
+        gap: 18,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <View
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: 3,
-            backgroundColor: colors.primary,
-          }}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.primary,
+            }}
+          />
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "700",
+              letterSpacing: 2,
+              color: colors.primary,
+              textTransform: "uppercase",
+            }}
+          >
+            Active plan
+          </Text>
+        </View>
+        <IconSymbol
+          color={colors.premium}
+          name={"crown.fill" as never}
+          size={18}
         />
-        <Text
-          style={{
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 2,
-            color: colors.primary,
-            textTransform: "uppercase",
-          }}
-        >
-          Active plan
-        </Text>
       </View>
 
       <View style={{ gap: 6 }}>
@@ -308,16 +318,13 @@ function PlanCard({
         >
           {planName}
         </Text>
-        <Text
-          style={{
-            fontSize: 13,
-            color: colors.inkMuted,
-            letterSpacing: 0.1,
-          }}
-        >
-          {cadence}
-        </Text>
+        <Text style={{ fontSize: 13, color: colors.inkMuted }}>{cadence}</Text>
       </View>
+
+      <View style={{ height: 1, backgroundColor: colors.divider }} />
+      <Text style={{ fontSize: 12, color: colors.inkMuted, lineHeight: 17 }}>
+        Jazāk Allāhu khayran — your support keeps Barakah running.
+      </Text>
     </View>
   );
 }
@@ -334,7 +341,7 @@ function UpgradeCard({
   return (
     <View
       style={{
-        borderRadius: 20,
+        borderRadius: 22,
         borderWidth: 1,
         borderColor: colors.border,
         backgroundColor: colors.card,
@@ -363,9 +370,10 @@ function UpgradeCard({
       <Text
         style={{
           fontFamily: "LibreBaskerville-Bold",
-          fontSize: 24,
+          fontSize: 26,
           color: colors.ink,
           letterSpacing: -0.3,
+          lineHeight: 32,
         }}
       >
         Unlock Barakah Premium
@@ -378,7 +386,8 @@ function UpgradeCard({
         disabled={loading}
         onPress={onUpgrade}
         style={({ pressed }) => ({
-          paddingVertical: 14,
+          marginTop: 2,
+          paddingVertical: 15,
           borderRadius: 999,
           alignItems: "center",
           justifyContent: "center",
@@ -391,7 +400,7 @@ function UpgradeCard({
             fontSize: 14,
             fontWeight: "700",
             color: "#FFFFFF",
-            letterSpacing: 0.3,
+            letterSpacing: 0.5,
           }}
         >
           {loading ? "Loading…" : "UPGRADE"}
@@ -562,123 +571,10 @@ function ActionRow({
   );
 }
 
-function Section({
-  children,
-  colors,
-  title,
-}: {
-  children: React.ReactNode;
-  colors: ThemeColors;
-  title: string;
-}) {
-  return (
-    <View style={{ marginTop: 28 }}>
-      <Text
-        style={{
-          paddingHorizontal: 20,
-          fontSize: 11,
-          fontWeight: "700",
-          letterSpacing: 2,
-          color: colors.inkMuted,
-          textTransform: "uppercase",
-          marginBottom: 10,
-        }}
-      >
-        {title}
-      </Text>
-      <View style={{ paddingHorizontal: 20 }}>{children}</View>
-    </View>
-  );
-}
-
-function Card({
-  children,
-  colors,
-}: {
-  children: React.ReactNode;
-  colors: ThemeColors;
-}) {
-  return (
-    <View
-      style={{
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.card,
-        overflow: "hidden",
-      }}
-    >
-      {children}
-    </View>
-  );
-}
-
 function Divider({ colors }: { colors: ThemeColors }) {
   return (
     <View
       style={{ height: 1, marginLeft: 66, backgroundColor: colors.divider }}
     />
-  );
-}
-
-function Header({
-  colors,
-  onBack,
-  title,
-}: {
-  colors: ThemeColors;
-  onBack: () => void;
-  title: string;
-}) {
-  return (
-    <View
-      style={{
-        paddingHorizontal: 16,
-        paddingTop: 6,
-        paddingBottom: 8,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-      }}
-    >
-      <Pressable
-        onPress={() => {
-          Haptics.selectionAsync().catch(() => undefined);
-          onBack();
-        }}
-      >
-        {({ pressed }) => (
-          <View
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 19,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: colors.surfaceSoft,
-              opacity: pressed ? 0.8 : 1,
-            }}
-          >
-            <IconSymbol
-              color={colors.ink}
-              name={"chevron.left" as never}
-              size={16}
-            />
-          </View>
-        )}
-      </Pressable>
-      <Text
-        style={{
-          flex: 1,
-          textAlign: "center",
-          fontSize: 16,
-          fontWeight: "700",
-          color: colors.ink,
-          marginRight: 38,
-        }}
-      >
-        {title}
-      </Text>
-    </View>
   );
 }

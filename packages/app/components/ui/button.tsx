@@ -1,5 +1,5 @@
-import * as Haptics from "expo-haptics";
 import { Pressable, type PressableProps, Text } from "react-native";
+import { hapticSelection } from "@/lib/haptics";
 
 type ButtonVariant = "primary" | "secondary";
 
@@ -36,7 +36,7 @@ export function Button({
       disabled={disabled}
       onPress={(event) => {
         if (!disabled) {
-          Haptics.selectionAsync().catch(() => undefined);
+          hapticSelection();
         }
         onPress?.(event);
       }}

@@ -38,16 +38,40 @@ const robotsContent = noindex
   ? "noindex,nofollow"
   : "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1";
 
-const organizationLd = {
-  "@context": "https://schema.org",
+// Single connected @graph: entities cross-reference by @id so search engines
+// resolve one knowledge entity (Organization → WebSite → WebPage → App) instead
+// of disconnected nodes. dateModified is the build time for a freshness signal.
+const orgId = `${siteUrl}/#organization`;
+const websiteId = `${siteUrl}/#website`;
+const softwareId = `${siteUrl}/#software`;
+const logoId = `${siteUrl}/#logo`;
+const webPageId = `${canonicalUrl}#webpage`;
+const primaryImageId = `${ogImageUrl}#primaryimage`;
+const faqId = `${canonicalUrl}#faq`;
+
+const logoUrl = new URL("/barakah-app-icon.png", siteUrl).toString();
+const datePublished = "2026-05-01";
+const dateModified = new Date().toISOString();
+
+const organizationNode = {
   "@type": "Organization",
+  "@id": orgId,
   name: appConfig.brand.name,
   legalName: appConfig.brand.legalName,
   url: siteUrl,
-  logo: new URL("/barakah-app-icon.png", siteUrl).toString(),
   email: appConfig.contact.email,
   description: appConfig.brand.description,
   sameAs: [appConfig.social.twitter],
+  logo: {
+    "@type": "ImageObject",
+    "@id": logoId,
+    url: logoUrl,
+    contentUrl: logoUrl,
+    width: 1024,
+    height: 1024,
+    caption: appConfig.brand.name,
+  },
+  image: { "@id": logoId },
   contactPoint: {
     "@type": "ContactPoint",
     contactType: "customer support",
@@ -56,30 +80,54 @@ const organizationLd = {
   },
 };
 
-const websiteLd = {
-  "@context": "https://schema.org",
+const websiteNode = {
   "@type": "WebSite",
+  "@id": websiteId,
   name: appConfig.brand.name,
   alternateName: [appConfig.brand.shortName, "heybarakah"],
   description: appConfig.brand.description,
   url: siteUrl,
   inLanguage: appConfig.seo.language,
-  publisher: {
-    "@type": "Organization",
-    name: appConfig.brand.name,
-    url: siteUrl,
-  },
+  publisher: { "@id": orgId },
 };
 
-const softwareLd = {
-  "@context": "https://schema.org",
+const primaryImageNode = {
+  "@type": "ImageObject",
+  "@id": primaryImageId,
+  url: ogImageUrl,
+  contentUrl: ogImageUrl,
+  width: 1200,
+  height: 630,
+  caption: imageAlt,
+};
+
+const webPageNode = {
+  "@type": type === "article" ? "Article" : "WebPage",
+  "@id": webPageId,
+  url: canonicalUrl,
+  name: title,
+  description,
+  inLanguage: appConfig.seo.language,
+  isPartOf: { "@id": websiteId },
+  about: { "@id": softwareId },
+  primaryImageOfPage: { "@id": primaryImageId },
+  image: { "@id": primaryImageId },
+  datePublished,
+  dateModified,
+  ...(type === "article"
+    ? { author: { "@id": orgId }, publisher: { "@id": orgId } }
+    : {}),
+};
+
+const softwareNode = {
   "@type": "SoftwareApplication",
+  "@id": softwareId,
   name: appConfig.brand.name,
   description: appConfig.brand.description,
   applicationCategory: "LifestyleApplication",
   operatingSystem: "iOS, Android",
   url: siteUrl,
-  image: ogImageUrl,
+  image: { "@id": primaryImageId },
   inLanguage: appConfig.seo.language,
   featureList: [
     "Prayer lock at all five salah windows (Fajr, Dhuhr, Asr, Maghrib, Isha)",
@@ -102,16 +150,13 @@ const softwareLd = {
     availability: "https://schema.org/PreOrder",
     url: appConfig.pricing.checkoutUrl,
   },
-  publisher: {
-    "@type": "Organization",
-    name: appConfig.brand.name,
-    url: siteUrl,
-  },
+  publisher: { "@id": orgId },
 };
 
-const faqLd = {
-  "@context": "https://schema.org",
+const faqNode = {
   "@type": "FAQPage",
+  "@id": faqId,
+  isPartOf: { "@id": webPageId },
   mainEntity: faqItems.map((item) => ({
     "@type": "Question",
     name: item.q,
@@ -120,6 +165,18 @@ const faqLd = {
       text: item.a,
     },
   })),
+};
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    organizationNode,
+    websiteNode,
+    primaryImageNode,
+    webPageNode,
+    softwareNode,
+    ...(includeFaqJsonLd ? [faqNode] : []),
+  ],
 };
 ---
 
@@ -160,6 +217,10 @@ const faqLd = {
     />
 
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang={appConfig.seo.language} href={canonicalUrl} />
+    <link rel="alternate" hreflang="x-default" href={canonicalUrl} />
+    <link rel="dns-prefetch" href="https://buy.polar.sh" />
+    <link rel="preconnect" href="https://buy.polar.sh" crossorigin />
     <link rel="icon" type="image/png" href="/barakah-app-icon.png" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/barakah-app-icon.png" />
@@ -193,6 +254,7 @@ const faqLd = {
 
     <meta name="twitter:card" content="summary_large_image" />
     {appConfig.seo.twitterHandle && <meta name="twitter:site" content={appConfig.seo.twitterHandle} />}
+    {appConfig.seo.twitterHandle && <meta name="twitter:creator" content={appConfig.seo.twitterHandle} />}
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImageUrl} />
@@ -200,24 +262,8 @@ const faqLd = {
 
     <script
       type="application/ld+json"
-      set:html={JSON.stringify(organizationLd).replace(/<\/script/gi, "<\\/script")}
+      set:html={JSON.stringify(structuredData).replace(/<\/script/gi, "<\\/script")}
     />
-    <script
-      type="application/ld+json"
-      set:html={JSON.stringify(websiteLd).replace(/<\/script/gi, "<\\/script")}
-    />
-    <script
-      type="application/ld+json"
-      set:html={JSON.stringify(softwareLd).replace(/<\/script/gi, "<\\/script")}
-    />
-    {
-      includeFaqJsonLd && (
-        <script
-          type="application/ld+json"
-          set:html={JSON.stringify(faqLd).replace(/<\/script/gi, "<\\/script")}
-        />
-      )
-    }
   </head>
   <body class:list={["text-[color:var(--color-fg)]", bodyClass]}>
     <AnnounceBar />

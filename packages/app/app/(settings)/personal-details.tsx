@@ -1,6 +1,5 @@
 import { useQueryClient, useQuery as useRqQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system/legacy";
-import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
@@ -25,6 +24,7 @@ import { useUser } from "@/contexts/user-context";
 import { api } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
 import { API_BASE_URL } from "@/lib/cf-flag";
+import { hapticNotification, hapticSelection } from "@/lib/haptics";
 
 const SPLIT_RE = /\s+/;
 const MAX_DIMENSION = 512;
@@ -68,7 +68,7 @@ export default function PersonalDetails() {
       : (parts[0]?.slice(0, 2) ?? "S").toUpperCase();
 
   const pickImage = async () => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       Alert.alert(
@@ -129,9 +129,7 @@ export default function PersonalDetails() {
       }
       await queryClient.invalidateQueries({ queryKey: ["cf", "me", "avatar"] });
       setImageChanged(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-        () => undefined
-      );
+      hapticNotification("success");
     } catch (err) {
       Alert.alert(
         "Upload failed",
@@ -147,7 +145,7 @@ export default function PersonalDetails() {
       return;
     }
     setSaving(true);
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     try {
       if (nameDirty) {
         const res = await api.api.v1.me.profile.$post({
@@ -439,7 +437,7 @@ function Header({
     >
       <Pressable
         onPress={() => {
-          Haptics.selectionAsync().catch(() => undefined);
+          hapticSelection();
           onBack();
         }}
         style={({ pressed }) => ({
@@ -481,7 +479,7 @@ function Header({
             disabled={doneDisabled}
             hitSlop={8}
             onPress={() => {
-              Haptics.selectionAsync().catch(() => undefined);
+              hapticSelection();
               onDone();
             }}
           >

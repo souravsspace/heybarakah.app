@@ -1,5 +1,4 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { selectionAsync } from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -15,6 +14,7 @@ import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { authClient } from "@/lib/auth-client";
+import { hapticSelection } from "@/lib/haptics";
 
 const PRIMARY = "#29603E";
 const INK = "#0F1311";
@@ -57,7 +57,7 @@ export default function EmailOtp() {
       Alert.alert("Invalid email", "Enter a valid email address.");
       return;
     }
-    selectionAsync().catch(() => undefined);
+    hapticSelection();
     setIsLoading(true);
     try {
       const { error } = await requestOtp(trimmed);
@@ -82,7 +82,7 @@ export default function EmailOtp() {
     if (cooldown > 0 || isResending) {
       return;
     }
-    selectionAsync().catch(() => undefined);
+    hapticSelection();
     setIsResending(true);
     try {
       const { error } = await requestOtp(email);
@@ -106,7 +106,7 @@ export default function EmailOtp() {
       Alert.alert("Invalid code", "Enter the 6-digit code from your email.");
       return;
     }
-    selectionAsync().catch(() => undefined);
+    hapticSelection();
     setIsLoading(true);
     try {
       const { error } = await authClient.signIn.emailOtp({

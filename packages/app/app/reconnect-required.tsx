@@ -1,14 +1,14 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Line, Polygon } from "react-native-svg";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
-import { useUser } from "@/contexts/user-context";
 import { hapticSelection } from "@/lib/haptics";
-import { useSubscription } from "@/lib/subscription";
+import { useOnline } from "@/lib/use-online";
 
 const MOSQUE_GREEN = "#29603E";
 const INK_GREEN = "#1B3F29";
@@ -23,7 +23,6 @@ function KhatamWatermark() {
         alignItems: "center",
         height: 420,
         justifyContent: "center",
-        opacity: 1,
         position: "absolute",
         top: -72,
         width: 420,
@@ -75,36 +74,29 @@ function KhatamWatermark() {
   );
 }
 
-export default function NoActiveSub() {
+export default function ReconnectRequired() {
   const router = useRouter();
-  const { user } = useUser();
-  const { restore } = useSubscription();
-  const [isRestoring, setIsRestoring] = useState(false);
+  const queryClient = useQueryClient();
+  const isOnline = useOnline();
+  const [isChecking, setIsChecking] = useState(false);
 
-  function useDifferentAccount() {
-    // Full sign-out (RevenueCat + Better Auth), reset onboarding, clear the
-    // account cache, then land on the onboarding welcome flow. Shared with the
-    // profile "Log out" action so both behave identically.
-    router.replace("/logging-out");
-  }
-
-  async function onRestore() {
-    setIsRestoring(true);
-    try {
-      const ok = await restore();
-      if (ok) {
-        router.replace("/home");
-        return;
-      }
-      Alert.alert(
-        "Nothing to restore",
-        "We could not find an active subscription for this account."
-      );
-    } catch {
-      Alert.alert("Could not restore", "Check your connection and try again.");
-    } finally {
-      setIsRestoring(false);
-    }
+  function onTryAgain() {
+    hapticSelection();
+    setIsChecking(true);
+    // Mark the gate's inputs stale so they refetch once connectivity returns,
+    // then re-enter the gate. Fire-and-forget: with the Expo online manager the
+    // refetch is *paused* while offline, so awaiting would hang this button
+    // forever. The gate re-evaluates on /home and routes back here if still
+    // offline past the grace window.
+    queryClient.invalidateQueries({ queryKey: ["cf", "me"] }).catch(() => {
+      // refetch is paused while offline; nothing to surface here
+    });
+    queryClient
+      .invalidateQueries({ queryKey: ["cf", "subscription"] })
+      .catch(() => {
+        // refetch is paused while offline; nothing to surface here
+      });
+    router.replace("/home");
   }
 
   return (
@@ -139,7 +131,7 @@ export default function NoActiveSub() {
                   textAlign: "center",
                 }}
               >
-                Your access has paused
+                You've been offline a while
               </Text>
 
               <View
@@ -163,59 +155,43 @@ export default function NoActiveSub() {
                     textAlign: "center",
                   }}
                 >
-                  The steadfast in salah never walk alone.
+                  Reconnect to continue.
                 </Text>
                 <View style={{ backgroundColor: GOLD, flex: 1, height: 0.8 }} />
               </View>
 
-              {user?.email ? (
-                <View
-                  style={{
-                    borderColor: "rgba(245,235,219,0.25)",
-                    borderRadius: 999,
-                    borderWidth: 1,
-                    paddingHorizontal: 16,
-                    paddingVertical: 7,
-                  }}
-                >
-                  <Text
-                    className="font-sans"
-                    style={{
-                      color: "rgba(245,235,219,0.82)",
-                      fontSize: 13,
-                      fontWeight: "500",
-                      letterSpacing: 0.1,
-                    }}
-                  >
-                    {user.email}
-                  </Text>
-                </View>
-              ) : null}
+              <Text
+                className="font-sans"
+                style={{
+                  color: "rgba(245,235,219,0.82)",
+                  fontSize: 15,
+                  lineHeight: 24,
+                  maxWidth: 320,
+                  textAlign: "center",
+                }}
+              >
+                We need to reach the internet to confirm your subscription.
+                Connect to Wi-Fi or mobile data, then try again.
+              </Text>
             </View>
           </View>
         </View>
       </FadeSlideIn>
 
-      <View
-        style={{
-          gap: 14,
-          paddingBottom: 24,
-          paddingHorizontal: 24,
-        }}
-      >
+      <View style={{ gap: 14, paddingBottom: 24, paddingHorizontal: 24 }}>
         <Pressable
+          accessibilityLabel="Try again"
           accessibilityRole="button"
-          onPress={() => {
-            hapticSelection();
-            router.push("/(onboarding)/paywall/plans");
-          }}
+          accessibilityState={{ disabled: isChecking }}
+          disabled={isChecking}
+          onPress={onTryAgain}
           style={({ pressed }) => ({
             alignItems: "center",
             backgroundColor: CREAM,
             borderRadius: 20,
             justifyContent: "center",
             minHeight: 64,
-            opacity: pressed ? 0.92 : 1,
+            opacity: pressed || isChecking ? 0.92 : 1,
           })}
         >
           <Text
@@ -227,56 +203,23 @@ export default function NoActiveSub() {
               letterSpacing: 0.2,
             }}
           >
-            VIEW PLANS
+            {isChecking ? "CHECKING..." : "TRY AGAIN"}
           </Text>
         </Pressable>
 
-        <Pressable
-          accessibilityRole="button"
-          disabled={isRestoring}
-          onPress={onRestore}
-          style={({ pressed }) => ({
-            alignItems: "center",
-            backgroundColor: "transparent",
-            borderColor: "rgba(245,235,219,0.3)",
-            borderRadius: 20,
-            borderWidth: 1,
-            justifyContent: "center",
-            minHeight: 64,
-            opacity: pressed ? 0.92 : 1,
-          })}
-        >
+        {isOnline ? null : (
           <Text
             className="font-sans"
             style={{
-              color: CREAM,
-              fontSize: 14,
-              fontWeight: "700",
+              color: "rgba(245,235,219,0.6)",
+              fontSize: 12,
               letterSpacing: 0.1,
+              textAlign: "center",
             }}
           >
-            {isRestoring ? "Restoring..." : "Restore purchase"}
+            Still no connection detected.
           </Text>
-        </Pressable>
-
-        <Pressable
-          accessibilityRole="button"
-          hitSlop={12}
-          onPress={useDifferentAccount}
-          style={{ alignItems: "center", marginTop: 8 }}
-        >
-          <Text
-            className="font-sans"
-            style={{
-              color: "rgba(245,235,219,0.74)",
-              fontSize: 13,
-              letterSpacing: 0.1,
-              textDecorationLine: "underline",
-            }}
-          >
-            Use a different account
-          </Text>
-        </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );

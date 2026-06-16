@@ -1,16 +1,5 @@
 {
   "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bun fix --skip=correctness/noUnusedImports"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Glob|Grep",
