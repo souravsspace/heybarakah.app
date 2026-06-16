@@ -12,6 +12,7 @@ import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
 import Purchases from "react-native-purchases";
 import { useUser } from "@/contexts/user-context";
 import { api } from "@/lib/api-client";
+import { saveEntitlementSnapshot } from "@/lib/entitlement-snapshot";
 import {
   configureRevenueCatAnonymous,
   ENTITLEMENT_ID,
@@ -63,6 +64,15 @@ function useSubscriptionBackend(): SubscriptionBackend {
       return (await res.json()) as ActiveSubscription;
     },
   });
+
+  // Persist the entitlement only on a real server answer (success), never on a
+  // failed/offline fetch — the offline gate trusts this snapshot within a
+  // bounded grace window.
+  useEffect(() => {
+    if (query.isSuccess) {
+      saveEntitlementSnapshot(query.data != null).catch(() => undefined);
+    }
+  }, [query.isSuccess, query.data]);
 
   return useMemo(() => {
     const invalidate = () =>
