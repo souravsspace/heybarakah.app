@@ -167,12 +167,15 @@ export default function AppLayout() {
     return <Redirect href={"/(onboarding)/welcome" as never} />;
   }
 
-  // Online trusts the live entitlement; offline trusts the last server-confirmed
-  // snapshot only within the bounded grace window (so permanent airplane mode
-  // can't grant premium forever).
+  // Online trusts the live entitlement. Offline trusts the last-known
+  // entitlement (in-memory or restored from the persisted cache) but bounds it
+  // by the snapshot's grace window so permanent airplane mode can't grant
+  // premium forever. A missing snapshot (just subscribed this session, not yet
+  // backgrounded) falls back to the live value rather than locking the user out.
   const subAllowed = isOnline
     ? Boolean(activeSubscription)
-    : snapshot !== null && snapshot.active && withinGrace(snapshot);
+    : Boolean(activeSubscription) &&
+      (snapshot === null || withinGrace(snapshot));
 
   if (!subAllowed) {
     return (
