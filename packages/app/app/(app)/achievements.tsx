@@ -13,8 +13,10 @@ import Svg, { Circle, G, Rect } from "react-native-svg";
 import { AchievementCard } from "@/components/achievement-card";
 import { AchievementDialog } from "@/components/achievement-dialog";
 import { AchievementsMesh } from "@/components/meshes";
+import { OfflineOverlay } from "@/components/offline-overlay";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
 import { api } from "@/lib/api-client";
+import { useOnline } from "@/lib/use-online";
 
 type Row = Achievement & {
   progress: { current: number; target: number; unit: string } | null;
@@ -150,7 +152,8 @@ export default function AchievementsScreen() {
   const { colors, scheme } = useTheme();
   const isDark = scheme === "dark";
   const insets = useSafeAreaInsets();
-  const { data } = useRqQuery({
+  const isOnline = useOnline();
+  const { data, refetch } = useRqQuery({
     queryKey: ["cf", "achievements"],
     queryFn: async () => {
       const res = await api.api.v1.achievements.$get();
@@ -210,6 +213,19 @@ export default function AchievementsScreen() {
 
   const sealRing = isDark ? "rgba(0,210,106,0.28)" : "rgba(41,96,62,0.26)";
   const ruleColor = isDark ? "rgba(245,235,219,0.12)" : "rgba(94,75,40,0.16)";
+
+  // Offline with nothing in the persisted cache yet — show the offline state
+  // instead of an empty achievements grid.
+  if (!(isOnline || data)) {
+    return (
+      <OfflineOverlay
+        description="Connect to the internet to see your achievements."
+        onRetry={() => {
+          refetch();
+        }}
+      />
+    );
+  }
 
   return (
     <View
