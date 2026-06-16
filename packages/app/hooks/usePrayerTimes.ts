@@ -7,7 +7,6 @@ import {
   type PrayerTimesSource,
 } from "@barakah/core/prayer";
 import { useQuery as useRqQuery } from "@tanstack/react-query";
-import { useNetworkState } from "expo-network";
 import type { InferRequestType } from "hono/client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
@@ -27,6 +26,7 @@ import {
 } from "@/hooks/use-permissions";
 import { api } from "@/lib/api-client";
 import { dateKey } from "@/lib/date-utils";
+import { useOnline } from "@/lib/use-online";
 
 type CalcMethod =
   | "isna"
@@ -252,8 +252,7 @@ export function usePrayerTimes() {
   const autoRefreshRequestKey = useRef<string | null>(null);
   const lastAutoRefreshAt = useRef(0);
 
-  const network = useNetworkState();
-  const isOnline = network.isConnected !== false;
+  const isOnline = useOnline();
 
   const locationId = activeLocation ? activeLocation._id : GPS_LOCATION_ID;
 
