@@ -11,6 +11,7 @@ import {
 import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
 import Purchases from "react-native-purchases";
 import { useUser } from "@/contexts/user-context";
+import { captureError, captureEvent } from "@/lib/analytics";
 import { api } from "@/lib/api-client";
 import { saveEntitlementSnapshot } from "@/lib/entitlement-snapshot";
 import {
@@ -267,9 +268,12 @@ export function SubscriptionProvider({
           entitlement &&
             entitlement.latestPurchaseDate !== entitlement.originalPurchaseDate
         );
+        captureEvent("purchase completed", { alreadyOwned, planId });
         return { ok: true, alreadyOwned };
       } catch (err) {
         const reason = err instanceof Error ? err.message : "purchase-failed";
+        captureError(err, { context: "purchase", planId });
+        captureEvent("purchase failed", { planId, reason });
         return { ok: false, cancelled: false, reason };
       } finally {
         setIsPurchasing(false);
