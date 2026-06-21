@@ -1,6 +1,7 @@
 import { useQuery as useRqQuery } from "@tanstack/react-query";
 import type React from "react";
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
+import { identifyUser } from "@/lib/analytics";
 import { api } from "@/lib/api-client";
 
 interface User {
@@ -70,6 +71,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       isLoading: query.isPending,
     };
   }, [query.data, query.isPending]);
+
+  // Associate analytics events with the signed-in user once it resolves.
+  // resetAnalytics() on logout (app/logging-out.tsx) clears this.
+  const userId = value.user?.id;
+  const userEmail = value.user?.email;
+  const userName = value.user?.name;
+  useEffect(() => {
+    if (userId) {
+      identifyUser(userId, {
+        email: userEmail ?? null,
+        name: userName ?? null,
+      });
+    }
+  }, [userId, userEmail, userName]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
