@@ -263,6 +263,19 @@ export async function relockApps(): Promise<RelockResult> {
   return NativeModule.relockApps();
 }
 
+/**
+ * Lift the active shield without discarding the persisted selection or the
+ * temporary-unlock state. Used by the foreground scheduler to release blocked
+ * apps the moment a prayer window ends, independent of the DeviceActivity
+ * extension's interval callbacks.
+ */
+export function liftShieldNow(): void {
+  if (Platform.OS !== "ios") {
+    return;
+  }
+  NativeModule.liftShieldNow();
+}
+
 export function checkAndClearPendingUnlock(): boolean {
   if (Platform.OS !== "ios") {
     return false;
