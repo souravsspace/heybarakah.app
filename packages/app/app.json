@@ -20,6 +20,7 @@
       "usesAppleSignIn": true,
       "icon": "./assets/images/icon.icon",
       "infoPlist": {
+        "CFBundleDisplayName": "Barakah",
         "UIViewControllerBasedStatusBarAppearance": false,
         "ITSAppUsesNonExemptEncryption": false
       },
