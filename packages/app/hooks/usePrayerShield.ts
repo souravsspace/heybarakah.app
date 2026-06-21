@@ -9,6 +9,7 @@ import {
   clearScheduledWindows,
   getBlockConfiguration,
   isTemporarilyUnlocked,
+  liftShieldNow,
   type PrayerBlockWindow,
   relockApps,
   scheduleBlockWindows,
@@ -270,15 +271,23 @@ export function usePrayerShield() {
       temporaryUnlock(Math.max(1, inside.end - nowMin)).catch(() => null);
     }
 
-    // iOS foreground backstop: directly engage the stored shield when we're
-    // inside an unlogged window. The DeviceActivity extension covers the
-    // app-closed case, but registering a schedule while already inside an
-    // interval doesn't reliably fire `intervalDidStart`, which left blocked apps
-    // open at salah while Barakah was foreground (the LA showed, the shield
-    // didn't). relockApps re-applies the persisted token set; it's idempotent so
-    // the 30s tick can re-assert it harmlessly.
-    if (Platform.OS === "ios" && effective && !isTemporarilyUnlocked()) {
-      relockApps().catch(() => null);
+    // iOS foreground backstop, symmetric around the window edges. The
+    // DeviceActivity extension covers the app-closed case, but registering a
+    // schedule mid-interval doesn't reliably fire `intervalDidStart`/`intervalDidEnd`.
+    // While Barakah is foreground we drive the shield directly so it both
+    // engages at salah and *lifts when the window ends* — without the lift the
+    // shield applied via relockApps stayed on past the 15-minute window if the
+    // extension's intervalDidEnd was delayed or dropped (apps stuck locked).
+    if (Platform.OS === "ios" && !isTemporarilyUnlocked()) {
+      if (effective) {
+        // Inside an unlogged window → re-assert the persisted token set
+        // (idempotent, so the 30s tick can re-apply harmlessly).
+        relockApps().catch(() => null);
+      } else if (!inside) {
+        // Outside every window (or the window just ended) → release the shield
+        // the native module may have eagerly applied on launch/resume.
+        liftShieldNow();
+      }
     }
 
     // Android has no equivalent OS scheduler, so keep driving its foreground
