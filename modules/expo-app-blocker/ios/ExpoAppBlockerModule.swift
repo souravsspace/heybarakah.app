@@ -250,11 +250,9 @@ public class ExpoAppBlockerModule: Module {
         let newConfig = BlockConfig(items: filtered, isActive: config.isActive, schedule: config.schedule)
         self.currentBlockConfig = newConfig
 
-        do {
-          try self.applyBlocks(newConfig)
-        } catch {
-          print("[AppBlocker] removeBlockedItem applyBlocks failed: \(error.localizedDescription)")
-        }
+        // Removing an item from the list must not re-engage the shield outside a
+        // prayer window — only re-apply when we're currently inside salah.
+        self.applyBlocksRespectingWindow(newConfig)
 
         let serialized = self.serializeBlockConfig(newConfig)
         self.persistBlockConfiguration(serialized)
