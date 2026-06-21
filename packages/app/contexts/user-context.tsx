@@ -1,7 +1,7 @@
 import { useQuery as useRqQuery } from "@tanstack/react-query";
 import type React from "react";
-import { createContext, useContext, useEffect, useMemo } from "react";
-import { identifyUser } from "@/lib/analytics";
+import { createContext, useContext, useEffect, useMemo, useRef } from "react";
+import { identifyUser, resetAnalytics } from "@/lib/analytics";
 import { api } from "@/lib/api-client";
 
 interface User {
@@ -72,17 +72,27 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
   }, [query.data, query.isPending]);
 
-  // Associate analytics events with the signed-in user once it resolves.
-  // resetAnalytics() on logout (app/logging-out.tsx) clears this.
+  // Associate analytics events with the signed-in user once it resolves, and
+  // dissociate when the user clears (deliberate logout OR an involuntary
+  // sign-out like an expired session). Guarded by the last-identified id so a
+  // background `/me` refetch that returns updated traits doesn't re-identify on
+  // every cache write — only an actual identity change does.
   const userId = value.user?.id;
   const userEmail = value.user?.email;
   const userName = value.user?.name;
+  const lastIdentifiedId = useRef<string | null>(null);
   useEffect(() => {
     if (userId) {
-      identifyUser(userId, {
-        email: userEmail ?? null,
-        name: userName ?? null,
-      });
+      if (userId !== lastIdentifiedId.current) {
+        lastIdentifiedId.current = userId;
+        identifyUser(userId, {
+          email: userEmail ?? null,
+          name: userName ?? null,
+        });
+      }
+    } else if (lastIdentifiedId.current !== null) {
+      lastIdentifiedId.current = null;
+      resetAnalytics();
     }
   }, [userId, userEmail, userName]);
 
