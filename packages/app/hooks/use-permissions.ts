@@ -19,11 +19,46 @@ export async function requestNotificationPermission(): Promise<boolean> {
   }
 }
 
+const LOCATION_TIMEOUT_MS = 12_000;
+const LOCATION_ATTEMPTS = 2;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("location-timeout")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
 export async function getCurrentLocation() {
+  // The first getCurrentPositionAsync right after a fresh permission grant can
+  // hang indefinitely while iOS finishes propagating authorization, wedging the
+  // UI on "Locating…". Race each attempt against a timeout and retry; on the
+  // retry the authorization has usually settled and the fix returns fast.
+  for (let attempt = 0; attempt < LOCATION_ATTEMPTS; attempt++) {
+    try {
+      return await withTimeout(
+        Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        }),
+        LOCATION_TIMEOUT_MS
+      );
+    } catch {
+      // retry once on the first-grant hang / transient failure
+    }
+  }
+
+  // Last resort: a cached fix beats leaving the UI stuck on "Locating…".
   try {
-    return await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
+    return await Location.getLastKnownPositionAsync();
   } catch {
     return null;
   }
