@@ -74,13 +74,18 @@ export function captureError(
 }
 
 interface RnErrorUtils {
-  getGlobalHandler?: () => (error: unknown, isFatal?: boolean) => void;
+  getGlobalHandler?: () =>
+    | ((error: unknown, isFatal?: boolean) => void)
+    | undefined;
   setGlobalHandler: (
     handler: (error: unknown, isFatal?: boolean) => void
   ) => void;
 }
 
-let globalHandlerInstalled = false;
+// Keyed on the ErrorUtils object itself (not a module variable) so dev Fast
+// Refresh — which re-evaluates this module but keeps globalThis — can't stack
+// duplicate wrappers and report each uncaught error N times.
+const INSTALLED_FLAG = "__barakahPosthogHandler__";
 
 /**
  * Route uncaught JS errors to PostHog. Wraps React Native's global ErrorUtils
@@ -88,15 +93,15 @@ let globalHandlerInstalled = false;
  * Render errors are covered separately by the root ErrorBoundary.
  */
 export function setupGlobalErrorTracking(): void {
-  if (!posthog || globalHandlerInstalled) {
+  if (!posthog) {
     return;
   }
   const errorUtils = (globalThis as unknown as { ErrorUtils?: RnErrorUtils })
-    .ErrorUtils;
-  if (!errorUtils) {
+    .ErrorUtils as (RnErrorUtils & Record<string, unknown>) | undefined;
+  if (!errorUtils || errorUtils[INSTALLED_FLAG]) {
     return;
   }
-  globalHandlerInstalled = true;
+  errorUtils[INSTALLED_FLAG] = true;
   const previous = errorUtils.getGlobalHandler?.();
   errorUtils.setGlobalHandler((error, isFatal) => {
     captureError(error, { fatal: isFatal === true, source: "global_handler" });
