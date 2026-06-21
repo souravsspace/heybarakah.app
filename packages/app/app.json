@@ -18,6 +18,7 @@
       "bundleIdentifier": "com.souravsspace.Barakah",
       "appleTeamId": "CG5WX63737",
       "usesAppleSignIn": true,
+      "icon": "./assets/images/icon.icon",
       "infoPlist": {
         "UIViewControllerBasedStatusBarAppearance": false,
         "ITSAppUsesNonExemptEncryption": false
