@@ -50,11 +50,16 @@ function findActiveLock(
       continue;
     }
     const bounds = lockBoundsMinutes(name, adhan);
-    if (minutes >= bounds.start && minutes < bounds.end) {
+    // Clamp a window that crossed midnight to 23:59. Without this, `bounds.end`
+    // exceeds 1440, `minutes < bounds.end` is always true, and `setHours(24, …)`
+    // rolls the end to tomorrow — so the Live Activity would never end until the
+    // day key flips. Mirrors the shield's clamp in usePrayerShield.
+    const boundsEnd = Math.min(bounds.end, 1439);
+    if (minutes >= bounds.start && minutes < boundsEnd) {
       const start = new Date(now);
       start.setHours(Math.floor(bounds.start / 60), bounds.start % 60, 0, 0);
       const end = new Date(now);
-      end.setHours(Math.floor(bounds.end / 60), bounds.end % 60, 0, 0);
+      end.setHours(Math.floor(boundsEnd / 60), boundsEnd % 60, 0, 0);
       return { name, start, end };
     }
   }

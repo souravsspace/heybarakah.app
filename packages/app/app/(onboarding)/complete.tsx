@@ -10,6 +10,7 @@ import { SuccessCheck } from "@/components/onboarding/illustrations/success-chec
 import { ScreenShell } from "@/components/onboarding/screen-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import { captureError, captureEvent } from "@/lib/analytics";
 import { api } from "@/lib/api-client";
 
 export default function Complete() {
@@ -56,9 +57,17 @@ export default function Complete() {
         throw new Error("Failed to save profile");
       }
       await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
+      captureEvent("onboarding completed", {
+        consistency: state.consistency ?? null,
+        goal: state.goal ?? null,
+        prayersToLock: state.prayersToLock
+          ? Object.values(state.prayersToLock).filter(Boolean).length
+          : 0,
+      });
       dispatch({ type: "RESET" });
-    } catch {
+    } catch (err) {
       // Save failed (e.g. offline): keep it locally so home.tsx retries upsert.
+      captureError(err, { context: "onboarding_profile_save" });
       dispatch({ type: "SET_FIELD", payload: { name } });
       dispatch({ type: "COMPLETE" });
     }

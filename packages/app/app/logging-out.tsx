@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
 import { AnimatedSplash } from "@/components/splash/animated-splash";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import { resetAnalytics } from "@/lib/analytics";
 import { authClient } from "@/lib/auth-client";
 import { resetOfflineQueue } from "@/lib/offline-queue";
 import { logOutRevenueCat } from "@/lib/revenuecat";
@@ -51,6 +52,8 @@ export default function LoggingOut() {
         // ignore
       }
       await resetOfflineQueue();
+      // Detach analytics from this user so further events go back to anonymous.
+      resetAnalytics();
       // Wipe all local storage so nothing account-scoped (dhikr lifetime counts,
       // onboarding state, cached data) survives into the next account signed in
       // on this device.

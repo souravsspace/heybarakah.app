@@ -107,7 +107,10 @@ export default function Unlock() {
     const { end } = lockBoundsMinutes(activePrayer, h * 60 + m);
     const now = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes();
-    return Math.max(1, end - nowMin);
+    // Cap to the window length. A window whose end crossed midnight (e.g. a late
+    // isha) yields an `end` in the 1440+ range while `nowMin` is small after
+    // midnight, so `end - nowMin` would otherwise unlock for nearly a full day.
+    return Math.min(LOCK_DURATION_MIN, Math.max(1, end - nowMin));
   }, [activePrayer, todayPrayerTimes]);
 
   // Tear down everything tied to this prayer window: lockscreen / Dynamic Island
@@ -136,6 +139,9 @@ export default function Unlock() {
     setBusy(true);
     hapticNotification("warning");
     try {
+      // End the lock-screen / Dynamic Island Live Activity too — a temporary
+      // unlock that leaves the countdown banner up is confusing.
+      await endAllLockActivities().catch(() => undefined);
       await temporaryUnlock(5);
     } finally {
       setBusy(false);

@@ -167,7 +167,9 @@ public class ExpoAppBlockerModule: Module {
           self.ensureLoadedPersistedConfig()
           let blockConfig = try self.parseBlockConfig(config)
           self.currentBlockConfig = blockConfig
-          try self.applyBlocks(blockConfig)
+          // Persist now, but only engage the shield if we're inside a prayer
+          // window — picking apps outside salah must not lock them immediately.
+          self.applyBlocksRespectingWindow(blockConfig)
           self.persistBlockConfiguration(config)
 
           DispatchQueue.main.async {
@@ -248,11 +250,9 @@ public class ExpoAppBlockerModule: Module {
         let newConfig = BlockConfig(items: filtered, isActive: config.isActive, schedule: config.schedule)
         self.currentBlockConfig = newConfig
 
-        do {
-          try self.applyBlocks(newConfig)
-        } catch {
-          print("[AppBlocker] removeBlockedItem applyBlocks failed: \(error.localizedDescription)")
-        }
+        // Removing an item from the list must not re-engage the shield outside a
+        // prayer window — only re-apply when we're currently inside salah.
+        self.applyBlocksRespectingWindow(newConfig)
 
         let serialized = self.serializeBlockConfig(newConfig)
         self.persistBlockConfiguration(serialized)
@@ -357,6 +357,15 @@ public class ExpoAppBlockerModule: Module {
           promise.resolve(["locked": true])
         }
       }
+    }
+
+    // Lift the active shield without discarding the persisted token config or the
+    // temporary-unlock state. The JS foreground scheduler calls this when a
+    // prayer window has ended (or we're outside every window) so blocked apps
+    // don't stay shielded if the DeviceActivity extension's intervalDidEnd is
+    // delayed or dropped.
+    Function("liftShieldNow") {
+      self.clearShield()
     }
   }
 
@@ -478,11 +487,7 @@ public class ExpoAppBlockerModule: Module {
         relockApps()
       }
     } else if let config = currentBlockConfig {
-      do {
-        try applyBlocks(config)
-      } catch {
-        print("[AppBlocker] checkAndApplyUnlockState applyBlocks failed: \(error)")
-      }
+      applyBlocksRespectingWindow(config)
     }
   }
 
@@ -617,11 +622,9 @@ public class ExpoAppBlockerModule: Module {
       return
     }
 
-    do {
-      try applyBlocks(config)
-    } catch {
-      print("[AppBlocker] relockApps applyBlocks failed: \(error)")
-    }
+    // Re-lock only inside a prayer window. A temporary unlock that expires after
+    // salah is over must leave apps free until the next window starts.
+    applyBlocksRespectingWindow(config)
   }
 
   // MARK: - Activity Scheduling
@@ -781,6 +784,43 @@ public class ExpoAppBlockerModule: Module {
     activityCenter.stopMonitoring([activityName])
   }
 
+  // Whether the wall clock currently sits inside any persisted prayer window.
+  // The windows are written by `scheduleBlockWindowsInternal`; the same check
+  // runs in the DeviceActivity monitor extension. Returns false when no windows
+  // are persisted yet so the module never shields before the schedule exists.
+  private func isInsidePrayerWindow() -> Bool {
+    guard
+      let windows = sharedDefaults?.array(forKey: prayerWindowsKey)
+        as? [[String: Int]]
+    else {
+      return false
+    }
+    let now = Calendar.current.dateComponents([.hour, .minute], from: Date())
+    let nowMinutes = (now.hour ?? 0) * 60 + (now.minute ?? 0)
+    return windows.contains { window in
+      guard let start = window["start"], let end = window["end"] else {
+        return false
+      }
+      return nowMinutes >= start && nowMinutes < end
+    }
+  }
+
+  // Apply the shield only while inside a prayer window; otherwise lift it. The
+  // host module is woken on launch/resume and when a temporary unlock expires,
+  // and must NOT re-shield outside salah — doing so left blocked apps locked all
+  // day. The DeviceActivity extension still drives the app-closed window edges.
+  private func applyBlocksRespectingWindow(_ config: BlockConfig) {
+    guard isInsidePrayerWindow() else {
+      clearShield()
+      return
+    }
+    do {
+      try applyBlocks(config)
+    } catch {
+      print("[AppBlocker] applyBlocksRespectingWindow failed: \(error)")
+    }
+  }
+
   private func isTemporarilyUnlockedInternal() -> Bool {
     guard let expirationDate = sharedDefaults?.object(forKey: temporaryUnlockKey) as? Date else {
       return false
@@ -885,7 +925,9 @@ public class ExpoAppBlockerModule: Module {
     do {
       let config = try parseBlockConfig(savedConfig)
       currentBlockConfig = config
-      try applyBlocks(config)
+      // Loading the persisted config (on launch/first access) must not shield
+      // outside salah; only re-engage if we're currently inside a window.
+      applyBlocksRespectingWindow(config)
     } catch {
       currentBlockConfig = nil
       userDefaults.removeObject(forKey: blockConfigStorageKey)

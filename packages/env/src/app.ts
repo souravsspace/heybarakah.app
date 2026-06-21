@@ -15,6 +15,10 @@ export const env = createEnv({
     EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: z.string().optional(),
     // Cloudflare Hono API base. Required — the app talks only to this backend.
     EXPO_PUBLIC_API_URL: z.url(),
+    // PostHog product analytics + error tracking. Optional: absent key →
+    // analytics is a no-op (see lib/analytics.ts).
+    EXPO_PUBLIC_POSTHOG_KEY: z.string().optional(),
+    EXPO_PUBLIC_POSTHOG_HOST: z.url().optional(),
   },
 
   /**
@@ -27,6 +31,8 @@ export const env = createEnv({
     EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY:
       process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY,
     EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
+    EXPO_PUBLIC_POSTHOG_KEY: process.env.EXPO_PUBLIC_POSTHOG_KEY,
+    EXPO_PUBLIC_POSTHOG_HOST: process.env.EXPO_PUBLIC_POSTHOG_HOST,
   },
 
   /**
