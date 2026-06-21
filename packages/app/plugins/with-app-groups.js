@@ -21,6 +21,8 @@ const GROUPS = [
   "group.com.souravsspace.Barakah.expowidgets",
 ];
 const DICT_RE = /<dict>/;
+const XCODEPROJ_RE = /\.xcodeproj$/;
+const WIDGET_RE = /widget/i;
 
 /** Inject the union of GROUPS into one entitlements plist on disk. */
 function patchEntitlementsFile(filePath) {
@@ -63,16 +65,29 @@ module.exports = function withAppGroups(inputConfig) {
     mod: "finalized",
     action: (cfg) => {
       const iosRoot = cfg.modRequest.platformProjectRoot;
-      patchEntitlementsFile(
-        path.join(iosRoot, "Barakah", "Barakah.entitlements")
-      );
+      // The main app target folder name is derived from expo.name (e.g.
+      // "Prayer Lock: Barakah" -> "PrayerLockBarakah"), so it drifts whenever
+      // the name changes. Discover it from the .xcodeproj instead of hardcoding.
+      const xcodeproj = fs
+        .readdirSync(iosRoot)
+        .find((entry) => entry.endsWith(".xcodeproj"));
+      if (xcodeproj) {
+        const appName = xcodeproj.replace(XCODEPROJ_RE, "");
+        patchEntitlementsFile(
+          path.join(iosRoot, appName, `${appName}.entitlements`)
+        );
+      } else {
+        console.warn(
+          "[with-app-groups] no .xcodeproj found to locate app target"
+        );
+      }
       // The widget extension folder name is owned by expo-widgets and has
       // drifted before (BarakahWidgetExtension → ExpoWidgetsTarget). Discover
       // any widget-extension entitlements on disk instead of hardcoding, so a
       // future rename doesn't silently drop the app group.
       let patchedWidget = false;
       for (const entry of fs.readdirSync(iosRoot, { withFileTypes: true })) {
-        if (!(entry.isDirectory() && /widget/i.test(entry.name))) {
+        if (!(entry.isDirectory() && WIDGET_RE.test(entry.name))) {
           continue;
         }
         const dir = path.join(iosRoot, entry.name);
