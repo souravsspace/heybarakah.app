@@ -1,6 +1,7 @@
 import type { LoggablePrayerName, PrayerStatus } from "@barakah/core/prayer";
 import { useQueryClient, useQuery as useRqQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
+import { captureEvent } from "@/lib/analytics";
 import { api } from "@/lib/api-client";
 import { enqueueMutation } from "@/lib/offline-queue";
 
@@ -125,6 +126,11 @@ function useLogMutate() {
         throw new Error("Failed to log prayer");
       }
       const data = await res.json();
+      captureEvent("prayer logged", {
+        prayer: args.prayer,
+        status: args.status,
+        unlocked: data.unlocked.length,
+      });
       queryClient.invalidateQueries({ queryKey: PRAYER_LOGS_KEY });
       queryClient.invalidateQueries({ queryKey: ["cf", "streak"] });
       // The server evaluates achievements inside this write; refresh the unseen
