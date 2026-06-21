@@ -186,7 +186,8 @@
             "deploymentTarget": "16.4"
           }
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,
