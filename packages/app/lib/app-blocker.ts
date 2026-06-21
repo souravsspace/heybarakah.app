@@ -161,6 +161,13 @@ export function relockApps(): Promise<RelockResult> {
   return mod.relockApps();
 }
 
+export function liftShieldNow(): void {
+  if (!mod) {
+    return;
+  }
+  mod.liftShieldNow();
+}
+
 export function checkAndClearPendingUnlock(): boolean {
   if (!mod) {
     return false;
