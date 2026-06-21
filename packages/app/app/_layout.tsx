@@ -93,9 +93,13 @@ function AnalyticsProvider({ children }: { children: ReactNode }) {
         // expo-router rides @react-navigation v7; the SDK can't autocapture its
         // screens, so we disable it and track manually via <ScreenTracker/>.
         captureScreens: false,
-        captureTouches: true,
+        // Touch autocapture wraps the tree in a touch-intercepting View that can
+        // conflict with react-native-gesture-handler and may capture
+        // user-entered label text (PII). Manual captureEvent calls are cleaner.
+        captureTouches: false,
       }}
       client={posthog}
+      style={{ flex: 1 }}
     >
       <ScreenTracker />
       {children}
