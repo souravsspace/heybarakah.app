@@ -135,30 +135,35 @@ public class ExpoAppBlockerModule: Module {
     }
 
     AsyncFunction("presentFamilyActivityPicker") { (promise: Promise) in
-      DispatchQueue.main.async {
+      // Read the persisted config on stateQueue (its owning queue) so the token
+      // sets can't race a concurrent setBlockConfiguration / removeBlockedItem,
+      // then hop to main to present the picker UI.
+      self.stateQueue.async {
         self.ensureLoadedPersistedConfig()
-
-        guard self.authCenter.authorizationStatus == .approved else {
-          promise.reject("NOT_AUTHORIZED", "Family Controls authorization not granted")
-          return
-        }
-
         let initialAppTokens = Set(self.currentBlockConfig?.items.compactMap { $0.appToken } ?? [])
         let initialCategoryTokens = Set(self.currentBlockConfig?.items.compactMap { $0.categoryToken } ?? [])
         let initialWebDomainTokens = Set(self.currentBlockConfig?.items.compactMap { $0.webDomainToken } ?? [])
-        let pickerView = FamilyActivityPickerView(
-          initialApplicationTokens: initialAppTokens,
-          initialCategoryTokens: initialCategoryTokens,
-          initialWebDomainTokens: initialWebDomainTokens,
-          promise: promise
-        )
-        let hostingController = UIHostingController(rootView: pickerView)
 
-        if let rootVC = self.getRootViewController() {
-          hostingController.modalPresentationStyle = .formSheet
-          rootVC.present(hostingController, animated: true)
-        } else {
-          promise.reject("NO_ROOT_VC", "Could not find root view controller")
+        DispatchQueue.main.async {
+          guard self.authCenter.authorizationStatus == .approved else {
+            promise.reject("NOT_AUTHORIZED", "Family Controls authorization not granted")
+            return
+          }
+
+          let pickerView = FamilyActivityPickerView(
+            initialApplicationTokens: initialAppTokens,
+            initialCategoryTokens: initialCategoryTokens,
+            initialWebDomainTokens: initialWebDomainTokens,
+            promise: promise
+          )
+          let hostingController = UIHostingController(rootView: pickerView)
+
+          if let rootVC = self.getRootViewController() {
+            hostingController.modalPresentationStyle = .formSheet
+            rootVC.present(hostingController, animated: true)
+          } else {
+            promise.reject("NO_ROOT_VC", "Could not find root view controller")
+          }
         }
       }
     }
@@ -186,12 +191,13 @@ public class ExpoAppBlockerModule: Module {
     }
 
     Function("getBlockConfiguration") { () -> [String: Any]? in
-      self.ensureLoadedPersistedConfig()
-
-      guard let config = self.currentBlockConfig else {
-        return nil
+      self.stateQueue.sync {
+        self.ensureLoadedPersistedConfig()
+        guard let config = self.currentBlockConfig else {
+          return nil
+        }
+        return self.serializeBlockConfig(config)
       }
-      return self.serializeBlockConfig(config)
     }
 
     Function("clearAllBlocks") {
@@ -280,11 +286,13 @@ public class ExpoAppBlockerModule: Module {
     }
 
     Function("isAppBlocked") { (bundleIdentifier: String) -> Bool in
-      self.ensureLoadedPersistedConfig()
-      guard let config = self.currentBlockConfig else {
-        return false
+      self.stateQueue.sync {
+        self.ensureLoadedPersistedConfig()
+        guard let config = self.currentBlockConfig else {
+          return false
+        }
+        return config.items.contains { $0.bundleIdentifier == bundleIdentifier }
       }
-      return config.items.contains { $0.bundleIdentifier == bundleIdentifier }
     }
 
     AsyncFunction("temporaryUnlock") { (durationMinutes: Int, promise: Promise) in
@@ -329,30 +337,35 @@ public class ExpoAppBlockerModule: Module {
     }
 
     Function("isTemporarilyUnlocked") { () -> Bool in
-      guard let expirationDate = self.sharedDefaults?.object(forKey: self.temporaryUnlockKey) as? Date else {
+      // relockApps() touches currentBlockConfig, so serialize on stateQueue.
+      self.stateQueue.sync {
+        guard let expirationDate = self.sharedDefaults?.object(forKey: self.temporaryUnlockKey) as? Date else {
+          return false
+        }
+
+        if Date() < expirationDate {
+          return true
+        }
+
+        self.relockApps()
         return false
       }
-
-      if Date() < expirationDate {
-        return true
-      }
-
-      self.relockApps()
-      return false
     }
 
     Function("getRemainingUnlockTime") { () -> Int in
-      guard let expirationDate = self.sharedDefaults?.object(forKey: self.temporaryUnlockKey) as? Date else {
+      self.stateQueue.sync {
+        guard let expirationDate = self.sharedDefaults?.object(forKey: self.temporaryUnlockKey) as? Date else {
+          return 0
+        }
+
+        let remaining = expirationDate.timeIntervalSince(Date())
+        if remaining > 0 {
+          return Int(remaining)
+        }
+
+        self.relockApps()
         return 0
       }
-
-      let remaining = expirationDate.timeIntervalSince(Date())
-      if remaining > 0 {
-        return Int(remaining)
-      }
-
-      self.relockApps()
-      return 0
     }
 
     AsyncFunction("relockApps") { (promise: Promise) in
@@ -736,45 +749,24 @@ public class ExpoAppBlockerModule: Module {
     let now = Date()
     let startComponents = calendar.dateComponents([.hour, .minute, .second], from: now)
     let endComponents = calendar.dateComponents([.hour, .minute, .second], from: expirationDate)
-    let nowDay = calendar.startOfDay(for: now)
-    let expirationDay = calendar.startOfDay(for: expirationDate)
 
-    let schedule: DeviceActivitySchedule
-
-    if nowDay == expirationDay {
-      schedule = DeviceActivitySchedule(
-        intervalStart: DateComponents(
-          hour: startComponents.hour,
-          minute: startComponents.minute,
-          second: startComponents.second
-        ),
-        intervalEnd: DateComponents(
-          hour: endComponents.hour,
-          minute: endComponents.minute,
-          second: endComponents.second
-        ),
-        repeats: false
-      )
-    } else {
-      // Cross-midnight unlock: use the real expiration time-of-day. When the
-      // end components are earlier in the day than the start, DeviceActivity
-      // treats the interval as crossing midnight, so the relock fires at the
-      // actual expiry tomorrow — not at 23:59:59 tonight (which relocked the
-      // user hours early).
-      schedule = DeviceActivitySchedule(
-        intervalStart: DateComponents(
-          hour: startComponents.hour,
-          minute: startComponents.minute,
-          second: startComponents.second
-        ),
-        intervalEnd: DateComponents(
-          hour: endComponents.hour,
-          minute: endComponents.minute,
-          second: endComponents.second
-        ),
-        repeats: false
-      )
-    }
+    // A single schedule covers both same-day and cross-midnight unlocks: when
+    // the end time-of-day is earlier than the start, DeviceActivity treats the
+    // interval as crossing midnight and fires the relock at the real expiry
+    // tomorrow (not at 23:59:59 tonight, which relocked the user hours early).
+    let schedule = DeviceActivitySchedule(
+      intervalStart: DateComponents(
+        hour: startComponents.hour,
+        minute: startComponents.minute,
+        second: startComponents.second
+      ),
+      intervalEnd: DateComponents(
+        hour: endComponents.hour,
+        minute: endComponents.minute,
+        second: endComponents.second
+      ),
+      repeats: false
+    )
 
     try activityCenter.startMonitoring(activityName, during: schedule)
   }
