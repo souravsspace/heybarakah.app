@@ -123,7 +123,7 @@ export default function LogPrayerScreen() {
   const fg = isDark ? "#F7F7F4" : colors.ink;
   const muted = isDark ? "#A1A1AA" : colors.inkMuted;
   const subtle = isDark ? "#5E5E62" : colors.inkSubtle;
-  const hairline = isDark ? "rgba(255,255,255,0.09)" : colors.divider;
+  const hairline = isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)";
   const pressedBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
   const selectedBg = isDark ? "rgba(41,96,62,0.12)" : "rgba(41,96,62,0.08)";
   const accent = BARAKAH_GREEN;
