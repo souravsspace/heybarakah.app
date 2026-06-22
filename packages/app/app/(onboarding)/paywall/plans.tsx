@@ -1,7 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Linking, Pressable, Text, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  Pressable,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { FadeSlideIn } from "@/components/onboarding/fade-slide-in";
 import { Headline } from "@/components/onboarding/headline";
 import { BarakahMark } from "@/components/onboarding/illustrations/barakah-mark";
@@ -75,6 +82,15 @@ export default function Plans() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const selected: PlanId = state.plan ?? "yearly";
+
+  // On non-Max devices (e.g. iPhone 14, 844pt) the expanded 3-card layout
+  // exceeds the fixed body height and the family badge collides with the
+  // pinned footer. Let the body scroll once all three cards are shown on
+  // anything shorter than a Max/Plus screen; Max devices and the collapsed
+  // 2-card layout stay fixed so their appearance is unchanged. The footer
+  // is a pinned sibling in ScreenShell, so only the cards scroll.
+  const { height } = useWindowDimensions();
+  const needsScroll = showAll && height < 900;
 
   const visible = PLANS.filter((p) => showAll || p.id !== "family");
 
@@ -268,7 +284,7 @@ export default function Plans() {
           </Pressable>
         </View>
       }
-      scroll={false}
+      scroll={needsScroll}
     >
       <FadeSlideIn className="gap-md">
         <View
