@@ -135,28 +135,35 @@ public class ExpoAppBlockerModule: Module {
     }
 
     AsyncFunction("presentFamilyActivityPicker") { (promise: Promise) in
-      DispatchQueue.main.async {
+      // Read the persisted config on stateQueue (its owning queue) so the token
+      // sets can't race a concurrent setBlockConfiguration / removeBlockedItem,
+      // then hop to main to present the picker UI.
+      self.stateQueue.async {
         self.ensureLoadedPersistedConfig()
-
-        guard self.authCenter.authorizationStatus == .approved else {
-          promise.reject("NOT_AUTHORIZED", "Family Controls authorization not granted")
-          return
-        }
-
         let initialAppTokens = Set(self.currentBlockConfig?.items.compactMap { $0.appToken } ?? [])
         let initialCategoryTokens = Set(self.currentBlockConfig?.items.compactMap { $0.categoryToken } ?? [])
-        let pickerView = FamilyActivityPickerView(
-          initialApplicationTokens: initialAppTokens,
-          initialCategoryTokens: initialCategoryTokens,
-          promise: promise
-        )
-        let hostingController = UIHostingController(rootView: pickerView)
+        let initialWebDomainTokens = Set(self.currentBlockConfig?.items.compactMap { $0.webDomainToken } ?? [])
 
-        if let rootVC = self.getRootViewController() {
-          hostingController.modalPresentationStyle = .formSheet
-          rootVC.present(hostingController, animated: true)
-        } else {
-          promise.reject("NO_ROOT_VC", "Could not find root view controller")
+        DispatchQueue.main.async {
+          guard self.authCenter.authorizationStatus == .approved else {
+            promise.reject("NOT_AUTHORIZED", "Family Controls authorization not granted")
+            return
+          }
+
+          let pickerView = FamilyActivityPickerView(
+            initialApplicationTokens: initialAppTokens,
+            initialCategoryTokens: initialCategoryTokens,
+            initialWebDomainTokens: initialWebDomainTokens,
+            promise: promise
+          )
+          let hostingController = UIHostingController(rootView: pickerView)
+
+          if let rootVC = self.getRootViewController() {
+            hostingController.modalPresentationStyle = .formSheet
+            rootVC.present(hostingController, animated: true)
+          } else {
+            promise.reject("NO_ROOT_VC", "Could not find root view controller")
+          }
         }
       }
     }
@@ -184,21 +191,26 @@ public class ExpoAppBlockerModule: Module {
     }
 
     Function("getBlockConfiguration") { () -> [String: Any]? in
-      self.ensureLoadedPersistedConfig()
-
-      guard let config = self.currentBlockConfig else {
-        return nil
+      self.stateQueue.sync {
+        self.ensureLoadedPersistedConfig()
+        guard let config = self.currentBlockConfig else {
+          return nil
+        }
+        return self.serializeBlockConfig(config)
       }
-      return self.serializeBlockConfig(config)
     }
 
     Function("clearAllBlocks") {
       self.stateQueue.async {
         self.ensureLoadedPersistedConfig()
         self.cancelRelockActivity()
-        self.store.shield.applications = nil
-        self.store.shield.applicationCategories = nil
-        self.store.shield.webDomains = nil
+        // ManagedSettingsStore is main-thread-only; off-thread writes silently
+        // fail to clear the shield.
+        self.runOnMain {
+          self.store.shield.applications = nil
+          self.store.shield.applicationCategories = nil
+          self.store.shield.webDomains = nil
+        }
         self.currentBlockConfig = nil
         self.userDefaults.removeObject(forKey: self.blockConfigStorageKey)
         self.sharedDefaults?.removeObject(forKey: self.blockConfigStorageKey)
@@ -274,11 +286,13 @@ public class ExpoAppBlockerModule: Module {
     }
 
     Function("isAppBlocked") { (bundleIdentifier: String) -> Bool in
-      self.ensureLoadedPersistedConfig()
-      guard let config = self.currentBlockConfig else {
-        return false
+      self.stateQueue.sync {
+        self.ensureLoadedPersistedConfig()
+        guard let config = self.currentBlockConfig else {
+          return false
+        }
+        return config.items.contains { $0.bundleIdentifier == bundleIdentifier }
       }
-      return config.items.contains { $0.bundleIdentifier == bundleIdentifier }
     }
 
     AsyncFunction("temporaryUnlock") { (durationMinutes: Int, promise: Promise) in
@@ -323,30 +337,35 @@ public class ExpoAppBlockerModule: Module {
     }
 
     Function("isTemporarilyUnlocked") { () -> Bool in
-      guard let expirationDate = self.sharedDefaults?.object(forKey: self.temporaryUnlockKey) as? Date else {
+      // relockApps() touches currentBlockConfig, so serialize on stateQueue.
+      self.stateQueue.sync {
+        guard let expirationDate = self.sharedDefaults?.object(forKey: self.temporaryUnlockKey) as? Date else {
+          return false
+        }
+
+        if Date() < expirationDate {
+          return true
+        }
+
+        self.relockApps()
         return false
       }
-
-      if Date() < expirationDate {
-        return true
-      }
-
-      self.relockApps()
-      return false
     }
 
     Function("getRemainingUnlockTime") { () -> Int in
-      guard let expirationDate = self.sharedDefaults?.object(forKey: self.temporaryUnlockKey) as? Date else {
+      self.stateQueue.sync {
+        guard let expirationDate = self.sharedDefaults?.object(forKey: self.temporaryUnlockKey) as? Date else {
+          return 0
+        }
+
+        let remaining = expirationDate.timeIntervalSince(Date())
+        if remaining > 0 {
+          return Int(remaining)
+        }
+
+        self.relockApps()
         return 0
       }
-
-      let remaining = expirationDate.timeIntervalSince(Date())
-      if remaining > 0 {
-        return Int(remaining)
-      }
-
-      self.relockApps()
-      return 0
     }
 
     AsyncFunction("relockApps") { (promise: Promise) in
@@ -654,7 +673,7 @@ public class ExpoAppBlockerModule: Module {
 
       let startTotal = startHour * 60 + startMinute
       let endTotal = endHour * 60 + endMinute
-      if nowMinutes >= startTotal && nowMinutes < endTotal {
+      if minutesInWindow(nowMinutes, start: startTotal, end: endTotal) {
         insideAnyWindow = true
       }
       persistedWindows.append(["start": startTotal, "end": endTotal])
@@ -730,45 +749,24 @@ public class ExpoAppBlockerModule: Module {
     let now = Date()
     let startComponents = calendar.dateComponents([.hour, .minute, .second], from: now)
     let endComponents = calendar.dateComponents([.hour, .minute, .second], from: expirationDate)
-    let nowDay = calendar.startOfDay(for: now)
-    let expirationDay = calendar.startOfDay(for: expirationDate)
 
-    let schedule: DeviceActivitySchedule
-
-    if nowDay == expirationDay {
-      schedule = DeviceActivitySchedule(
-        intervalStart: DateComponents(
-          hour: startComponents.hour,
-          minute: startComponents.minute,
-          second: startComponents.second
-        ),
-        intervalEnd: DateComponents(
-          hour: endComponents.hour,
-          minute: endComponents.minute,
-          second: endComponents.second
-        ),
-        repeats: false
-      )
-    } else {
-      // Cross-midnight unlock: use the real expiration time-of-day. When the
-      // end components are earlier in the day than the start, DeviceActivity
-      // treats the interval as crossing midnight, so the relock fires at the
-      // actual expiry tomorrow — not at 23:59:59 tonight (which relocked the
-      // user hours early).
-      schedule = DeviceActivitySchedule(
-        intervalStart: DateComponents(
-          hour: startComponents.hour,
-          minute: startComponents.minute,
-          second: startComponents.second
-        ),
-        intervalEnd: DateComponents(
-          hour: endComponents.hour,
-          minute: endComponents.minute,
-          second: endComponents.second
-        ),
-        repeats: false
-      )
-    }
+    // A single schedule covers both same-day and cross-midnight unlocks: when
+    // the end time-of-day is earlier than the start, DeviceActivity treats the
+    // interval as crossing midnight and fires the relock at the real expiry
+    // tomorrow (not at 23:59:59 tonight, which relocked the user hours early).
+    let schedule = DeviceActivitySchedule(
+      intervalStart: DateComponents(
+        hour: startComponents.hour,
+        minute: startComponents.minute,
+        second: startComponents.second
+      ),
+      intervalEnd: DateComponents(
+        hour: endComponents.hour,
+        minute: endComponents.minute,
+        second: endComponents.second
+      ),
+      repeats: false
+    )
 
     try activityCenter.startMonitoring(activityName, during: schedule)
   }
@@ -801,8 +799,19 @@ public class ExpoAppBlockerModule: Module {
       guard let start = window["start"], let end = window["end"] else {
         return false
       }
-      return nowMinutes >= start && nowMinutes < end
+      return minutesInWindow(nowMinutes, start: start, end: end)
     }
+  }
+
+  // True when `now` (minutes since midnight) is inside [start, end). When the
+  // window crosses midnight it is stored as end < start (e.g. Isha 23:50→00:05),
+  // so the comparison wraps. Without this, a midnight-spanning prayer window
+  // never matches and the shield never engages during it.
+  private func minutesInWindow(_ now: Int, start: Int, end: Int) -> Bool {
+    if end < start {
+      return now >= start || now < end
+    }
+    return now >= start && now < end
   }
 
   // Apply the shield only while inside a prayer window; otherwise lift it. The
@@ -1084,6 +1093,10 @@ struct BlockedAppsContentView: View {
     isDark ? Color.white.opacity(0.08)
            : Color(red: 0.93, green: 0.93, blue: 0.93)
   }
+  private var dividerColor: Color {
+    isDark ? Color.white.opacity(0.10)
+           : Color.black.opacity(0.08)
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -1110,11 +1123,20 @@ struct BlockedAppsContentView: View {
                   RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .fill(trashBgColor)
                 )
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remove \(item.displayName)")
           }
-          .padding(.vertical, 12)
+          // Fixed row height keeps the system Label's large app icon from
+          // making rows look far apart; a hairline divider does the separating.
+          .frame(height: 56)
+          if index < viewModel.items.count - 1 {
+            Rectangle()
+              .fill(dividerColor)
+              .frame(height: 1)
+          }
         }
       }
 
@@ -1189,6 +1211,7 @@ struct FamilyActivityPickerView: View {
   init(
     initialApplicationTokens: Set<ApplicationToken>,
     initialCategoryTokens: Set<ActivityCategoryToken>,
+    initialWebDomainTokens: Set<WebDomainToken>,
     promise: Promise
   ) {
     self.promise = promise
@@ -1196,6 +1219,7 @@ struct FamilyActivityPickerView: View {
     var initialSelection = FamilyActivitySelection()
     initialSelection.applicationTokens = initialApplicationTokens
     initialSelection.categoryTokens = initialCategoryTokens
+    initialSelection.webDomainTokens = initialWebDomainTokens
     self._selection = State(initialValue: initialSelection)
   }
 
@@ -1203,9 +1227,6 @@ struct FamilyActivityPickerView: View {
     NavigationView {
       VStack {
         familyActivityPicker
-          .onChange(of: selection) { newSelection in
-            _ = newSelection
-          }
       }
       .onAppear {
         didAppear = true
@@ -1325,6 +1346,7 @@ struct FamilyActivityPickerView: View {
   }
 
   private func dismissWithCancel() {
+    guard !didFinish else { return }
     didFinish = true
 
     DispatchQueue.main.async {
@@ -1332,6 +1354,10 @@ struct FamilyActivityPickerView: View {
         rootVC.dismiss(animated: true) {
           self.promise.reject("PICKER_CANCELLED", "User cancelled Family Activity Picker")
         }
+      } else {
+        // No view controller to dismiss; still settle the promise so the JS
+        // caller never awaits forever.
+        self.promise.reject("PICKER_CANCELLED", "User cancelled Family Activity Picker")
       }
     }
   }
@@ -1369,6 +1395,7 @@ struct FamilyActivityPickerView: View {
   }
 
   private func dismissWithResult(_ result: [[String: Any]]) {
+    guard !didFinish else { return }
     didFinish = true
 
     DispatchQueue.main.async {
@@ -1376,6 +1403,10 @@ struct FamilyActivityPickerView: View {
         rootVC.dismiss(animated: true) {
           self.promise.resolve(result)
         }
+      } else {
+        // No view controller to dismiss; still settle the promise so the JS
+        // caller never awaits forever.
+        self.promise.resolve(result)
       }
     }
   }

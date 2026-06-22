@@ -52,6 +52,10 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
       guard let start = window["start"], let end = window["end"] else {
         return false
       }
+      // Window crossing midnight is stored as end < start, so the range wraps.
+      if end < start {
+        return nowMinutes >= start || nowMinutes < end
+      }
       return nowMinutes >= start && nowMinutes < end
     }
   }

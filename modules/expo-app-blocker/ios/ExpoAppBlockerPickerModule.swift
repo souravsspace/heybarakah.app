@@ -37,6 +37,9 @@ class FamilyActivityPickerViewModel: ObservableObject {
   @Published var selection = FamilyActivitySelection(includeEntireCategory: true)
   @Published var colorScheme: ColorScheme? = nil
   var didSetInitial = false
+  /// Set before a programmatic selection mutation (initial seed / clear) so the
+  /// `onChange` handler can swallow the resulting non-user event exactly once.
+  var suppressSelectionEvents = false
 }
 
 // MARK: - Native View (ExpoView wrapper)
@@ -70,7 +73,13 @@ class FamilyActivityPickerNativeView: ExpoView {
   func setInitialSelection(_ selection: FamilyActivitySelection) {
     guard !viewModel.didSetInitial else { return }
     viewModel.didSetInitial = true
-    viewModel.selection = normalizeSelection(selection)
+    let normalized = normalizeSelection(selection)
+    // Only arm the suppress flag when the assignment actually changes the value
+    // (and therefore fires onChange to reset it). Otherwise the flag would stick
+    // true and swallow the next real user edit.
+    guard viewModel.selection != normalized else { return }
+    viewModel.suppressSelectionEvents = true
+    viewModel.selection = normalized
   }
 
   /// Increments-only: first snapshot records baseline without clearing; higher values clear UI.
@@ -86,12 +95,19 @@ class FamilyActivityPickerNativeView: ExpoView {
   }
 
   private func clearSelectionWithoutRemount() {
+    let cleared = FamilyActivitySelection(includeEntireCategory: true)
+    // Clearing an already-empty picker changes nothing, so onChange would not
+    // fire and the suppress flag would stick true and swallow the next real
+    // edit. Bail when there is nothing to clear.
+    guard viewModel.selection != cleared else { return }
+    viewModel.suppressSelectionEvents = true
     var transaction = Transaction()
     transaction.disablesAnimations = true
     withTransaction(transaction) {
-      viewModel.selection = FamilyActivitySelection(includeEntireCategory: true)
+      viewModel.selection = cleared
     }
-    viewModel.didSetInitial = false
+    // Keep didSetInitial = true so a stale `initialSelection` prop re-delivery
+    // from React can't re-seed the picker and undo this clear.
   }
 
   private func normalizeSelection(_ selection: FamilyActivitySelection) -> FamilyActivitySelection {
@@ -177,6 +193,12 @@ struct InlinePickerContentView: View {
     // If a future iOS/SDK build stops syncing empty selections here, reconsider a targeted redraw.
     let picker = FamilyActivityPicker(selection: $viewModel.selection)
       .onChange(of: viewModel.selection) { newSelection in
+        // Swallow the change emitted by a programmatic seed/clear so only real
+        // user edits reach React.
+        if viewModel.suppressSelectionEvents {
+          viewModel.suppressSelectionEvents = false
+          return
+        }
         onSelectionChange(newSelection)
       }
 

@@ -186,10 +186,18 @@ class AppBlockerService : Service() {
 
     fun start(context: Context) {
       val intent = Intent(context, AppBlockerService::class.java)
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        context.startForegroundService(intent)
-      } else {
-        context.startService(intent)
+      try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          context.startForegroundService(intent)
+        } else {
+          context.startService(intent)
+        }
+      } catch (e: Exception) {
+        // Android 12+ throws ForegroundServiceStartNotAllowedException when a
+        // foreground service is started from the background (e.g. a JS reload
+        // while the app is backgrounded). Swallow it instead of crashing; the
+        // service starts on the next foreground call to startMonitoring().
+        Log.w(TAG, "Failed to start AppBlockerService", e)
       }
     }
 

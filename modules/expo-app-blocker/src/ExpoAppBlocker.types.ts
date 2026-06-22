@@ -40,6 +40,22 @@ export interface IOSBlockedItem {
   type: "app" | "category" | "webDomain";
 }
 
+/**
+ * Trailing metadata row appended by the native picker. It is NOT a blocked
+ * item — it carries the selection totals and the serialized FamilyActivity
+ * selection so the caller can persist the exact picked state. Filter it out of
+ * the real items before rendering/counting.
+ */
+export interface IOSPickerSummary {
+  type: "summary";
+  totalApps: number;
+  totalCategories: number;
+  totalWebDomains: number;
+  selectionData: string;
+}
+
+export type IOSPickerResultItem = IOSBlockedItem | IOSPickerSummary;
+
 // ──────────────────────────────────────────────────────────────────────────────
 // iOS-specific types
 // ──────────────────────────────────────────────────────────────────────────────
@@ -113,7 +129,10 @@ export interface BlockedAppsNativeListProps {
   items: IOSBlockedItem[];
   /** Fired when the user taps a row's trash button */
   onRequestRemove?: (event: { nativeEvent: BlockedItemRemoveEvent }) => void;
-  /** Base64-encoded FamilyActivitySelection for accurate rendering */
+  /**
+   * @deprecated No-op. The native view renders from `items` (tokens); this prop
+   * is no longer forwarded over the bridge. Kept for source compatibility.
+   */
   selectionData?: string;
   /** Standard React Native style */
   style?: any;

@@ -32,6 +32,8 @@ import {
   getInstalledApps,
   getPermissionStatus,
   type IOSBlockedItem,
+  type IOSPickerResultItem,
+  type IOSPickerSummary,
   isTemporarilyUnlocked,
   type PermissionStatus,
   presentFamilyActivityPicker,
@@ -86,6 +88,43 @@ function quietVerb(items: IOSBlockedItem[]): string {
   }
   // singular when only one item across all types
   return total === 1 ? "goes" : "go";
+}
+
+const IOS_TYPE_RANK: Record<string, number> = {
+  app: 0,
+  category: 1,
+  webDomain: 2,
+};
+
+// Strip the synthetic "summary" row the native picker appends (it carries
+// totals + selectionData, not a real blocked item, so it would inflate every
+// count by one) and order items stably. The native picker returns tokens in
+// Set iteration order, which is nondeterministic, so without this a re-pick
+// reshuffles the visible rows.
+function normalizeIosItems(raw: IOSPickerResultItem[]): IOSBlockedItem[] {
+  return raw
+    .filter((i): i is IOSBlockedItem => i.type !== "summary")
+    .sort((a, b) => {
+      const ra = IOS_TYPE_RANK[a.type] ?? 9;
+      const rb = IOS_TYPE_RANK[b.type] ?? 9;
+      if (ra !== rb) {
+        return ra - rb;
+      }
+      const na = (
+        a.displayName ??
+        a.categoryName ??
+        a.domain ??
+        ""
+      ).toLowerCase();
+      const nb = (
+        b.displayName ??
+        b.categoryName ??
+        b.domain ??
+        ""
+      ).toLowerCase();
+      const byName = na.localeCompare(nb);
+      return byName === 0 ? a.token.localeCompare(b.token) : byName;
+    });
 }
 
 export default function Locked() {
@@ -153,7 +192,7 @@ export default function Locked() {
     if (Platform.OS === "ios") {
       const cfg = getBlockConfiguration();
       if (cfg?.blockedItems) {
-        setIosItems(cfg.blockedItems);
+        setIosItems(normalizeIosItems(cfg.blockedItems));
       }
     }
     if (Platform.OS === "android") {
@@ -212,9 +251,17 @@ export default function Locked() {
     hydratedRef.current = true;
     setPickerOpen(true);
     try {
-      const items = await presentFamilyActivityPicker();
+      const raw = await presentFamilyActivityPicker();
+      const summary = raw.find(
+        (i): i is IOSPickerSummary => i.type === "summary"
+      );
+      const items = normalizeIosItems(raw);
+      // The picker result is the fresh source of truth: persist its own
+      // selectionData (carried on the summary row), not the stale local copy.
+      const nextSelection = summary?.selectionData ?? iosSelectionLocal;
       setIosItems(items);
-      await persistIos(items, iosSelectionLocal);
+      setIosSelectionLocal(nextSelection);
+      await persistIos(items, nextSelection);
       const categoryCount = items.filter((i) => i.type === "category").length;
       if (categoryCount > 0) {
         Alert.alert(
@@ -232,7 +279,7 @@ export default function Locked() {
 
   const refreshIosItems = useCallback(() => {
     const cfg = getBlockConfiguration();
-    setIosItems(cfg?.blockedItems ?? []);
+    setIosItems(normalizeIosItems(cfg?.blockedItems ?? []));
   }, []);
 
   const handleRequestRemove = useCallback(

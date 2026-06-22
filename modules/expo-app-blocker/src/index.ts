@@ -15,6 +15,7 @@ import type {
   IOSBlockConfiguration,
   IOSBlockedItem,
   IOSPermissions,
+  IOSPickerResultItem,
   PermissionStatus,
   PrayerBlockWindow,
   RelockResult,
@@ -33,6 +34,8 @@ export type {
   IOSBlockConfiguration,
   IOSBlockedItem,
   IOSPermissions,
+  IOSPickerResultItem,
+  IOSPickerSummary,
   PermissionStatus,
   PluginConfig,
   PrayerBlockWindow,
@@ -160,10 +163,14 @@ export function stopMonitoring(): void {
 // iOS-specific: Family Controls
 // ──────────────────────────────────────────────────────────────────────────────
 
-export async function presentFamilyActivityPicker(): Promise<IOSBlockedItem[]> {
+export async function presentFamilyActivityPicker(): Promise<
+  IOSPickerResultItem[]
+> {
   if (Platform.OS !== "ios") {
     throw new Error("Family Activity Picker is only available on iOS");
   }
+  // The native result is the real blocked items followed by a trailing
+  // `{ type: "summary" }` metadata row — model it so callers strip it.
   return NativeModule.presentFamilyActivityPicker();
 }
 
@@ -311,7 +318,6 @@ if (Platform.OS === "ios") {
 
 export function BlockedAppsNativeList({
   items,
-  selectionData,
   theme,
   style,
   onRequestRemove,
@@ -320,6 +326,9 @@ export function BlockedAppsNativeList({
     return null;
   }
 
+  // `tokens` is the canonical source for the native view; the legacy
+  // `selectionData` prop is a no-op on the native side so we no longer forward
+  // it over the bridge on every render.
   const tokens = items
     .filter((item) => (item.type as string) !== "summary")
     .map((item) => ({
@@ -329,7 +338,6 @@ export function BlockedAppsNativeList({
     }));
 
   return React.createElement(NativeBlockedAppsView, {
-    selectionData: selectionData || "",
     tokens,
     theme: theme || "light",
     onRequestRemove,
