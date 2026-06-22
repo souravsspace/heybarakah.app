@@ -121,8 +121,46 @@ function useLogMutate() {
   const queryClient = useQueryClient();
   return useCallback(
     async (args: LogPrayerArgs) => {
-      const res = await api.api.v1["prayer-logs"].$post({ json: args });
+      // Optimistically upsert the row in every cached week query so the UI
+      // flips instantly; snapshot first so a failed POST can roll back.
+      const snapshot = queryClient.getQueriesData<PrayerLogRow[]>({
+        queryKey: PRAYER_LOGS_KEY,
+      });
+      const optimisticRow: PrayerLogRow = {
+        _id: `optimistic-${args.date}-${args.prayer}`,
+        date: args.date,
+        prayer: args.prayer,
+        status: args.status,
+        prayedAt: args.prayedAt,
+        updatedAt: Date.now(),
+      };
+      queryClient.setQueriesData<PrayerLogRow[]>(
+        { queryKey: PRAYER_LOGS_KEY },
+        (prev) => {
+          if (prev === undefined) {
+            return prev;
+          }
+          const next = prev.filter(
+            (row) => !(row.date === args.date && row.prayer === args.prayer)
+          );
+          next.push(optimisticRow);
+          return next;
+        }
+      );
+
+      let res: Awaited<ReturnType<(typeof api.api.v1)["prayer-logs"]["$post"]>>;
+      try {
+        res = await api.api.v1["prayer-logs"].$post({ json: args });
+      } catch (err) {
+        for (const [key, data] of snapshot) {
+          queryClient.setQueryData(key, data);
+        }
+        throw err;
+      }
       if (!res.ok) {
+        for (const [key, data] of snapshot) {
+          queryClient.setQueryData(key, data);
+        }
         throw new Error("Failed to log prayer");
       }
       const data = await res.json();
@@ -167,8 +205,38 @@ function useClearMutate() {
   const queryClient = useQueryClient();
   return useCallback(
     async (args: ClearPrayerArgs) => {
-      const res = await api.api.v1["prayer-logs"].clear.$post({ json: args });
+      // Optimistically remove the row from every cached week query so the UI
+      // clears instantly; snapshot first so a failed POST can roll back.
+      const snapshot = queryClient.getQueriesData<PrayerLogRow[]>({
+        queryKey: PRAYER_LOGS_KEY,
+      });
+      queryClient.setQueriesData<PrayerLogRow[]>(
+        { queryKey: PRAYER_LOGS_KEY },
+        (prev) => {
+          if (prev === undefined) {
+            return prev;
+          }
+          return prev.filter(
+            (row) => !(row.date === args.date && row.prayer === args.prayer)
+          );
+        }
+      );
+
+      let res: Awaited<
+        ReturnType<(typeof api.api.v1)["prayer-logs"]["clear"]["$post"]>
+      >;
+      try {
+        res = await api.api.v1["prayer-logs"].clear.$post({ json: args });
+      } catch (err) {
+        for (const [key, data] of snapshot) {
+          queryClient.setQueryData(key, data);
+        }
+        throw err;
+      }
       if (!res.ok) {
+        for (const [key, data] of snapshot) {
+          queryClient.setQueryData(key, data);
+        }
         throw new Error("Failed to clear prayer");
       }
       const data = await res.json();
