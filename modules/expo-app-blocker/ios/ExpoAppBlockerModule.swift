@@ -198,9 +198,13 @@ public class ExpoAppBlockerModule: Module {
       self.stateQueue.async {
         self.ensureLoadedPersistedConfig()
         self.cancelRelockActivity()
-        self.store.shield.applications = nil
-        self.store.shield.applicationCategories = nil
-        self.store.shield.webDomains = nil
+        // ManagedSettingsStore is main-thread-only; off-thread writes silently
+        // fail to clear the shield.
+        self.runOnMain {
+          self.store.shield.applications = nil
+          self.store.shield.applicationCategories = nil
+          self.store.shield.webDomains = nil
+        }
         self.currentBlockConfig = nil
         self.userDefaults.removeObject(forKey: self.blockConfigStorageKey)
         self.sharedDefaults?.removeObject(forKey: self.blockConfigStorageKey)
@@ -656,7 +660,7 @@ public class ExpoAppBlockerModule: Module {
 
       let startTotal = startHour * 60 + startMinute
       let endTotal = endHour * 60 + endMinute
-      if nowMinutes >= startTotal && nowMinutes < endTotal {
+      if minutesInWindow(nowMinutes, start: startTotal, end: endTotal) {
         insideAnyWindow = true
       }
       persistedWindows.append(["start": startTotal, "end": endTotal])
@@ -803,8 +807,19 @@ public class ExpoAppBlockerModule: Module {
       guard let start = window["start"], let end = window["end"] else {
         return false
       }
-      return nowMinutes >= start && nowMinutes < end
+      return minutesInWindow(nowMinutes, start: start, end: end)
     }
+  }
+
+  // True when `now` (minutes since midnight) is inside [start, end). When the
+  // window crosses midnight it is stored as end < start (e.g. Isha 23:50→00:05),
+  // so the comparison wraps. Without this, a midnight-spanning prayer window
+  // never matches and the shield never engages during it.
+  private func minutesInWindow(_ now: Int, start: Int, end: Int) -> Bool {
+    if end < start {
+      return now >= start || now < end
+    }
+    return now >= start && now < end
   }
 
   // Apply the shield only while inside a prayer window; otherwise lift it. The
@@ -1220,9 +1235,6 @@ struct FamilyActivityPickerView: View {
     NavigationView {
       VStack {
         familyActivityPicker
-          .onChange(of: selection) { newSelection in
-            _ = newSelection
-          }
       }
       .onAppear {
         didAppear = true
@@ -1342,6 +1354,7 @@ struct FamilyActivityPickerView: View {
   }
 
   private func dismissWithCancel() {
+    guard !didFinish else { return }
     didFinish = true
 
     DispatchQueue.main.async {
@@ -1349,6 +1362,10 @@ struct FamilyActivityPickerView: View {
         rootVC.dismiss(animated: true) {
           self.promise.reject("PICKER_CANCELLED", "User cancelled Family Activity Picker")
         }
+      } else {
+        // No view controller to dismiss; still settle the promise so the JS
+        // caller never awaits forever.
+        self.promise.reject("PICKER_CANCELLED", "User cancelled Family Activity Picker")
       }
     }
   }
@@ -1386,6 +1403,7 @@ struct FamilyActivityPickerView: View {
   }
 
   private func dismissWithResult(_ result: [[String: Any]]) {
+    guard !didFinish else { return }
     didFinish = true
 
     DispatchQueue.main.async {
@@ -1393,6 +1411,10 @@ struct FamilyActivityPickerView: View {
         rootVC.dismiss(animated: true) {
           self.promise.resolve(result)
         }
+      } else {
+        // No view controller to dismiss; still settle the promise so the JS
+        // caller never awaits forever.
+        self.promise.resolve(result)
       }
     }
   }
