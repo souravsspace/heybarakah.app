@@ -1,10 +1,11 @@
 import { env } from "cloudflare:test";
+import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-
 import { createDatabase } from "@/db";
-import { userAchievements, users } from "@/db/schema";
+import { dhikrPreset, userAchievements, users } from "@/db/schema";
 import { applyMigrations } from "@/test-support/apply-migrations";
 import {
+  CYCLE_MS,
   DEFAULT_TARGET,
   getPresetTotals,
   getToday,
@@ -125,6 +126,7 @@ describe("dhikr service", () => {
     const db = createDatabase(env.DB);
     expect(await getPresetTotals(db, "fresh-preset-user")).toEqual({
       totals: {},
+      monthly: {},
       grandTotal: 0,
     });
   });
@@ -139,20 +141,56 @@ describe("dhikr service", () => {
     expect(await incrementPreset(db, user, "subhanallah", 7)).toEqual({
       presetTotal: 7,
       grandTotal: 7,
+      monthlyTotal: 7,
     });
     expect(await incrementPreset(db, user, "subhanallah", 3)).toEqual({
       presetTotal: 10,
       grandTotal: 10,
+      monthlyTotal: 10,
     });
     // A different preset keeps its own total; the grand total spans both.
     expect(await incrementPreset(db, user, "alhamdulillah", 5)).toEqual({
       presetTotal: 5,
       grandTotal: 15,
+      monthlyTotal: 5,
     });
 
-    const { totals, grandTotal } = await getPresetTotals(db, user);
+    const { totals, monthly, grandTotal } = await getPresetTotals(db, user);
     expect(totals).toEqual({ subhanallah: 10, alhamdulillah: 5 });
+    // Fresh increments fall inside the current window, so monthly mirrors total.
+    expect(monthly).toEqual({ subhanallah: 10, alhamdulillah: 5 });
     expect(grandTotal).toBe(15);
+  });
+
+  it("resets the monthly window after 30 days, keeping lifetime total", async () => {
+    const db = createDatabase(env.DB);
+    const user = "monthly-reset-user";
+    await db
+      .insert(users)
+      .values({ authUserId: user, completedAt: new Date().toISOString() });
+
+    // Seed a preset whose window opened well over 30 days ago.
+    await incrementPreset(db, user, "subhanallah", 40);
+    const stale = Date.now() - CYCLE_MS - 1000;
+    await db
+      .update(dhikrPreset)
+      .set({ cycleStart: stale })
+      .where(eq(dhikrPreset.presetId, "subhanallah"));
+
+    // Read masks the lapsed window: lifetime stays, monthly reports 0.
+    const masked = await getPresetTotals(db, user);
+    expect(masked.totals.subhanallah).toBe(40);
+    expect(masked.monthly.subhanallah).toBe(0);
+
+    // The next increment opens a fresh window: monthly resets to the new delta,
+    // lifetime keeps accumulating.
+    const after = await incrementPreset(db, user, "subhanallah", 6);
+    expect(after.presetTotal).toBe(46);
+    expect(after.monthlyTotal).toBe(6);
+
+    const reread = await getPresetTotals(db, user);
+    expect(reread.totals.subhanallah).toBe(46);
+    expect(reread.monthly.subhanallah).toBe(6);
   });
 
   it("unlocks dhikr achievements off the grand total", async () => {
