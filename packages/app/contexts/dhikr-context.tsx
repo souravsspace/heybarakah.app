@@ -69,14 +69,18 @@ export const PRESETS: Preset[] = [
 // offline display); `pending` holds local taps not yet flushed to the server.
 const SYNCED_KEY_PREFIX = "@barakah/dhikr/synced";
 const PENDING_KEY_PREFIX = "@barakah/dhikr/pending";
+const MONTHLY_KEY_PREFIX = "@barakah/dhikr/monthly";
 const syncedKey = (userId: string) => `${SYNCED_KEY_PREFIX}/${userId}`;
 const pendingKey = (userId: string) => `${PENDING_KEY_PREFIX}/${userId}`;
+const monthlyKey = (userId: string) => `${MONTHLY_KEY_PREFIX}/${userId}`;
 const FLUSH_DELAY_MS = 1200;
 
 type Lifetime = Record<string, number>;
 
 interface CloudTotals {
   grandTotal: number;
+  // Per-preset count in the current cloud-tracked 30-day window (auto-resets).
+  monthly: Lifetime;
   totals: Lifetime;
 }
 
@@ -101,6 +105,7 @@ interface DhikrContextValue {
   grandTotal: number;
   increment: () => void;
   isLast: boolean;
+  monthly: Lifetime;
   next: Preset;
   nextDhikr: () => void;
   resetSession: () => void;
@@ -118,6 +123,9 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
   // total = synced + pending (local-first, survives offline).
   const [synced, setSynced] = useState<Lifetime>({});
   const [pending, setPending] = useState<Lifetime>({});
+  // Cloud-authoritative per-preset monthly-window totals (server auto-resets
+  // every 30 days). Mirrors `synced`: cached for instant/offline display.
+  const [monthlySynced, setMonthlySynced] = useState<Lifetime>({});
   // Authoritative live counter. State lags a render behind, so rapid double-taps
   // would otherwise read a stale `count`; the ref advances synchronously per tap.
   const countRef = useRef(0);
@@ -150,6 +158,7 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
     hydrated.current = false;
     setSynced({});
     setPending({});
+    setMonthlySynced({});
     pendingRef.current = {};
     if (!userId) {
       hydrated.current = true;
@@ -159,8 +168,9 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
     Promise.all([
       AsyncStorage.getItem(syncedKey(userId)),
       AsyncStorage.getItem(pendingKey(userId)),
+      AsyncStorage.getItem(monthlyKey(userId)),
     ])
-      .then(([s, p]) => {
+      .then(([s, p, m]) => {
         if (cancelled) {
           return;
         }
@@ -168,6 +178,7 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
         const pendingMap = readMap(p);
         setPending(pendingMap);
         pendingRef.current = pendingMap;
+        setMonthlySynced(readMap(m));
       })
       .catch(() => undefined)
       .finally(() => {
@@ -184,6 +195,7 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (cloudQuery.data) {
       setSynced(cloudQuery.data.totals ?? {});
+      setMonthlySynced(cloudQuery.data.monthly ?? {});
     }
   }, [cloudQuery.data]);
 
@@ -204,6 +216,15 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
       () => undefined
     );
   }, [pending, userId]);
+  useEffect(() => {
+    if (!(hydrated.current && userId)) {
+      return;
+    }
+    AsyncStorage.setItem(
+      monthlyKey(userId),
+      JSON.stringify(monthlySynced)
+    ).catch(() => undefined);
+  }, [monthlySynced, userId]);
 
   // Push unsynced taps to the server. Each preset's server total already includes
   // the sent delta, so synced is set to it and the same delta removed from pending
@@ -227,11 +248,13 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
           if (!res.ok) {
             continue;
           }
-          const { presetTotal } = (await res.json()) as {
+          const { presetTotal, monthlyTotal } = (await res.json()) as {
             presetTotal: number;
             grandTotal: number;
+            monthlyTotal: number;
           };
           setSynced((prev) => ({ ...prev, [presetId]: presetTotal }));
+          setMonthlySynced((prev) => ({ ...prev, [presetId]: monthlyTotal }));
           setPending((prev) => ({
             ...prev,
             [presetId]: Math.max(0, (prev[presetId] ?? 0) - by),
@@ -283,6 +306,16 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
     }
     return merged;
   }, [synced, pending]);
+
+  // Displayed monthly = cloud monthly window + unflushed local taps (recent
+  // taps always fall inside the current window).
+  const monthly = useMemo<Lifetime>(() => {
+    const merged: Lifetime = { ...monthlySynced };
+    for (const [id, n] of Object.entries(pending)) {
+      merged[id] = (merged[id] ?? 0) + n;
+    }
+    return merged;
+  }, [monthlySynced, pending]);
 
   const active = PRESETS[activeIndex];
   const complete = count >= active.target;
@@ -341,6 +374,7 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
       grandTotal,
       increment,
       isLast,
+      monthly,
       next,
       nextDhikr,
       resetSession,
@@ -355,6 +389,7 @@ export function DhikrProvider({ children }: { children: ReactNode }) {
       grandTotal,
       increment,
       isLast,
+      monthly,
       next,
       nextDhikr,
       resetSession,
