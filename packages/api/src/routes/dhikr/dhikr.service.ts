@@ -9,6 +9,8 @@ const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export const DEFAULT_TARGET = 33;
 export const MAX_TARGET = 10_000;
 export const MAX_INCREMENT = 1000;
+// Length of the rolling per-preset window before `monthlyTotal` auto-resets.
+export const CYCLE_MS = 30 * 24 * 60 * 60 * 1000;
 
 // The fixed set of dhikr presets the client tracks. The server validates the
 // id against this list so a typo can't create a junk per-preset row.
@@ -27,6 +29,9 @@ export function isValidPresetId(id: string): id is PresetId {
 
 export interface PresetTotals {
   grandTotal: number;
+  // Per-preset count within the current 30-day window. A preset whose window
+  // has already lapsed reports 0 (the next increment lazily resets the row).
+  monthly: Record<string, number>;
   totals: Record<string, number>;
 }
 
@@ -35,12 +40,23 @@ export async function getPresetTotals(
   authUserId: string
 ): Promise<PresetTotals> {
   const rows = await db
-    .select({ presetId: dhikrPreset.presetId, total: dhikrPreset.total })
+    .select({
+      presetId: dhikrPreset.presetId,
+      total: dhikrPreset.total,
+      monthlyTotal: dhikrPreset.monthlyTotal,
+      cycleStart: dhikrPreset.cycleStart,
+    })
     .from(dhikrPreset)
     .where(eq(dhikrPreset.authUserId, authUserId));
+  const now = Date.now();
   const totals: Record<string, number> = {};
+  const monthly: Record<string, number> = {};
   for (const row of rows) {
     totals[row.presetId] = row.total;
+    // Mask a lapsed window on read so a stale row shows 0 until its next tap
+    // resets it — no write needed, lifetime `total` untouched.
+    monthly[row.presetId] =
+      now - row.cycleStart < CYCLE_MS ? row.monthlyTotal : 0;
   }
   const [aggregate] = await db
     .select({ total: dhikrAggregate.total })
@@ -49,7 +65,7 @@ export async function getPresetTotals(
     .limit(1);
   const grandTotal =
     aggregate?.total ?? rows.reduce((sum, row) => sum + row.total, 0);
-  return { totals, grandTotal };
+  return { totals, monthly, grandTotal };
 }
 
 export async function incrementPreset(
@@ -57,19 +73,39 @@ export async function incrementPreset(
   authUserId: string,
   presetId: PresetId,
   delta: number
-): Promise<{ presetTotal: number; grandTotal: number }> {
+): Promise<{ presetTotal: number; grandTotal: number; monthlyTotal: number }> {
   const now = Date.now();
   // Atomic batch: the per-preset total and the grand aggregate move in lockstep,
   // each `+= delta` computed in SQL so concurrent increments can't clobber. The
   // UNIQUE indexes make a racing insert resolve to the update branch.
+  // `monthlyTotal`/`cycleStart` carry a rolling 30-day window: on conflict, if
+  // the window has lapsed the CASE resets it to this delta + reopens the window,
+  // else it accumulates. Both CASEs read the same pre-update `cycleStart`, so the
+  // reset decision is consistent within the one atomic statement.
+  const lapsed = sql`${now} - ${dhikrPreset.cycleStart} >= ${CYCLE_MS}`;
   const presetWrite = db
     .insert(dhikrPreset)
-    .values({ authUserId, presetId, total: delta, updatedAt: now })
+    .values({
+      authUserId,
+      presetId,
+      total: delta,
+      monthlyTotal: delta,
+      cycleStart: now,
+      updatedAt: now,
+    })
     .onConflictDoUpdate({
       target: [dhikrPreset.authUserId, dhikrPreset.presetId],
-      set: { total: sql`${dhikrPreset.total} + ${delta}`, updatedAt: now },
+      set: {
+        total: sql`${dhikrPreset.total} + ${delta}`,
+        monthlyTotal: sql`CASE WHEN ${lapsed} THEN ${delta} ELSE ${dhikrPreset.monthlyTotal} + ${delta} END`,
+        cycleStart: sql`CASE WHEN ${lapsed} THEN ${now} ELSE ${dhikrPreset.cycleStart} END`,
+        updatedAt: now,
+      },
     })
-    .returning({ total: dhikrPreset.total });
+    .returning({
+      total: dhikrPreset.total,
+      monthlyTotal: dhikrPreset.monthlyTotal,
+    });
   const aggregateWrite = db
     .insert(dhikrAggregate)
     .values({ authUserId, total: delta, updatedAt: now })
@@ -87,6 +123,7 @@ export async function incrementPreset(
   return {
     presetTotal: presetRows[0].total,
     grandTotal: aggregateRows[0].total,
+    monthlyTotal: presetRows[0].monthlyTotal,
   };
 }
 
