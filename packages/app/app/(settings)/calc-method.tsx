@@ -7,7 +7,7 @@ import {
   SettingsScreen,
 } from "@/components/settings/settings-screen";
 import { type ThemeColors, useTheme } from "@/contexts/theme-context";
-import { useUser } from "@/contexts/user-context";
+import { type CfAccount, useUser } from "@/contexts/user-context";
 import { api } from "@/lib/api-client";
 import { hapticSelection } from "@/lib/haptics";
 
@@ -69,9 +69,20 @@ export default function CalcMethod() {
     }
     setSaving(m);
     hapticSelection();
+    // Optimistically set calcMethod in the cached account so the radio flips
+    // instantly; snapshot first so a failed POST can roll back.
+    const snapshot = queryClient.getQueryData<CfAccount | null>(["cf", "me"]);
+    queryClient.setQueryData<CfAccount | null>(["cf", "me"], (prev) =>
+      prev?.profile == null
+        ? prev
+        : { ...prev, profile: { ...prev.profile, calcMethod: m } }
+    );
     try {
       await api.api.v1.me.profile.$post({ json: { calcMethod: m } });
       await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
+    } catch (err) {
+      queryClient.setQueryData(["cf", "me"], snapshot);
+      throw err;
     } finally {
       setSaving(null);
     }
@@ -83,9 +94,20 @@ export default function CalcMethod() {
     }
     setSavingMadhab(m);
     hapticSelection();
+    // Optimistically set madhab in the cached account so the radio flips
+    // instantly; snapshot first so a failed POST can roll back.
+    const snapshot = queryClient.getQueryData<CfAccount | null>(["cf", "me"]);
+    queryClient.setQueryData<CfAccount | null>(["cf", "me"], (prev) =>
+      prev?.profile == null
+        ? prev
+        : { ...prev, profile: { ...prev.profile, madhab: m } }
+    );
     try {
       await api.api.v1.me.profile.$post({ json: { madhab: m } });
       await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
+    } catch (err) {
+      queryClient.setQueryData(["cf", "me"], snapshot);
+      throw err;
     } finally {
       setSavingMadhab(null);
     }
