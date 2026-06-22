@@ -78,14 +78,22 @@ export default function CalcMethod() {
         : { ...prev, profile: { ...prev.profile, calcMethod: m } }
     );
     try {
-      await api.api.v1.me.profile.$post({ json: { calcMethod: m } });
-      await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
+      const res = await api.api.v1.me.profile.$post({
+        json: { calcMethod: m },
+      });
+      if (!res.ok) {
+        queryClient.setQueryData(["cf", "me"], snapshot);
+        return;
+      }
     } catch (err) {
       queryClient.setQueryData(["cf", "me"], snapshot);
       throw err;
     } finally {
       setSaving(null);
     }
+    // Background reconciliation only on success; not awaited so a failed refetch
+    // can't spuriously roll back the (already correct) optimistic value.
+    queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
   };
 
   const pickMadhab = async (m: Madhab) => {
@@ -103,14 +111,20 @@ export default function CalcMethod() {
         : { ...prev, profile: { ...prev.profile, madhab: m } }
     );
     try {
-      await api.api.v1.me.profile.$post({ json: { madhab: m } });
-      await queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
+      const res = await api.api.v1.me.profile.$post({ json: { madhab: m } });
+      if (!res.ok) {
+        queryClient.setQueryData(["cf", "me"], snapshot);
+        return;
+      }
     } catch (err) {
       queryClient.setQueryData(["cf", "me"], snapshot);
       throw err;
     } finally {
       setSavingMadhab(null);
     }
+    // Background reconciliation only on success; not awaited so a failed refetch
+    // can't spuriously roll back the (already correct) optimistic value.
+    queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
   };
 
   return (
