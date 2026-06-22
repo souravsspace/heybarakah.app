@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient, useQuery as useRqQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Image,
@@ -141,6 +141,8 @@ export default function Locked() {
     [queryClient]
   );
 
+  // Permission + native/installed reads run once on mount and never depend on
+  // the server selection, so a shield refetch can't re-trigger them.
   useEffect(() => {
     if (Platform.OS === "web") {
       return;
@@ -153,17 +155,30 @@ export default function Locked() {
       if (cfg?.blockedItems) {
         setIosItems(cfg.blockedItems);
       }
-      if (selection?.iosSelectionData) {
-        setIosSelectionLocal(selection.iosSelectionData);
-      }
     }
     if (Platform.OS === "android") {
       getInstalledApps()
         .then(setInstalled)
         .catch(() => null);
-      if (selection?.androidPackageNames) {
-        setPendingAndroid(new Set(selection.androidPackageNames));
-      }
+    }
+  }, []);
+
+  // Seed local selection from the server EXACTLY ONCE (first load with data).
+  // After that, local user actions (picker / remove / clear / toggle) own the
+  // state and we only write to the server — we never read it back into local,
+  // so the invalidate→refetch that those writes trigger can't clobber the
+  // freshly-picked selection (no more "shake" / stale count flicker).
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (Platform.OS === "web" || hydratedRef.current || !selection) {
+      return;
+    }
+    hydratedRef.current = true;
+    if (Platform.OS === "ios" && selection.iosSelectionData) {
+      setIosSelectionLocal(selection.iosSelectionData);
+    }
+    if (Platform.OS === "android" && selection.androidPackageNames) {
+      setPendingAndroid(new Set(selection.androidPackageNames));
     }
   }, [selection]);
 
