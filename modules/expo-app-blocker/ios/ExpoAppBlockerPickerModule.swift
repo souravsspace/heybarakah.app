@@ -37,6 +37,9 @@ class FamilyActivityPickerViewModel: ObservableObject {
   @Published var selection = FamilyActivitySelection(includeEntireCategory: true)
   @Published var colorScheme: ColorScheme? = nil
   var didSetInitial = false
+  /// Set before a programmatic selection mutation (initial seed / clear) so the
+  /// `onChange` handler can swallow the resulting non-user event exactly once.
+  var suppressSelectionEvents = false
 }
 
 // MARK: - Native View (ExpoView wrapper)
@@ -70,6 +73,7 @@ class FamilyActivityPickerNativeView: ExpoView {
   func setInitialSelection(_ selection: FamilyActivitySelection) {
     guard !viewModel.didSetInitial else { return }
     viewModel.didSetInitial = true
+    viewModel.suppressSelectionEvents = true
     viewModel.selection = normalizeSelection(selection)
   }
 
@@ -86,12 +90,14 @@ class FamilyActivityPickerNativeView: ExpoView {
   }
 
   private func clearSelectionWithoutRemount() {
+    viewModel.suppressSelectionEvents = true
     var transaction = Transaction()
     transaction.disablesAnimations = true
     withTransaction(transaction) {
       viewModel.selection = FamilyActivitySelection(includeEntireCategory: true)
     }
-    viewModel.didSetInitial = false
+    // Keep didSetInitial = true so a stale `initialSelection` prop re-delivery
+    // from React can't re-seed the picker and undo this clear.
   }
 
   private func normalizeSelection(_ selection: FamilyActivitySelection) -> FamilyActivitySelection {
@@ -177,6 +183,12 @@ struct InlinePickerContentView: View {
     // If a future iOS/SDK build stops syncing empty selections here, reconsider a targeted redraw.
     let picker = FamilyActivityPicker(selection: $viewModel.selection)
       .onChange(of: viewModel.selection) { newSelection in
+        // Swallow the change emitted by a programmatic seed/clear so only real
+        // user edits reach React.
+        if viewModel.suppressSelectionEvents {
+          viewModel.suppressSelectionEvents = false
+          return
+        }
         onSelectionChange(newSelection)
       }
 
