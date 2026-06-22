@@ -32,6 +32,8 @@ import {
   getInstalledApps,
   getPermissionStatus,
   type IOSBlockedItem,
+  type IOSPickerResultItem,
+  type IOSPickerSummary,
   isTemporarilyUnlocked,
   type PermissionStatus,
   presentFamilyActivityPicker,
@@ -99,9 +101,9 @@ const IOS_TYPE_RANK: Record<string, number> = {
 // count by one) and order items stably. The native picker returns tokens in
 // Set iteration order, which is nondeterministic, so without this a re-pick
 // reshuffles the visible rows.
-function normalizeIosItems(raw: IOSBlockedItem[]): IOSBlockedItem[] {
+function normalizeIosItems(raw: IOSPickerResultItem[]): IOSBlockedItem[] {
   return raw
-    .filter((i) => (i.type as string) !== "summary")
+    .filter((i): i is IOSBlockedItem => i.type !== "summary")
     .sort((a, b) => {
       const ra = IOS_TYPE_RANK[a.type] ?? 9;
       const rb = IOS_TYPE_RANK[b.type] ?? 9;
@@ -250,9 +252,9 @@ export default function Locked() {
     setPickerOpen(true);
     try {
       const raw = await presentFamilyActivityPicker();
-      const summary = raw.find((i) => (i.type as string) === "summary") as
-        | { selectionData?: string }
-        | undefined;
+      const summary = raw.find(
+        (i): i is IOSPickerSummary => i.type === "summary"
+      );
       const items = normalizeIosItems(raw);
       // The picker result is the fresh source of truth: persist its own
       // selectionData (carried on the summary row), not the stale local copy.
