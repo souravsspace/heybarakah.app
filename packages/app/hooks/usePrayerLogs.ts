@@ -123,6 +123,9 @@ function useLogMutate() {
     async (args: LogPrayerArgs) => {
       // Optimistically upsert the row in every cached week query so the UI
       // flips instantly; snapshot first so a failed POST can roll back.
+      // Stop any in-flight week refetch from resolving after our optimistic
+      // write and clobbering it with pre-tap server data.
+      await queryClient.cancelQueries({ queryKey: PRAYER_LOGS_KEY });
       const snapshot = queryClient.getQueriesData<PrayerLogRow[]>({
         queryKey: PRAYER_LOGS_KEY,
       });
@@ -207,6 +210,9 @@ function useClearMutate() {
     async (args: ClearPrayerArgs) => {
       // Optimistically remove the row from every cached week query so the UI
       // clears instantly; snapshot first so a failed POST can roll back.
+      // Stop any in-flight week refetch from resolving after our optimistic
+      // write and clobbering it with pre-tap server data.
+      await queryClient.cancelQueries({ queryKey: PRAYER_LOGS_KEY });
       const snapshot = queryClient.getQueriesData<PrayerLogRow[]>({
         queryKey: PRAYER_LOGS_KEY,
       });
