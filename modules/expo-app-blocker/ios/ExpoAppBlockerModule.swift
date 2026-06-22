@@ -145,9 +145,11 @@ public class ExpoAppBlockerModule: Module {
 
         let initialAppTokens = Set(self.currentBlockConfig?.items.compactMap { $0.appToken } ?? [])
         let initialCategoryTokens = Set(self.currentBlockConfig?.items.compactMap { $0.categoryToken } ?? [])
+        let initialWebDomainTokens = Set(self.currentBlockConfig?.items.compactMap { $0.webDomainToken } ?? [])
         let pickerView = FamilyActivityPickerView(
           initialApplicationTokens: initialAppTokens,
           initialCategoryTokens: initialCategoryTokens,
+          initialWebDomainTokens: initialWebDomainTokens,
           promise: promise
         )
         let hostingController = UIHostingController(rootView: pickerView)
@@ -1084,6 +1086,10 @@ struct BlockedAppsContentView: View {
     isDark ? Color.white.opacity(0.08)
            : Color(red: 0.93, green: 0.93, blue: 0.93)
   }
+  private var dividerColor: Color {
+    isDark ? Color.white.opacity(0.10)
+           : Color.black.opacity(0.08)
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -1110,11 +1116,20 @@ struct BlockedAppsContentView: View {
                   RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .fill(trashBgColor)
                 )
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remove \(item.displayName)")
           }
-          .padding(.vertical, 12)
+          // Fixed row height keeps the system Label's large app icon from
+          // making rows look far apart; a hairline divider does the separating.
+          .frame(height: 56)
+          if index < viewModel.items.count - 1 {
+            Rectangle()
+              .fill(dividerColor)
+              .frame(height: 1)
+          }
         }
       }
 
@@ -1189,6 +1204,7 @@ struct FamilyActivityPickerView: View {
   init(
     initialApplicationTokens: Set<ApplicationToken>,
     initialCategoryTokens: Set<ActivityCategoryToken>,
+    initialWebDomainTokens: Set<WebDomainToken>,
     promise: Promise
   ) {
     self.promise = promise
@@ -1196,6 +1212,7 @@ struct FamilyActivityPickerView: View {
     var initialSelection = FamilyActivitySelection()
     initialSelection.applicationTokens = initialApplicationTokens
     initialSelection.categoryTokens = initialCategoryTokens
+    initialSelection.webDomainTokens = initialWebDomainTokens
     self._selection = State(initialValue: initialSelection)
   }
 
