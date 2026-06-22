@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
   Card,
@@ -52,80 +52,121 @@ const MADHAB_OPTIONS: { key: Madhab; label: string; note: string }[] = [
   { key: "none", label: "Not specified", note: "Use default (Shāfiʿī)" },
 ];
 
+// Persist only after taps settle so rapid changes don't fire racing POSTs that
+// can land out of order and revert the radio. UI updates instantly regardless.
+const PERSIST_DEBOUNCE_MS = 350;
+type ProfileField = "calcMethod" | "madhab";
+
 export default function CalcMethod() {
   const { colors } = useTheme();
   const { profile } = useUser();
   const queryClient = useQueryClient();
-  const [saving, setSaving] = useState<Method | null>(null);
-  const [savingMadhab, setSavingMadhab] = useState<Madhab | null>(null);
 
   const current = (profile?.calcMethod as Method | undefined) ?? "mwl";
   const currentMadhab: Madhab =
     (profile?.madhab as Madhab | undefined) ?? "none";
 
-  const pick = async (m: Method) => {
-    if (m === current || saving) {
-      return;
-    }
-    setSaving(m);
-    hapticSelection();
-    // Optimistically set calcMethod in the cached account so the radio flips
-    // instantly; snapshot first so a failed POST can roll back.
-    const snapshot = queryClient.getQueryData<CfAccount | null>(["cf", "me"]);
-    queryClient.setQueryData<CfAccount | null>(["cf", "me"], (prev) =>
-      prev?.profile == null
-        ? prev
-        : { ...prev, profile: { ...prev.profile, calcMethod: m } }
-    );
-    try {
-      const res = await api.api.v1.me.profile.$post({
-        json: { calcMethod: m },
-      });
-      if (!res.ok) {
-        queryClient.setQueryData(["cf", "me"], snapshot);
-        return;
-      }
-    } catch (err) {
-      queryClient.setQueryData(["cf", "me"], snapshot);
-      throw err;
-    } finally {
-      setSaving(null);
-    }
-    // Background reconciliation only on success; not awaited so a failed refetch
-    // can't spuriously roll back the (already correct) optimistic value.
-    queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
-  };
+  // Per-field debounce timers + the latest pending value, so only the final
+  // selection is POSTed (last-write-wins) and nothing reverts mid-tapping.
+  const methodTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const madhabTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingMethod = useRef<Method | null>(null);
+  const pendingMadhab = useRef<Madhab | null>(null);
 
-  const pickMadhab = async (m: Madhab) => {
-    if (m === currentMadhab || savingMadhab) {
-      return;
-    }
-    setSavingMadhab(m);
-    hapticSelection();
-    // Optimistically set madhab in the cached account so the radio flips
-    // instantly; snapshot first so a failed POST can roll back.
-    const snapshot = queryClient.getQueryData<CfAccount | null>(["cf", "me"]);
-    queryClient.setQueryData<CfAccount | null>(["cf", "me"], (prev) =>
-      prev?.profile == null
-        ? prev
-        : { ...prev, profile: { ...prev.profile, madhab: m } }
-    );
-    try {
-      const res = await api.api.v1.me.profile.$post({ json: { madhab: m } });
-      if (!res.ok) {
-        queryClient.setQueryData(["cf", "me"], snapshot);
+  const persistField = useCallback(
+    async (field: ProfileField, value: string) => {
+      try {
+        await api.api.v1.me.profile.$post({ json: { [field]: value } });
+      } finally {
+        // Reconcile with server truth (confirms the write, or corrects it if
+        // the save failed). The optimistic value already matches on success.
+        queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
+      }
+    },
+    [queryClient]
+  );
+
+  // Write the optimistic value immediately so the radio flips on every tap,
+  // even fast ones; cancel in-flight /me so a focus-refetch can't clobber it.
+  const writeOptimistic = useCallback(
+    (field: ProfileField, value: string) => {
+      queryClient.cancelQueries({ queryKey: ["cf", "me"] });
+      queryClient.setQueryData<CfAccount | null>(["cf", "me"], (prev) =>
+        prev?.profile == null
+          ? prev
+          : { ...prev, profile: { ...prev.profile, [field]: value } }
+      );
+    },
+    [queryClient]
+  );
+
+  const pick = useCallback(
+    (m: Method) => {
+      if (m === current) {
         return;
       }
-    } catch (err) {
-      queryClient.setQueryData(["cf", "me"], snapshot);
-      throw err;
-    } finally {
-      setSavingMadhab(null);
-    }
-    // Background reconciliation only on success; not awaited so a failed refetch
-    // can't spuriously roll back the (already correct) optimistic value.
-    queryClient.invalidateQueries({ queryKey: ["cf", "me"] });
-  };
+      hapticSelection();
+      writeOptimistic("calcMethod", m);
+      pendingMethod.current = m;
+      if (methodTimer.current) {
+        clearTimeout(methodTimer.current);
+      }
+      methodTimer.current = setTimeout(() => {
+        const value = pendingMethod.current;
+        pendingMethod.current = null;
+        methodTimer.current = null;
+        if (value) {
+          persistField("calcMethod", value).catch(() => undefined);
+        }
+      }, PERSIST_DEBOUNCE_MS);
+    },
+    [current, writeOptimistic, persistField]
+  );
+
+  const pickMadhab = useCallback(
+    (m: Madhab) => {
+      if (m === currentMadhab) {
+        return;
+      }
+      hapticSelection();
+      writeOptimistic("madhab", m);
+      pendingMadhab.current = m;
+      if (madhabTimer.current) {
+        clearTimeout(madhabTimer.current);
+      }
+      madhabTimer.current = setTimeout(() => {
+        const value = pendingMadhab.current;
+        pendingMadhab.current = null;
+        madhabTimer.current = null;
+        if (value) {
+          persistField("madhab", value).catch(() => undefined);
+        }
+      }, PERSIST_DEBOUNCE_MS);
+    },
+    [currentMadhab, writeOptimistic, persistField]
+  );
+
+  // Flush a pending write if the user leaves before the debounce fires, so the
+  // last selection is never lost.
+  useEffect(
+    () => () => {
+      if (methodTimer.current) {
+        clearTimeout(methodTimer.current);
+        if (pendingMethod.current) {
+          persistField("calcMethod", pendingMethod.current).catch(
+            () => undefined
+          );
+        }
+      }
+      if (madhabTimer.current) {
+        clearTimeout(madhabTimer.current);
+        if (pendingMadhab.current) {
+          persistField("madhab", pendingMadhab.current).catch(() => undefined);
+        }
+      }
+    },
+    [persistField]
+  );
 
   return (
     <SettingsScreen
@@ -139,9 +180,7 @@ export default function CalcMethod() {
               {i > 0 ? <Divider colors={colors} /> : null}
               <OptionRow
                 colors={colors}
-                disabled={!!saving}
                 onPress={() => pick(m.key)}
-                saving={saving === m.key}
                 selected={current === m.key}
                 subtitle={m.region}
                 title={m.title}
@@ -169,9 +208,7 @@ export default function CalcMethod() {
               {i > 0 ? <Divider colors={colors} /> : null}
               <OptionRow
                 colors={colors}
-                disabled={!!savingMadhab}
                 onPress={() => pickMadhab(m.key)}
-                saving={savingMadhab === m.key}
                 selected={currentMadhab === m.key}
                 subtitle={m.note}
                 title={m.label}
@@ -186,23 +223,19 @@ export default function CalcMethod() {
 
 function OptionRow({
   colors,
-  disabled,
   onPress,
-  saving,
   selected,
   subtitle,
   title,
 }: {
   colors: ThemeColors;
-  disabled: boolean;
   onPress: () => void;
-  saving: boolean;
   selected: boolean;
   subtitle: string;
   title: string;
 }) {
   return (
-    <Pressable disabled={disabled} onPress={onPress}>
+    <Pressable onPress={onPress}>
       {({ pressed }) => (
         <View
           style={{
@@ -243,7 +276,6 @@ function OptionRow({
               borderColor: selected ? colors.primary : colors.border,
               alignItems: "center",
               justifyContent: "center",
-              opacity: saving ? 0.5 : 1,
             }}
           >
             {selected ? (
