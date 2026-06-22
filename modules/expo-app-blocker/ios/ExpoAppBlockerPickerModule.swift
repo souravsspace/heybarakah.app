@@ -73,8 +73,13 @@ class FamilyActivityPickerNativeView: ExpoView {
   func setInitialSelection(_ selection: FamilyActivitySelection) {
     guard !viewModel.didSetInitial else { return }
     viewModel.didSetInitial = true
+    let normalized = normalizeSelection(selection)
+    // Only arm the suppress flag when the assignment actually changes the value
+    // (and therefore fires onChange to reset it). Otherwise the flag would stick
+    // true and swallow the next real user edit.
+    guard viewModel.selection != normalized else { return }
     viewModel.suppressSelectionEvents = true
-    viewModel.selection = normalizeSelection(selection)
+    viewModel.selection = normalized
   }
 
   /// Increments-only: first snapshot records baseline without clearing; higher values clear UI.
@@ -90,11 +95,16 @@ class FamilyActivityPickerNativeView: ExpoView {
   }
 
   private func clearSelectionWithoutRemount() {
+    let cleared = FamilyActivitySelection(includeEntireCategory: true)
+    // Clearing an already-empty picker changes nothing, so onChange would not
+    // fire and the suppress flag would stick true and swallow the next real
+    // edit. Bail when there is nothing to clear.
+    guard viewModel.selection != cleared else { return }
     viewModel.suppressSelectionEvents = true
     var transaction = Transaction()
     transaction.disablesAnimations = true
     withTransaction(transaction) {
-      viewModel.selection = FamilyActivitySelection(includeEntireCategory: true)
+      viewModel.selection = cleared
     }
     // Keep didSetInitial = true so a stale `initialSelection` prop re-delivery
     // from React can't re-seed the picker and undo this clear.
