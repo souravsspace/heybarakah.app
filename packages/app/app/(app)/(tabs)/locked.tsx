@@ -206,6 +206,10 @@ export default function Locked() {
     if (pickerOpen) {
       return;
     }
+    // The picker result is now the source of truth. Mark hydrated so a server
+    // selection query that resolves AFTER the user picks (slow first load)
+    // can't seed-clobber the just-picked selection.
+    hydratedRef.current = true;
     setPickerOpen(true);
     try {
       const items = await presentFamilyActivityPicker();
