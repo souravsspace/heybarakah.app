@@ -54,7 +54,7 @@ export const getPresets: AppRouterHandler<GetPresetsRoute> = async (c) => {
   const user = c.get("user");
   // Lenient like getToday: unauthenticated reads return empty totals, not 401.
   if (!user) {
-    return c.json({ totals: {}, grandTotal: 0 }, OK);
+    return c.json({ totals: {}, monthly: {}, grandTotal: 0 }, OK);
   }
   const db = createDatabase(c.env.DB);
   return c.json(await service.getPresetTotals(db, user.id), OK);
