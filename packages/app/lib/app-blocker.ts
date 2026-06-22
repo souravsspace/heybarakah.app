@@ -4,7 +4,7 @@ import type {
   BlockedItemRemoveEvent,
   FamilyActivityPickerViewProps,
   IOSBlockConfiguration,
-  IOSBlockedItem,
+  IOSPickerResultItem,
   PermissionStatus,
   PrayerBlockWindow,
   RelockResult,
@@ -22,6 +22,8 @@ export type {
   FamilyActivityPickerViewProps,
   IOSBlockConfiguration,
   IOSBlockedItem,
+  IOSPickerResultItem,
+  IOSPickerSummary,
   PermissionStatus,
   PrayerBlockWindow,
   RelockResult,
@@ -202,7 +204,7 @@ export function FamilyActivityPickerView(
   return React.createElement(mod.FamilyActivityPickerView, props);
 }
 
-export function presentFamilyActivityPicker(): Promise<IOSBlockedItem[]> {
+export function presentFamilyActivityPicker(): Promise<IOSPickerResultItem[]> {
   if (!mod) {
     return Promise.resolve([]);
   }
