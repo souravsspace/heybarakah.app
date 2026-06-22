@@ -38,7 +38,7 @@ export function useUser() {
   return ctx;
 }
 
-interface CfAccount {
+export interface CfAccount {
   profile: Profile | null;
   user: (User & { id: string }) | null;
 }

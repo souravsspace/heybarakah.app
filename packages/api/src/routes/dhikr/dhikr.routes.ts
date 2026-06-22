@@ -41,6 +41,7 @@ const TodaySchema = z.object({
 
 const PresetTotalsSchema = z.object({
   totals: z.record(z.string(), z.number()),
+  monthly: z.record(z.string(), z.number()),
   grandTotal: z.number(),
 });
 
@@ -153,8 +154,12 @@ export const incrementPreset = createRoute({
   },
   responses: {
     [OK]: jsonContent(
-      z.object({ presetTotal: z.number(), grandTotal: z.number() }),
-      "Updated preset total + grand total"
+      z.object({
+        presetTotal: z.number(),
+        grandTotal: z.number(),
+        monthlyTotal: z.number(),
+      }),
+      "Updated preset total + grand total + monthly window total"
     ),
     [UNAUTHORIZED]: unauthorizedResponse,
     [UNPROCESSABLE_ENTITY]: validationErrorResponse,

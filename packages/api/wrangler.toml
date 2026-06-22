@@ -53,6 +53,11 @@ new_sqlite_classes = ["SyncHub"]
 # Staging / parallel-verification environment (see §9).
 [env.development]
 name = "barakah-api-dev"
+# Override (not inherit) the top-level custom-domain route. Wrangler inherits
+# top-level `routes` into named envs, so without this a `--env development`
+# deploy would reassign api.heybarakah.app from prod to the dev worker. The dev
+# worker is reached via its *.workers.dev host instead.
+routes = []
 
 # Named environments do not inherit the top-level DO binding/migration blocks.
 [[env.development.durable_objects.bindings]]

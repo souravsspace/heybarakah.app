@@ -26,6 +26,7 @@ export default function DhikrScreen() {
     count,
     increment,
     isLast,
+    monthly,
     next,
     nextDhikr,
     totals,
@@ -77,6 +78,7 @@ export default function DhikrScreen() {
   }, [openRecord]);
 
   const lifetimeActive = totals[active.id] ?? 0;
+  const monthlyActive = monthly[active.id] ?? 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -288,6 +290,25 @@ export default function DhikrScreen() {
         </View>
 
         <View style={{ alignItems: "center", gap: 4, marginBottom: 8 }}>
+          <Text
+            style={{
+              fontSize: 9,
+              fontWeight: "700",
+              letterSpacing: 1.8,
+              color: colors.inkSubtle,
+              textTransform: "uppercase",
+            }}
+          >
+            This month · {active.short}{" "}
+            <Text
+              style={{
+                color: colors.ink,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {monthlyActive.toLocaleString()}
+            </Text>
+          </Text>
           <Text
             style={{
               fontSize: 9,

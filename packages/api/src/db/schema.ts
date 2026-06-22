@@ -280,6 +280,13 @@ export const dhikrPreset = sqliteTable(
     authUserId: text("authUserId").notNull(),
     presetId: text("presetId").notNull(),
     total: integer("total", { mode: "number" }).notNull(),
+    // Rolling 30-day counter that auto-resets, kept alongside the lifetime
+    // `total`. `cycleStart` is the ms epoch the current window opened; once
+    // (now - cycleStart) crosses 30 days the next increment resets the window.
+    monthlyTotal: integer("monthlyTotal", { mode: "number" })
+      .notNull()
+      .default(0),
+    cycleStart: integer("cycleStart", { mode: "number" }).notNull().default(0),
     updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
   },
   (t) => [

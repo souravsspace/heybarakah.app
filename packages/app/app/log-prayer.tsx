@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@/contexts/theme-context";
 import {
   useClearPrayer,
   useLogPrayer,
@@ -56,6 +57,7 @@ export default function LogPrayerScreen() {
   const date = params.date;
 
   const insets = useSafeAreaInsets();
+  const { scheme, colors } = useTheme();
   const { todayPrayerTimes, prayerTimes } = usePrayerTimes();
   const week = useWeekLogs(date ?? dateKey());
   const logPrayer = useLogPrayer();
@@ -116,13 +118,14 @@ export default function LogPrayerScreen() {
     return null;
   }
 
-  const sheetBg = "#0E1311";
-  const fg = "#F7F7F4";
-  const muted = "#A1A1AA";
-  const subtle = "#5E5E62";
-  const hairline = "rgba(255,255,255,0.09)";
-  const pressedBg = "rgba(255,255,255,0.05)";
-  const selectedBg = "rgba(41,96,62,0.12)";
+  const isDark = scheme === "dark";
+  const sheetBg = isDark ? "#0E1311" : colors.surface;
+  const fg = isDark ? "#F7F7F4" : colors.ink;
+  const muted = isDark ? "#A1A1AA" : colors.inkMuted;
+  const subtle = isDark ? "#5E5E62" : colors.inkSubtle;
+  const hairline = isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)";
+  const pressedBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
+  const selectedBg = isDark ? "rgba(41,96,62,0.12)" : "rgba(41,96,62,0.08)";
   const accent = BARAKAH_GREEN;
 
   const rangeText =
