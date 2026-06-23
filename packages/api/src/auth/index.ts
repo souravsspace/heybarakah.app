@@ -41,15 +41,21 @@ function randomOtp(): string {
   return String(n).padStart(6, "0");
 }
 
-// True when this email is the configured App Review demo account, i.e. it
-// should receive the fixed REVIEW_OTP_CODE and no outbound email.
+// True when this email is a configured App Review demo account, i.e. it should
+// receive the fixed REVIEW_OTP_CODE and no outbound email. REVIEW_OTP_EMAIL may
+// be a comma-separated list so a common typo can't lock a reviewer out.
 function isReviewEmail(env: AuthEnv | undefined, email: string): boolean {
   const reviewEmail = env?.REVIEW_OTP_EMAIL;
   const reviewCode = env?.REVIEW_OTP_CODE;
   if (!(reviewEmail && reviewCode)) {
     return false;
   }
-  return email.toLowerCase() === reviewEmail.toLowerCase();
+  const target = email.toLowerCase().trim();
+  return reviewEmail
+    .split(",")
+    .map((e) => e.toLowerCase().trim())
+    .filter(Boolean)
+    .includes(target);
 }
 
 function buildSocialProviders(env: EnvVars) {
