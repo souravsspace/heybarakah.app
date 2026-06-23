@@ -42,6 +42,12 @@ type NextPrayerName = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 const AUTO_REFRESH_RETRY_MS = 30_000;
 const GPS_LOCATION_ID = "gps";
 
+// A fresh-grant GPS fix can come back null/timeout, leaving the screen with no
+// location. Auto-retry a few times so the user doesn't have to close and reopen
+// the app to recover.
+const GPS_RETRY_MS = 5000;
+const GPS_MAX_ATTEMPTS = 5;
+
 const DEFAULT_METHOD_ID = 3;
 
 const CALC_METHOD_MAP: Record<CalcMethod, number> = {
@@ -212,11 +218,20 @@ export function usePrayerTimes() {
   const { state } = useOnboardingState();
   const [today, setToday] = useState(dateKey);
 
+  // Bumped to re-trigger GPS resolution (retry-on-failure + foreground resume).
+  const [locationAttempt, setLocationAttempt] = useState(0);
+  const hasLocationRef = useRef(false);
+
   useEffect(() => {
     const sub = AppState.addEventListener("change", (status) => {
       if (status === "active") {
         const current = dateKey();
         setToday((prev) => (prev === current ? prev : current));
+        // Returning to the app with no location yet: re-attempt resolution. This
+        // is the in-app equivalent of the close-and-reopen workaround.
+        if (!hasLocationRef.current) {
+          setLocationAttempt((a) => a + 1);
+        }
       }
     });
     return () => sub.remove();
@@ -269,6 +284,8 @@ export function usePrayerTimes() {
     return gpsLocation;
   }, [activeLocation, gpsLocation]);
 
+  hasLocationRef.current = Boolean(location);
+
   useEffect(() => {
     if (!storageHydrated) {
       return;
@@ -314,6 +331,20 @@ export function usePrayerTimes() {
       return;
     }
     let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Granted-but-no-fix is the fresh-grant hang: retry a bounded number of
+    // times instead of dead-ending until the screen is remounted.
+    const scheduleRetry = () => {
+      if (locationAttempt + 1 >= GPS_MAX_ATTEMPTS) {
+        return;
+      }
+      retryTimer = setTimeout(() => {
+        if (!cancelled) {
+          setLocationAttempt((a) => a + 1);
+        }
+      }, GPS_RETRY_MS);
+    };
 
     async function loadLocation() {
       setLoadingGps(true);
@@ -334,6 +365,7 @@ export function usePrayerTimes() {
         if (!cancelled) {
           setError("Unable to determine your location.");
           setLoadingGps(false);
+          scheduleRetry();
         }
         return;
       }
@@ -360,13 +392,17 @@ export function usePrayerTimes() {
       if (!cancelled) {
         setError("Unable to determine your location.");
         setLoadingGps(false);
+        scheduleRetry();
       }
     });
 
     return () => {
       cancelled = true;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
     };
-  }, [state.locationGranted, activeLocation]);
+  }, [state.locationGranted, activeLocation, locationAttempt]);
 
   const loadingLocation = activeLocation ? false : loadingGps;
 
