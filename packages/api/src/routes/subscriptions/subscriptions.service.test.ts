@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { createDatabase } from "@/db";
 import { subscriptions } from "@/db/schema";
+import type { EnvVars } from "@/env";
 import { applyMigrations } from "@/test-support/apply-migrations";
 import {
   applyRevenueCatEntitlement,
@@ -159,6 +160,37 @@ describe("subscriptions service — claims + reads", () => {
 
     const result = await getMySubscription(db, { id: user });
     expect(result?.source).toBe("polar");
+  });
+
+  it("getMySubscription returns a synthetic active row for the review email", async () => {
+    const db = createDatabase(env.DB);
+    const reviewEnv = {
+      ...env,
+      REVIEW_OTP_EMAIL: "appreview@heybarakah.app",
+    } as unknown as EnvVars;
+    const result = await getMySubscription(
+      db,
+      { id: "reviewer", email: "AppReview@HeyBarakah.app" },
+      reviewEnv
+    );
+    expect(result?.status).toBe("active");
+    expect(result?.expiresAt).toBeNull();
+    // Never persisted — nothing was written to the DB for this user.
+    const rows = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.authUserId, "reviewer"));
+    expect(rows).toHaveLength(0);
+  });
+
+  it("getMySubscription ignores the review bypass when REVIEW_OTP_EMAIL is unset", async () => {
+    const db = createDatabase(env.DB);
+    const result = await getMySubscription(
+      db,
+      { id: "no-review", email: "appreview@heybarakah.app" },
+      { ...env, REVIEW_OTP_EMAIL: undefined } as unknown as EnvVars
+    );
+    expect(result).toBeNull();
   });
 
   it("claimPolarByEmail links unowned polar rows to the user", async () => {
