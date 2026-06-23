@@ -183,6 +183,20 @@ describe("subscriptions service — claims + reads", () => {
     expect(rows).toHaveLength(0);
   });
 
+  it("getMySubscription matches any email in a comma-separated REVIEW_OTP_EMAIL", async () => {
+    const db = createDatabase(env.DB);
+    const reviewEnv = {
+      ...env,
+      REVIEW_OTP_EMAIL: "appreview@heybarakah.app, appreview@heybarkah.app",
+    } as unknown as EnvVars;
+    const result = await getMySubscription(
+      db,
+      { id: "reviewer-typo", email: "appreview@heybarkah.app" },
+      reviewEnv
+    );
+    expect(result?.status).toBe("active");
+  });
+
   it("getMySubscription ignores the review bypass when REVIEW_OTP_EMAIL is unset", async () => {
     const db = createDatabase(env.DB);
     const result = await getMySubscription(
