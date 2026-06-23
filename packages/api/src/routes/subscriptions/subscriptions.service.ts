@@ -29,10 +29,58 @@ export interface SessionUser {
   id: string;
 }
 
+// App Review demo account: when REVIEW_OTP_EMAIL is set and matches the signed-in
+// user, hand back a synthetic active subscription so Apple reviewers clear the
+// paywall and can test the core feature. The row is never written to the DB, so
+// deleting the REVIEW_OTP_EMAIL secret instantly disables the bypass (same secret
+// that gates the static sign-in OTP).
+function buildReviewSubscriptionRow(user: SessionUser): SubscriptionRow {
+  const now = new Date().toISOString();
+  return {
+    id: `review-${user.id}`,
+    authUserId: user.id,
+    customerEmail: user.email ?? null,
+    productId: "lifetime",
+    status: "active",
+    source: "mock",
+    claimedAt: now,
+    activatedAt: now,
+    updatedAt: now,
+    expiresAt: null,
+    polarCustomerId: null,
+    polarProductId: null,
+    polarOrderId: null,
+    rcAppUserId: null,
+    rcOriginalAppUserId: null,
+    rcProductIdentifier: null,
+    rcEntitlementId: null,
+    rcStore: null,
+    rcPeriodType: null,
+    rcWillRenew: null,
+    rcLatestPurchaseAt: null,
+  };
+}
+
+function isReviewSubscriptionEmail(
+  env: EnvVars | undefined,
+  email: string | null | undefined
+): boolean {
+  const reviewEmail = env?.REVIEW_OTP_EMAIL;
+  if (!(reviewEmail && email)) {
+    return false;
+  }
+  return email.toLowerCase() === reviewEmail.toLowerCase();
+}
+
 export async function getMySubscription(
   db: Database,
-  user: SessionUser
+  user: SessionUser,
+  env?: EnvVars
 ): Promise<SubscriptionRow | null> {
+  if (isReviewSubscriptionEmail(env, user.email)) {
+    return buildReviewSubscriptionRow(user);
+  }
+
   const activeRows = await db
     .select()
     .from(subscriptions)
