@@ -25,17 +25,12 @@ user), unless noted. None used for tracking.
 |-----------------|-----------|---------|--------|--------|
 | **Email Address** | Yes | App Functionality, Analytics | Yes | account + PostHog identify (`user-context.tsx:89`) |
 | **Name** | Yes | App Functionality, Analytics | Yes | account + PostHog identify (`user-context.tsx:90`) |
-| **Precise Location** | Yes | App Functionality | Yes* | `expo-location` for prayer-time calc (`app.json:113`) |
+| **Precise Location** | Yes | App Functionality | Yes | `expo-location`; coords stored server-side (`use-locations.ts:205`) |
 | **Purchase History** | Yes | App Functionality, Analytics | Yes | RevenueCat IAP |
 | **Product Interaction** (Usage Data) | Yes | Analytics | Yes | PostHog autocapture taps/screens (`_layout.tsx:92`) |
 | **Other Usage Data** (app lifecycle) | Yes | Analytics | Yes | `captureAppLifecycleEvents` (`analytics.ts:22`) |
 | **Crash Data** (Diagnostics) | Yes | App Functionality, Analytics | Yes | PostHog `captureException` (`analytics.ts:70`) |
 | **User ID** | Yes | App Functionality, Analytics | Yes | Better Auth user id = PostHog distinct id |
-
-\* **Precise Location** — verify whether the coordinate is stored server-side or
-only computed on-device for prayer times. If on-device only and never sent, you
-may still declare it as collected for App Functionality (location is used). If it
-leaves the device, keep it declared. When unsure, declare it (safer).
 
 ## Notes per purpose
 - **App Functionality** — sign-in, prayer-time calc, subscription gating, account.
@@ -50,4 +45,3 @@ leaves the device, keep it declared. When unsure, declare it (safer).
 - [ ] No data type marked "Used to Track You"
 - [ ] Email, Name, Location, Purchases, Usage, Crash, User ID all declared
 - [ ] Privacy policy URL present and reachable
-- [ ] Confirm Precise Location storage (note above)
