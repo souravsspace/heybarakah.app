@@ -18,10 +18,14 @@ export const getMySubscription: AppRouterHandler<
     return c.json(null, OK);
   }
   const db = createDatabase(c.env.DB);
-  const row = await service.getMySubscription(db, {
-    id: user.id,
-    email: user.email,
-  });
+  const row = await service.getMySubscription(
+    db,
+    {
+      id: user.id,
+      email: user.email,
+    },
+    c.env
+  );
   return c.json(row, OK);
 };
 
