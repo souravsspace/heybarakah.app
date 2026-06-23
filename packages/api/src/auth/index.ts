@@ -35,6 +35,23 @@ function buildTrustedOrigins(env: EnvVars): string[] {
   return origins;
 }
 
+// 6-digit OTP for real users. Web Crypto (workerd runtime — no node:crypto).
+function randomOtp(): string {
+  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
+  return String(n).padStart(6, "0");
+}
+
+// True when this email is the configured App Review demo account, i.e. it
+// should receive the fixed REVIEW_OTP_CODE and no outbound email.
+function isReviewEmail(env: AuthEnv | undefined, email: string): boolean {
+  const reviewEmail = env?.REVIEW_OTP_EMAIL;
+  const reviewCode = env?.REVIEW_OTP_CODE;
+  if (!(reviewEmail && reviewCode)) {
+    return false;
+  }
+  return email.toLowerCase() === reviewEmail.toLowerCase();
+}
+
 function buildSocialProviders(env: EnvVars) {
   return {
     ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
@@ -106,11 +123,20 @@ export function createAuth(
             otpLength: 6,
             expiresIn: 300,
             allowedAttempts: 3,
+            generateOTP: ({ email }) =>
+              isReviewEmail(env, email)
+                ? (env?.REVIEW_OTP_CODE as string)
+                : randomOtp(),
             sendVerificationOTP({ email, otp, type }) {
               if (type !== "sign-in" && type !== "email-verification") {
                 return Promise.resolve();
               }
               if (!env) {
+                return Promise.resolve();
+              }
+              // App Review demo account uses a static code documented in the
+              // review notes; reviewers can't read our inbox, so skip the email.
+              if (isReviewEmail(env, email)) {
                 return Promise.resolve();
               }
               return sendOTPEmail(env, { to: email, code: otp });
