@@ -69,7 +69,13 @@ function isReviewSubscriptionEmail(
   if (!(reviewEmail && email)) {
     return false;
   }
-  return email.toLowerCase() === reviewEmail.toLowerCase();
+  // REVIEW_OTP_EMAIL may be a comma-separated list (mirrors auth.isReviewEmail).
+  const target = email.toLowerCase().trim();
+  return reviewEmail
+    .split(",")
+    .map((e) => e.toLowerCase().trim())
+    .filter(Boolean)
+    .includes(target);
 }
 
 export async function getMySubscription(
