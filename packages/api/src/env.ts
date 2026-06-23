@@ -34,6 +34,12 @@ export const EnvSchema = z.object({
   ALLOW_MOCK_SUBSCRIPTIONS: z.string().optional(),
   ALLOW_EXPO_ORIGINS: z.string().optional(),
 
+  // App Review demo account — when both are set, sign-in OTP for this exact
+  // email is the fixed REVIEW_OTP_CODE (no email sent), so Apple reviewers can
+  // enter the OTP-only app. Unset after approval to disable the static code.
+  REVIEW_OTP_EMAIL: z.string().optional(),
+  REVIEW_OTP_CODE: z.string().optional(),
+
   // Debug/observability flags (isTruthyFlag: "true" or "1"). DEBUG exposes
   // error stacks + docs UI; LOG_LEVEL enables debug logs; DOCS_ENABLED exposes
   // the OpenAPI doc + Scalar UI without the rest of DEBUG.
