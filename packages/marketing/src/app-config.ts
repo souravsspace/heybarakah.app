@@ -10,10 +10,14 @@ const APP_STORE_URL =
   "https://apps.apple.com/hk/app/prayer-lock-barakah/id6772314573?l=en-GB";
 
 // Polar checkout link with the discount PRESET attached, so 20% applies
-// silently for auto-discount countries. Leave "" until the preset link exists
-// in Polar; resolveCheckout() then falls back to prefilling the code instead.
-const POLAR_CHECKOUT_DISCOUNT =
+// silently for auto-discount countries. Sandbox while developing, live in prod.
+// Leave "" to fall back to prefilling the code on the base link instead.
+const POLAR_CHECKOUT_DISCOUNT_PROD =
   "https://buy.polar.sh/polar_cl_adr09zvmQ7PjoSPRvWssdIwesW3vklGE42B5p05Cdq9";
+const POLAR_CHECKOUT_DISCOUNT_SANDBOX = "";
+const discountCheckoutUrl = import.meta.env.DEV
+  ? POLAR_CHECKOUT_DISCOUNT_SANDBOX
+  : POLAR_CHECKOUT_DISCOUNT_PROD;
 
 export const appConfig = {
   brand: {
@@ -84,7 +88,7 @@ export const appConfig = {
   discount: {
     code: "UMMAH20",
     percent: 20,
-    presetCheckoutUrl: POLAR_CHECKOUT_DISCOUNT,
+    presetCheckoutUrl: discountCheckoutUrl,
     autoCountries: [
       "PK", "IN", "BD", "ID", "EG", "NG", "MA", "DZ", "TN", "LY",
       "SD", "IQ", "YE", "SY", "JO", "PS", "LB", "AF", "IR", "UZ",
