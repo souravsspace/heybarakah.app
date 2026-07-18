@@ -14,7 +14,8 @@ const APP_STORE_URL =
 // Leave "" to fall back to prefilling the code on the base link instead.
 const POLAR_CHECKOUT_DISCOUNT_PROD =
   "https://buy.polar.sh/polar_cl_adr09zvmQ7PjoSPRvWssdIwesW3vklGE42B5p05Cdq9";
-const POLAR_CHECKOUT_DISCOUNT_SANDBOX = "";
+const POLAR_CHECKOUT_DISCOUNT_SANDBOX =
+  "https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_dAjjg4HysTi28OHqAUmfD7dB67OKSqEIQbMnu1eXH79/redirect";
 const discountCheckoutUrl = import.meta.env.DEV
   ? POLAR_CHECKOUT_DISCOUNT_SANDBOX
   : POLAR_CHECKOUT_DISCOUNT_PROD;
