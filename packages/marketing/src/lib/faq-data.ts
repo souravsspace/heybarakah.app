@@ -21,16 +21,16 @@ export const faqItems: readonly FaqItem[] = [
     a: "Yes. Prayer times, qibla, and the lock all work offline once configured. Your data never leaves your device.",
   },
   {
-    q: "What happens if I buy before launch?",
-    a: "You reserve founding lifetime access at the launch price. At launch, Barakah emails your access instructions. If you prefer not to pay before the app opens, join the free waitlist instead.",
+    q: "What does the lifetime purchase get me?",
+    a: "Barakah is live on the App Store and free to download. The one-time founding purchase locks the lifetime price for good and unlocks reciter packs, Jumu'ah and Ramadan focus modes, and every future update. No subscription, no renewal.",
   },
   {
     q: "Is Barakah free?",
     a: "Core lock, adhan, qibla, and times are free. A modest one-time purchase supports development and unlocks reciter packs, Jumu'ah and Ramadan focus modes, and every future update.",
   },
   {
-    q: "Why should I trust an early-access purchase?",
-    a: "Because the promise is intentionally narrow: no subscription, no renewal, private prayer settings, and a launch email when access opens. The checkout is handled securely by Polar.",
+    q: "Why should I trust a founding purchase?",
+    a: "Because the promise is intentionally narrow: no subscription, no renewal, and private prayer settings that stay on your device. The checkout is handled securely by Polar.",
   },
   {
     q: "Is there an app that locks your phone during prayer times?",

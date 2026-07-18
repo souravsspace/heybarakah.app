@@ -1,7 +1,7 @@
 ---
 import { appConfig } from "../app-config";
 
-const { brand, routes } = appConfig;
+const { brand, routes, store } = appConfig;
 ---
 
 <header class="nav" id="nav">
@@ -16,10 +16,10 @@ const { brand, routes } = appConfig;
       <a class="lnk" href="#prayer-day">Prayer day</a>
       <a class="lnk" href="#amanah">Amanah</a>
       <a class="lnk" href="#features">What it locks</a>
-      <a class="lnk" href={routes.pricing}>Pricing</a>
+      <a class="lnk lifetime-only" href={routes.pricing}>Pricing</a>
     </nav>
     <div class="nav-cta-group">
-      <a class="btn btn-primary btn-sm" href={routes.pricing}>Reserve access</a>
+      <a class="btn btn-primary btn-sm" href={store.ios.url}>Download</a>
     </div>
   </div>
 </header>

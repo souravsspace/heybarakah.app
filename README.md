@@ -18,7 +18,6 @@ Monorepo managed with Turbo + Bun.
   - `ShieldAction` — custom shield shown when a blocked app is opened.
 - `packages/marketing` — Astro site deployed to Cloudflare (heybarakah.app).
 - `packages/ui`, `packages/hooks`, `packages/lib`, `packages/constants` — shared workspace packages.
-- `design/` — brand source of truth (tokens, type, components, chats). Read `design/README.md` first for any UI work.
 
 ## Develop
 

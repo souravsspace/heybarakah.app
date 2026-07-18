@@ -144,10 +144,10 @@ const softwareNode = {
   keywords: appConfig.seo.keywords.join(", "),
   offers: {
     "@type": "Offer",
-    price: "39.99",
+    price: "99",
     priceCurrency: "USD",
     category: "LifetimeAccess",
-    availability: "https://schema.org/PreOrder",
+    availability: "https://schema.org/InStock",
     url: appConfig.pricing.checkoutUrl,
   },
   publisher: { "@id": orgId },
@@ -186,6 +186,13 @@ const structuredData = {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
+
+    {/* Founding lifetime offer surfaces on a fraction of visits only. Runs
+        pre-paint so gated blocks never flash in or out. App Store download
+        stays the always-on primary CTA regardless. */}
+    <script is:inline>
+      if (Math.random() < 0.4) document.documentElement.classList.add("ll-on");
+    </script>
 
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -263,6 +270,13 @@ const structuredData = {
     <script
       type="application/ld+json"
       set:html={JSON.stringify(structuredData).replace(/<\/script/gi, "<\\/script")}
+    />
+
+    <script
+      is:inline
+      defer
+      src="https://api.trysonex.com/sonex.js"
+      data-website-id="7d8407c1-a7e8-472b-9100-5642451a180f"
     />
   </head>
   <body class:list={["text-[color:var(--color-fg)]", bodyClass]}>

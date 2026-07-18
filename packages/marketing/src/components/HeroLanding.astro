@@ -1,5 +1,7 @@
 ---
 import { appConfig } from "../app-config";
+
+const { checkout } = Astro.locals;
 ---
 
 <section class="hero" data-od-id="hero">
@@ -23,13 +25,15 @@ import { appConfig } from "../app-config";
       <h1 class="reveal d1">Your phone,<br />on <span class="it">prayer time.</span></h1>
       <p class="hero-sub reveal d2">Barakah quietly locks distractions during salah. Five times a day, your phone steps aside so you can show up — not scroll.</p>
       <div class="hero-actions reveal d3">
-        <a class="btn btn-primary" href={appConfig.pricing.checkoutUrl}>Reserve lifetime <span class="ar" aria-hidden="true">→</span></a>
-        <a class="btn btn-ghost" href="#waitlist">Join waitlist</a>
+        <a class="appstore-badge" href={appConfig.store.ios.url} aria-label="Download Barakah on the App Store">
+          <img src="/app-store-badge.svg" alt="Download on the App Store" width="135" height="40" decoding="async" />
+        </a>
+        <a class="btn btn-ghost lifetime-only" href={checkout.url}>Reserve lifetime <span class="ar" aria-hidden="true">→</span></a>
       </div>
       <div class="hero-trust reveal d4">
-        <strong>Secure checkout by Polar</strong>
+        <strong>Free to download</strong>
         <span class="dot"></span>
-        <span>Launch email only</span>
+        <span>On the App Store now</span>
         <span class="dot"></span>
         <span>Private prayer settings</span>
       </div>

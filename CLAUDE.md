@@ -4,35 +4,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## Design System Reference
-
-When designing or implementing any UI, components, layouts, or visual features, **always consult the `design/` directory first**. It is the single source of truth for the Barakah brand. Do not assume tokens, colors, or patterns — look them up.
-
-**Read these files in order:**
-
-1. **`design/README.md`** — Handoff overview from Claude Design. Read it first.
-2. **`design/chats/`** — Conversation transcripts that capture intent and the user's final decisions.
-3. **`design/project/README.md`** — Brand context, content fundamentals, visual foundations, iconography.
-4. **`design/project/SKILL.md`** — Agent Skill manifest with cross-tool guidance.
-5. **`design/project/colors_and_type.css`** — Canonical CSS custom properties and semantic type classes.
-6. **`design/project/preview/`** — Per-component HTML cards (tokens, buttons, inputs, option rows, plan cards, etc.).
-7. **`design/project/ui_kits/app/`** — Click-thru HTML recreation of the mobile app (welcome → onboarding → paywall → home).
-8. **`design/project/` route-group dirs (`(app)`, `(onboarding)`, `(account)`, `(settings)`, `onboarding/`, `ui/`)** — TSX prototypes mirroring the Expo app screens/components.
-9. **`design/project/assets/`** and **`design/project/fonts/`** — Brand marks, icons, font files.
-
-**Key rules to internalize:**
-
-- Mosque green `#29603E` is the **only** accent. Everything else is black, white, and cool grays.
-- Serif (Libre Baskerville) for headlines only. Sans (Inter) for all UI and body.
-- No emoji anywhere. No gradients on backgrounds. No bouncy animations.
-- Whitespace and hairline borders create separation — not shadows.
-- Sentence case everywhere except the announcement bar and primary CTA label (all-caps).
-- Always honor Islamic typographic conventions: **Allah, ﷺ, Qur'an, du'a, salah, fajr, dhuhr, asr, maghrib, isha**.
-
-All design work must align with the tokens, components, and rules in `design/`.
-
----
-
 ## 0. Mindset & Approach
 
 **Think before coding. Don't assume. Don't hide confusion. Surface tradeoffs.**

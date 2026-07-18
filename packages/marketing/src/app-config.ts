@@ -5,6 +5,21 @@ const POLAR_CHECKOUT_SANDBOX =
   "https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_z6qSjYtqHLCf3EAjnxdzsXnrNXztHj0Nh7PHb20qNTf/redirect";
 const checkoutUrl = import.meta.env.DEV ? POLAR_CHECKOUT_SANDBOX : POLAR_CHECKOUT_PROD;
 
+// Live App Store listing. Primary CTA now that Barakah has launched on iOS.
+const APP_STORE_URL =
+  "https://apps.apple.com/hk/app/prayer-lock-barakah/id6772314573?l=en-GB";
+
+// Polar checkout link with the discount PRESET attached, so 20% applies
+// silently for auto-discount countries. Sandbox while developing, live in prod.
+// Leave "" to fall back to prefilling the code on the base link instead.
+const POLAR_CHECKOUT_DISCOUNT_PROD =
+  "https://buy.polar.sh/polar_cl_adr09zvmQ7PjoSPRvWssdIwesW3vklGE42B5p05Cdq9";
+const POLAR_CHECKOUT_DISCOUNT_SANDBOX =
+  "https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_dAjjg4HysTi28OHqAUmfD7dB67OKSqEIQbMnu1eXH79/redirect";
+const discountCheckoutUrl = import.meta.env.DEV
+  ? POLAR_CHECKOUT_DISCOUNT_SANDBOX
+  : POLAR_CHECKOUT_DISCOUNT_PROD;
+
 export const appConfig = {
   brand: {
     name: "Barakah App",
@@ -57,19 +72,34 @@ export const appConfig = {
   },
 
   store: {
-    ios: { url: "#", status: "Coming soon" },
+    ios: { url: APP_STORE_URL, status: "Live" },
     android: { url: "#", status: "Coming soon" },
   },
 
   pricing: {
-    lifetimePrice: "$39.99",
+    lifetimePrice: "$99",
     originalPrice: "$165",
     label: "Early access — lifetime",
     checkoutUrl,
   },
 
+  // Regional pricing. Auto-discount countries hit the preset checkout link
+  // (silent 20% off); everyone else sees the code and gets it prefilled at
+  // checkout. autoCountries is ISO 3166-1 alpha-2 — edit freely.
+  discount: {
+    code: "UMMAH20",
+    percent: 20,
+    presetCheckoutUrl: discountCheckoutUrl,
+    autoCountries: [
+      "PK", "IN", "BD", "ID", "EG", "NG", "MA", "DZ", "TN", "LY",
+      "SD", "IQ", "YE", "SY", "JO", "PS", "LB", "AF", "IR", "UZ",
+      "TR", "KE", "TZ", "UG", "GH", "SN", "ML", "PH", "LK", "NP",
+      "KZ", "KG", "TJ", "TM", "AZ", "ET", "MR", "SO", "CM", "CI",
+    ] as readonly string[],
+  },
+
   routes: {
-    waitlist: "#waitlist",
+    newsletter: "#newsletter",
     pricing: "#pricing",
     faq: "#faq",
     features: "#features",
@@ -96,8 +126,8 @@ export const appConfig = {
       logoAlt: "Netflix",
       description: "A standard Netflix subscription is",
       price: "$19.99 / month.",
-      comparison: "Barakah lifetime costs less than 2 months of Netflix.",
-      comparisonBold: "2 months",
+      comparison: "Barakah is a one-time payment, not a monthly bill.",
+      comparisonBold: "one-time payment",
     },
     {
       name: "Food Delivery",
@@ -105,8 +135,8 @@ export const appConfig = {
       logoAlt: "Uber Eats",
       description: "Average order value for a single delivery in the US is",
       price: "$27.30.",
-      comparison: "Barakah lifetime costs less than 1.5 takeout orders.",
-      comparisonBold: "1.5 takeout orders",
+      comparison: "Barakah is paid once, then never again.",
+      comparisonBold: "never again",
     },
   ],
 

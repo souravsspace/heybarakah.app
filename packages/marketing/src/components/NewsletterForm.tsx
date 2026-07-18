@@ -6,7 +6,7 @@ type Status = "idle" | "submitting" | "success" | "error";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function WaitlistForm() {
+export default function NewsletterForm() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +42,7 @@ export default function WaitlistForm() {
     return (
       <div className="waitlist done" role="status">
         <span style={{ color: "#fff" }}>
-          {error ?? "Jazak Allahu khayran — you're on the list."}
+          {error ?? "Jazak Allahu khayran — you're subscribed."}
         </span>
       </div>
     );
@@ -50,7 +50,7 @@ export default function WaitlistForm() {
 
   return (
     <>
-      <form aria-label="Join the waitlist" className="waitlist" noValidate onSubmit={onSubmit}>
+      <form aria-label="Subscribe to the newsletter" className="waitlist" noValidate onSubmit={onSubmit}>
         <input
           aria-label="Email address"
           autoComplete="email"
@@ -61,7 +61,7 @@ export default function WaitlistForm() {
           value={email}
         />
         <button className="btn btn-light" disabled={status === "submitting"} type="submit">
-          {status === "submitting" ? "Joining" : "Join the waitlist"}
+          {status === "submitting" ? "Subscribing" : "Subscribe"}
         </button>
       </form>
       {status === "error" && error ? (

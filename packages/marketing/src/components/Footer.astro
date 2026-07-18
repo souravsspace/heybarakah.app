@@ -1,7 +1,7 @@
 ---
 import { appConfig } from "../app-config";
 
-const { brand, contact, social } = appConfig;
+const { brand, contact, social, store } = appConfig;
 const year = new Date().getFullYear();
 ---
 
@@ -48,7 +48,7 @@ const year = new Date().getFullYear();
         <h4>Company</h4>
         <ul>
           <li><a href="#faq">FAQs</a></li>
-          <li><a href="#waitlist">Join waitlist</a></li>
+          <li><a href={store.ios.url}>Download app</a></li>
           <li><a href={`mailto:${contact.email}`}>Email us</a></li>
           <li><a href={social.twitter}>Twitter / X</a></li>
         </ul>

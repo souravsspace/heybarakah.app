@@ -1,11 +1,12 @@
 ---
 import { appConfig } from "../app-config";
-import WaitlistForm from "./WaitlistForm";
+import NewsletterForm from "./NewsletterForm";
 
 const { pricing } = appConfig;
+const { checkout } = Astro.locals;
 ---
 
-<section class="final geo geo-light" id="waitlist" data-od-id="waitlist">
+<section class="final geo geo-light" id="newsletter" data-od-id="newsletter">
   <div class="final-halo" aria-hidden="true"></div>
   <div class="wrap">
     <span class="ornament on-green reveal" aria-hidden="true"
@@ -21,22 +22,29 @@ const { pricing } = appConfig;
     <p class="final-bism reveal">Bismillah ir-Rahman ir-Raheem.</p>
     <h2 class="reveal d1">Show up; <span class="it">not scroll.</span></h2>
     <p class="reveal d2">
-      Join the waitlist for free, or reserve founding lifetime access today if you already know you
-      want Barakah when it launches.
+      Get the occasional note from Barakah: new reciters, focus modes for Ramadan and Jumu'ah, and
+      gentle reminders to protect your salah. No noise.
     </p>
     <div class="reveal d3">
-      <WaitlistForm client:visible />
+      <NewsletterForm client:visible />
     </div>
-    <div class="launch-notes reveal d3" aria-label="Launch notes">
-      <span>iPhone and Android launch list</span>
-      <span>One launch email</span>
+    <div class="launch-notes reveal d3" aria-label="What to expect">
+      <span>New reciters and features</span>
+      <span>Roughly one email a month</span>
       <span>Prayer settings stay private</span>
     </div>
-    <p class="final-or reveal d3">
-      Ready now? <a href={pricing.checkoutUrl}
+    <p class="final-or reveal d3 lifetime-only">
+      Ready for more? <a href={checkout.url}
         >Reserve founding lifetime access for {pricing.lifetimePrice}</a
       >
     </p>
-    <p class="final-fine reveal d3">No spam. One email at launch. Your address stays with us.</p>
+    {checkout.showCode ? (
+      <p class="final-code reveal d3 lifetime-only">
+        Use code <b>{checkout.code}</b> for {checkout.percent}% off at checkout.
+      </p>
+    ) : (
+      <p class="final-code reveal d3 lifetime-only">{checkout.percent}% off applied automatically.</p>
+    )}
+    <p class="final-fine reveal d3">No spam. Unsubscribe anytime. Your address stays with us.</p>
   </div>
 </section>
