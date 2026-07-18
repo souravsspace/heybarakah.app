@@ -3,6 +3,7 @@ import { appConfig } from "../app-config";
 import NewsletterForm from "./NewsletterForm";
 
 const { pricing } = appConfig;
+const { checkout } = Astro.locals;
 ---
 
 <section class="final geo geo-light" id="newsletter" data-od-id="newsletter">
@@ -33,10 +34,17 @@ const { pricing } = appConfig;
       <span>Prayer settings stay private</span>
     </div>
     <p class="final-or reveal d3 lifetime-only">
-      Ready for more? <a href={pricing.checkoutUrl}
+      Ready for more? <a href={checkout.url}
         >Reserve founding lifetime access for {pricing.lifetimePrice}</a
       >
     </p>
+    {checkout.showCode ? (
+      <p class="final-code reveal d3 lifetime-only">
+        Use code <b>{checkout.code}</b> for {checkout.percent}% off at checkout.
+      </p>
+    ) : (
+      <p class="final-code reveal d3 lifetime-only">{checkout.percent}% off applied automatically.</p>
+    )}
     <p class="final-fine reveal d3">No spam. Unsubscribe anytime. Your address stays with us.</p>
   </div>
 </section>
