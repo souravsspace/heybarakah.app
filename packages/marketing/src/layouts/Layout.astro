@@ -187,6 +187,13 @@ const structuredData = {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
 
+    {/* Founding lifetime offer surfaces on a fraction of visits only. Runs
+        pre-paint so gated blocks never flash in or out. App Store download
+        stays the always-on primary CTA regardless. */}
+    <script is:inline>
+      if (Math.random() < 0.4) document.documentElement.classList.add("ll-on");
+    </script>
+
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="keywords" content={appConfig.seo.keywords.join(", ")} />
