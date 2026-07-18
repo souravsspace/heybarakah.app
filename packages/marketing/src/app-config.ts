@@ -5,6 +5,10 @@ const POLAR_CHECKOUT_SANDBOX =
   "https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_z6qSjYtqHLCf3EAjnxdzsXnrNXztHj0Nh7PHb20qNTf/redirect";
 const checkoutUrl = import.meta.env.DEV ? POLAR_CHECKOUT_SANDBOX : POLAR_CHECKOUT_PROD;
 
+// Live App Store listing. Primary CTA now that Barakah has launched on iOS.
+const APP_STORE_URL =
+  "https://apps.apple.com/hk/app/prayer-lock-barakah/id6772314573?l=en-GB";
+
 export const appConfig = {
   brand: {
     name: "Barakah App",
@@ -57,7 +61,7 @@ export const appConfig = {
   },
 
   store: {
-    ios: { url: "#", status: "Coming soon" },
+    ios: { url: APP_STORE_URL, status: "Live" },
     android: { url: "#", status: "Coming soon" },
   },
 
@@ -69,7 +73,7 @@ export const appConfig = {
   },
 
   routes: {
-    waitlist: "#waitlist",
+    newsletter: "#newsletter",
     pricing: "#pricing",
     faq: "#faq",
     features: "#features",
