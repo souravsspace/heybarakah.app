@@ -271,6 +271,13 @@ const structuredData = {
       type="application/ld+json"
       set:html={JSON.stringify(structuredData).replace(/<\/script/gi, "<\\/script")}
     />
+
+    <script
+      is:inline
+      defer
+      src="https://api.trysonex.com/sonex.js"
+      data-website-id="7d8407c1-a7e8-472b-9100-5642451a180f"
+    />
   </head>
   <body class:list={["text-[color:var(--color-fg)]", bodyClass]}>
     <AnnounceBar />
