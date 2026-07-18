@@ -13,7 +13,7 @@ const APP_STORE_URL =
 // silently for auto-discount countries. Leave "" until the preset link exists
 // in Polar; resolveCheckout() then falls back to prefilling the code instead.
 const POLAR_CHECKOUT_DISCOUNT =
-  "https://buy.polar.sh/polar_cl_SDwUskblSPZq9JOyD0fxPpMKdiv2FfZoJBx0J41nWjw";
+  "https://buy.polar.sh/polar_cl_adr09zvmQ7PjoSPRvWssdIwesW3vklGE42B5p05Cdq9";
 
 export const appConfig = {
   brand: {
