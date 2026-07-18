@@ -223,29 +223,36 @@ section > .wrap { position: relative; z-index: 1; }
   margin-top: 36px;
   flex-wrap: wrap;
 }
-.hero-actions .appstore-badge,
 .hero-actions .btn {
-  width: var(--hero-cta-w);
   height: var(--hero-cta-h);
   min-height: var(--hero-cta-h);
   border-radius: var(--hero-cta-r);
-}
-.hero-actions .btn {
-  padding: 0 12px;
+  padding: 0 22px;
   font-size: 14px;
   line-height: 1;
   box-shadow: 0 10px 26px rgba(41,96,62,0.22);
 }
 .hero-actions .btn-ghost {
-  width: 156px;
   border-color: rgba(41,96,62,0.22);
   background: rgba(255,255,255,0.52);
   box-shadow: none;
 }
-.hero-actions .appstore-badge svg {
-  width: 100%;
+.appstore-badge {
+  display: inline-flex;
+  align-items: center;
+  height: var(--hero-cta-h, 52px);
+  border-radius: 9px;
+  transition: transform .22s var(--ease), box-shadow .22s var(--ease);
+}
+.appstore-badge img {
   height: 100%;
-  border-radius: var(--hero-cta-r);
+  width: auto;
+  display: block;
+  border-radius: inherit;
+}
+.appstore-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.22);
 }
 .hero-trust { display: flex; align-items: center; gap: 14px; margin-top: 26px; color: var(--muted); font-size: 13px; }
 .hero-trust .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border-2); }
