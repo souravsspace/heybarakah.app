@@ -90,3 +90,10 @@ body {
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/* Founding lifetime offer. Hidden unless the pre-paint gate in Layout.astro
+   marks this visit (html.ll-on). Inverted so shown elements keep their
+   natural display; !important beats component display rules. */
+html:not(.ll-on) .lifetime-only {
+  display: none !important;
+}
