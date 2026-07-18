@@ -9,11 +9,12 @@ Barakah is a prayer-lock app for Muslims. Pricing is intentionally simple: one l
 - Offline: yes
 
 ## Lifetime — early access
-- Price: $39.99 USD (one-time)
+- Price: $99 USD (one-time)
 - Originally: $165 USD
+- Regional discount: 20% off with code UMMAH20 (auto-applied in some regions)
 - Billing: one-time payment, no subscription, no renewal
 - Includes: everything in Free, plus reciter packs and family sharing, plus all future updates
-- Platforms: iOS (coming soon), Android (coming soon)
+- Platforms: iOS (live on the App Store), Android (coming soon)
 - Checkout: https://buy.polar.sh/polar_cl_Y5OrCssvZrWKPBmeacK37ZHOtdBgjBd4R1Hw43u4P8Q
 
 ## Contact
