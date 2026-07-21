@@ -40,6 +40,7 @@ import {
   relockApps,
   removeBlockedItem,
   requestPermissions,
+  scheduleTestWindow,
   setBlockConfiguration,
   setBlockedApps,
   startMonitoring,
@@ -1108,6 +1109,39 @@ function DevPanel({
     }
   }, [androidPackages, iosItems]);
 
+  // Reproduces the REAL native salah path: schedules a DeviceActivity window
+  // ~90s out so the monitor extension's `intervalDidStart` fires (unlike
+  // "Activate shield now", which is a foreground-only shortcut that never
+  // touches DeviceActivity). Background the app after tapping, then watch
+  // Console.app / `idevicesyslog | grep BarakahShield` to see whether the
+  // extension engages the shield or dies before applying it.
+  const scheduleReal = useCallback(async () => {
+    hapticNotification("warning");
+    if (Platform.OS !== "ios") {
+      Alert.alert("iOS only", "The real DeviceActivity path is iOS-only.");
+      return;
+    }
+    if (iosItems.length === 0) {
+      Alert.alert(
+        "Nothing to block",
+        "Add at least one app to the shield first."
+      );
+      return;
+    }
+    try {
+      // Persist the tokens so the monitor extension has something to read when
+      // the window opens with the app closed.
+      await setBlockConfiguration({ blockedItems: iosItems, isActive: true });
+      scheduleTestWindow(90, 16);
+      Alert.alert(
+        "Test window scheduled",
+        "In ~90 seconds a real 16-min prayer window opens via DeviceActivity.\n\n1. Close Barakah now (background it).\n2. When it starts, open a blocked app — it should be shielded.\n3. Watch Console.app (filter “BarakahShield”) to see the extension fire.\n\nUse “Activate shield now” to clear the test."
+      );
+    } catch (err) {
+      Alert.alert("Schedule failed", String(err));
+    }
+  }, [iosItems]);
+
   // Mocks a 20-minute Asr quiet window so the lock-screen Live Activity and
   // Dynamic Island can be checked without waiting for a real prayer.
   const startLA = useCallback(() => {
@@ -1168,6 +1202,33 @@ function DevPanel({
           Activate shield now
         </Text>
       </Pressable>
+      {Platform.OS === "ios" ? (
+        <Pressable
+          accessibilityLabel="Schedule real DeviceActivity window in 90 seconds (dev)"
+          accessibilityRole="button"
+          onPress={scheduleReal}
+          style={({ pressed }) => ({
+            alignItems: "center",
+            borderColor: colors.primary,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            opacity: pressed ? 0.7 : 1,
+            paddingVertical: 14,
+          })}
+        >
+          <Text
+            style={{
+              color: colors.primary,
+              fontSize: 13,
+              fontWeight: "700",
+              letterSpacing: 0.8,
+              textTransform: "uppercase",
+            }}
+          >
+            Schedule real window (+90s)
+          </Text>
+        </Pressable>
+      ) : null}
       {Platform.OS === "ios" ? (
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Pressable

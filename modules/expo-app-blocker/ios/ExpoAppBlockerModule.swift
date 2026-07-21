@@ -20,6 +20,11 @@ public class ExpoAppBlockerModule: Module {
   private let prayerWindowsKey = "appBlocker.prayerWindows.v1"
   private let pendingUnlockKey = "appBlocker.pendingUnlock.v1"
   private let minimumTemporaryUnlockMinutes = 1
+  // DeviceActivity's documented floor is 15 min; schedule a hair above it so
+  // `intervalDidStart` fires reliably at salah. Kept in sync with the JS
+  // `MIN_DEVICE_ACTIVITY_MINUTES` in prayer-shield-windows.ts.
+  private let minPrayerWindowMinutes = 16
+  private let dayEndMinute = 1439
   private var didLoadPersistedConfig = false
 
   private var currentBlockConfig: BlockConfig?
@@ -223,6 +228,34 @@ public class ExpoAppBlockerModule: Module {
       self.stateQueue.async {
         self.ensureLoadedPersistedConfig()
         self.scheduleBlockWindowsInternal(windows)
+      }
+    }
+
+    // DEV harness: register a single real DeviceActivity window starting
+    // `startInSeconds` from now for `durationMinutes`, so the native salah path
+    // (`intervalDidStart` in the monitor extension) can be exercised on demand —
+    // background the app after calling this and watch Console.app for the
+    // "[BarakahShield]" breadcrumbs. This is the ONLY way to reproduce the
+    // app-closed salah behavior without waiting for a real prayer time. Blocked
+    // apps must already be selected (setBlockConfiguration) for the shield to
+    // have anything to apply.
+    Function("scheduleTestWindow") { (startInSeconds: Int, durationMinutes: Int) in
+      self.stateQueue.async {
+        self.ensureLoadedPersistedConfig()
+        let calendar = Calendar.current
+        let start = Date().addingTimeInterval(TimeInterval(max(0, startInSeconds)))
+        let end = start.addingTimeInterval(TimeInterval(max(1, durationMinutes) * 60))
+        let startComp = calendar.dateComponents([.hour, .minute], from: start)
+        let endComp = calendar.dateComponents([.hour, .minute], from: end)
+        let itemCount = self.currentBlockConfig?.items.count ?? 0
+        NSLog("[BarakahShield][module] scheduleTestWindow start=\(startComp.hour ?? -1):\(startComp.minute ?? -1) end=\(endComp.hour ?? -1):\(endComp.minute ?? -1) blockedItems=\(itemCount)")
+        self.scheduleBlockWindowsInternal([[
+          "name": "asr",
+          "startHour": startComp.hour ?? 0,
+          "startMinute": startComp.minute ?? 0,
+          "endHour": endComp.hour ?? 0,
+          "endMinute": endComp.minute ?? 0,
+        ]])
       }
     }
 
@@ -672,7 +705,15 @@ public class ExpoAppBlockerModule: Module {
       else { continue }
 
       let startTotal = startHour * 60 + startMinute
-      let endTotal = endHour * 60 + endMinute
+      var endTotal = endHour * 60 + endMinute
+      // Defensive floor mirroring the JS side: DeviceActivity fires unreliably
+      // (or startMonitoring throws) for intervals at/under 15 minutes, which
+      // silently leaves that salah unshielded. Extend a sub-floor same-day
+      // window up to the floor, clamped to 23:59. Wrapping windows (endTotal <
+      // startTotal) already span the midnight boundary and are long enough.
+      if endTotal > startTotal, endTotal - startTotal < minPrayerWindowMinutes {
+        endTotal = min(startTotal + minPrayerWindowMinutes, dayEndMinute)
+      }
       if minutesInWindow(nowMinutes, start: startTotal, end: endTotal) {
         insideAnyWindow = true
       }
@@ -680,7 +721,7 @@ public class ExpoAppBlockerModule: Module {
       parsed.append((
         name: name,
         start: DateComponents(hour: startHour, minute: startMinute),
-        end: DateComponents(hour: endHour, minute: endMinute)
+        end: DateComponents(hour: endTotal / 60, minute: endTotal % 60)
       ))
     }
 
@@ -689,6 +730,7 @@ public class ExpoAppBlockerModule: Module {
     // (reapply) or outside it (stay cleared).
     sharedDefaults?.set(persistedWindows, forKey: prayerWindowsKey)
 
+    NSLog("[BarakahShield][module] scheduleBlockWindows registering=\(parsed.count) nowMin=\(nowMinutes) insideAnyWindow=\(insideAnyWindow)")
     for window in parsed {
       let schedule = DeviceActivitySchedule(
         intervalStart: window.start,
@@ -698,8 +740,9 @@ public class ExpoAppBlockerModule: Module {
       let activityName = DeviceActivityName(prayerActivityPrefix + window.name)
       do {
         try activityCenter.startMonitoring(activityName, during: schedule)
+        NSLog("[BarakahShield][module] startMonitoring ok name=\(window.name) start=\(window.start.hour ?? -1):\(window.start.minute ?? -1) end=\(window.end.hour ?? -1):\(window.end.minute ?? -1)")
       } catch {
-        print("[AppBlocker] scheduleBlockWindows failed for \(window.name): \(error.localizedDescription)")
+        NSLog("[BarakahShield][module] startMonitoring FAILED name=\(window.name): \(error.localizedDescription)")
       }
     }
 

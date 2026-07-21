@@ -20,6 +20,10 @@ const {
 } = resolve("expo/config-plugins");
 const fs = require("node:fs");
 const path = require("node:path");
+const {
+  applySwiftReplacements,
+  buildSwiftReplacements,
+} = require("./swift-substitutions");
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Privacy manifest helper
@@ -363,154 +367,10 @@ function withAppBlockerIOS(config, pluginConfig) {
     }
 
     // 2. Substitute placeholders in the freshly-copied Swift files. The
-    //    substitution map mirrors the original withDangerousMod block — kept
-    //    here so config-eval produces final, build-ready Swift in one pass.
-    function hexToRgb(hex) {
-      let h = String(hex).replace("#", "").trim();
-      // Expand shorthand #abc → #aabbcc.
-      if (h.length === 3) {
-        h = h
-          .split("")
-          .map((c) => c + c)
-          .join("");
-      }
-      if (!/^[0-9a-fA-F]{6}$/.test(h)) {
-        throw new Error(
-          `expo-app-blocker: invalid hex color "${hex}" — expected #RGB or #RRGGBB`
-        );
-      }
-      return {
-        r: (Number.parseInt(h.substring(0, 2), 16) / 255).toFixed(3),
-        g: (Number.parseInt(h.substring(2, 4), 16) / 255).toFixed(3),
-        b: (Number.parseInt(h.substring(4, 6), 16) / 255).toFixed(3),
-      };
-    }
-
-    const shield = pluginConfig?.ios?.shield || {};
-    const uiColorLiteral = (hex) => {
-      const c = hexToRgb(hex);
-      return `UIColor(red: ${c.r}, green: ${c.g}, blue: ${c.b}, alpha: 1.0)`;
-    };
-    const dynamicColorExpr = (lightHex, darkHex) => {
-      const light = uiColorLiteral(lightHex);
-      if (!darkHex) {
-        return light;
-      }
-      const dark = uiColorLiteral(darkHex);
-      return `UIColor { trait in trait.userInterfaceStyle == .dark ? ${dark} : ${light} }`;
-    };
-    const primaryColorExpr = dynamicColorExpr(
-      shield.primaryButtonColor || "#fb6107",
-      shield.darkPrimaryButtonColor || null
-    );
-    const titleColorExpr = dynamicColorExpr(
-      shield.titleColor || "#111111",
-      shield.darkTitleColor || null
-    );
-    const subtitleColorExpr = dynamicColorExpr(
-      shield.subtitleColor || "#737373",
-      shield.darkSubtitleColor || null
-    );
-    const bgColorHex = shield.backgroundColor || null;
-    const darkBgColorHex = shield.darkBackgroundColor || null;
-
-    const blurStyleMap = {
-      systemUltraThinMaterial: ".systemUltraThinMaterial",
-      systemThinMaterial: ".systemThinMaterial",
-      systemMaterial: ".systemMaterial",
-      systemThickMaterial: ".systemThickMaterial",
-      systemChromeMaterial: ".systemChromeMaterial",
-      systemUltraThinMaterialLight: ".systemUltraThinMaterialLight",
-      systemThinMaterialLight: ".systemThinMaterialLight",
-      systemMaterialLight: ".systemMaterialLight",
-      systemThickMaterialLight: ".systemThickMaterialLight",
-      systemChromeMaterialLight: ".systemChromeMaterialLight",
-      systemUltraThinMaterialDark: ".systemUltraThinMaterialDark",
-      systemThinMaterialDark: ".systemThinMaterialDark",
-      systemMaterialDark: ".systemMaterialDark",
-      systemThickMaterialDark: ".systemThickMaterialDark",
-      systemChromeMaterialDark: ".systemChromeMaterialDark",
-      regular: ".regular",
-      prominent: ".prominent",
-      light: ".light",
-      dark: ".dark",
-      extraLight: ".extraLight",
-    };
-    const blurRaw =
-      shield.backgroundBlurStyle || (bgColorHex ? null : "systemThickMaterial");
-    const blurSwift =
-      blurRaw && blurStyleMap[blurRaw] ? blurStyleMap[blurRaw] : null;
-
-    const notification = pluginConfig?.ios?.notification || {};
-    const notificationTitle = notification.title || "App Blocker";
-    const notificationBody =
-      notification.body ||
-      "Tap to return to the app and complete the unlock challenge.";
-    const notificationAttachIcon =
-      notification.attachIcon === false ? "false" : "true";
-
-    const tempUnlockTitle = shield.tempUnlockTitle || "Almost there!";
-    const tempUnlockSubtitle =
-      shield.tempUnlockSubtitle ||
-      "Your free time is loading. Try again in a moment.";
-    const tempUnlockButtonLabel = shield.tempUnlockButtonLabel || "OK";
-
-    const countSuffixTemplate =
-      shield.countSuffix === undefined
-        ? " You have {count} apps blocked."
-        : shield.countSuffix;
-
-    // Swift string-literal escaping for plugin substitutions that land inside
-    // `"..."` literals. `\(` is the Swift interpolation escape; rendering it
-    // unescaped here is intentional — see renderCountSuffixSwift.
-    function escapeSwiftString(s) {
-      return String(s)
-        .replace(/\\/g, "\\\\")
-        .replace(/"/g, '\\"')
-        .replace(/\n/g, "\\n")
-        .replace(/\r/g, "\\r");
-    }
-    function renderCountSuffixSwift(template) {
-      if (!template) {
-        return '""';
-      }
-      const escaped = escapeSwiftString(template);
-      return `"${escaped.replace(/\{count\}/g, "\\(count)")}"`;
-    }
-
-    const replacements = {
-      APP_GROUP_PLACEHOLDER: escapeSwiftString(appGroup),
-      SHIELD_TITLE_PLACEHOLDER: escapeSwiftString(shield.title || "Hold on!"),
-      SHIELD_SUBTITLE_PLACEHOLDER: escapeSwiftString(
-        shield.subtitle || "{appName} is blocked."
-      ),
-      SHIELD_PRIMARY_BUTTON_PLACEHOLDER: escapeSwiftString(
-        shield.primaryButtonLabel || "Earn Free Time"
-      ),
-      SHIELD_SECONDARY_BUTTON_PLACEHOLDER: escapeSwiftString(
-        shield.secondaryButtonLabel === null
-          ? "none"
-          : shield.secondaryButtonLabel || "Not now"
-      ),
-      SHIELD_TEMP_UNLOCK_TITLE_PLACEHOLDER: escapeSwiftString(tempUnlockTitle),
-      SHIELD_TEMP_UNLOCK_SUBTITLE_PLACEHOLDER:
-        escapeSwiftString(tempUnlockSubtitle),
-      SHIELD_TEMP_UNLOCK_BUTTON_PLACEHOLDER: escapeSwiftString(
-        tempUnlockButtonLabel
-      ),
-      SHIELD_COUNT_SUFFIX_SWIFT_PLACEHOLDER:
-        renderCountSuffixSwift(countSuffixTemplate),
-      NOTIFICATION_TITLE_PLACEHOLDER: escapeSwiftString(notificationTitle),
-      NOTIFICATION_BODY_PLACEHOLDER: escapeSwiftString(notificationBody),
-      NOTIFICATION_ATTACH_ICON_PLACEHOLDER: notificationAttachIcon,
-      SHIELD_PRIMARY_COLOR_EXPR_PLACEHOLDER: primaryColorExpr,
-      SHIELD_TITLE_COLOR_EXPR_PLACEHOLDER: titleColorExpr,
-      SHIELD_SUBTITLE_COLOR_EXPR_PLACEHOLDER: subtitleColorExpr,
-      SHIELD_BG_COLOR_PLACEHOLDER: bgColorHex
-        ? dynamicColorExpr(bgColorHex, darkBgColorHex)
-        : "nil",
-      SHIELD_BLUR_STYLE_PLACEHOLDER: blurSwift || "nil",
-    };
+    //    substitution map is built by the shared `swift-substitutions` module
+    //    (unit-tested) so config-eval produces final, build-ready Swift in one
+    //    pass.
+    const replacements = buildSwiftReplacements(appGroup, pluginConfig);
 
     if (fs.existsSync(targetsDir)) {
       for (const dir of fs.readdirSync(targetsDir)) {
@@ -523,11 +383,8 @@ function withAppBlockerIOS(config, pluginConfig) {
             continue;
           }
           const filePath = path.join(dirPath, file);
-          let content = fs.readFileSync(filePath, "utf-8");
-          for (const [key, value] of Object.entries(replacements)) {
-            content = content.replace(new RegExp(key, "g"), value);
-          }
-          fs.writeFileSync(filePath, content);
+          const content = fs.readFileSync(filePath, "utf-8");
+          fs.writeFileSync(filePath, applySwiftReplacements(content, replacements));
         }
       }
     }
