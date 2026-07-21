@@ -130,6 +130,16 @@ export function clearScheduledWindows(): void {
   mod.clearScheduledWindows();
 }
 
+export function scheduleTestWindow(
+  startInSeconds = 90,
+  durationMinutes = 16
+): void {
+  if (!mod) {
+    return;
+  }
+  mod.scheduleTestWindow(startInSeconds, durationMinutes);
+}
+
 export function removeBlockedItem(
   tokenId: string,
   type: BlockedItemRemoveEvent["type"]
