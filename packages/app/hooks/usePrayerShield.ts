@@ -10,7 +10,6 @@ import {
   getBlockConfiguration,
   isTemporarilyUnlocked,
   liftShieldNow,
-  type PrayerBlockWindow,
   relockApps,
   scheduleBlockWindows,
   setBlockedApps,
@@ -27,7 +26,11 @@ import {
   persistShieldSchedule,
   registerPrayerShieldTask,
 } from "@/lib/prayer-shield-task";
-import { lockBoundsMinutes } from "@/lib/prayer-window-config";
+import {
+  computeWindows,
+  type Timings,
+  toBlockWindows,
+} from "@/lib/prayer-shield-windows";
 import {
   cacheShieldSelection,
   loadCachedShieldSelection,
@@ -35,70 +38,7 @@ import {
 import { useWeekLogs } from "./usePrayerLogs";
 import { usePrayerTimes } from "./usePrayerTimes";
 
-interface Timings {
-  asr: string;
-  dhuhr: string;
-  fajr: string;
-  isha: string;
-  maghrib: string;
-}
-
 const INACTIVE_STATE = /inactive|background/;
-
-function parseHHmm(time: string) {
-  const [h, m] = time.split(":").map(Number);
-  if (
-    Number.isNaN(h) ||
-    Number.isNaN(m) ||
-    h < 0 ||
-    h > 23 ||
-    m < 0 ||
-    m > 59
-  ) {
-    return null;
-  }
-  return h * 60 + m;
-}
-
-function toBlockWindows(
-  windows: { name: PrayerWindow; start: number; end: number }[]
-): PrayerBlockWindow[] {
-  const out: PrayerBlockWindow[] = [];
-  for (const w of windows) {
-    // DateComponents has no hour 24; clamp a midnight end to 23:59.
-    const end = Math.min(w.end, 1439);
-    // DeviceActivity rejects intervals shorter than 15 minutes; skip any window
-    // clipped below that (e.g. one clamped at midnight) so startMonitoring can't
-    // throw and silently drop the entire schedule.
-    if (end - w.start < 15) {
-      continue;
-    }
-    out.push({
-      endHour: Math.floor(end / 60),
-      endMinute: end % 60,
-      name: w.name,
-      startHour: Math.floor(w.start / 60),
-      startMinute: w.start % 60,
-    });
-  }
-  return out;
-}
-
-function computeWindows(windows: PrayerWindow[], timings: Timings) {
-  const out: { name: PrayerWindow; start: number; end: number }[] = [];
-  for (const name of windows) {
-    const adhan = parseHHmm(timings[name]);
-    if (adhan === null) {
-      continue;
-    }
-    const { start, end } = lockBoundsMinutes(name, adhan);
-    if (start >= 1440) {
-      continue;
-    }
-    out.push({ name, start, end: Math.min(end, 1440) });
-  }
-  return out.sort((a, b) => a.start - b.start);
-}
 
 interface ShieldRow {
   androidPackageNames: string[] | null;
