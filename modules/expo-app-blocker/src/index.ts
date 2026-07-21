@@ -210,6 +210,24 @@ export function scheduleBlockWindows(windows: PrayerBlockWindow[]): void {
   NativeModule.scheduleBlockWindows(windows);
 }
 
+/**
+ * DEV harness: schedules a single real DeviceActivity window `startInSeconds`
+ * from now for `durationMinutes`, exercising the exact native salah path
+ * (`intervalDidStart` in the monitor extension) on demand. Background the app
+ * after calling this and watch Console.app / `idevicesyslog` for the
+ * "[BarakahShield]" breadcrumbs. Select blocked apps first so the shield has
+ * something to apply. No-op off iOS.
+ */
+export function scheduleTestWindow(
+  startInSeconds = 90,
+  durationMinutes = 16
+): void {
+  if (Platform.OS !== "ios") {
+    return;
+  }
+  NativeModule.scheduleTestWindow(startInSeconds, durationMinutes);
+}
+
 /** Stops all prayer-window monitoring and clears the shield (keeps the stored
  *  token configuration so windows can be re-scheduled later). */
 export function clearScheduledWindows(): void {
