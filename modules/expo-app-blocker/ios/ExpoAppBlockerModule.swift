@@ -20,6 +20,11 @@ public class ExpoAppBlockerModule: Module {
   private let prayerWindowsKey = "appBlocker.prayerWindows.v1"
   private let pendingUnlockKey = "appBlocker.pendingUnlock.v1"
   private let minimumTemporaryUnlockMinutes = 1
+  // DeviceActivity's documented floor is 15 min; schedule a hair above it so
+  // `intervalDidStart` fires reliably at salah. Kept in sync with the JS
+  // `MIN_DEVICE_ACTIVITY_MINUTES` in prayer-shield-windows.ts.
+  private let minPrayerWindowMinutes = 16
+  private let dayEndMinute = 1439
   private var didLoadPersistedConfig = false
 
   private var currentBlockConfig: BlockConfig?
@@ -672,7 +677,15 @@ public class ExpoAppBlockerModule: Module {
       else { continue }
 
       let startTotal = startHour * 60 + startMinute
-      let endTotal = endHour * 60 + endMinute
+      var endTotal = endHour * 60 + endMinute
+      // Defensive floor mirroring the JS side: DeviceActivity fires unreliably
+      // (or startMonitoring throws) for intervals at/under 15 minutes, which
+      // silently leaves that salah unshielded. Extend a sub-floor same-day
+      // window up to the floor, clamped to 23:59. Wrapping windows (endTotal <
+      // startTotal) already span the midnight boundary and are long enough.
+      if endTotal > startTotal, endTotal - startTotal < minPrayerWindowMinutes {
+        endTotal = min(startTotal + minPrayerWindowMinutes, dayEndMinute)
+      }
       if minutesInWindow(nowMinutes, start: startTotal, end: endTotal) {
         insideAnyWindow = true
       }
@@ -680,7 +693,7 @@ public class ExpoAppBlockerModule: Module {
       parsed.append((
         name: name,
         start: DateComponents(hour: startHour, minute: startMinute),
-        end: DateComponents(hour: endHour, minute: endMinute)
+        end: DateComponents(hour: endTotal / 60, minute: endTotal % 60)
       ))
     }
 
