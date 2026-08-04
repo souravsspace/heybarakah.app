@@ -49,7 +49,7 @@ describe("saveEntitlementSnapshot + readEntitlementSnapshot", () => {
   test("read rejects a structurally invalid snapshot", async () => {
     store.set(
       "@barakah/entitlement-snapshot/v1",
-      JSON.stringify({ active: "yes", ts: "later" }),
+      JSON.stringify({ active: "yes", ts: "later" })
     );
     expect(await readEntitlementSnapshot()).toBeNull();
   });
@@ -67,7 +67,7 @@ describe("withinGrace", () => {
 
   test("snapshot exactly at the grace boundary is still valid", () => {
     expect(
-      withinGrace({ active: true, ts: Date.now() - OFFLINE_SUB_GRACE_MS }),
+      withinGrace({ active: true, ts: Date.now() - OFFLINE_SUB_GRACE_MS })
     ).toBe(true);
   });
 
@@ -76,7 +76,7 @@ describe("withinGrace", () => {
       withinGrace({
         active: true,
         ts: Date.now() - OFFLINE_SUB_GRACE_MS - 1000,
-      }),
+      })
     ).toBe(false);
   });
 

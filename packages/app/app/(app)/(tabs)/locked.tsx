@@ -28,6 +28,7 @@ import {
   BlockedAppsNativeList,
   type BlockedItemRemoveEvent,
   clearAllBlocks,
+  dumpDiagnostics,
   getBlockConfiguration,
   getInstalledApps,
   getPermissionStatus,
@@ -51,10 +52,13 @@ import {
   UPSERT_ANDROID_KIND,
   UPSERT_IOS_KIND,
 } from "@/lib/shield-selection-offline";
-import { endAllLockActivities, startLockActivity } from "@/lib/widgets-native";
 
 type ThemeColors = ReturnType<typeof useTheme>["colors"];
 const SHOW_UNLOCK_PREVIEW = __DEV__;
+// Dev harness window: far enough out to force-quit the app first, and past
+// DeviceActivity's 15-minute floor so `intervalDidStart` fires.
+const TEST_WINDOW_DELAY_S = 90;
+const TEST_WINDOW_MINUTES = 16;
 
 function summarizeIosSelection(items: IOSBlockedItem[]): string {
   const apps = items.filter((i) => i.type === "app").length;
@@ -1132,32 +1136,26 @@ function DevPanel({
       // Persist the tokens so the monitor extension has something to read when
       // the window opens with the app closed.
       await setBlockConfiguration({ blockedItems: iosItems, isActive: true });
-      scheduleTestWindow(90, 16);
+      scheduleTestWindow(TEST_WINDOW_DELAY_S, TEST_WINDOW_MINUTES);
       Alert.alert(
         "Test window scheduled",
-        "In ~90 seconds a real 16-min prayer window opens via DeviceActivity.\n\n1. Close Barakah now (background it).\n2. When it starts, open a blocked app — it should be shielded.\n3. Watch Console.app (filter “BarakahShield”) to see the extension fire.\n\nUse “Activate shield now” to clear the test."
+        `In ~${TEST_WINDOW_DELAY_S}s a real ${TEST_WINDOW_MINUTES}-min prayer window opens via DeviceActivity.\n\n1. Force-quit Barakah now (swipe it away).\n2. When the window opens, launch a blocked app — it should be shielded.\n3. Watch Console.app (filter “BarakahShield”) for the extension.\n\nThis REPLACES today’s real prayer windows. Force-quit and relaunch Barakah afterwards to re-register them.`
       );
     } catch (err) {
       Alert.alert("Schedule failed", String(err));
     }
   }, [iosItems]);
 
-  // Mocks a 20-minute Asr quiet window so the lock-screen Live Activity and
-  // Dynamic Island can be checked without waiting for a real prayer.
-  const startLA = useCallback(() => {
-    hapticSelection();
-    const now = new Date();
-    const end = new Date(now.getTime() + 20 * 60 * 1000);
-    startLockActivity({
-      name: "asr",
-      startISO: now.toISOString(),
-      endISO: end.toISOString(),
-    }).catch((e: unknown) => Alert.alert("Live Activity failed", String(e)));
-  }, []);
-
-  const stopLA = useCallback(() => {
-    hapticSelection();
-    endAllLockActivities().catch(() => undefined);
+  // Prints the live DeviceActivity registration state to the unified log. The
+  // breadcrumbs only fire while something is happening; this answers "were the
+  // windows even registered?" after a salah has already come and gone.
+  const dumpState = useCallback(() => {
+    hapticNotification("warning");
+    dumpDiagnostics();
+    Alert.alert(
+      "State dumped",
+      "Look for “[BarakahShield][module] DUMP” lines in Console.app."
+    );
   }, []);
 
   return (
@@ -1230,52 +1228,31 @@ function DevPanel({
         </Pressable>
       ) : null}
       {Platform.OS === "ios" ? (
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Pressable
-            accessibilityLabel="Start Live Activity (dev)"
-            accessibilityRole="button"
-            onPress={startLA}
-            style={({ pressed }) => ({
-              alignItems: "center",
-              borderColor: colors.border,
-              borderRadius: 14,
-              borderWidth: 1,
-              flex: 1,
-              opacity: pressed ? 0.6 : 1,
-              paddingVertical: 12,
-            })}
+        <Pressable
+          accessibilityLabel="Dump shield state to the system log (dev)"
+          accessibilityRole="button"
+          onPress={dumpState}
+          style={({ pressed }) => ({
+            alignItems: "center",
+            borderColor: colors.primary,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            opacity: pressed ? 0.7 : 1,
+            paddingVertical: 14,
+          })}
+        >
+          <Text
+            style={{
+              color: colors.primary,
+              fontSize: 13,
+              fontWeight: "700",
+              letterSpacing: 0.8,
+              textTransform: "uppercase",
+            }}
           >
-            <Text
-              style={{ color: colors.ink, fontSize: 13, fontWeight: "600" }}
-            >
-              Start Live Activity
-            </Text>
-          </Pressable>
-          <Pressable
-            accessibilityLabel="Stop Live Activity (dev)"
-            accessibilityRole="button"
-            onPress={stopLA}
-            style={({ pressed }) => ({
-              alignItems: "center",
-              borderColor: colors.border,
-              borderRadius: 14,
-              borderWidth: 1,
-              flex: 1,
-              opacity: pressed ? 0.6 : 1,
-              paddingVertical: 12,
-            })}
-          >
-            <Text
-              style={{
-                color: colors.inkMuted,
-                fontSize: 13,
-                fontWeight: "600",
-              }}
-            >
-              Stop Live Activity
-            </Text>
-          </Pressable>
-        </View>
+            Dump shield state
+          </Text>
+        </Pressable>
       ) : null}
       <Pressable
         accessibilityLabel="Preview unlock screen"

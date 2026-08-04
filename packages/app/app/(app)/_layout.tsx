@@ -16,7 +16,6 @@ import { DhikrProvider } from "@/contexts/dhikr-context";
 import { useUser } from "@/contexts/user-context";
 import { useWidgetInteractions } from "@/hooks/use-widget-interactions";
 import { useDailyAyahNotification } from "@/hooks/useDailyAyahNotification";
-import { useLockActivityScheduler } from "@/hooks/useLockActivityScheduler";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { usePrayerShield } from "@/hooks/usePrayerShield";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
@@ -38,7 +37,6 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 function AuthedShell() {
   useDailyAyahNotification();
   useWidgetSync();
-  useLockActivityScheduler();
   useWidgetInteractions();
   useOfflineSync();
 

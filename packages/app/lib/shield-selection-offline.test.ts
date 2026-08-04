@@ -35,7 +35,7 @@ describe("shield-selection cache", () => {
     const selection = { windows: [{ start: 300, end: 316 }], tokens: ["a"] };
     await cacheShieldSelection(selection);
     expect(await loadCachedShieldSelection<typeof selection>()).toEqual(
-      selection,
+      selection
     );
   });
 

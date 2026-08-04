@@ -16,7 +16,7 @@ describe("pickDailyAyah", () => {
       Array.from({ length: 30 }, (_, i) => {
         const day = String(i + 1).padStart(2, "0");
         return AYAHS.indexOf(pickDailyAyah(`2026-07-${day}`));
-      }),
+      })
     );
     // hashing across 30 consecutive days should not collapse to one ayah
     expect(picks.size).toBeGreaterThan(1);

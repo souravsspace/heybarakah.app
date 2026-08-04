@@ -20,7 +20,6 @@ import {
   LOCK_DURATION_MIN,
   lockBoundsMinutes,
 } from "@/lib/prayer-window-config";
-import { endAllLockActivities } from "@/lib/widgets-native";
 
 type PrayerName = LoggablePrayerName;
 
@@ -113,10 +112,8 @@ export default function Unlock() {
     return Math.min(LOCK_DURATION_MIN, Math.max(1, end - nowMin));
   }, [activePrayer, todayPrayerTimes]);
 
-  // Tear down everything tied to this prayer window: lockscreen / Dynamic Island
-  // Live Activity, and the app shield (until the window ends).
+  // Lift the app shield for the rest of this prayer window.
   const liftShield = useCallback(async () => {
-    await endAllLockActivities().catch(() => undefined);
     await temporaryUnlock(remainingLockMin).catch(() => undefined);
   }, [remainingLockMin]);
 
@@ -139,9 +136,6 @@ export default function Unlock() {
     setBusy(true);
     hapticNotification("warning");
     try {
-      // End the lock-screen / Dynamic Island Live Activity too — a temporary
-      // unlock that leaves the countdown banner up is confusing.
-      await endAllLockActivities().catch(() => undefined);
       await temporaryUnlock(5);
     } finally {
       setBusy(false);

@@ -2,6 +2,7 @@ import DeviceActivity
 import ManagedSettings
 import FamilyControls
 import Foundation
+import os
 
 @available(iOS 15.0, *)
 class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
@@ -18,10 +19,32 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
   override init() {
     super.init()
     sharedDefaults = UserDefaults(suiteName: appGroupIdentifier)
+    log("init suite=\(appGroupIdentifier) defaults=\(sharedDefaults == nil ? "nil" : "ok")")
+  }
+
+  // Breadcrumb logger for the salah path. This extension runs in its own
+  // process and nothing it does reaches the JS/PostHog layer, so these lines
+  // are the only window into why a prayer window did (or didn't) shield.
+  //
+  // The message MUST be passed as a `%{public}@` argument. `NSLog("...\(x)")`
+  // makes the interpolated string the format itself, which the unified log
+  // treats as dynamic and redacts — Console then shows bare "<private>" lines
+  // with no content, which is exactly what the first instrumentation round hit.
+  //
+  // Read on-device via Console.app (filter "BarakahShield") or
+  // `idevicesyslog | grep BarakahShield`.
+  private static let logHandle = OSLog(
+    subsystem: "com.souravsspace.Barakah.shield",
+    category: "monitor"
+  )
+
+  private func log(_ message: String) {
+    os_log("%{public}@", log: Self.logHandle, type: .default, "[BarakahShield][monitor] \(message)")
   }
 
   override func intervalDidEnd(for activity: DeviceActivityName) {
     super.intervalDidEnd(for: activity)
+    log("intervalDidEnd activity=\(activity.rawValue)")
     // Prayer window over → lift the shield so apps are usable until the next
     // salah. The token config stays persisted for the next window start.
     if activity.rawValue.hasPrefix(prayerActivityPrefix) {
@@ -62,11 +85,13 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
 
   override func intervalDidStart(for activity: DeviceActivityName) {
     super.intervalDidStart(for: activity)
+    log("intervalDidStart activity=\(activity.rawValue)")
     // Prayer window started → engage the shield from the stored selection, even
     // if the app is closed.
     if activity.rawValue.hasPrefix(prayerActivityPrefix) {
       reapplyBlockConfiguration()
     }
+    log("intervalDidStart done activity=\(activity.rawValue)")
   }
 
   private func clearShields() {
@@ -79,19 +104,26 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
     // Extensions have no access to the host app's UserDefaults.standard sandbox.
     // If sharedDefaults is nil (entitlement misconfigured), bail out rather than
     // silently clearing all shields via the fall-through.
-    guard let userDefaults = sharedDefaults else { return }
+    guard let userDefaults = sharedDefaults else {
+      log("reapply BAIL sharedDefaults=nil (app-group entitlement missing?)")
+      return
+    }
 
     guard let configDict = userDefaults.dictionary(forKey: blockConfigStorageKey) else {
+      log("reapply no persisted config → clearing shields")
       store.shield.applications = nil
       store.shield.applicationCategories = nil
       store.shield.webDomains = nil
       return
     }
 
+    log("reapply config found keys=\(configDict.keys.count) → parsing")
     guard let blockConfig = parseBlockConfig(configDict) else {
+      log("reapply parseBlockConfig returned nil → leaving shield untouched")
       return
     }
 
+    log("reapply parsed items=\(blockConfig.items.count) active=\(blockConfig.isActive) → applying")
     applyBlocks(blockConfig)
   }
 
@@ -149,8 +181,10 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
     let validAppTokens = config.items.compactMap { $0.appToken }
     let validCategoryTokens = config.items.compactMap { $0.categoryToken }
     let validWebDomainTokens = config.items.compactMap { $0.webDomainToken }
+    log("applyBlocks apps=\(validAppTokens.count) cats=\(validCategoryTokens.count) web=\(validWebDomainTokens.count)")
 
     guard !validAppTokens.isEmpty || !validCategoryTokens.isEmpty || !validWebDomainTokens.isEmpty else {
+      log("applyBlocks all token sets empty (decode failed?) → clearing shields")
       store.shield.applications = nil
       store.shield.applicationCategories = nil
       store.shield.webDomains = nil
@@ -174,6 +208,7 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
     } else {
       store.shield.webDomains = nil
     }
+    log("applyBlocks shield SET apps=\(validAppTokens.count) cats=\(validCategoryTokens.count) web=\(validWebDomainTokens.count)")
   }
 
   private func decodeApplicationToken(from encoded: String) -> ApplicationToken? {

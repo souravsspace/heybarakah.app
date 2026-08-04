@@ -228,6 +228,19 @@ export function scheduleTestWindow(
   NativeModule.scheduleTestWindow(startInSeconds, durationMinutes);
 }
 
+/**
+ * DEV harness: dumps the registered DeviceActivity activities, the windows
+ * persisted for the monitor extension, and the stored token count to the
+ * unified log under "[BarakahShield]". Use it after a salah that failed to
+ * shield to see whether the windows were registered at all. No-op off iOS.
+ */
+export function dumpDiagnostics(): void {
+  if (Platform.OS !== "ios") {
+    return;
+  }
+  NativeModule.dumpDiagnostics();
+}
+
 /** Stops all prayer-window monitoring and clears the shield (keeps the stored
  *  token configuration so windows can be re-scheduled later). */
 export function clearScheduledWindows(): void {

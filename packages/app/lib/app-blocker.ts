@@ -140,6 +140,13 @@ export function scheduleTestWindow(
   mod.scheduleTestWindow(startInSeconds, durationMinutes);
 }
 
+export function dumpDiagnostics(): void {
+  if (!mod) {
+    return;
+  }
+  mod.dumpDiagnostics();
+}
+
 export function removeBlockedItem(
   tokenId: string,
   type: BlockedItemRemoveEvent["type"]

@@ -1,11 +1,11 @@
-import type { PrayerDay } from "@barakah/core/prayer";
 import { afterEach, describe, expect, setSystemTime, test } from "bun:test";
+import type { PrayerDay } from "@barakah/core/prayer";
 import {
   activePrayerNow,
   dateKey,
   fmtRangeTime,
-  pad2,
   PRAYER_ORDER,
+  pad2,
 } from "@/lib/date-utils";
 
 function makeDay(timings: Partial<Record<string, string>>): PrayerDay {

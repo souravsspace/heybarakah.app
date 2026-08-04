@@ -49,9 +49,9 @@ interface ShieldRow {
 }
 
 // `undefined` = loading, `null` = no selection (the contract this hook relies on).
-type ShieldSelection = ShieldRow | null | undefined;
+export type ShieldSelection = ShieldRow | null | undefined;
 
-function useShieldSelection(): ShieldSelection {
+export function useShieldSelection(): ShieldSelection {
   const query = useRqQuery({
     queryKey: ["cf", "shield"],
     queryFn: async (): Promise<ShieldRow | null> => {
