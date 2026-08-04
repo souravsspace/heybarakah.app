@@ -1076,6 +1076,19 @@ function DevPanel({
   colors: ThemeColors;
   iosItems: IOSBlockedItem[];
 }) {
+  // Pending "start the banner when the test window opens" timer. Held in a ref
+  // so leaving the tab cancels it instead of firing a banner for a window the
+  // tester already moved on from.
+  const laTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (laTimer.current) {
+        clearTimeout(laTimer.current);
+      }
+    },
+    []
+  );
+
   const activate = useCallback(async () => {
     hapticNotification("warning");
     try {
@@ -1138,26 +1151,31 @@ function DevPanel({
       // the window opens with the app closed.
       await setBlockConfiguration({ blockedItems: iosItems, isActive: true });
       scheduleTestWindow(TEST_WINDOW_DELAY_S, TEST_WINDOW_MINUTES);
-      // Cover the SAME span with a Live Activity so one tap exercises both
-      // halves of a salah window. ActivityKit only permits starting an activity
-      // from the foreground, so it has to be raised now, before the app is
-      // force-quit — the same constraint the real salah path runs into.
+      // Raise the Live Activity when the window actually OPENS, not on tap, so
+      // the harness matches what a real salah looks like. ActivityKit only
+      // permits starting an activity from the foreground, so this timer is the
+      // best a local build can do: it fires only while the app is still alive.
+      // Force-quitting to test the shield therefore means no banner — that gap
+      // is the production bug, and only APNs push-to-start closes it.
       const start = new Date(Date.now() + TEST_WINDOW_DELAY_S * 1000);
       const end = new Date(start.getTime() + TEST_WINDOW_MINUTES * 60_000);
-      let liveActivity = "Live Activity started";
-      try {
-        await endAllLockActivities();
-        await startLockActivity({
+      await endAllLockActivities();
+      if (laTimer.current) {
+        clearTimeout(laTimer.current);
+      }
+      laTimer.current = setTimeout(() => {
+        laTimer.current = null;
+        startLockActivity({
           endISO: end.toISOString(),
           name: "asr",
           startISO: start.toISOString(),
-        });
-      } catch (laErr) {
-        liveActivity = `Live Activity FAILED: ${String(laErr)}`;
-      }
+        }).catch((laErr: unknown) =>
+          Alert.alert("Live Activity failed", String(laErr))
+        );
+      }, TEST_WINDOW_DELAY_S * 1000);
       Alert.alert(
         "Test window scheduled",
-        `In ~${TEST_WINDOW_DELAY_S}s a real ${TEST_WINDOW_MINUTES}-min prayer window opens via DeviceActivity. ${liveActivity}.\n\n1. Force-quit Barakah now (swipe it away).\n2. Lock the phone — the Live Activity should show on the lock screen.\n3. When the window opens, launch a blocked app — it should be shielded.\n4. Watch Console.app (filter “BarakahShield”) for the extension.\n\nThis REPLACES today’s real prayer windows. Force-quit and relaunch Barakah afterwards to re-register them.`
+        `In ~${TEST_WINDOW_DELAY_S}s a real ${TEST_WINDOW_MINUTES}-min prayer window opens via DeviceActivity.\n\nTo test the SHIELD: force-quit Barakah now, then launch a blocked app once the window opens. No Live Activity will appear — a closed app cannot raise one.\n\nTo test the LIVE ACTIVITY: leave Barakah running and lock the phone. The banner appears when the window opens, not now.\n\nWatch Console.app (filter “BarakahShield”) either way.\n\nThis REPLACES today’s real prayer windows. Force-quit and relaunch Barakah afterwards to re-register them.`
       );
     } catch (err) {
       Alert.alert("Schedule failed", String(err));
