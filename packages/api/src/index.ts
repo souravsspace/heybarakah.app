@@ -10,6 +10,7 @@ import { achievements } from "@/routes/achievements/achievements.index";
 import { appConfig } from "@/routes/app-config/app-config.index";
 import { dhikr } from "@/routes/dhikr/dhikr.index";
 import { healthCheck } from "@/routes/health-check/health-check.index";
+import { liveActivity } from "@/routes/live-activity/live-activity.index";
 import { marketing } from "@/routes/marketing/marketing.index";
 import { prayerLogs } from "@/routes/prayer-logs/prayer-logs.index";
 import { prayerTimes } from "@/routes/prayer-times/prayer-times.index";
@@ -58,6 +59,7 @@ const router = app
   .route("/", appConfig)
   .route("/", achievements)
   .route("/", dhikr)
+  .route("/", liveActivity)
   .route("/", marketing)
   .route("/", prayerLogs)
   .route("/", prayerTimes)
