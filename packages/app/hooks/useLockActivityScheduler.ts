@@ -2,6 +2,7 @@ import type { PrayerDay } from "@barakah/core/prayer";
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { useWeekLogs } from "@/hooks/usePrayerLogs";
+import { useShieldSelection } from "@/hooks/usePrayerShield";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { dateKey, PRAYER_ORDER, pad2 } from "@/lib/date-utils";
 import { lockBoundsMinutes } from "@/lib/prayer-window-config";
@@ -37,10 +38,17 @@ function localISO(d: Date): string {
 
 function findActiveLock(
   day: PrayerDay,
-  now: Date
+  now: Date,
+  enabledWindows: readonly string[]
 ): { name: PrayerName; start: Date; end: Date } | null {
   const minutes = nowMinutes(now);
   for (const name of PRAYER_ORDER) {
+    // The Live Activity must mirror the shield exactly: same prayers, same
+    // bounds. Without this filter a prayer the user excluded from the shield
+    // still raised a "quiet time" banner with nothing actually blocked.
+    if (!enabledWindows.includes(name)) {
+      continue;
+    }
     const raw = (day.timings as Record<string, string>)[name];
     if (!raw) {
       continue;
@@ -68,6 +76,12 @@ function findActiveLock(
 
 export function useLockActivityScheduler(): void {
   const { prayerTimes } = usePrayerTimes();
+  const selection = useShieldSelection();
+  // Shield off, or no prayers selected -> no windows, so no Live Activity.
+  // `undefined` means the selection is still loading; treat it as empty so we
+  // don't briefly raise a banner for a prayer the shield won't cover.
+  const enabledWindows = selection?.enabled ? selection.windows : [];
+  const windowsKey = [...enabledWindows].sort().join(",");
   const today = dateKey();
   const week = useWeekLogs(today);
   const weekRef = useRef(week);
@@ -114,7 +128,7 @@ export function useLockActivityScheduler(): void {
       if (!day) {
         return;
       }
-      const active = findActiveLock(day, now);
+      const active = findActiveLock(day, now, enabledWindows);
       // Already prayed this window -> no Live Activity. End any running one.
       const activeLogged = active
         ? Boolean(weekRef.current.getStatus(dayKey, active.name))
@@ -179,5 +193,9 @@ export function useLockActivityScheduler(): void {
       clearInterval(interval);
       sub.remove();
     };
-  }, [prayerTimes, loggedKey]);
+    // `windowsKey` (not `enabledWindows`) is the dep: the query returns a fresh
+    // array identity on every refetch, which would otherwise tear down and
+    // restart the Live Activity on each poll.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: windowsKey stands in for enabledWindows
+  }, [prayerTimes, loggedKey, windowsKey]);
 }
