@@ -137,6 +137,7 @@
           "bundleIdentifier": "com.souravsspace.Barakah.BarakahWidgets",
           "groupIdentifier": "group.com.souravsspace.Barakah.expowidgets",
           "frequentUpdates": true,
+          "enablePushNotifications": true,
           "widgets": [
             {
               "name": "DhikrWidget",
