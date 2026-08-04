@@ -4,6 +4,7 @@ import ManagedSettings
 import DeviceActivity
 import SwiftUI
 import Foundation
+import os
 
 public class ExpoAppBlockerModule: Module {
   private let appGroupIdentifier = ExpoAppBlockerConfig.appGroupIdentifier
@@ -32,6 +33,19 @@ public class ExpoAppBlockerModule: Module {
   private let scheduleLock = NSLock()
   private let persistLoadLock = NSLock()
   private var isProcessingUnlockState = false
+
+  // Must log via `%{public}@`; interpolating into the format string itself gets
+  // the whole line redacted to "<private>" by the unified log. Mirrors the
+  // logger in the DeviceActivityMonitor extension so both halves of the salah
+  // path show up under the same "BarakahShield" Console filter.
+  private static let logHandle = OSLog(
+    subsystem: "com.souravsspace.Barakah.shield",
+    category: "module"
+  )
+
+  private func log(_ message: String) {
+    os_log("%{public}@", log: Self.logHandle, type: .default, "[BarakahShield][module] \(message)")
+  }
 
   public func definition() -> ModuleDefinition {
     Name("ExpoAppBlocker")
@@ -248,7 +262,7 @@ public class ExpoAppBlockerModule: Module {
         let startComp = calendar.dateComponents([.hour, .minute], from: start)
         let endComp = calendar.dateComponents([.hour, .minute], from: end)
         let itemCount = self.currentBlockConfig?.items.count ?? 0
-        NSLog("[BarakahShield][module] scheduleTestWindow start=\(startComp.hour ?? -1):\(startComp.minute ?? -1) end=\(endComp.hour ?? -1):\(endComp.minute ?? -1) blockedItems=\(itemCount)")
+        self.log("scheduleTestWindow start=\(startComp.hour ?? -1):\(startComp.minute ?? -1) end=\(endComp.hour ?? -1):\(endComp.minute ?? -1) blockedItems=\(itemCount)")
         self.scheduleBlockWindowsInternal([[
           "name": "asr",
           "startHour": startComp.hour ?? 0,
@@ -256,6 +270,32 @@ public class ExpoAppBlockerModule: Module {
           "endHour": endComp.hour ?? 0,
           "endMinute": endComp.minute ?? 0,
         ]])
+      }
+    }
+
+    // DEV harness: dumps everything the salah path depends on to the unified
+    // log in one shot — which DeviceActivity activities iOS actually has
+    // registered, the windows persisted for the extension, and the token count.
+    // Run it right after a failing salah to see whether the windows were even
+    // registered, which the breadcrumbs alone can't answer after the fact.
+    Function("dumpDiagnostics") {
+      self.stateQueue.async {
+        self.ensureLoadedPersistedConfig()
+        let activities = self.activityCenter.activities.map { $0.rawValue }.sorted()
+        let windows = self.sharedDefaults?.array(forKey: self.prayerWindowsKey) as? [[String: Int]] ?? []
+        let calendar = Calendar.current
+        let now = Date()
+        let nowMinutes = (calendar.component(.hour, from: now) * 60)
+          + calendar.component(.minute, from: now)
+        let inside = windows.contains { window in
+          guard let start = window["start"], let end = window["end"] else { return false }
+          return self.minutesInWindow(nowMinutes, start: start, end: end)
+        }
+        let hasPersistedConfig = self.sharedDefaults?.dictionary(forKey: self.blockConfigStorageKey) != nil
+        self.log("DUMP nowMin=\(nowMinutes) insideWindow=\(inside)")
+        self.log("DUMP activities(\(activities.count))=\(activities.joined(separator: ","))")
+        self.log("DUMP persistedWindows(\(windows.count))=\(windows.map { "\($0["start"] ?? -1)-\($0["end"] ?? -1)" }.joined(separator: ","))")
+        self.log("DUMP items=\(self.currentBlockConfig?.items.count ?? -1) active=\(self.currentBlockConfig?.isActive ?? false) persistedConfig=\(hasPersistedConfig)")
       }
     }
 
@@ -730,7 +770,7 @@ public class ExpoAppBlockerModule: Module {
     // (reapply) or outside it (stay cleared).
     sharedDefaults?.set(persistedWindows, forKey: prayerWindowsKey)
 
-    NSLog("[BarakahShield][module] scheduleBlockWindows registering=\(parsed.count) nowMin=\(nowMinutes) insideAnyWindow=\(insideAnyWindow)")
+    self.log("scheduleBlockWindows registering=\(parsed.count) nowMin=\(nowMinutes) insideAnyWindow=\(insideAnyWindow)")
     for window in parsed {
       let schedule = DeviceActivitySchedule(
         intervalStart: window.start,
@@ -740,9 +780,9 @@ public class ExpoAppBlockerModule: Module {
       let activityName = DeviceActivityName(prayerActivityPrefix + window.name)
       do {
         try activityCenter.startMonitoring(activityName, during: schedule)
-        NSLog("[BarakahShield][module] startMonitoring ok name=\(window.name) start=\(window.start.hour ?? -1):\(window.start.minute ?? -1) end=\(window.end.hour ?? -1):\(window.end.minute ?? -1)")
+        self.log("startMonitoring ok name=\(window.name) start=\(window.start.hour ?? -1):\(window.start.minute ?? -1) end=\(window.end.hour ?? -1):\(window.end.minute ?? -1)")
       } catch {
-        NSLog("[BarakahShield][module] startMonitoring FAILED name=\(window.name): \(error.localizedDescription)")
+        self.log("startMonitoring FAILED name=\(window.name): \(error.localizedDescription)")
       }
     }
 
