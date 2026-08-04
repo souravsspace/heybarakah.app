@@ -28,7 +28,7 @@ describe("welcome-card-stack", () => {
 
   test("startDrag on empty stack sets dragIndex null", () => {
     expect(
-      startWelcomeCardDrag(createWelcomeCardStackState(0)).dragIndex,
+      startWelcomeCardDrag(createWelcomeCardStackState(0)).dragIndex
     ).toBeNull();
   });
 
@@ -41,7 +41,7 @@ describe("welcome-card-stack", () => {
 
   test("startExit marks front card outgoing and clears drag", () => {
     const s = startWelcomeCardExit(
-      startWelcomeCardDrag(createWelcomeCardStackState(3)),
+      startWelcomeCardDrag(createWelcomeCardStackState(3))
     );
     expect(s.outgoingIndex).toBe(0);
     expect(s.dragIndex).toBeNull();
