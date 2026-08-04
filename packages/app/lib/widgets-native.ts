@@ -110,32 +110,3 @@ export async function reloadTimelines(): Promise<void> {
     widget.reload();
   }
 }
-
-export function startLockActivity(args: {
-  endISO: string;
-  name: PrayerName;
-  startISO: string;
-}): Promise<string> {
-  if (!isIOS) {
-    return Promise.reject(new Error("ExpoWidgets: iOS only"));
-  }
-  return import("@/widgets/lock-activity").then((m) =>
-    m.startLockActivityInstance(args)
-  );
-}
-
-export async function endLockActivity(id: string): Promise<void> {
-  if (!isIOS) {
-    return;
-  }
-  const m = await import("@/widgets/lock-activity");
-  await m.endLockActivityInstance(id);
-}
-
-export async function endAllLockActivities(): Promise<void> {
-  if (!isIOS) {
-    return;
-  }
-  const m = await import("@/widgets/lock-activity");
-  await m.endAllLockActivityInstances();
-}
