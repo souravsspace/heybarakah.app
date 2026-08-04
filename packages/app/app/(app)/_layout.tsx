@@ -16,6 +16,7 @@ import { DhikrProvider } from "@/contexts/dhikr-context";
 import { useUser } from "@/contexts/user-context";
 import { useWidgetInteractions } from "@/hooks/use-widget-interactions";
 import { useDailyAyahNotification } from "@/hooks/useDailyAyahNotification";
+import { useLiveActivityPushToken } from "@/hooks/useLiveActivityPushToken";
 import { useLockActivityScheduler } from "@/hooks/useLockActivityScheduler";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { usePrayerShield } from "@/hooks/usePrayerShield";
@@ -39,6 +40,7 @@ function AuthedShell() {
   useDailyAyahNotification();
   useWidgetSync();
   useLockActivityScheduler();
+  useLiveActivityPushToken();
   useWidgetInteractions();
   useOfflineSync();
 
