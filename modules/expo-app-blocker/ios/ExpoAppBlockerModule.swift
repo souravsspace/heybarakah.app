@@ -47,6 +47,24 @@ public class ExpoAppBlockerModule: Module {
     os_log("%{public}@", log: Self.logHandle, type: .default, "[BarakahShield][module] \(message)")
   }
 
+  // JS numbers cross the Expo bridge boxed as `Double`, so `Any as? Int` on a
+  // value that came from JavaScript returns nil even when the number is
+  // integral. That silently dropped every prayer window in
+  // `scheduleBlockWindowsInternal` — no DeviceActivity activity was ever
+  // registered, so no salah ever shielded. Accept any numeric representation.
+  private static func intValue(_ value: Any?) -> Int? {
+    switch value {
+    case let int as Int:
+      return int
+    case let number as NSNumber:
+      return number.intValue
+    case let double as Double:
+      return Int(double)
+    default:
+      return nil
+    }
+  }
+
   public func definition() -> ModuleDefinition {
     Name("ExpoAppBlocker")
 
@@ -634,10 +652,12 @@ public class ExpoAppBlockerModule: Module {
     var schedule: ScheduleInfo?
     if let scheduleDict = dict["schedule"] as? [String: Any] {
       schedule = ScheduleInfo(
-        intervalStart: scheduleDict["intervalStart"] as? Int ?? 0,
-        intervalEnd: scheduleDict["intervalEnd"] as? Int ?? 24,
+        // Same JS-number-is-a-Double trap as the prayer windows: a plain
+        // `as? Int` here would quietly swap the caller's values for defaults.
+        intervalStart: Self.intValue(scheduleDict["intervalStart"]) ?? 0,
+        intervalEnd: Self.intValue(scheduleDict["intervalEnd"]) ?? 24,
         repeats: scheduleDict["repeats"] as? Bool ?? true,
-        warningTime: scheduleDict["warningTime"] as? Int ?? 5
+        warningTime: Self.intValue(scheduleDict["warningTime"]) ?? 5
       )
     }
 
@@ -738,11 +758,14 @@ public class ExpoAppBlockerModule: Module {
     for window in windows {
       guard
         let name = window["name"] as? String,
-        let startHour = window["startHour"] as? Int,
-        let startMinute = window["startMinute"] as? Int,
-        let endHour = window["endHour"] as? Int,
-        let endMinute = window["endMinute"] as? Int
-      else { continue }
+        let startHour = Self.intValue(window["startHour"]),
+        let startMinute = Self.intValue(window["startMinute"]),
+        let endHour = Self.intValue(window["endHour"]),
+        let endMinute = Self.intValue(window["endMinute"])
+      else {
+        self.log("scheduleBlockWindows DROPPED malformed window=\(window)")
+        continue
+      }
 
       let startTotal = startHour * 60 + startMinute
       var endTotal = endHour * 60 + endMinute
