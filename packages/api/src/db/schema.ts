@@ -383,6 +383,27 @@ export const emailQueue = sqliteTable(
   ]
 );
 
+// APNs push-to-start tokens for the salah Live Activity. A Live Activity can
+// only be raised from the foreground, so the banner can never appear at adhan
+// while the app is closed — the one process iOS does wake then (the
+// DeviceActivityMonitor extension) is barred from ActivityKit. Push-to-start is
+// the only mechanism that works, and it needs the device's token server-side.
+// The token is app-wide per install, so `token` is unique and a user with two
+// devices simply owns two rows.
+export const liveActivityTokens = sqliteTable(
+  "liveActivityTokens",
+  {
+    id: text("id").primaryKey().$defaultFn(uuid),
+    authUserId: text("authUserId").notNull(),
+    token: text("token").notNull(),
+    updatedAt: integer("updatedAt", { mode: "number" }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("liveActivityTokens_by_token").on(t.token),
+    index("liveActivityTokens_by_user").on(t.authUserId),
+  ]
+);
+
 export const schema = {
   users,
   subscriptions,
@@ -398,6 +419,7 @@ export const schema = {
   userAchievementCounters,
   appConfig,
   emailQueue,
+  liveActivityTokens,
   user,
   account,
   session,
