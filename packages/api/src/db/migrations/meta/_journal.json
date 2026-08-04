@@ -64,13 +64,6 @@
       "when": 1782154466507,
       "tag": "0008_slippery_vengeance",
       "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "6",
-      "when": 1785874597835,
-      "tag": "0009_gray_iron_monger",
-      "breakpoints": true
     }
   ]
 }
