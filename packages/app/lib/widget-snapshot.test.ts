@@ -1,5 +1,5 @@
-import type { PrayerDay } from "@barakah/core/prayer";
 import { describe, expect, test } from "bun:test";
+import type { PrayerDay } from "@barakah/core/prayer";
 import type { Ayah } from "@/constants/ayahs";
 import {
   type BuildSnapshotInput,
@@ -35,7 +35,7 @@ const AYAH: Ayah = {
 };
 
 function makeInput(
-  overrides: Partial<BuildSnapshotInput> = {},
+  overrides: Partial<BuildSnapshotInput> = {}
 ): BuildSnapshotInput {
   return {
     ayah: AYAH,
@@ -84,7 +84,7 @@ describe("buildWidgetSnapshot", () => {
 
   test("skips prayers with malformed / out-of-range timings", () => {
     const snap = buildWidgetSnapshot(
-      makeInput({ today: makeDay({ asr: "bad", isha: "25:00" }) }),
+      makeInput({ today: makeDay({ asr: "bad", isha: "25:00" }) })
     );
     expect(snap?.prayers.map((p) => p.name)).toEqual([
       "fajr",
@@ -119,7 +119,7 @@ describe("buildWidgetSnapshot", () => {
 
   test("reference with no space keeps whole string as surah", () => {
     const snap = buildWidgetSnapshot(
-      makeInput({ ayah: { ...AYAH, reference: "Basmala" } }),
+      makeInput({ ayah: { ...AYAH, reference: "Basmala" } })
     );
     expect(snap?.ayah.surah).toBe("Basmala");
     expect(snap?.ayah.reference).toBe("");
@@ -127,19 +127,19 @@ describe("buildWidgetSnapshot", () => {
 
   test("populates tomorrowFajrISO only when tomorrow is provided and valid", () => {
     expect(
-      buildWidgetSnapshot(makeInput({ tomorrow: null }))?.tomorrowFajrISO,
+      buildWidgetSnapshot(makeInput({ tomorrow: null }))?.tomorrowFajrISO
     ).toBeNull();
     const withTomorrow = buildWidgetSnapshot(
       makeInput({
         tomorrow: { ...makeDay(), date: "2026-07-23" },
-      }),
+      })
     );
     expect(withTomorrow?.tomorrowFajrISO).toMatch(ISO_LOCAL);
 
     const badTomorrow = buildWidgetSnapshot(
       makeInput({
         tomorrow: { ...makeDay({ fajr: "nope" }), date: "2026-07-23" },
-      }),
+      })
     );
     expect(badTomorrow?.tomorrowFajrISO).toBeNull();
   });
@@ -151,7 +151,7 @@ describe("buildWidgetSnapshot", () => {
     expect(snap?.date).toBe("2026-07-22");
     expect(snap?.lockNow).toBeNull();
     expect(new Date(snap?.generatedAt ?? "").toString()).not.toBe(
-      "Invalid Date",
+      "Invalid Date"
     );
   });
 });
