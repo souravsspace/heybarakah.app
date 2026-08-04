@@ -44,24 +44,42 @@ function SalahArcLayout(
   const ARC_RISE = 16;
 
   const scheme = environment.colorScheme ?? "light";
-  const tok =
-    scheme === "dark"
-      ? {
-          bg: "#0f0e0b",
-          ink: "#f5ebdb",
-          muted: "#f5ebdb94",
-          faint: "#f5ebdb5c",
-          accent: "#29603E",
-          hairline: "#f5ebdb2e",
-        }
-      : {
-          bg: "#e8dcc4",
-          ink: "#1a1408",
-          muted: "#1a14088c",
-          faint: "#1a14085c",
-          accent: "#29603E",
-          hairline: "#1a140829",
-        };
+  // Tinted / Clear home screens report "accented"/"vibrant"; there WidgetKit
+  // recolours the tile from the user's tint, so an opaque brand background
+  // fights it. Go transparent and use luminance-only greys, which WidgetKit
+  // maps onto the tint.
+  const mode = environment.widgetRenderingMode ?? "fullColor";
+  const systemTinted = mode !== "fullColor";
+  const dark = {
+    bg: "#0f0e0b",
+    ink: "#f5ebdb",
+    muted: "#f5ebdb94",
+    faint: "#f5ebdb5c",
+    accent: "#29603E",
+    hairline: "#f5ebdb2e",
+  };
+  const light = {
+    bg: "#e8dcc4",
+    ink: "#1a1408",
+    muted: "#1a14088c",
+    faint: "#1a14085c",
+    accent: "#29603E",
+    hairline: "#1a140829",
+  };
+  const tinted = {
+    bg: "#00000000",
+    ink: "#ffffff",
+    muted: "#ffffffb3",
+    faint: "#ffffff80",
+    accent: "#ffffff",
+    hairline: "#ffffff4d",
+  };
+  let tok = light;
+  if (systemTinted) {
+    tok = tinted;
+  } else if (scheme === "dark") {
+    tok = dark;
+  }
 
   const state = props.salah ?? {
     countdownMinutes: 0,
