@@ -28,6 +28,7 @@ import {
   BlockedAppsNativeList,
   type BlockedItemRemoveEvent,
   clearAllBlocks,
+  dumpDiagnostics,
   getBlockConfiguration,
   getInstalledApps,
   getPermissionStatus,
@@ -55,6 +56,10 @@ import { endAllLockActivities, startLockActivity } from "@/lib/widgets-native";
 
 type ThemeColors = ReturnType<typeof useTheme>["colors"];
 const SHOW_UNLOCK_PREVIEW = __DEV__;
+// Dev harness window: far enough out to force-quit the app first, and past
+// DeviceActivity's 15-minute floor so `intervalDidStart` fires.
+const TEST_WINDOW_DELAY_S = 90;
+const TEST_WINDOW_MINUTES = 16;
 
 function summarizeIosSelection(items: IOSBlockedItem[]): string {
   const apps = items.filter((i) => i.type === "app").length;
@@ -1132,15 +1137,44 @@ function DevPanel({
       // Persist the tokens so the monitor extension has something to read when
       // the window opens with the app closed.
       await setBlockConfiguration({ blockedItems: iosItems, isActive: true });
-      scheduleTestWindow(90, 16);
+      scheduleTestWindow(TEST_WINDOW_DELAY_S, TEST_WINDOW_MINUTES);
+      // Cover the SAME span with a Live Activity so one tap exercises both
+      // halves of a salah window. ActivityKit only permits starting an activity
+      // from the foreground, so it has to be raised now, before the app is
+      // force-quit — the same constraint the real salah path runs into.
+      const start = new Date(Date.now() + TEST_WINDOW_DELAY_S * 1000);
+      const end = new Date(start.getTime() + TEST_WINDOW_MINUTES * 60_000);
+      let liveActivity = "Live Activity started";
+      try {
+        await endAllLockActivities();
+        await startLockActivity({
+          endISO: end.toISOString(),
+          name: "asr",
+          startISO: start.toISOString(),
+        });
+      } catch (laErr) {
+        liveActivity = `Live Activity FAILED: ${String(laErr)}`;
+      }
       Alert.alert(
         "Test window scheduled",
-        "In ~90 seconds a real 16-min prayer window opens via DeviceActivity.\n\n1. Close Barakah now (background it).\n2. When it starts, open a blocked app — it should be shielded.\n3. Watch Console.app (filter “BarakahShield”) to see the extension fire.\n\nUse “Activate shield now” to clear the test."
+        `In ~${TEST_WINDOW_DELAY_S}s a real ${TEST_WINDOW_MINUTES}-min prayer window opens via DeviceActivity. ${liveActivity}.\n\n1. Force-quit Barakah now (swipe it away).\n2. Lock the phone — the Live Activity should show on the lock screen.\n3. When the window opens, launch a blocked app — it should be shielded.\n4. Watch Console.app (filter “BarakahShield”) for the extension.\n\nThis REPLACES today’s real prayer windows. Force-quit and relaunch Barakah afterwards to re-register them.`
       );
     } catch (err) {
       Alert.alert("Schedule failed", String(err));
     }
   }, [iosItems]);
+
+  // Prints the live DeviceActivity registration state to the unified log. The
+  // breadcrumbs only fire while something is happening; this answers "were the
+  // windows even registered?" after a salah has already come and gone.
+  const dumpState = useCallback(() => {
+    hapticNotification("warning");
+    dumpDiagnostics();
+    Alert.alert(
+      "State dumped",
+      "Look for “[BarakahShield][module] DUMP” lines in Console.app."
+    );
+  }, []);
 
   // Mocks a 20-minute Asr quiet window so the lock-screen Live Activity and
   // Dynamic Island can be checked without waiting for a real prayer.
@@ -1226,6 +1260,33 @@ function DevPanel({
             }}
           >
             Schedule real window (+90s)
+          </Text>
+        </Pressable>
+      ) : null}
+      {Platform.OS === "ios" ? (
+        <Pressable
+          accessibilityLabel="Dump shield state to the system log (dev)"
+          accessibilityRole="button"
+          onPress={dumpState}
+          style={({ pressed }) => ({
+            alignItems: "center",
+            borderColor: colors.primary,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            opacity: pressed ? 0.7 : 1,
+            paddingVertical: 14,
+          })}
+        >
+          <Text
+            style={{
+              color: colors.primary,
+              fontSize: 13,
+              fontWeight: "700",
+              letterSpacing: 0.8,
+              textTransform: "uppercase",
+            }}
+          >
+            Dump shield state
           </Text>
         </Pressable>
       ) : null}
