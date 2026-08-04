@@ -5,11 +5,11 @@ import config from "./metro.config";
 
 const requireFromApp = createRequire(`${import.meta.dirname}/app/_layout.tsx`);
 const requireFromReactNative = createRequire(
-  require.resolve("react-native/package.json"),
+  require.resolve("react-native/package.json")
 );
 const workspaceRoot = join(import.meta.dirname, "../..");
 const workspaceReactDirectory = dirname(
-  requireFromReactNative.resolve("react"),
+  requireFromReactNative.resolve("react")
 );
 
 describe("metro config", () => {
@@ -23,14 +23,14 @@ describe("metro config", () => {
     // to the same workspace path (equal, and healthy); when a duplicate nested
     // copy exists the alias must still win, so assert the root, not inequality.
     expect(aliasedReact?.startsWith(join(workspaceRoot, "node_modules"))).toBe(
-      true,
+      true
     );
     if (appLocalReact !== workspaceReactDirectory) {
       expect(aliasedReact).not.toBe(appLocalReact);
     }
     expect(config.watchFolders).toContain(workspaceRoot);
     expect(config.resolver?.nodeModulesPaths?.[0]).toBe(
-      join(workspaceRoot, "node_modules"),
+      join(workspaceRoot, "node_modules")
     );
     expect(config.resolver?.disableHierarchicalLookup).not.toBe(true);
   });
