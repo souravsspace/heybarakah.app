@@ -7,7 +7,7 @@ import os
 @available(iOS 15.0, *)
 class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
   // CONFIGURE: Replace with your App Group identifier
-  private let appGroupIdentifier = "APP_GROUP_PLACEHOLDER"
+  private let appGroupIdentifier = "group.com.souravsspace.Barakah.shield"
   private let temporaryUnlockKey = "appBlocker.temporaryUnlock.v1"
   private let blockConfigStorageKey = "appBlocker.blockConfiguration.v1"
   private let prayerActivityPrefix = "appBlocker.prayer."
