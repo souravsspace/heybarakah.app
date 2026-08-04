@@ -2,6 +2,7 @@ import DeviceActivity
 import ManagedSettings
 import FamilyControls
 import Foundation
+import os
 
 @available(iOS 15.0, *)
 class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
@@ -21,15 +22,24 @@ class AppBlockerDeviceActivityMonitor: DeviceActivityMonitor {
     log("init suite=\(appGroupIdentifier) defaults=\(sharedDefaults == nil ? "nil" : "ok")")
   }
 
-  // Breadcrumb logger. The DeviceActivityMonitor extension runs in its own
-  // process with a tiny (~6MB) memory budget; when it crashes or is jetsammed
-  // mid-`intervalDidStart` the shield never applies and the OS shows a "Barakah
-  // has crashed" report attributed to the host app. Nothing here reaches the
-  // JS/PostHog layer, so these NSLogs are the only window into the salah path.
-  // Read them on-device via Console.app (filter "BarakahShield") or
+  // Breadcrumb logger for the salah path. This extension runs in its own
+  // process and nothing it does reaches the JS/PostHog layer, so these lines
+  // are the only window into why a prayer window did (or didn't) shield.
+  //
+  // The message MUST be passed as a `%{public}@` argument. `NSLog("...\(x)")`
+  // makes the interpolated string the format itself, which the unified log
+  // treats as dynamic and redacts — Console then shows bare "<private>" lines
+  // with no content, which is exactly what the first instrumentation round hit.
+  //
+  // Read on-device via Console.app (filter "BarakahShield") or
   // `idevicesyslog | grep BarakahShield`.
+  private static let logHandle = OSLog(
+    subsystem: "com.souravsspace.Barakah.shield",
+    category: "monitor"
+  )
+
   private func log(_ message: String) {
-    NSLog("[BarakahShield][monitor] \(message)")
+    os_log("%{public}@", log: Self.logHandle, type: .default, "[BarakahShield][monitor] \(message)")
   }
 
   override func intervalDidEnd(for activity: DeviceActivityName) {
