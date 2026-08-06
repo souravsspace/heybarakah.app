@@ -1,7 +1,8 @@
 import type { PrayerWindow } from "@barakah/core/shieldSelection";
 import { useQuery as useRqQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
+import { requestNotificationPermission } from "@/hooks/use-permissions";
 import { useTodayKey } from "@/hooks/use-today-key";
 import { api } from "@/lib/api-client";
 import {
@@ -17,6 +18,10 @@ import {
   stopMonitoring,
   temporaryUnlock,
 } from "@/lib/app-blocker";
+import {
+  cancelLastCallNotifications,
+  scheduleLastCallNotifications,
+} from "@/lib/prayer-last-call-notifications";
 import {
   cancelShieldNotifications,
   scheduleShieldNotifications,
@@ -80,7 +85,7 @@ export function usePrayerShield() {
   // Still resolving both sources — acting now would clear a live schedule before
   // we know the real selection, so callers must wait.
   const resolving = liveSelection === undefined && !cacheLoaded;
-  const { todayPrayerTimes } = usePrayerTimes();
+  const { todayPrayerTimes, prayerTimes } = usePrayerTimes();
   const today = useTodayKey();
   const week = useWeekLogs(today);
   const weekRef = useRef(week);
@@ -92,8 +97,14 @@ export function usePrayerShield() {
     .map((row) => row.prayer)
     .sort()
     .join(",");
+  // Isha's time expires at Islamic midnight, which needs tomorrow's fajr.
+  const nextDayFajr = useMemo(() => {
+    const idx = prayerTimes.findIndex((d) => d.date === today);
+    return idx >= 0 ? (prayerTimes[idx + 1]?.timings.fajr ?? null) : null;
+  }, [prayerTimes, today]);
   const appStateRef = useRef(AppState.currentState);
   const lastScheduleKey = useRef<string>("");
+  const lastCallKey = useRef<string>("");
   const [activeWindow, setActiveWindow] = useState<PrayerWindow | null>(null);
 
   useEffect(() => {
@@ -133,8 +144,10 @@ export function usePrayerShield() {
         // noop — library may throw on simulator or pre-permission
       }
       cancelShieldNotifications().catch(() => null);
+      cancelLastCallNotifications().catch(() => null);
       clearShieldSchedule().catch(() => null);
       lastScheduleKey.current = "";
+      lastCallKey.current = "";
       return;
     }
     if (!todayPrayerTimes) {
@@ -169,9 +182,6 @@ export function usePrayerShield() {
         windows: selection.windows,
         times,
       }).catch(() => null);
-      persistShieldSchedule({ windows: selection.windows, times }).catch(
-        () => null
-      );
       // iOS: hand the windows to DeviceActivity so the shield engages/lifts at
       // each salah even when the app is closed (the foreground tick alone can't
       // flip the shield in the background). Tokens were already stored by the
@@ -185,6 +195,35 @@ export function usePrayerShield() {
           clearScheduledWindows();
         }
       }
+    }
+
+    // The "your time is running out" reminders. Keyed on today's logs as well as
+    // the schedule: a pending notification can't tell at fire time whether the
+    // prayer was recorded, so logging one has to re-issue the set without it.
+    const logged = loggedKey ? (loggedKey.split(",") as PrayerWindow[]) : [];
+    const nextLastCallKey = JSON.stringify({
+      logged: loggedKey,
+      nextDayFajr,
+      times,
+      windows: selection.windows,
+    });
+    if (nextLastCallKey !== lastCallKey.current) {
+      lastCallKey.current = nextLastCallKey;
+      scheduleLastCallNotifications({
+        logged,
+        nextDayFajr,
+        times,
+        windows: selection.windows,
+      }).catch(() => null);
+      // Everything the background task needs to keep both notification sets and
+      // the shield itself honest while the app stays closed.
+      persistShieldSchedule({
+        date: today,
+        logged,
+        nextDayFajr,
+        times,
+        windows: selection.windows,
+      }).catch(() => null);
     }
 
     const now = new Date();
@@ -245,11 +284,24 @@ export function usePrayerShield() {
         stopMonitoring();
       }
     }
-  }, [resolving, selection, todayPrayerTimes, loggedKey, today]);
+  }, [resolving, selection, todayPrayerTimes, loggedKey, nextDayFajr, today]);
 
   useEffect(() => {
     registerPrayerShieldTask().catch(() => null);
   }, []);
+
+  // Both reminder sets are useless without the notification permission, and a
+  // user who skipped or denied it during onboarding is never asked again. Ask
+  // once when the shield turns on. Already-granted is a no-op, and iOS won't
+  // re-prompt after a denial — it just resolves as denied — so this can't nag.
+  const askedForNotifications = useRef(false);
+  useEffect(() => {
+    if (!selection?.enabled || askedForNotifications.current) {
+      return;
+    }
+    askedForNotifications.current = true;
+    requestNotificationPermission().catch(() => null);
+  }, [selection?.enabled]);
 
   useEffect(() => {
     sync();

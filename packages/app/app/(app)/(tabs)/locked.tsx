@@ -1,5 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient, useQuery as useRqQuery } from "@tanstack/react-query";
+import * as BackgroundTask from "expo-background-task";
+import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -20,8 +22,17 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LockedMesh } from "@/components/meshes";
 import { ScrollBlurHeader } from "@/components/scroll-blur-header";
+import {
+  dateSeed,
+  LAST_CALL_BODIES,
+  LAST_CALL_TITLES,
+  pickDaily,
+  SHIELD_BODIES,
+  SHIELD_TITLES,
+} from "@/constants/notification-copy";
 import { SOCIAL_APPS, type SocialApp } from "@/constants/social-apps";
 import { useTheme } from "@/contexts/theme-context";
+import { requestNotificationPermission } from "@/hooks/use-permissions";
 import { api } from "@/lib/api-client";
 import {
   type AndroidBlockableApp,
@@ -59,6 +70,9 @@ const SHOW_UNLOCK_PREVIEW = __DEV__;
 // DeviceActivity's 15-minute floor so `intervalDidStart` fires.
 const TEST_WINDOW_DELAY_S = 90;
 const TEST_WINDOW_MINUTES = 16;
+// Far enough out to background the app before either reminder lands.
+const DEV_NOTIF_LOCK_DELAY_S = 15;
+const DEV_NOTIF_LAST_CALL_DELAY_S = 30;
 
 function summarizeIosSelection(items: IOSBlockedItem[]): string {
   const apps = items.filter((i) => i.type === "app").length;
@@ -1066,6 +1080,44 @@ function PickMore({
   );
 }
 
+function DevOutlineButton({
+  colors,
+  label,
+  onPress,
+}: {
+  colors: ThemeColors;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityLabel={`${label} (dev)`}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => ({
+        alignItems: "center",
+        borderColor: colors.primary,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        opacity: pressed ? 0.7 : 1,
+        paddingVertical: 14,
+      })}
+    >
+      <Text
+        style={{
+          color: colors.primary,
+          fontSize: 13,
+          fontWeight: "700",
+          letterSpacing: 0.8,
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 function DevPanel({
   androidPackages,
   colors,
@@ -1156,6 +1208,87 @@ function DevPanel({
       "State dumped",
       "Look for “[BarakahShield][module] DUMP” lines in Console.app."
     );
+  }, []);
+
+  // Both reminder kinds, fired seconds apart, without waiting for a real salah.
+  // Uses the production copy pools so the wording is what ships.
+  const fireTestNotifications = useCallback(async () => {
+    hapticNotification("warning");
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      Alert.alert(
+        "Notifications denied",
+        "Enable them in Settings → Barakah → Notifications, then try again."
+      );
+      return;
+    }
+    const seed = dateSeed(new Date());
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: pickDaily(SHIELD_TITLES.dhuhr, `${seed}-dev-shield`),
+        body: pickDaily(SHIELD_BODIES, `${seed}-dev-shield-body`),
+        sound: false,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: DEV_NOTIF_LOCK_DELAY_S,
+      },
+    });
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: pickDaily(LAST_CALL_TITLES.dhuhr, `${seed}-dev-last`),
+        body: pickDaily(LAST_CALL_BODIES, `${seed}-dev-last-body`),
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: DEV_NOTIF_LAST_CALL_DELAY_S,
+      },
+    });
+    Alert.alert(
+      "Reminders scheduled",
+      `Background Barakah now.\n\n+${DEV_NOTIF_LOCK_DELAY_S}s — the quiet “salah nears” nudge (silent).\n+${DEV_NOTIF_LAST_CALL_DELAY_S}s — the loud “time is running out” last call.`
+    );
+  }, []);
+
+  // What is actually queued for the rest of today — the only way to check the
+  // real schedule without waiting for a salah to come around.
+  const listScheduled = useCallback(async () => {
+    hapticNotification("warning");
+    const pending = await Notifications.getAllScheduledNotificationsAsync();
+    if (pending.length === 0) {
+      Alert.alert("Nothing scheduled", "No reminders are queued.");
+      return;
+    }
+    const lines = pending
+      .map((n) => {
+        const trigger = n.trigger as { date?: number | string } | null;
+        const when = trigger?.date ? new Date(trigger.date) : null;
+        const stamp = when
+          ? `${when.getHours()}:${String(when.getMinutes()).padStart(2, "0")}`
+          : "—";
+        return `${stamp}  ${n.content.title ?? "(untitled)"}`;
+      })
+      .sort()
+      .join("\n");
+    Alert.alert(`${pending.length} scheduled`, lines);
+  }, []);
+
+  // Runs the background task on demand: reschedules both reminder sets from the
+  // persisted schedule and releases a shield left on past its window.
+  const runBackgroundRefresh = useCallback(async () => {
+    hapticNotification("warning");
+    try {
+      const ran = await BackgroundTask.triggerTaskWorkerForTestingAsync();
+      Alert.alert(
+        ran ? "Background task ran" : "Background task did not run",
+        ran
+          ? "Reminders were re-issued and a stuck shield would have been released."
+          : "Only works in a dev build on a real device — simulators skip background task registration."
+      );
+    } catch (err) {
+      Alert.alert("Trigger failed", String(err));
+    }
   }, []);
 
   return (
@@ -1254,6 +1387,21 @@ function DevPanel({
           </Text>
         </Pressable>
       ) : null}
+      <DevOutlineButton
+        colors={colors}
+        label="Fire test reminders"
+        onPress={fireTestNotifications}
+      />
+      <DevOutlineButton
+        colors={colors}
+        label="List scheduled reminders"
+        onPress={listScheduled}
+      />
+      <DevOutlineButton
+        colors={colors}
+        label="Run background refresh"
+        onPress={runBackgroundRefresh}
+      />
       <Pressable
         accessibilityLabel="Preview unlock screen"
         accessibilityRole="button"
