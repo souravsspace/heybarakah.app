@@ -2,6 +2,7 @@ import type { PrayerWindow } from "@barakah/core/shieldSelection";
 import { useQuery as useRqQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
+import { requestNotificationPermission } from "@/hooks/use-permissions";
 import { useTodayKey } from "@/hooks/use-today-key";
 import { api } from "@/lib/api-client";
 import {
@@ -288,6 +289,19 @@ export function usePrayerShield() {
   useEffect(() => {
     registerPrayerShieldTask().catch(() => null);
   }, []);
+
+  // Both reminder sets are useless without the notification permission, and a
+  // user who skipped or denied it during onboarding is never asked again. Ask
+  // once when the shield turns on. Already-granted is a no-op, and iOS won't
+  // re-prompt after a denial — it just resolves as denied — so this can't nag.
+  const askedForNotifications = useRef(false);
+  useEffect(() => {
+    if (!selection?.enabled || askedForNotifications.current) {
+      return;
+    }
+    askedForNotifications.current = true;
+    requestNotificationPermission().catch(() => null);
+  }, [selection?.enabled]);
 
   useEffect(() => {
     sync();
