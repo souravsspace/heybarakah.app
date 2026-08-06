@@ -65,6 +65,35 @@ export function computeWindows(
   return out.sort((a, b) => a.start - b.start);
 }
 
+// Minutes left in the shield window actually registered with the OS for
+// `prayer`, or 0 when `now` sits outside it.
+//
+// `lockBoundsMinutes` describes the logical LOCK_DURATION_MIN window, but the
+// registered interval is padded up to MIN_DEVICE_ACTIVITY_MINUTES by
+// `toBlockWindows` and the native relock re-shields against *that* window. An
+// unlock sized to the logical window therefore expires while the OS still
+// considers the window open, putting the shield back on a user who just prayed.
+export function remainingShieldMinutes(
+  prayer: PrayerWindow,
+  timings: Timings | null | undefined,
+  now: Date = new Date()
+): number {
+  if (!timings) {
+    return 0;
+  }
+  const adhan = parseHHmm(timings[prayer]);
+  if (adhan === null) {
+    return 0;
+  }
+  const { start, end } = lockBoundsMinutes(prayer, adhan);
+  const osEnd = Math.max(end, start + MIN_DEVICE_ACTIVITY_MINUTES);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  if (nowMin < start || nowMin >= osEnd) {
+    return 0;
+  }
+  return Math.max(1, osEnd - nowMin);
+}
+
 // Map computed shield windows to the OS DeviceActivity schedule payload. A
 // window clipped below the DeviceActivity floor (e.g. one clamped at midnight,
 // or the exact-15-minute effective window) is *extended* to the floor rather
