@@ -16,10 +16,8 @@ import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { temporaryUnlock } from "@/lib/app-blocker";
 import { activePrayerNow, dateKey } from "@/lib/date-utils";
 import { hapticNotification } from "@/lib/haptics";
-import {
-  LOCK_DURATION_MIN,
-  lockBoundsMinutes,
-} from "@/lib/prayer-window-config";
+import { remainingShieldMinutes } from "@/lib/prayer-shield-windows";
+import { LOCK_DURATION_MIN } from "@/lib/prayer-window-config";
 
 type PrayerName = LoggablePrayerName;
 
@@ -90,39 +88,25 @@ export default function Unlock() {
     router.replace("/(app)/(tabs)/locked");
   }, [router]);
 
-  // Minutes left in the current prayer's lock window — how long to lift the
-  // shield for so the next prayer re-shields normally.
-  const remainingLockMin = useMemo(() => {
-    if (!(activePrayer && todayPrayerTimes)) {
-      return LOCK_DURATION_MIN;
-    }
-    const raw = (todayPrayerTimes.timings as Record<string, string>)[
-      activePrayer
-    ];
-    const [h, m] = (raw ?? "").split(":").map(Number);
-    if (Number.isNaN(h) || Number.isNaN(m)) {
-      return LOCK_DURATION_MIN;
-    }
-    const { end } = lockBoundsMinutes(activePrayer, h * 60 + m);
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    // Cap to the window length. A window whose end crossed midnight (e.g. a late
-    // isha) yields an `end` in the 1440+ range while `nowMin` is small after
-    // midnight, so `end - nowMin` would otherwise unlock for nearly a full day.
-    return Math.min(LOCK_DURATION_MIN, Math.max(1, end - nowMin));
+  // Lift the app shield for the rest of this prayer window. `remainingShieldMinutes`
+  // returns 0 when we believe we're outside the window; the user is looking at the
+  // unlock screen, so something shielded them — fall back to a full lock duration
+  // rather than no-op.
+  const liftShield = useCallback(async () => {
+    const minutes = activePrayer
+      ? remainingShieldMinutes(activePrayer, todayPrayerTimes?.timings)
+      : 0;
+    await temporaryUnlock(minutes || LOCK_DURATION_MIN).catch(() => undefined);
   }, [activePrayer, todayPrayerTimes]);
 
-  // Lift the app shield for the rest of this prayer window.
-  const liftShield = useCallback(async () => {
-    await temporaryUnlock(remainingLockMin).catch(() => undefined);
-  }, [remainingLockMin]);
-
   // Already prayed this window: nothing to gate, so don't sit on the screen.
+  // Skipped while `onMarkPrayed` runs — its optimistic log flips this flag
+  // mid-flight, and dismissing here would race the celebration screen it routes to.
   useEffect(() => {
-    if (activePrayerLogged) {
+    if (activePrayerLogged && !prayerBusy) {
       close();
     }
-  }, [activePrayerLogged, close]);
+  }, [activePrayerLogged, prayerBusy, close]);
 
   const onContinueQuiet = async () => {
     await liftShield();
@@ -150,13 +134,18 @@ export default function Unlock() {
     setPrayerBusy(true);
     const status = classifyNow(activePrayer);
     try {
+      // Free the apps first. The shield is local state, so it must come off on
+      // the tap itself — putting the POST ahead of it left users shielded for the
+      // length of a slow request, and left them shielded permanently when the
+      // request failed. `logPrayer` persists an offline-queue backstop before it
+      // hits the network, so a rejection here is replayed later, not lost.
+      await liftShield();
       await logPrayer({
         date: today,
         prayer: activePrayer,
         status,
         prayedAt: Date.now(),
-      });
-      await liftShield();
+      }).catch(() => undefined);
       // Swap the unlock modal for the celebration screen; it names the prayer,
       // then routes Home where the new log is already reflected live.
       router.replace({
