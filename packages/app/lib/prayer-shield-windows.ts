@@ -94,6 +94,16 @@ export function remainingShieldMinutes(
   return Math.max(1, osEnd - nowMin);
 }
 
+// Whether `now` falls inside any of the registered shield windows. Used by the
+// background reconciler to decide if a still-engaged shield is legitimate.
+export function isInsideAnyShieldWindow(
+  windows: readonly PrayerWindow[],
+  timings: Timings | null | undefined,
+  now: Date = new Date()
+): boolean {
+  return windows.some((w) => remainingShieldMinutes(w, timings, now) > 0);
+}
+
 // Map computed shield windows to the OS DeviceActivity schedule payload. A
 // window clipped below the DeviceActivity floor (e.g. one clamped at midnight,
 // or the exact-15-minute effective window) is *extended* to the floor rather
