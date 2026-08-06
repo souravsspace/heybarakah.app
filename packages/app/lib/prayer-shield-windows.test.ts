@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { PrayerWindow } from "@barakah/core/shieldSelection";
 import {
   computeWindows,
+  isInsideAnyShieldWindow,
   MIN_DEVICE_ACTIVITY_MINUTES,
   parseHHmm,
   remainingShieldMinutes,
@@ -175,5 +176,25 @@ describe("remainingShieldMinutes", () => {
     for (let m = START; m < END; m++) {
       expect(m + remainingShieldMinutes("dhuhr", TIMINGS, at(m))).toBe(END);
     }
+  });
+});
+
+describe("isInsideAnyShieldWindow", () => {
+  const at = (minuteOfDay: number): Date => {
+    const d = new Date(2026, 0, 1);
+    d.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
+    return d;
+  };
+
+  test("true only while one of the given windows is open", () => {
+    // dhuhr window is 13:07–13:23 for a 12:30 adhan.
+    expect(isInsideAnyShieldWindow(["dhuhr"], TIMINGS, at(790))).toBe(true);
+    expect(isInsideAnyShieldWindow(["dhuhr"], TIMINGS, at(700))).toBe(false);
+    expect(isInsideAnyShieldWindow(["fajr"], TIMINGS, at(790))).toBe(false);
+  });
+
+  test("false for an empty selection or missing timings", () => {
+    expect(isInsideAnyShieldWindow([], TIMINGS, at(790))).toBe(false);
+    expect(isInsideAnyShieldWindow(["dhuhr"], null, at(790))).toBe(false);
   });
 });
