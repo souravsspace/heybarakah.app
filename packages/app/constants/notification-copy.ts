@@ -54,6 +54,43 @@ export const SHIELD_BODIES: readonly string[] = [
   "Quiet now. The world can wait.",
 ];
 
+export const LAST_CALL_TITLES: Record<PrayerWindow, readonly string[]> = {
+  fajr: [
+    "Fajr is closing",
+    "Last of Fajr",
+    "Fajr slips away",
+    "Fajr won't wait",
+  ],
+  dhuhr: [
+    "Dhuhr is closing",
+    "Last of Dhuhr",
+    "Dhuhr slips away",
+    "Dhuhr won't wait",
+  ],
+  asr: ["Asr is closing", "Last of Asr", "Asr slips away", "Asr won't wait"],
+  maghrib: [
+    "Maghrib is closing",
+    "Last of Maghrib",
+    "Maghrib slips away",
+    "Maghrib won't wait",
+  ],
+  isha: [
+    "Isha is closing",
+    "Last of Isha",
+    "Isha slips away",
+    "Isha won't wait",
+  ],
+};
+
+export const LAST_CALL_BODIES: readonly string[] = [
+  "The window shuts soon. Pray now.",
+  "Time is going. Stand for it.",
+  "Minutes left — don't let it pass.",
+  "Go now, before it becomes qadā.",
+  "It closes soon. Leave the rest.",
+  "Still time, but not much. Pray.",
+];
+
 export const AYAH_TITLES: readonly string[] = [
   "A reminder",
   "From the Qur'an",
