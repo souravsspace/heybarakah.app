@@ -4,6 +4,7 @@ import {
   computeWindows,
   MIN_DEVICE_ACTIVITY_MINUTES,
   parseHHmm,
+  remainingShieldMinutes,
   type Timings,
   toBlockWindows,
 } from "@/lib/prayer-shield-windows";
@@ -128,5 +129,51 @@ describe("toBlockWindows", () => {
 
   test("empty input yields empty output", () => {
     expect(toBlockWindows([])).toEqual([]);
+  });
+});
+
+describe("remainingShieldMinutes", () => {
+  // dhuhr adhan 12:30 (750) + 45 offset = 13:15 midpoint → window 13:07–13:23.
+  const START = 787;
+  const END = 803;
+
+  const at = (minuteOfDay: number): Date => {
+    const d = new Date(2026, 0, 1);
+    d.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
+    return d;
+  };
+
+  test("covers the whole registered window from its first minute", () => {
+    // The registered interval is 16 minutes wide. Capping this at
+    // LOCK_DURATION_MIN (15) expired the unlock while the OS still considered
+    // the window open, so the native relock re-shielded a user who had just
+    // marked the prayer as prayed.
+    expect(remainingShieldMinutes("dhuhr", TIMINGS, at(START))).toBe(
+      END - START
+    );
+  });
+
+  test("shrinks as the window elapses", () => {
+    expect(remainingShieldMinutes("dhuhr", TIMINGS, at(START + 10))).toBe(6);
+    expect(remainingShieldMinutes("dhuhr", TIMINGS, at(END - 1))).toBe(1);
+  });
+
+  test("is zero outside the window", () => {
+    expect(remainingShieldMinutes("dhuhr", TIMINGS, at(START - 1))).toBe(0);
+    expect(remainingShieldMinutes("dhuhr", TIMINGS, at(END))).toBe(0);
+  });
+
+  test("is zero without usable timings", () => {
+    expect(remainingShieldMinutes("dhuhr", null, at(START))).toBe(0);
+    expect(remainingShieldMinutes("dhuhr", undefined, at(START))).toBe(0);
+    expect(
+      remainingShieldMinutes("dhuhr", { ...TIMINGS, dhuhr: "25:99" }, at(START))
+    ).toBe(0);
+  });
+
+  test("never outlives the window it unlocks", () => {
+    for (let m = START; m < END; m++) {
+      expect(m + remainingShieldMinutes("dhuhr", TIMINGS, at(m))).toBe(END);
+    }
   });
 });
