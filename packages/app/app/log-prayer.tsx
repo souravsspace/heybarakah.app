@@ -12,6 +12,7 @@ import {
 } from "@/hooks/usePrayerLogs";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { dateKey, fmtRangeTime, PRAYER_ORDER } from "@/lib/date-utils";
+import { liftShieldForPrayer } from "@/lib/shield-lift";
 
 const BARAKAH_GREEN = "#29603E";
 
@@ -141,6 +142,13 @@ export default function LogPrayerScreen() {
 
   const handlePick = (status: PrayerStatus) => {
     dismiss();
+    // Logging today's active salah as prayed lifts its shield for the rest of the
+    // window; "missed" leaves it on, and past dates have no live window to lift.
+    if (status !== "missed" && date === dateKey()) {
+      liftShieldForPrayer(prayer, todayPrayerTimes?.timings).catch(
+        () => undefined
+      );
+    }
     logPrayer({
       date,
       prayer,
