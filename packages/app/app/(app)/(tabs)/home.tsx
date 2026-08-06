@@ -31,6 +31,7 @@ import {
   PRAYER_ORDER,
   pad2,
 } from "@/lib/date-utils";
+import { liftShieldForPrayer } from "@/lib/shield-lift";
 
 type PrayerName = LoggablePrayerName;
 
@@ -280,6 +281,12 @@ export default function Home() {
   const onMarkPrayed = useCallback(
     async (prayer: PrayerName) => {
       const status = classifyNow(prayer);
+      // Marking the prayer whose shield window is live must free the blocked
+      // apps right here — before the POST, so a slow or failed request can't
+      // leave the user locked out of a salah they already prayed.
+      if (status !== "missed") {
+        await liftShieldForPrayer(prayer, todayPrayerTimes?.timings);
+      }
       await logPrayer({
         date: today,
         prayer,
@@ -287,7 +294,7 @@ export default function Home() {
         prayedAt: Date.now(),
       });
     },
-    [classifyNow, logPrayer, today]
+    [classifyNow, logPrayer, today, todayPrayerTimes]
   );
 
   const openSheet = useCallback(
