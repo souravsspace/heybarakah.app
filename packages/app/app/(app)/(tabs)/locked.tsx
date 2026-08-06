@@ -1251,6 +1251,29 @@ function DevPanel({
     );
   }, []);
 
+  // What is actually queued for the rest of today — the only way to check the
+  // real schedule without waiting for a salah to come around.
+  const listScheduled = useCallback(async () => {
+    hapticNotification("warning");
+    const pending = await Notifications.getAllScheduledNotificationsAsync();
+    if (pending.length === 0) {
+      Alert.alert("Nothing scheduled", "No reminders are queued.");
+      return;
+    }
+    const lines = pending
+      .map((n) => {
+        const trigger = n.trigger as { date?: number | string } | null;
+        const when = trigger?.date ? new Date(trigger.date) : null;
+        const stamp = when
+          ? `${when.getHours()}:${String(when.getMinutes()).padStart(2, "0")}`
+          : "—";
+        return `${stamp}  ${n.content.title ?? "(untitled)"}`;
+      })
+      .sort()
+      .join("\n");
+    Alert.alert(`${pending.length} scheduled`, lines);
+  }, []);
+
   // Runs the background task on demand: reschedules both reminder sets from the
   // persisted schedule and releases a shield left on past its window.
   const runBackgroundRefresh = useCallback(async () => {
@@ -1368,6 +1391,11 @@ function DevPanel({
         colors={colors}
         label="Fire test reminders"
         onPress={fireTestNotifications}
+      />
+      <DevOutlineButton
+        colors={colors}
+        label="List scheduled reminders"
+        onPress={listScheduled}
       />
       <DevOutlineButton
         colors={colors}
